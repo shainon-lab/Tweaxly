@@ -8,3 +8,8 @@ out/
 prisma/*.db
 prisma/*.db-journal
 uploads/
+.vercel
+
+.env.production
+.env.development.local
+.env.preview.local
