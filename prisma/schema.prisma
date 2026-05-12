@@ -1,0 +1,398 @@
+// Prisma schema for the AI CFO MVP.
+// SQLite for fast local dev — swap provider to "postgresql" for production.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime   @default(now())
+  businesses   Business[]
+}
+
+model Business {
+  id              String              @id @default(cuid())
+  ownerId         String
+  owner           User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name            String
+  currency        String              @default("USD")
+  fiscalStartMonth Int                @default(1)
+  vatEnabled      Boolean             @default(false)
+  vatRate         Float?              @default(0)
+  // Optional business branding. Both stored as data URLs (base64-encoded) so
+  // they can be rendered directly into <img src> / <link rel="icon"> without
+  // a separate file-serving layer.
+  logoData        String?
+  faviconData     String?
+  createdAt       DateTime            @default(now())
+
+  categories      Category[]
+  uploads         UploadBatch[]
+  transactions    Transaction[]
+  rules           CategorizationRule[]
+  duplicateGroups DuplicateGroup[]
+  employees       Employee[]
+  employeeEvents  EmployeeEvent[]
+  forecastItems   ForecastItem[]
+  forecastAssumptions ForecastAssumption[]
+  mutedSignals    MutedSignal[]
+  mappingTemplates MappingTemplate[]
+  recommendations Recommendation[]
+  consultations   Consultation[]
+  manualEntries   ManualEntry[]
+  notificationRules NotificationRule[]
+  vendors         Vendor[]
+}
+
+model NotificationRule {
+  id             String    @id @default(cuid())
+  businessId     String
+  business       Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // What to watch: "revenue" | "expenses" | "net" | "category"
+  metric         String
+  // Required when metric = "category"; null otherwise.
+  categoryId     String?
+  category       Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  // "increase" | "decrease"
+  direction      String
+  // "percent" | "amount"
+  thresholdType  String
+  // For percent: store as 0-100 (e.g. 10 means "10%"). For amount: money value.
+  thresholdValue Float
+  // Comparison window: "month" | "quarter" | "year".
+  period         String
+  // Optional friendly label the user can set for this rule.
+  label          String?
+  enabled        Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+
+  @@index([businessId])
+}
+
+model Category {
+  id         String        @id @default(cuid())
+  businessId String
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  // kind: revenue, fixed, variable, payroll, marketing, fee, tax, transfer, other
+  kind       String
+  isOneTime  Boolean       @default(false)
+  createdAt  DateTime      @default(now())
+  transactions Transaction[]
+  manualEntries ManualEntry[]
+  notificationRules NotificationRule[]
+  vendors      Vendor[]  @relation("VendorCategory")
+
+  // Optional "primary" vendor for the category. Surfaced in the Settings
+  // categories table as the headline vendor (defaults to GENERAL when null).
+  primaryVendorId String?
+  primaryVendor   Vendor?  @relation("CategoryPrimaryVendor", fields: [primaryVendorId], references: [id], onDelete: SetNull)
+
+  @@unique([businessId, name])
+}
+
+model Vendor {
+  id         String    @id @default(cuid())
+  businessId String
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  categoryId String?
+  category   Category? @relation("VendorCategory", fields: [categoryId], references: [id], onDelete: SetNull)
+  // Like Category.isOneTime — transactions matching this vendor inherit
+  // this default when no transaction-level override is set.
+  isOneTime  Boolean   @default(false)
+  createdAt  DateTime  @default(now())
+
+  // Reverse side of Category.primaryVendor relation.
+  primaryForCategories Category[] @relation("CategoryPrimaryVendor")
+
+  @@unique([businessId, name])
+  @@index([businessId, categoryId])
+}
+
+model MappingTemplate {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name       String
+  source     String   // bank | credit_card | paypal | stripe | invoicing | payroll | other
+  // JSON string: { date, amount, description, currency, txnId, source, category, notes }
+  mapping    String
+  createdAt  DateTime @default(now())
+
+  @@unique([businessId, name])
+}
+
+model UploadBatch {
+  id          String        @id @default(cuid())
+  businessId  String
+  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  source      String        // bank | credit_card | paypal | stripe | invoicing | payroll | other | monthly_summary
+  // mode: transactions (per-row activity) | monthly_summary (single-month totals per category)
+  mode        String        @default("transactions")
+  filename    String
+  rowCount    Int           @default(0)
+  // For monthly_summary uploads: the YYYY-MM the data represents (derived from the calendar date)
+  representsMonth String?
+  createdAt   DateTime      @default(now())
+  transactions Transaction[]
+}
+
+model Transaction {
+  id                   String       @id @default(cuid())
+  businessId           String
+  business             Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  uploadBatchId        String?
+  uploadBatch          UploadBatch? @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+  source               String
+  originalSourceFile   String?
+  externalId           String?
+  transactionDate      DateTime
+  accountingMonth      String       // YYYY-MM
+  amount               Float        // signed: positive = inflow, negative = outflow
+  currency             String       @default("USD")
+  type                 String       // income | expense | transfer | fee | payroll | tax | other
+  categoryId           String?
+  category             Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  subcategory          String?
+  vendor               String?
+  description          String       @default("")
+  isRecurring          Boolean      @default(false)
+  isOneTime            Boolean      @default(false)
+  isDuplicateCandidate Boolean      @default(false)
+  isExcludedFromPnl    Boolean      @default(false)
+  // Free-form note explaining WHY this transaction is excluded (e.g. "personal
+  // purchase on shared bank account"). Shown as a hover tooltip on the
+  // "not calculated" pill in the Transactions table.
+  excludeNote          String?
+  notes                String?
+  duplicateGroupId     String?
+  duplicateGroup       DuplicateGroup? @relation(fields: [duplicateGroupId], references: [id], onDelete: SetNull)
+  manualEntryId        String?
+  manualEntry          ManualEntry? @relation(fields: [manualEntryId], references: [id], onDelete: Cascade)
+  createdAt            DateTime     @default(now())
+
+  @@index([businessId, accountingMonth])
+  @@index([businessId, type])
+  @@index([businessId, vendor])
+}
+
+model CategorizationRule {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // matchField: description | vendor | source
+  matchField String
+  // matchType: contains | equals | startsWith | regex
+  matchType  String
+  pattern    String
+  categoryId String
+  // optional flags
+  setRecurring Boolean @default(false)
+  setOneTime   Boolean @default(false)
+  priority   Int      @default(0)
+  createdAt  DateTime @default(now())
+}
+
+model DuplicateGroup {
+  id         String        @id @default(cuid())
+  businessId String
+  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reason     String        // e.g. "amount+date+|<=2 days| & sources differ"
+  status     String        @default("open") // open | merged | dismissed
+  createdAt  DateTime      @default(now())
+  transactions Transaction[]
+}
+
+model Employee {
+  id          String          @id @default(cuid())
+  businessId  String
+  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name        String
+  role        String?
+  // Cost breakdown — new fields. When any of these are set, total monthly
+  // cost = gross + sum(breakdown). When all are null, we fall back to the
+  // legacy gross * employerCostMultiplier calculation so older records
+  // continue to work.
+  employmentType  String?   @default("employee")   // employee | contractor | freelancer
+  department      String?
+  employerTaxes   Float?    // monthly $
+  pension         Float?
+  benefits        Float?
+  additionalCosts Float?
+  // status: active | planned | terminated. Inferred from start/end dates if
+  // not set explicitly (legacy rows).
+  status          String?   @default("active")
+  grossMonthlySalary Float
+  employerCostMultiplier Float @default(1.25)
+  startDate   DateTime
+  endDate     DateTime?
+  notes       String?
+  createdAt   DateTime        @default(now())
+  events      EmployeeEvent[]
+}
+
+model EmployeeEvent {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employeeId  String?
+  employee    Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  // type: hire | termination | salary_change | bonus | one_time
+  type        String
+  effectiveDate DateTime
+  amount      Float?    // for bonus / one_time / salary_change new salary
+  notes       String?
+  createdAt   DateTime  @default(now())
+}
+
+model ForecastItem {
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  label        String
+  // kind: income | expense
+  kind         String
+  amount       Float
+  monthsAhead  Int       // 1, 2, 3
+  notes        String?
+  createdAt    DateTime  @default(now())
+}
+
+// Scenario assumption on top of the baseline forecast. Each row is a single
+// business event the user is modeling (a hire, a new contract, a marketing
+// cut, etc.). The forecast engine reads these and produces a "scenario" line
+// alongside the baseline.
+model ForecastAssumption {
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // family: revenue | expense | payroll
+  family       String
+  // type — discriminates which fields are meaningful. e.g. hire, terminate,
+  // salary_increase, bonus, contractor_add, contractor_remove,
+  // revenue_growth, revenue_decline, new_recurring_revenue,
+  // one_time_revenue, lose_recurring_revenue, expense_growth,
+  // expense_decline, marketing_change, software_change, rent_increase,
+  // one_time_expense, remove_recurring, custom.
+  type         String
+  label        String
+  category     String?
+  // amount in $ — interpretation depends on type (monthly cost, one-time
+  // hit, etc.). 0 means "not used".
+  amount       Float    @default(0)
+  // percentage — 0..1 (so 0.05 = 5%). 0 means "not used".
+  percentage   Float    @default(0)
+  // forecast-relative month index (1 = first projected month).
+  startMonth   Int      @default(1)
+  // null = open-ended (runs until end of forecast horizon).
+  endMonth     Int?
+  isRecurring  Boolean  @default(true)
+  notes        String?
+  createdAt    DateTime @default(now())
+
+  @@index([businessId, createdAt])
+}
+
+model Recommendation {
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // level: info | good | warn | bad
+  level      String   @default("info")
+  title      String
+  detail     String
+  // monthly $ impact, positive = savings or new revenue
+  impact     Float    @default(0)
+  // bucket: marketing | payroll | vendor | growth | accuracy | cashflow | other
+  category   String   @default("other")
+  // Stable identifier across regenerations — used to mute a signal kind
+  // ("don't show me this again for a week"). E.g. "marketing_intensity_high"
+  // or "vendor_spike:Acme". Older rows may be null until regenerated.
+  signalKey  String?
+  // optional JSON payload — list of action items, employees, vendors, etc.
+  payload    String?
+  // status: active | dismissed | applied
+  status     String   @default("active")
+  createdAt  DateTime @default(now())
+
+  @@index([businessId, status, createdAt])
+}
+
+// Suppression list for Business Signals. When the user picks "Don't show
+// again" on a signal, we save its signalKey here with a mutedUntil 7 days
+// out. The generator filters anything whose key is currently muted; once
+// mutedUntil passes, the signal becomes eligible again.
+model MutedSignal {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  signalKey   String
+  mutedUntil  DateTime
+  createdAt   DateTime @default(now())
+
+  @@unique([businessId, signalKey])
+  @@index([businessId, mutedUntil])
+}
+
+model Consultation {
+  id         String                @id @default(cuid())
+  businessId String
+  business   Business              @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  title      String
+  createdAt  DateTime              @default(now())
+  updatedAt  DateTime              @updatedAt
+  messages   ConsultationMessage[]
+
+  @@index([businessId, updatedAt])
+}
+
+// ManualEntry: a user-defined recurring (or one-time) income/outcome rule.
+// On create, the system materializes Transactions for each occurrence from
+// startDate up to (and including) the current month. Future months are
+// projected by the forecast engine via the trailing-month average and any
+// dedicated forecast logic. Deleting a ManualEntry cascade-deletes all
+// Transactions it created.
+model ManualEntry {
+  id          String       @id @default(cuid())
+  businessId  String
+  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // type: income | outcome
+  type        String
+  categoryId  String
+  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  // Always stored as a positive number; sign applied at materialization based on type
+  amount      Float
+  // frequency: one_time | monthly | quarterly | yearly
+  frequency   String
+  startDate   DateTime
+  endDate     DateTime?
+  notes       String?
+  createdAt   DateTime     @default(now())
+  transactions Transaction[]
+
+  @@index([businessId, createdAt])
+}
+
+model ConsultationMessage {
+  id             String       @id @default(cuid())
+  consultationId String
+  consultation   Consultation @relation(fields: [consultationId], references: [id], onDelete: Cascade)
+  // role: user | assistant
+  role           String
+  content        String
+  // optional structured JSON payload (options, items, etc.)
+  payload        String?
+  createdAt      DateTime     @default(now())
+
+  @@index([consultationId, createdAt])
+}

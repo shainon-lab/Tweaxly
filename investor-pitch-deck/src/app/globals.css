@@ -1,0 +1,113 @@
+@import "tailwindcss";
+
+/* Tweaxly investor pitch — light, premium SaaS aesthetic (Stripe / Mercury /
+   Ramp / Vercel direction). Tailwind v4 reads these CSS variables as theme
+   tokens; brand gradient is purple → blue → teal. */
+@theme inline {
+  --color-ink-50:  #f8fafc;
+  --color-ink-100: #f1f5f9;
+  --color-ink-200: #e2e8f0;
+  --color-ink-300: #cbd5e1;
+  --color-ink-400: #94a3b8;
+  --color-ink-500: #64748b;
+  --color-ink-600: #475569;
+  --color-ink-700: #334155;
+  --color-ink-800: #1e293b;
+  --color-ink-900: #0f172a;
+  --color-ink-950: #060a16;
+
+  --color-line: #e5e7eb;
+  --color-muted: #f9fafb;
+
+  --color-brand-purple: #7c5cfa;
+  --color-brand-blue:   #4f7dff;
+  --color-brand-teal:   #22d3ee;
+
+  --color-good: #10b981;
+  --color-bad:  #ef4444;
+  --color-warn: #f59e0b;
+
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root { color-scheme: light; }
+
+html, body { background: #ffffff; color: #0f172a; }
+html { scroll-behavior: smooth; }
+
+@layer components {
+  /* Built-in utilities only — Tailwind v4 won't @apply nested custom classes. */
+  .container-deck { @apply max-w-6xl mx-auto px-8 md:px-16; }
+
+  .btn,
+  .btn-primary,
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium transition;
+  }
+  .btn-primary  { @apply bg-ink-900 text-white shadow-sm; }
+  .btn-primary:hover  { @apply bg-ink-800; }
+  .btn-secondary { @apply bg-white text-ink-900 border border-line shadow-sm; }
+  .btn-secondary:hover { @apply bg-ink-50; }
+
+  .card {
+    @apply rounded-2xl border border-line bg-white p-6;
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04), 0 4px 16px rgba(15, 23, 42, 0.04);
+  }
+
+  .label-eyebrow {
+    @apply inline-flex items-center gap-2 rounded-full border border-line bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.18em] text-ink-600 shadow-sm;
+  }
+
+  /* Tailwind v4 can't @apply a custom class — list every variant with its
+     full ruleset. Shared properties go on the comma-separated selector. */
+  .pill,
+  .pill-good,
+  .pill-warn,
+  .pill-bad {
+    @apply inline-flex items-center rounded-full border px-2 py-0.5 text-[11px] font-medium;
+  }
+  .pill      { @apply border-line bg-white text-ink-700; }
+  .pill-good { @apply border-emerald-200 bg-emerald-50 text-emerald-700; }
+  .pill-warn { @apply border-amber-200 bg-amber-50 text-amber-700; }
+  .pill-bad  { @apply border-rose-200 bg-rose-50 text-rose-700; }
+
+  /* Hover lift for feature cards used on several slides. */
+  .card-hover { transition: transform 200ms ease, box-shadow 200ms ease; }
+  .card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 12px 32px rgba(15, 23, 42, 0.08);
+  }
+
+  /* Brand-gradient text — used on the wordmark x and on accent words. */
+  .gradient-text {
+    background-image: linear-gradient(135deg, #7c5cfa 0%, #4f7dff 50%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  .gradient-bg {
+    background-image: linear-gradient(135deg, #7c5cfa 0%, #4f7dff 50%, #22d3ee 100%);
+  }
+}
+
+/* Page-snap scrolling for slide-by-slide navigation. Each section is one
+   slide; arrow keys + buttons advance one snap unit. */
+.deck { scroll-snap-type: y mandatory; overflow-y: scroll; height: 100vh; }
+.slide {
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+/* Print: lay out one slide per page so the deck can be exported to PDF. */
+@media print {
+  .deck { height: auto; overflow: visible; }
+  .slide { page-break-after: always; min-height: 100vh; }
+  .deck-nav, .deck-footer-nav { display: none !important; }
+}

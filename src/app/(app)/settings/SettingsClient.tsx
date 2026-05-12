@@ -1,0 +1,845 @@
+"use client";
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import CurrencyPicker from "@/components/CurrencyPicker";
+
+type Biz = {
+  id: string; name: string; currency: string; fiscalStartMonth: number;
+  vatEnabled: boolean; vatRate: number;
+  logoData: string | null;
+  faviconData: string | null;
+};
+type Cat = {
+  id: string; name: string; kind: string; isOneTime: boolean;
+  primaryVendorId: string | null;
+};
+
+// Friendly type label derived from the internal kind field. The categories
+// table shows this instead of the full kind taxonomy.
+function typeLabel(kind: string): "Income" | "Outcome" {
+  return kind === "revenue" ? "Income" : "Outcome";
+}
+type Vendor = { id: string; name: string; categoryId: string | null; isOneTime: boolean };
+type View = "categories" | "vendors" | "all";
+
+
+const LOGO_ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml";
+const FAVICON_ACCEPT = "image/png,image/svg+xml,image/x-icon,image/vnd.microsoft.icon,.ico";
+// Cap the raw file at ~1MB; base64-encoded that's ~1.33MB, under the 1.4MB
+// server limit. Larger uploads are rejected with a clear message rather than
+// silently failing on the server.
+const MAX_FILE_BYTES = 1_000_000;
+
+// Pending = the staged change for a brand slot:
+//   undefined → no draft (display saved value)
+//   null      → user wants to remove the saved value
+//   string    → user picked a new file, staged as a data URL
+type Pending = string | null | undefined;
+
+function readAsDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error ?? new Error("read failed"));
+    reader.readAsDataURL(file);
+  });
+}
+
+function effectiveValue(saved: string | null, pending: Pending): string | null {
+  return pending === undefined ? saved : pending;
+}
+
+export default function SettingsClient({
+  business,
+  categories,
+  vendors,
+}: {
+  business: Biz;
+  categories: Cat[];
+  vendors: Vendor[];
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [biz, setBiz] = useState<Biz>(business);
+  const [cats, setCats] = useState<Cat[]>(categories);
+  const [vends, setVends] = useState<Vendor[]>(vendors);
+  const [view, setView] = useState<View>("categories");
+  // Modal state for Add category / Add vendor.
+  const [addCatOpen, setAddCatOpen] = useState(false);
+  const [addCatDraft, setAddCatDraft] = useState<{ name: string; isIncome: boolean; isOneTime: boolean }>({
+    name: "", isIncome: false, isOneTime: false,
+  });
+  const [addVendorOpen, setAddVendorOpen] = useState(false);
+  const [addVendorDraft, setAddVendorDraft] = useState<{ name: string; categoryId: string; isOneTime: boolean }>({
+    name: "", categoryId: "__new__", isOneTime: false,
+  });
+
+  // Branding draft state — staged changes that only persist on Save.
+  const [logoPending, setLogoPending] = useState<Pending>(undefined);
+  const [faviconPending, setFaviconPending] = useState<Pending>(undefined);
+  const [brandSaving, setBrandSaving] = useState<"logo" | "favicon" | null>(null);
+  const [brandError, setBrandError] = useState<string | null>(null);
+
+  // Business-card save state — keeps the user informed when their name /
+  // currency / VAT changes actually land in the database.
+  const [bizSaving, setBizSaving] = useState(false);
+  const [bizSaved, setBizSaved] = useState(false);
+  const [bizError, setBizError] = useState<string | null>(null);
+
+  async function saveBiz() {
+    setBizSaving(true);
+    setBizError(null);
+    setBizSaved(false);
+    const trimmedName = biz.name.trim();
+    if (!trimmedName) {
+      setBizError("Business name can't be empty.");
+      setBizSaving(false);
+      return;
+    }
+    try {
+      const res = await fetch("/api/business", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: trimmedName,
+          currency: biz.currency,
+          fiscalStartMonth: biz.fiscalStartMonth,
+          vatEnabled: biz.vatEnabled,
+          vatRate: biz.vatRate,
+        }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        let msg = txt || `Save failed (${res.status})`;
+        try { msg = JSON.parse(txt).error ?? msg; } catch { /* keep raw text */ }
+        setBizError(msg);
+        return;
+      }
+      // Sync local form state with what the server actually persisted — this
+      // is the user's confirmation that the name override took effect.
+      const updated = await res.json();
+      setBiz((b) => ({
+        ...b,
+        name: updated.name ?? b.name,
+        currency: updated.currency ?? b.currency,
+        fiscalStartMonth: updated.fiscalStartMonth ?? b.fiscalStartMonth,
+        vatEnabled: !!updated.vatEnabled,
+        vatRate: updated.vatRate ?? 0,
+      }));
+      setBizSaved(true);
+      // Clear the success badge after a moment so it doesn't linger.
+      setTimeout(() => setBizSaved(false), 2500);
+      // Re-render server components (sidebar, page header, tab title) so the
+      // new name shows up everywhere else immediately.
+      startTransition(() => router.refresh());
+    } catch (err) {
+      setBizError(err instanceof Error ? err.message : "Save failed — check the browser console.");
+    } finally {
+      setBizSaving(false);
+    }
+  }
+
+  async function saveBrand(field: "logoData" | "faviconData", value: string | null) {
+    const kind: "logo" | "favicon" = field === "logoData" ? "logo" : "favicon";
+    setBrandSaving(kind);
+    setBrandError(null);
+    try {
+      const res = await fetch("/api/business", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+      if (!res.ok) {
+        const txt = await res.text();
+        let msg = txt || `Save failed (${res.status})`;
+        try { msg = JSON.parse(txt).error ?? msg; } catch { /* keep raw text */ }
+        setBrandError(msg);
+        return false;
+      }
+      setBiz((b) => ({ ...b, [field]: value }));
+      if (field === "logoData") setLogoPending(undefined);
+      else setFaviconPending(undefined);
+      startTransition(() => router.refresh());
+      return true;
+    } catch (err) {
+      // Network failure, body too large, etc. Surface it instead of leaving
+      // the user staring at an unresponsive Save button.
+      const msg = err instanceof Error ? err.message : "Save failed — check the browser console.";
+      setBrandError(msg);
+      return false;
+    } finally {
+      setBrandSaving(null);
+    }
+  }
+
+  async function stageFile(kind: "logo" | "favicon", file: File | undefined) {
+    if (!file) return;
+    setBrandError(null);
+    if (file.size > MAX_FILE_BYTES) {
+      setBrandError(`File is too large (${Math.round(file.size / 1024)} KB). Max is ${MAX_FILE_BYTES / 1024} KB.`);
+      return;
+    }
+    try {
+      const dataUrl = await readAsDataUrl(file);
+      if (kind === "logo") setLogoPending(dataUrl);
+      else setFaviconPending(dataUrl);
+    } catch (e) {
+      setBrandError(e instanceof Error ? e.message : "Could not read file");
+    }
+  }
+
+  async function addCategoryFromModal() {
+    const name = addCatDraft.name.trim();
+    if (!name) return;
+    const res = await fetch("/api/categories", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        kind: addCatDraft.isIncome ? "revenue" : "variable",
+        isOneTime: addCatDraft.isOneTime,
+      }),
+    });
+    if (!res.ok) { alert(await res.text()); return; }
+    const c = await res.json();
+    setCats((cur) => [...cur, { ...c, primaryVendorId: c.primaryVendorId ?? null }]);
+    setAddCatDraft({ name: "", isIncome: false, isOneTime: false });
+    setAddCatOpen(false);
+    startTransition(() => router.refresh());
+  }
+
+  async function addVendorFromModal() {
+    const name = addVendorDraft.name.trim();
+    if (!name) return;
+    // "__new__" sentinel: prompt for a new category name first.
+    let categoryId: string | null = null;
+    if (addVendorDraft.categoryId === "__new__") {
+      const catName = window.prompt("New category name:")?.trim();
+      if (!catName) return;
+      const res = await fetch("/api/categories", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: catName, kind: "variable", isOneTime: false }),
+      });
+      if (!res.ok) { alert(await res.text()); return; }
+      const created = await res.json();
+      setCats((cur) => [...cur, { ...created, primaryVendorId: created.primaryVendorId ?? null }]);
+      categoryId = created.id;
+    } else if (addVendorDraft.categoryId && addVendorDraft.categoryId !== "__undefined__") {
+      categoryId = addVendorDraft.categoryId;
+    }
+    const res = await fetch("/api/vendors", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name,
+        categoryId,
+        isOneTime: addVendorDraft.isOneTime,
+      }),
+    });
+    if (!res.ok) { alert(await res.text()); return; }
+    const v = await res.json();
+    setVends((cur) => {
+      const existing = cur.find((x) => x.id === v.id);
+      if (existing) return cur.map((x) => (x.id === v.id ? v : x));
+      return [...cur, v];
+    });
+    setAddVendorDraft({ name: "", categoryId: "__new__", isOneTime: false });
+    setAddVendorOpen(false);
+    startTransition(() => router.refresh());
+  }
+
+  async function removeCategory(id: string) {
+    if (!confirm("Delete this category? Transactions using it will become Uncategorized.")) return;
+    await fetch(`/api/categories?id=${id}`, { method: "DELETE" });
+    setCats(cats.filter((c) => c.id !== id));
+    startTransition(() => router.refresh());
+  }
+
+  async function removeVendor(id: string) {
+    if (!confirm("Delete this vendor? Transactions keep their text vendor field, but this entry will disappear from the registry.")) return;
+    await fetch(`/api/vendors?id=${id}`, { method: "DELETE" });
+    setVends((cur) => cur.filter((v) => v.id !== id));
+    setCats((cur) => cur.map((c) => (c.primaryVendorId === id ? { ...c, primaryVendorId: null } : c)));
+    startTransition(() => router.refresh());
+  }
+
+  async function toggleVendorOneTime(v: Vendor) {
+    const next = !v.isOneTime;
+    setVends((cur) => cur.map((x) => (x.id === v.id ? { ...x, isOneTime: next } : x)));
+    const res = await fetch("/api/vendors", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: v.id, isOneTime: next }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      setVends((cur) => cur.map((x) => (x.id === v.id ? { ...x, isOneTime: v.isOneTime } : x)));
+      return;
+    }
+    startTransition(() => router.refresh());
+  }
+
+  // "GENERAL" or a specific vendor — picks the category's primary vendor.
+  async function setPrimaryVendor(catId: string, raw: string) {
+    const primaryVendorId = raw === "__general__" ? null : raw;
+    setCats((cur) => cur.map((c) => (c.id === catId ? { ...c, primaryVendorId } : c)));
+    const res = await fetch("/api/categories", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: catId, primaryVendorId }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      startTransition(() => router.refresh());
+      return;
+    }
+    startTransition(() => router.refresh());
+  }
+
+  // Vendor → category assignment, with a special "__new__" sentinel that
+  // prompts for a brand-new category name, creates it, and then assigns.
+  async function assignVendorCategory(vendorId: string, raw: string) {
+    let categoryId: string | null = null;
+    if (raw === "__new__") {
+      const name = window.prompt("New category name:")?.trim();
+      if (!name) return;
+      const res = await fetch("/api/categories", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, kind: "variable", isOneTime: false }),
+      });
+      if (!res.ok) { alert(await res.text()); return; }
+      const created: Cat = await res.json();
+      setCats((cur) => [...cur, created]);
+      categoryId = created.id;
+    } else if (raw === "" || raw === "__undefined__") {
+      categoryId = null;
+    } else {
+      categoryId = raw;
+    }
+    setVends((cur) => cur.map((v) => (v.id === vendorId ? { ...v, categoryId } : v)));
+    const res = await fetch("/api/vendors", {
+      method: "PATCH", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: vendorId, categoryId }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      // Roll back: re-fetch on next render.
+      startTransition(() => router.refresh());
+      return;
+    }
+    startTransition(() => router.refresh());
+  }
+
+  // Vendors grouped by their assigned category, for the "Vendors" column in
+  // the categories table. Vendors with no category land in the "Undefined"
+  // bucket (only shown in the Vendors view).
+  function vendorsForCategory(categoryId: string): Vendor[] {
+    return vends.filter((v) => v.categoryId === categoryId);
+  }
+  const unassignedVendors = vends.filter((v) => !v.categoryId);
+
+  async function toggleOneTime(c: Cat) {
+    const next = !c.isOneTime;
+    // Optimistic update — flip the local row first, roll back if the API
+    // rejects. Changing the category default flows through to every place
+    // that uses it (data flow, dashboard, forecasts) on the next render.
+    setCats(cats.map((x) => (x.id === c.id ? { ...x, isOneTime: next } : x)));
+    const res = await fetch("/api/categories", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: c.id, isOneTime: next }),
+    });
+    if (!res.ok) {
+      alert(await res.text());
+      setCats(cats.map((x) => (x.id === c.id ? { ...x, isOneTime: c.isOneTime } : x)));
+      return;
+    }
+    startTransition(() => router.refresh());
+  }
+
+  return (
+    <>
+      <div className="card mb-6">
+        <div className="font-medium mb-3">Business</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
+          <div className="md:col-span-2"><label className="label">Name</label>
+            <input className="input" value={biz.name} onChange={(e) => setBiz({ ...biz, name: e.target.value })} />
+          </div>
+          <div><label className="label">Currency</label>
+            <CurrencyPicker
+              value={biz.currency}
+              onChange={(code) => setBiz({ ...biz, currency: code })}
+            />
+          </div>
+          <div><label className="label">Fiscal year starts in</label>
+            <select className="input" value={biz.fiscalStartMonth} onChange={(e) => setBiz({ ...biz, fiscalStartMonth: Number(e.target.value) })}>
+              {Array.from({ length: 12 }).map((_, i) => (
+                <option key={i + 1} value={i + 1}>
+                  {new Date(Date.UTC(2024, i, 1)).toLocaleString("en-US", { month: "long" })}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-3 pt-6">
+            <input type="checkbox" checked={biz.vatEnabled} onChange={(e) => setBiz({ ...biz, vatEnabled: e.target.checked })} />
+            <label className="text-sm">Track VAT</label>
+          </div>
+          <div><label className="label">VAT rate %</label>
+            <input className="input" type="number" step="0.1" value={biz.vatRate} onChange={(e) => setBiz({ ...biz, vatRate: Number(e.target.value) })} />
+          </div>
+          <div className="md:col-span-3 flex items-center justify-end gap-3">
+            {bizError ? <span className="text-sm text-red-300">{bizError}</span> : null}
+            {bizSaved && !bizError ? <span className="text-sm text-good">Saved ✓</span> : null}
+            <button className="btn-primary" disabled={pending || bizSaving} onClick={saveBiz}>
+              {bizSaving ? "Saving…" : "Save"}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="card mb-6">
+        <div className="font-medium mb-1">Branding</div>
+        <div className="text-xs text-slate-400 mb-4">
+          Upload your own logo and favicon. Pick a file to preview it, then click <strong>Save</strong> to apply.
+          The TWEAXLY wordmark stays as the platform brand; your logo appears beneath it (replacing the business name).
+          The favicon replaces the browser tab icon.
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <BrandSlot
+            label="Logo"
+            hint="PNG, JPEG, WEBP, or SVG. Up to 1 MB. Rectangular logos look best — they'll be scaled to fit a ~48px tall slot in the sidebar."
+            previewBg="#0a1428"
+            previewClassName="h-24 w-full flex items-center justify-center"
+            saved={biz.logoData}
+            pending={logoPending}
+            accept={LOGO_ACCEPT}
+            saving={brandSaving === "logo"}
+            onPick={(f) => stageFile("logo", f)}
+            onClearDraft={() => { setLogoPending(undefined); setBrandError(null); }}
+            onStageRemove={() => { setLogoPending(null); setBrandError(null); }}
+            onSave={() => saveBrand("logoData", logoPending ?? null)}
+            renderPreview={(src) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={src} alt="Logo" className="max-h-20 max-w-full object-contain" />
+            )}
+          />
+          <BrandSlot
+            label="Favicon"
+            hint="PNG, SVG, or ICO. Up to 1 MB. A square image works best — browsers render it at 16–32px."
+            previewBg="#0a1428"
+            previewClassName="h-24 w-full flex items-center justify-center"
+            saved={biz.faviconData}
+            pending={faviconPending}
+            accept={FAVICON_ACCEPT}
+            saving={brandSaving === "favicon"}
+            onPick={(f) => stageFile("favicon", f)}
+            onClearDraft={() => { setFaviconPending(undefined); setBrandError(null); }}
+            onStageRemove={() => { setFaviconPending(null); setBrandError(null); }}
+            onSave={() => saveBrand("faviconData", faviconPending ?? null)}
+            renderPreview={(src) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={src} alt="Favicon" className="h-12 w-12 object-contain" />
+            )}
+          />
+        </div>
+        {brandError ? (
+          <div className="mt-3 text-sm text-red-300">{brandError}</div>
+        ) : null}
+      </div>
+
+      <div className="card">
+        <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
+          <div className="font-medium">Categories &amp; vendors</div>
+          <div className="inline-flex items-center rounded-md border border-line overflow-hidden text-xs">
+            {(["categories", "vendors", "all"] as View[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`px-3 py-1.5 transition ${
+                  view === v
+                    ? "bg-accent-soft text-accent"
+                    : "text-slate-300 hover:bg-ink-700"
+                }`}
+              >
+                {v === "categories" ? "Show only categories"
+                  : v === "vendors"  ? "Show only vendors"
+                  :                     "Show all"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-2 mb-4">
+          <button className="btn-primary" onClick={() => setAddCatOpen(true)}>+ Add category</button>
+          <button className="btn-ghost" onClick={() => setAddVendorOpen(true)}>+ Add vendor</button>
+        </div>
+
+        {view === "categories" || view === "all" ? (
+          <>
+            {view === "all" ? (
+              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Categories</div>
+            ) : null}
+            <table className="table-base mb-2">
+              <thead>
+                <tr>
+                  <th>Category</th>
+                  <th>Vendor</th>
+                  <th>Type</th>
+                  <th>One-time?</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {cats.map((c) => (
+                  <tr key={c.id}>
+                    <td>{c.name}</td>
+                    <td>
+                      <select
+                        className="input max-w-[220px] py-1"
+                        value={c.primaryVendorId ?? "__general__"}
+                        onChange={(e) => setPrimaryVendor(c.id, e.target.value)}
+                        title="Primary vendor for this category. GENERAL means no specific vendor is highlighted."
+                      >
+                        <option value="__general__">GENERAL</option>
+                        {vends.map((v) => (
+                          <option key={v.id} value={v.id}>{v.name}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td>
+                      <span className={c.kind === "revenue" ? "pill-good" : "pill"}>
+                        {typeLabel(c.kind)}
+                      </span>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => toggleOneTime(c)}
+                        title="Click to toggle. The change applies wherever this category is used."
+                        className={c.isOneTime
+                          ? "pill-warn cursor-pointer hover:opacity-80"
+                          : "pill cursor-pointer hover:opacity-80"}
+                      >
+                        {c.isOneTime ? "YES" : "NO"}
+                      </button>
+                    </td>
+                    <td className="text-right"><button className="btn-danger py-1" onClick={() => removeCategory(c.id)}>Delete</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </>
+        ) : null}
+
+        {view === "vendors" || view === "all" ? (
+          <>
+            {view === "all" ? (
+              <div className="text-xs uppercase tracking-wider text-slate-500 mt-6 mb-2">Vendors</div>
+            ) : null}
+            <table className="table-base">
+              <thead>
+                <tr>
+                  <th>Vendor</th>
+                  <th>Category</th>
+                  <th>One-time?</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...unassignedVendors, ...vends.filter((v) => v.categoryId)].map((v) => (
+                  <tr key={v.id}>
+                    <td>{v.name}</td>
+                    <td>
+                      <select
+                        className="input max-w-[280px] py-1"
+                        value={v.categoryId ?? "__undefined__"}
+                        onChange={(e) => assignVendorCategory(v.id, e.target.value)}
+                      >
+                        <option value="__undefined__">Undefined</option>
+                        {cats.map((c) => (
+                          <option key={c.id} value={c.id}>{c.name}</option>
+                        ))}
+                        <option value="__new__">+ Add new category…</option>
+                      </select>
+                    </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => toggleVendorOneTime(v)}
+                        title="Click to toggle. Vendors marked one-time default to one-time on every transaction that matches them."
+                        className={v.isOneTime
+                          ? "pill-warn cursor-pointer hover:opacity-80"
+                          : "pill cursor-pointer hover:opacity-80"}
+                      >
+                        {v.isOneTime ? "YES" : "NO"}
+                      </button>
+                    </td>
+                    <td className="text-right"><button className="btn-danger py-1" onClick={() => removeVendor(v.id)}>Delete</button></td>
+                  </tr>
+                ))}
+                {vends.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-sm text-slate-400 py-6">
+                      No vendors yet. Use <span className="text-slate-200">+ Add vendor</span> above, or upload transactions with vendor names.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </>
+        ) : null}
+      </div>
+
+      {/* Add category modal */}
+      {addCatOpen ? (
+        <Modal
+          title="Add category"
+          onClose={() => setAddCatOpen(false)}
+        >
+          <div className="space-y-3">
+            <div>
+              <label className="label">Category name</label>
+              <input
+                className="input"
+                autoFocus
+                value={addCatDraft.name}
+                onChange={(e) => setAddCatDraft({ ...addCatDraft, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <label className="label">Type</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={`btn flex-1 ${!addCatDraft.isIncome ? "bg-bad text-white" : "btn-ghost"}`}
+                  onClick={() => setAddCatDraft({ ...addCatDraft, isIncome: false })}
+                >
+                  Outcome
+                </button>
+                <button
+                  type="button"
+                  className={`btn flex-1 ${addCatDraft.isIncome ? "bg-good text-white" : "btn-ghost"}`}
+                  onClick={() => setAddCatDraft({ ...addCatDraft, isIncome: true })}
+                >
+                  Income
+                </button>
+              </div>
+            </div>
+            <div>
+              <label className="label">One-time?</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={`btn flex-1 ${!addCatDraft.isOneTime ? "bg-accent text-white" : "btn-ghost"}`}
+                  onClick={() => setAddCatDraft({ ...addCatDraft, isOneTime: false })}
+                >
+                  NO
+                </button>
+                <button
+                  type="button"
+                  className={`btn flex-1 ${addCatDraft.isOneTime ? "bg-warn text-white" : "btn-ghost"}`}
+                  onClick={() => setAddCatDraft({ ...addCatDraft, isOneTime: true })}
+                >
+                  YES
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button className="btn-ghost" onClick={() => setAddCatOpen(false)}>Cancel</button>
+              <button
+                className="btn-primary"
+                disabled={!addCatDraft.name.trim()}
+                onClick={addCategoryFromModal}
+              >
+                Add category
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+
+      {/* Add vendor modal */}
+      {addVendorOpen ? (
+        <Modal
+          title="Add vendor"
+          onClose={() => setAddVendorOpen(false)}
+        >
+          <div className="space-y-3">
+            <div>
+              <label className="label">Select vendor</label>
+              <input
+                className="input"
+                autoFocus
+                value={addVendorDraft.name}
+                onChange={(e) => setAddVendorDraft({ ...addVendorDraft, name: e.target.value })}
+                placeholder="e.g. Meta, Google, Bing"
+              />
+            </div>
+            <div>
+              <label className="label">Category</label>
+              <select
+                className="input"
+                value={addVendorDraft.categoryId}
+                onChange={(e) => setAddVendorDraft({ ...addVendorDraft, categoryId: e.target.value })}
+              >
+                <option value="__new__">+ Add new category…</option>
+                {cats.map((c) => (
+                  <option key={c.id} value={c.id}>{c.name}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="label">One-time?</label>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  className={`btn flex-1 ${!addVendorDraft.isOneTime ? "bg-accent text-white" : "btn-ghost"}`}
+                  onClick={() => setAddVendorDraft({ ...addVendorDraft, isOneTime: false })}
+                >
+                  NO
+                </button>
+                <button
+                  type="button"
+                  className={`btn flex-1 ${addVendorDraft.isOneTime ? "bg-warn text-white" : "btn-ghost"}`}
+                  onClick={() => setAddVendorDraft({ ...addVendorDraft, isOneTime: true })}
+                >
+                  YES
+                </button>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <button className="btn-ghost" onClick={() => setAddVendorOpen(false)}>Cancel</button>
+              <button
+                className="btn-primary"
+                disabled={!addVendorDraft.name.trim()}
+                onClick={addVendorFromModal}
+              >
+                Add vendor
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
+    </>
+  );
+}
+
+function Modal({
+  title,
+  onClose,
+  children,
+}: {
+  title: string;
+  onClose: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div
+      className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+      onClick={onClose}
+    >
+      <div className="card max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between mb-4">
+          <div className="text-base font-semibold">{title}</div>
+          <button
+            type="button"
+            className="text-slate-400 hover:text-slate-200 px-2"
+            onClick={onClose}
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function BrandSlot({
+  label,
+  hint,
+  saved,
+  pending,
+  accept,
+  saving,
+  onPick,
+  onClearDraft,
+  onStageRemove,
+  onSave,
+  renderPreview,
+  previewBg,
+  previewClassName,
+}: {
+  label: string;
+  hint: string;
+  saved: string | null;
+  pending: Pending;
+  accept: string;
+  saving: boolean;
+  onPick: (file: File | undefined) => void;
+  onClearDraft: () => void;
+  onStageRemove: () => void;
+  onSave: () => void;
+  renderPreview: (src: string) => React.ReactNode;
+  previewBg: string;
+  previewClassName: string;
+}) {
+  const display = effectiveValue(saved, pending);
+  const isDirty = pending !== undefined;
+  return (
+    <div>
+      <div className="flex items-center justify-between">
+        <div className="label">{label}</div>
+        {isDirty ? <span className="text-[11px] text-warn">Unsaved changes</span> : null}
+      </div>
+      <div
+        className={`rounded-md border ${isDirty ? "border-warn/50" : "border-line"} ${previewClassName}`}
+        style={{ backgroundColor: previewBg }}
+      >
+        {display ? renderPreview(display) : <span className="text-xs text-slate-500">No {label.toLowerCase()} set</span>}
+      </div>
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <label className="btn-ghost cursor-pointer">
+          <input
+            type="file"
+            accept={accept}
+            className="hidden"
+            disabled={saving}
+            onChange={(e) => {
+              onPick(e.target.files?.[0]);
+              e.target.value = "";
+            }}
+          />
+          {saved || (typeof pending === "string") ? "Replace" : "Upload"}
+        </label>
+        {/* Stage a removal — only meaningful if there's something currently saved or pending */}
+        {(saved || typeof pending === "string") ? (
+          <button
+            className="btn-ghost"
+            disabled={saving}
+            onClick={onStageRemove}
+            title={`Stage removal of the ${label.toLowerCase()}`}
+          >
+            Remove
+          </button>
+        ) : null}
+        {isDirty ? (
+          <>
+            <button
+              className="btn-primary"
+              disabled={saving}
+              onClick={onSave}
+            >
+              {saving ? "Saving…" : "Save"}
+            </button>
+            <button
+              className="btn-ghost"
+              disabled={saving}
+              onClick={onClearDraft}
+            >
+              Cancel
+            </button>
+          </>
+        ) : null}
+      </div>
+      <div className="text-xs text-slate-500 mt-2">{hint}</div>
+    </div>
+  );
+}

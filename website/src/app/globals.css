@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+/* TWEAXLY brand palette — same values as the product (ai-cfo-mvp). The
+   navy is the logo's panel; purple/teal are the X gradient stops. */
+@theme inline {
+  --color-ink-950: #0b0d12;
+  --color-ink-900: #11141b;
+  --color-ink-800: #161a23;
+  --color-ink-700: #222735;
+  --color-line: #272c3a;
+  --color-brand-navy: #0a1428;
+  --color-brand-purple: #a78bfa;
+  --color-brand-purple-deep: #7c5cfa;
+  --color-brand-teal: #22d3ee;
+  --color-brand-teal-deep: #06b6d4;
+  --color-good: #3ecf8e;
+  --color-bad: #ef5b5b;
+  --color-warn: #f1b04a;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+:root { color-scheme: dark; }
+
+html, body {
+  background: #0a1428;
+  color: #e7eaf0;
+}
+
+html { scroll-behavior: smooth; }
+
+@layer components {
+  .container-tweaxly { @apply max-w-6xl mx-auto px-6; }
+
+  /* Each rule applies built-in utilities only — Tailwind v4 won't @apply a
+     class that's itself defined via @apply. */
+  .btn,
+  .btn-primary,
+  .btn-brand,
+  .btn-ghost {
+    @apply inline-flex items-center justify-center rounded-md px-4 py-2 text-sm font-medium transition;
+  }
+
+  .btn-primary { @apply bg-brand-purple text-white; }
+  .btn-primary:hover { @apply bg-brand-purple-deep; }
+
+  .btn-brand { @apply text-white; background-image: linear-gradient(90deg, #a78bfa 0%, #22d3ee 100%); }
+  .btn-brand:hover { opacity: 0.9; }
+
+  .btn-ghost { @apply border border-line text-slate-200; }
+  .btn-ghost:hover { @apply bg-ink-700; }
+
+  .card {
+    @apply rounded-xl border border-line p-6;
+    background-color: rgb(17 20 27 / 0.8);
+  }
+
+  .gradient-text {
+    background-image: linear-gradient(180deg, #a78bfa 0%, #22d3ee 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+}
+
+/* FAQ accordion — uses native <details>/<summary> so it works without JS. */
+details.faq-item {
+  border-radius: 12px;
+  border: 1px solid #272c3a;
+  background-color: rgb(17 20 27 / 0.8);
+  padding: 1rem 1.25rem;
+  transition: background-color 150ms ease;
+}
+details.faq-item[open] {
+  background-color: rgb(22 26 35 / 0.9);
+}
+details.faq-item > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  font-weight: 500;
+  color: #e7eaf0;
+}
+details.faq-item > summary::-webkit-details-marker { display: none; }
+details.faq-item > summary::after {
+  content: "+";
+  font-size: 1.25rem;
+  line-height: 1;
+  color: #a78bfa;
+  transition: transform 200ms ease;
+  flex-shrink: 0;
+}
+details.faq-item[open] > summary::after { content: "−"; }
+details.faq-item > .faq-answer {
+  margin-top: 0.75rem;
+  color: #cbd5e1;
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
