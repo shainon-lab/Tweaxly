@@ -224,7 +224,7 @@ export default function ConsultationClient({
           </div>
           <button
             type="button"
-            className="btn-brand text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
+            className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
             disabled={sending || !draft.trim()}
             onClick={() => void send()}
           >
