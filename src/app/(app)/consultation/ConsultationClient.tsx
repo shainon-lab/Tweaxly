@@ -131,8 +131,23 @@ export default function ConsultationClient({
   // user gets to read and edit before clicking Start Consultation.
   const [draft, setDraft] = useState(initialDraft ?? "");
   const [sending, setSending] = useState(false);
+  // The free-form question textarea stays collapsed by default — the
+  // primary affordance is the trends grid above. Clicking "Consult on
+  // any topic" reveals the input. If we landed with ?q= (from a
+  // Business Signal), we auto-expand so the prefilled question is
+  // visible and editable immediately.
+  const [askExpanded, setAskExpanded] = useState(!!initialDraft);
   const [, startTransition] = useTransition();
   const responseRef = useRef<HTMLDivElement | null>(null);
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // When the user clicks "Consult on any topic" to expand the input,
+  // pull focus into the textarea so they can start typing immediately.
+  useEffect(() => {
+    if (askExpanded && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [askExpanded]);
 
   useEffect(() => {
     setActive(initialActive);
@@ -248,44 +263,76 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Free-form input area */}
-      <div className="rounded-2xl border border-line bg-ink-900/40 p-4 md:p-5 shadow-sm">
-        <div className="mb-3">
-          <h2 className="text-lg md:text-xl font-semibold text-slate-100">
-            Ask Any Question About Your Business
-          </h2>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Anything goes — cashflow, hiring, pricing, vendors, runway, growth.
-          </p>
-        </div>
-        <textarea
-          className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none resize-none min-h-[88px]"
-          rows={3}
-          placeholder={PLACEHOLDER}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          disabled={sending}
-        />
-        <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
-          <div className="text-[11px] text-slate-500">
-            Press ⌘/Ctrl + Enter to send.
+      {/* Free-form input area — collapsed by default into a single-line
+          CTA matching the Business Signals footer language. Expands into
+          the full textarea when the user clicks "Consult on any topic". */}
+      {!askExpanded ? (
+        <div className="rounded-2xl border border-line bg-ink-900/40 p-4 md:p-5 shadow-sm flex items-center justify-between gap-3 flex-wrap">
+          <div className="text-sm text-slate-300 leading-relaxed">
+            Or consult about anything else going on in your business.
           </div>
           <button
             type="button"
             className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
-            disabled={sending || !draft.trim()}
-            onClick={() => void send()}
+            onClick={() => setAskExpanded(true)}
           >
-            {sending ? "Analyzing…" : "Start Consultation"}
+            Consult on any topic
           </button>
         </div>
-      </div>
+      ) : (
+        <div className="rounded-2xl border border-line bg-ink-900/40 p-4 md:p-5 shadow-sm">
+          <div className="mb-3 flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg md:text-xl font-semibold text-slate-100">
+                Ask Any Question About Your Business
+              </h2>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Anything goes — cashflow, hiring, pricing, vendors, runway, growth.
+              </p>
+            </div>
+            <button
+              type="button"
+              className="text-xs text-slate-400 hover:text-slate-200 shrink-0"
+              onClick={() => {
+                setAskExpanded(false);
+                setDraft("");
+              }}
+              title="Hide the input"
+              aria-label="Hide the input"
+            >
+              ✕
+            </button>
+          </div>
+          <textarea
+            ref={textareaRef}
+            className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none resize-none min-h-[88px]"
+            rows={3}
+            placeholder={PLACEHOLDER}
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault();
+                void send();
+              }
+            }}
+            disabled={sending}
+          />
+          <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
+            <div className="text-[11px] text-slate-500">
+              Press ⌘/Ctrl + Enter to send.
+            </div>
+            <button
+              type="button"
+              className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
+              disabled={sending || !draft.trim()}
+              onClick={() => void send()}
+            >
+              {sending ? "Analyzing…" : "Start Consultation"}
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Loading shimmer while we wait for the advisor */}
       {sending ? (
