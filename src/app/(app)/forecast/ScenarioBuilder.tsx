@@ -281,7 +281,7 @@ export default function ScenarioBuilder({
     <>
       <div id="scenario-builder" className="card mb-4 scroll-mt-6">
         <div className="flex items-center justify-between mb-3">
-          <div className="font-medium">Scenario builder</div>
+          <div className="font-medium">Scenario Builder</div>
           <div className="text-xs text-slate-400">Click an event to model a business decision</div>
         </div>
         {EVENT_GROUPS.map((g) => (

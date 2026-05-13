@@ -82,7 +82,7 @@ export default function ForecastSetup({
           className="btn-ghost text-xs"
           onClick={jumpToBuilder}
         >
-          ↓ Scenario builder
+          ↓ Scenario Builder
         </button>
       </div>
       <div className="flex flex-wrap items-end gap-3">
