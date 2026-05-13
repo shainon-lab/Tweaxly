@@ -53,10 +53,12 @@ export default async function YearlyInsightsTextPage({
       <PageHeader
         title={`Insights · ${selected} Summary`}
         subtitle="Plain-English observations about the chosen year, each paired with a tip you can act on."
-        right={<YearSelect selected={selected} years={years} />}
       />
       <InsightsTabs />
       <YearlySubTabs />
+      <div className="flex items-end justify-end mb-4 flex-wrap gap-3">
+        <YearSelect selected={selected} years={years} />
+      </div>
 
       {stats.coverage.isPartial && stats.coverage.partialNote ? (
         <div className="card mb-4 border-warn/40">

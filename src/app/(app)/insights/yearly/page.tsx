@@ -58,10 +58,12 @@ export default async function YearlyNumbersPage({
       <PageHeader
         title={`Insights · ${selected} Summary`}
         subtitle="Headline numbers across financials, workforce, and cost composition for the chosen year."
-        right={<YearSelect selected={selected} years={years} />}
       />
       <InsightsTabs />
       <YearlySubTabs />
+      <div className="flex items-end justify-end mb-4 flex-wrap gap-3">
+        <YearSelect selected={selected} years={years} />
+      </div>
 
       {stats.coverage.isPartial && stats.coverage.partialNote ? (
         <div className="card mb-4 border-warn/40">

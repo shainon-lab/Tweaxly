@@ -17,7 +17,11 @@ export default function YearlySubTabs() {
     { href: `/insights/yearly/insights${suffix}`, label: "Top insights & tips" },
   ];
   return (
-    <div className="mb-6 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+    // Block wrapper forces the sub-tabs onto their own line below the
+    // InsightsTabs row. Without it the two inline-flex containers wrap
+    // side-by-side on wide screens.
+    <div className="mb-6">
+    <div className="inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => {
         const base = t.href.split("?")[0];
         // /insights/yearly is matched exactly so visiting /insights/yearly/insights
@@ -37,6 +41,7 @@ export default function YearlySubTabs() {
           </Link>
         );
       })}
+    </div>
     </div>
   );
 }
