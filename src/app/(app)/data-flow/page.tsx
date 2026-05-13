@@ -60,7 +60,7 @@ export default async function DataFlowPage({
   return (
     <>
       <PageHeader
-        title="Data Flow"
+        title="Category Trends"
         subtitle={`${RANGE_LABEL[range]}${categoryFilter ? ` · ${categoryFilter}` : ""}. ${view === "summary" ? "P&L summary" : "Per-month detail"}.`}
         right={
           <DataFlowFilters

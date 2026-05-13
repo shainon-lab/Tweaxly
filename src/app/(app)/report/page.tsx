@@ -130,7 +130,7 @@ export default async function ReportPage({
   return (
     <>
       <PageHeader
-        title={`Monthly Reports — ${primary.label}`}
+        title={`P&L Statement — ${primary.label}`}
         subtitle={business.name}
         right={
           <ReportPeriodPicker

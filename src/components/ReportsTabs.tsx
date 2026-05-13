@@ -7,8 +7,8 @@ import { usePathname } from "next/navigation";
 // Monthly Reports, Data Flow, or Insights. The Insights tab carries its
 // own second-level nav (General / Yearly Summary) once you're inside.
 const TABS = [
-  { href: "/report",    label: "Monthly Reports" },
-  { href: "/data-flow", label: "Data Flow"       },
+  { href: "/report",    label: "P&L Statement"   },
+  { href: "/data-flow", label: "Category Trends" },
   { href: "/insights",  label: "Insights"        },
 ];
 
