@@ -27,6 +27,7 @@ import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/wo
 import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
 import ScenarioBuilder, { type RosterMember } from "./ScenarioBuilder";
+import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
   return v === "3m" || v === "6m" || v === "12m" || v === "ytd" || v === "last_year" || v === "custom";
@@ -126,6 +127,21 @@ export default async function ForecastPage({
         histTo={sp.hist_to}
       />
 
+      <ActiveScenarioAssumptions
+        assumptions={assumptions.map((a) => ({
+          id: a.id,
+          family: a.family,
+          type: a.type,
+          label: a.label,
+          amount: a.amount,
+          percentage: a.percentage,
+          startMonth: a.startMonth,
+          endMonth: a.endMonth,
+          isRecurring: a.isRecurring,
+        }))}
+        currency={ccy}
+      />
+
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
@@ -165,39 +181,6 @@ export default async function ForecastPage({
         </div>
       </div>
 
-      <ForecastChart
-        points={points.map((p) => ({
-          ym: p.ym,
-          index: p.index,
-          baselineRevenue: p.baselineRevenue,
-          baselineExpenses: p.baselineExpenses,
-          baselineNet: p.baselineNet,
-          scenarioRevenue: p.scenarioRevenue,
-          scenarioExpenses: p.scenarioExpenses,
-          scenarioNet: p.scenarioNet,
-        }))}
-      />
-
-      <ScenarioBuilder
-        assumptions={assumptions.map((a) => ({
-          id: a.id,
-          family: a.family,
-          type: a.type,
-          label: a.label,
-          category: a.category ?? null,
-          amount: a.amount,
-          percentage: a.percentage,
-          startMonth: a.startMonth,
-          endMonth: a.endMonth,
-          isRecurring: a.isRecurring,
-          notes: a.notes ?? null,
-        }))}
-        roster={roster}
-        activePayrollSum={activePayrollSum}
-        maxMonthsAhead={horizon.months}
-        currency={ccy}
-      />
-
       <div className="card mb-6">
         <div className="font-medium mb-2">Insights</div>
         {insights.length === 0 ? (
@@ -218,6 +201,19 @@ export default async function ForecastPage({
           These projections are estimates based on the selected historical period and your scenario assumptions. They are not guarantees — actual results depend on execution and market conditions.
         </div>
       </div>
+
+      <ForecastChart
+        points={points.map((p) => ({
+          ym: p.ym,
+          index: p.index,
+          baselineRevenue: p.baselineRevenue,
+          baselineExpenses: p.baselineExpenses,
+          baselineNet: p.baselineNet,
+          scenarioRevenue: p.scenarioRevenue,
+          scenarioExpenses: p.scenarioExpenses,
+          scenarioNet: p.scenarioNet,
+        }))}
+      />
 
       <div className="card mb-6 overflow-x-auto">
         <div className="font-medium mb-3">Month-by-month projection</div>
@@ -256,6 +252,13 @@ export default async function ForecastPage({
           </tbody>
         </table>
       </div>
+
+      <ScenarioBuilder
+        roster={roster}
+        activePayrollSum={activePayrollSum}
+        maxMonthsAhead={horizon.months}
+        currency={ccy}
+      />
     </>
   );
 }

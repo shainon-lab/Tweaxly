@@ -18,21 +18,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { createAssumption, deleteAssumption, clearAllAssumptions } from "./actions";
-
-type AssumptionRow = {
-  id: string;
-  family: string;
-  type: string;
-  label: string;
-  category: string | null;
-  amount: number;
-  percentage: number;
-  startMonth: number;
-  endMonth: number | null;
-  isRecurring: boolean;
-  notes: string | null;
-};
+import { createAssumption } from "./actions";
 
 export type RosterMember = {
   id: string;
@@ -109,13 +95,11 @@ function fmtMoney(value: number, currency: string) {
 type RaiseScope = "specific" | "overall";
 
 export default function ScenarioBuilder({
-  assumptions,
   roster,
   activePayrollSum,
   maxMonthsAhead,
   currency,
 }: {
-  assumptions: AssumptionRow[];
   roster: RosterMember[];
   activePayrollSum: number;
   maxMonthsAhead: number;
@@ -280,21 +264,14 @@ export default function ScenarioBuilder({
       });
       setOpenKey(null);
       startTransition(() => router.refresh());
+      // Bring the user back to the top so they see the new entry land in
+      // the Active scenario assumptions card right below the setup row.
+      if (typeof window !== "undefined") {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      }
     } catch (e) {
       alert(`Failed to save: ${(e as Error).message}`);
     }
-  }
-
-  async function remove(id: string) {
-    if (!confirm("Remove this assumption?")) return;
-    await deleteAssumption(id);
-    startTransition(() => router.refresh());
-  }
-
-  async function clearAll() {
-    if (!confirm("Remove all scenario assumptions?")) return;
-    await clearAllAssumptions();
-    startTransition(() => router.refresh());
   }
 
   const selectedRosterEmp = eligibleRoster.find((r) => r.id === form.employeeId);
@@ -542,61 +519,6 @@ export default function ScenarioBuilder({
           </div>
         ) : null}
       </div>
-
-      <div className="card mb-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="font-medium">Scenario assumptions</div>
-          {assumptions.length > 0 ? (
-            <button type="button" className="btn-ghost text-xs" onClick={clearAll} disabled={pending}>Clear all</button>
-          ) : null}
-        </div>
-        {assumptions.length === 0 ? (
-          <div className="text-sm text-slate-400 py-4 text-center">
-            No assumptions yet. Click an event above to start modeling decisions.
-          </div>
-        ) : (
-          <table className="table-base">
-            <thead>
-              <tr>
-                <th>Family</th>
-                <th>Event</th>
-                <th>Label</th>
-                <th className="text-right">Amount</th>
-                <th className="text-right">%</th>
-                <th>Months</th>
-                <th>Cadence</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {assumptions.map((a) => (
-                <tr key={a.id}>
-                  <td><span className="pill">{a.family}</span></td>
-                  <td className="text-slate-300">{prettyType(a.type)}</td>
-                  <td className="font-medium">{a.label}</td>
-                  <td className={`text-right ${a.amount >= 0 ? "text-slate-200" : "text-good"}`}>
-                    {a.amount === 0 ? "—" : fmtMoney(a.amount, currency)}
-                  </td>
-                  <td className="text-right text-slate-300">
-                    {a.percentage === 0 ? "—" : `${(a.percentage * 100).toFixed(1)}%`}
-                  </td>
-                  <td className="text-slate-300">
-                    M{a.startMonth}{a.endMonth ? ` → M${a.endMonth}` : "+"}
-                  </td>
-                  <td>{a.isRecurring ? <span className="pill-good">recurring</span> : <span className="pill-warn">one-time</span>}</td>
-                  <td className="text-right">
-                    <button className="btn-danger py-1" disabled={pending} onClick={() => remove(a.id)}>Delete</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-      </div>
     </>
   );
-}
-
-function prettyType(t: string): string {
-  return t.replace(/_/g, " ");
 }
