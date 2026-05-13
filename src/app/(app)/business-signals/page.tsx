@@ -68,7 +68,9 @@ export default async function BusinessSignalsPage() {
         title="Business Signals"
         subtitle="The AI advisor's rotating observations — refresh the page to roll a new random set."
       />
-      <BusinessSignalsTabs firingAlerts={triggeredAlerts.length} />
+      <BusinessSignalsTabs
+        firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}
+      />
       <PushRecommendations initial={pushRecs} currency={ccy} />
     </>
   );

@@ -1,19 +1,25 @@
-// Yearly Summary → Top insights & tips sub-tab. The numeric companion
-// view lives at /insights/yearly/numbers.
+// Yearly Summary → Key numbers sub-tab. The headline metrics for the
+// chosen year. Companion to /insights/yearly which carries the textual
+// observations.
 
 import PageHeader from "@/components/PageHeader";
 import InsightsTabs from "@/components/InsightsTabs";
 import { requireBusiness } from "@/lib/auth";
 import {
   computeYearlyStats,
-  generateYearlyInsights,
   listCompletedYearsWithData,
+  statBoxes,
 } from "@/lib/yearlySummary";
-import YearSelect from "./YearSelect";
-import YearlyInsightsList from "./YearlyInsightsList";
-import YearlySubTabs from "./YearlySubTabs";
+import YearSelect from "../YearSelect";
+import YearlySubTabs from "../YearlySubTabs";
 
-export default async function YearlyInsightsPage({
+const TONE_CLASS: Record<string, string> = {
+  good: "text-good",
+  warn: "text-warn",
+  bad:  "text-bad",
+};
+
+export default async function YearlyNumbersPage({
   searchParams,
 }: {
   searchParams: Promise<{ year?: string }>;
@@ -46,13 +52,13 @@ export default async function YearlyInsightsPage({
   const selected = years.includes(requested) ? requested : years[0];
 
   const stats = await computeYearlyStats(business.id, selected);
-  const insights = generateYearlyInsights(stats, ccy);
+  const boxes = statBoxes(stats, ccy);
 
   return (
     <>
       <PageHeader
         title={`Insights · ${selected} Summary`}
-        subtitle="Plain-English observations about the chosen year, each paired with a tip you can act on."
+        subtitle="Headline numbers across financials, workforce, and cost composition for the chosen year."
         right={<YearSelect selected={selected} years={years} />}
       />
       <InsightsTabs />
@@ -67,7 +73,29 @@ export default async function YearlyInsightsPage({
         </div>
       ) : null}
 
-      <YearlyInsightsList insights={insights} />
+      <div className="card mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+          <div>
+            <div className="font-medium">Key numbers · {selected}</div>
+            <div className="text-xs text-slate-400">
+              {boxes.length} headline metrics across financials, workforce, and cost composition
+            </div>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
+          {boxes.map((b, i) => (
+            <div key={i} className="card-tight">
+              <div className="text-xs uppercase tracking-wide text-slate-400">{b.label}</div>
+              <div className={`mt-2 text-lg font-semibold ${b.tone ? TONE_CLASS[b.tone] : ""}`}>
+                {b.value}
+              </div>
+              {b.hint ? (
+                <div className="text-xs text-slate-400 mt-1">{b.hint}</div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      </div>
     </>
   );
 }

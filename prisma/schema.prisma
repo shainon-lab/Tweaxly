@@ -73,6 +73,14 @@ model NotificationRule {
   // Optional friendly label the user can set for this rule.
   label          String?
   enabled        Boolean   @default(true)
+  // Stamped the first time we see this rule actually firing. Persisted so
+  // the Alerts UI can display a meaningful timestamp ("appeared 3 days
+  // ago") even though triggers are evaluated live.
+  firstFiredAt   DateTime?
+  // Set when the user clicks "Mark as read" on this alert. The notification
+  // continues to appear (now in the Previous section), but the unread
+  // badge no longer counts it.
+  acknowledgedAt DateTime?
   createdAt      DateTime  @default(now())
 
   @@index([businessId])

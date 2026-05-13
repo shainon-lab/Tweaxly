@@ -62,11 +62,18 @@ export async function POST(req: NextRequest) {
 
 export async function PATCH(req: NextRequest) {
   const { business } = await requireBusiness();
-  const body = await req.json() as { id?: string; enabled?: boolean; label?: string | null };
+  const body = await req.json() as {
+    id?: string;
+    enabled?: boolean;
+    label?: string | null;
+    action?: "ack" | "unack";
+  };
   if (!body.id) return bad("id required");
   const data: Record<string, unknown> = {};
   if (typeof body.enabled === "boolean") data.enabled = body.enabled;
   if ("label" in body) data.label = body.label?.toString().trim() || null;
+  if (body.action === "ack")   data.acknowledgedAt = new Date();
+  if (body.action === "unack") data.acknowledgedAt = null;
   await prisma.notificationRule.updateMany({
     where: { id: body.id, businessId: business.id },
     data,

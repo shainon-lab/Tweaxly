@@ -16,6 +16,8 @@ export type TriggeredAlert = {
   level: "warn" | "bad" | "good" | "info";
   headline: string;
   detail: string;
+  firstFiredAt: Date | null;
+  acknowledgedAt: Date | null;
 };
 
 type Rule = {
@@ -151,8 +153,55 @@ export async function evaluateNotificationRules(
              "info",
       headline,
       detail,
+      firstFiredAt: r.firstFiredAt,
+      acknowledgedAt: r.acknowledgedAt,
     });
   }
+
+  return triggered;
+}
+
+// Variant used by the Alerts page (write path). Same evaluation but also:
+//   - stamps firstFiredAt on rules that are currently firing without a
+//     timestamp (so the Alerts UI can say "appeared X ago").
+//   - clears firstFiredAt + acknowledgedAt on rules that have stopped
+//     firing — if the alert ever fires again it gets a fresh "appeared"
+//     timestamp and a fresh chance to be marked-as-read.
+// Side effects are confined to this function so read-only consumers (the
+// sidebar badge, the dashboard mini-card) don't accidentally mutate state.
+export async function evaluateAndStampNotificationRules(
+  businessId: string,
+): Promise<TriggeredAlert[]> {
+  const triggered = await evaluateNotificationRules(businessId);
+  const firingIds = new Set(triggered.map((t) => t.ruleId));
+  const now = new Date();
+
+  // 1. Stamp firstFiredAt on currently-firing rules that have none.
+  const needsStamp = triggered.filter((t) => t.firstFiredAt == null);
+  if (needsStamp.length > 0) {
+    await prisma.notificationRule.updateMany({
+      where: { businessId, id: { in: needsStamp.map((t) => t.ruleId) } },
+      data: { firstFiredAt: now },
+    });
+    // Reflect on the returned alerts so the UI shows the new timestamp.
+    for (const t of triggered) {
+      if (t.firstFiredAt == null) t.firstFiredAt = now;
+    }
+  }
+
+  // 2. Clear stamps on rules that have a firstFiredAt but no longer fire.
+  //    Acknowledged "Previous" notifications go away here — which matches
+  //    the user's expectation that a rule that stopped firing is no longer
+  //    in the Alerts view.
+  await prisma.notificationRule.updateMany({
+    where: {
+      businessId,
+      firstFiredAt: { not: null },
+      id: { notIn: triggered.map((t) => t.ruleId) },
+    },
+    data: { firstFiredAt: null, acknowledgedAt: null },
+  });
+  void firingIds;
 
   return triggered;
 }

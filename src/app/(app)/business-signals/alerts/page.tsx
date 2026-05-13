@@ -7,7 +7,7 @@ import PageHeader from "@/components/PageHeader";
 import ThresholdAlertsBox from "@/components/ThresholdAlertsBox";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { evaluateNotificationRules } from "@/lib/notificationsEval";
+import { evaluateAndStampNotificationRules } from "@/lib/notificationsEval";
 import BusinessSignalsTabs from "../BusinessSignalsTabs";
 
 export const dynamic = "force-dynamic";
@@ -16,7 +16,7 @@ export default async function BusinessSignalsAlertsPage() {
   const { business } = await requireBusiness();
 
   const [thresholdAlerts, ruleCounts] = await Promise.all([
-    evaluateNotificationRules(business.id),
+    evaluateAndStampNotificationRules(business.id),
     prisma.notificationRule.groupBy({
       by: ["enabled"],
       where: { businessId: business.id },
@@ -32,7 +32,9 @@ export default async function BusinessSignalsAlertsPage() {
         title="Business Signals"
         subtitle="Threshold rules — when one of your watched metrics crosses its limit, the breach lands here."
       />
-      <BusinessSignalsTabs firingAlerts={thresholdAlerts.length} />
+      <BusinessSignalsTabs
+        firingAlerts={thresholdAlerts.filter((a) => a.acknowledgedAt == null).length}
+      />
       <ThresholdAlertsBox
         alerts={thresholdAlerts}
         totalRules={totalRules}
