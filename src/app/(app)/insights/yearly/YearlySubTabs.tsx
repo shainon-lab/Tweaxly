@@ -10,14 +10,18 @@ export default function YearlySubTabs() {
   const sp = useSearchParams();
   const qs = sp.toString();
   const suffix = qs ? `?${qs}` : "";
+  // Key numbers is the default landing of the Yearly Summary view, so it
+  // sits first and is what /insights/yearly itself renders.
   const TABS = [
-    { href: `/insights/yearly${suffix}`,         label: "Top insights & tips" },
-    { href: `/insights/yearly/numbers${suffix}`, label: "Key numbers" },
+    { href: `/insights/yearly${suffix}`,          label: "Key numbers" },
+    { href: `/insights/yearly/insights${suffix}`, label: "Top insights & tips" },
   ];
   return (
     <div className="mb-6 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => {
         const base = t.href.split("?")[0];
+        // /insights/yearly is matched exactly so visiting /insights/yearly/insights
+        // doesn't also highlight the Key numbers tab.
         const active = path === base;
         return (
           <Link
