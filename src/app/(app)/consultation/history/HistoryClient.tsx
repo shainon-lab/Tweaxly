@@ -1,30 +1,58 @@
 "use client";
 
-// Chat history view — every past question across all threads. Only one
-// item can be open at a time; opening another closes the previous. The
-// expanded item pins the question at the top while the answer scrolls
-// underneath if it doesn't fit.
+// Split-screen history view: list on the left, viewer on the right.
+// Selection lives in the URL (?id=xxx) so navigation feels stable —
+// each click triggers a server-rendered swap of the right panel
+// without touching the left list.
 
-import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
-import { renderMarkdown } from "../markdown";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useTransition } from "react";
 
-export type HistoryEntry = {
+export type HistoryListItem = {
   id: string;
-  question: string;
-  answer: string | null;
+  title: string;
   askedAt: string;
 };
 
-export default function HistoryClient({ history }: { history: HistoryEntry[] }) {
+export type HistoryDetail = {
+  id: string;
+  question: string;
+  askedAt: string;
+  answerMarkdown: string | null;
+};
+
+function fmtDate(iso: string): { date: string; time: string } {
+  const d = new Date(iso);
+  return {
+    date: d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" }),
+    time: d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+  };
+}
+
+export default function HistoryClient({
+  list,
+  detail,
+  answerNodes,
+}: {
+  list: HistoryListItem[];
+  detail: HistoryDetail | null;
+  answerNodes: React.ReactNode;
+}) {
   const router = useRouter();
-  const [, startTransition] = useTransition();
-  const [openId, setOpenId] = useState<string | null>(null);
+  const sp = useSearchParams();
+  const [pending, startTransition] = useTransition();
+  const selectedId = sp.get("id") ?? detail?.id ?? null;
 
   function newConversation() {
-    startTransition(() => {
-      router.push("/consultation");
-    });
+    startTransition(() => router.push("/consultation"));
+  }
+
+  function closeViewer() {
+    const params = new URLSearchParams(sp.toString());
+    params.delete("id");
+    const qs = params.toString();
+    startTransition(() => router.push(`/consultation/history${qs ? `?${qs}` : ""}`));
   }
 
   return (
@@ -32,86 +60,109 @@ export default function HistoryClient({ history }: { history: HistoryEntry[] }) 
       <div className="flex items-center justify-end mb-4">
         <button
           type="button"
-          className="btn-primary"
+          className="btn-brand text-sm px-5 py-2 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
           onClick={newConversation}
+          disabled={pending}
         >
-          + New conversation
+          + New Consultation
         </button>
       </div>
 
-      <div className="card">
-        <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-          <div>
-            <div className="font-medium">Chat history</div>
-            <div className="text-xs text-slate-400">
-              {history.length} question{history.length === 1 ? "" : "s"} asked — click any to read the answer
-            </div>
+      {list.length === 0 ? (
+        <div className="card text-center py-16">
+          <div className="text-lg font-medium">No consultations yet</div>
+          <div className="text-sm text-slate-400 mt-1">
+            Start a new consultation to begin building your history.
           </div>
         </div>
+      ) : (
+        // Split-screen. The OUTER container is the only thing that controls
+        // height; both panels manage their own internal scroll so nested
+        // scrollbars never appear.
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 h-[calc(100vh-300px)] min-h-[480px]">
+          {/* Left panel: list */}
+          <aside className="rounded-xl border border-line bg-ink-900/30 overflow-y-auto">
+            <ul className="p-2 space-y-1">
+              {list.map((item) => {
+                const active = item.id === selectedId;
+                const { date, time } = fmtDate(item.askedAt);
+                return (
+                  <li key={item.id}>
+                    <Link
+                      href={`/consultation/history?id=${item.id}`}
+                      scroll={false}
+                      className={`block rounded-lg px-3 py-2.5 text-sm transition border ${
+                        active
+                          ? "bg-accent-soft border-accent/40 text-slate-100"
+                          : "border-transparent text-slate-300 hover:bg-ink-700/60 hover:border-line"
+                      }`}
+                    >
+                      <div className="line-clamp-2 leading-snug">{item.title}</div>
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        {date} • {time}
+                      </div>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </aside>
 
-        {history.length === 0 ? (
-          <div className="text-sm text-slate-400 py-10 text-center">
-            No questions yet — once you ask the advisor something it&apos;ll show up here.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {history.map((h) => {
-              const open = openId === h.id;
-              return (
-                <div
-                  key={h.id}
-                  className={`rounded-md border ${
-                    open ? "border-accent/50 bg-ink-800/40" : "border-line bg-ink-800/20"
-                  }`}
-                >
-                  {/* Question header — always visible, click to toggle */}
+          {/* Right panel: viewer. Empty state when no selection. */}
+          <section className="rounded-xl border border-line bg-ink-900/30 flex flex-col overflow-hidden">
+            {!detail ? (
+              <div className="flex-1 flex items-center justify-center text-center px-6">
+                <div className="max-w-sm">
+                  <div className="inline-flex w-12 h-12 rounded-full bg-accent-soft text-accent items-center justify-center text-xl mb-3">
+                    ✦
+                  </div>
+                  <div className="text-base font-medium text-slate-200">
+                    Select a consultation to view its analysis.
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    Pick any item from the list on the left.
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Sticky question header — never scrolls, so the user
+                    always knows which question the analysis answers. */}
+                <div className="px-5 md:px-6 py-4 border-b border-line bg-ink-900/60 flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-[10px] uppercase tracking-wide text-accent mb-1">Question</div>
+                    <div className="text-sm md:text-base text-slate-100 break-words">
+                      {detail.question}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-1">
+                      {new Date(detail.askedAt).toLocaleString()}
+                    </div>
+                  </div>
                   <button
                     type="button"
-                    className="w-full text-left px-4 py-3 flex items-start gap-3 hover:bg-ink-700/40 transition rounded-md"
-                    onClick={() => setOpenId(open ? null : h.id)}
+                    className="text-xs text-slate-300 hover:text-white border border-line rounded-md px-2 py-1 shrink-0"
+                    onClick={closeViewer}
+                    disabled={pending}
                   >
-                    <div className="flex-1 min-w-0">
-                      <div className="text-sm text-slate-100">{h.question}</div>
-                      <div className="text-[11px] text-slate-500 mt-1">
-                        {new Date(h.askedAt).toLocaleString()}
-                      </div>
-                    </div>
-                    <span className="text-slate-400 text-xs shrink-0 mt-0.5">
-                      {open ? "▴" : "▾"}
-                    </span>
+                    Close
                   </button>
-
-                  {/* Answer body — question stays pinned via the sticky
-                      header above; the answer scrolls inside the panel if
-                      it overflows but is roomy enough to fit most. */}
-                  {open ? (
-                    <div className="border-t border-line">
-                      <div className="px-4 py-3 max-h-[60vh] overflow-y-auto">
-                        {h.answer ? (
-                          <div className="space-y-1.5">{renderMarkdown(h.answer)}</div>
-                        ) : (
-                          <div className="text-xs text-slate-500 italic">
-                            No answer was recorded for this question.
-                          </div>
-                        )}
-                      </div>
-                      <div className="px-4 py-2 border-t border-line flex justify-end">
-                        <button
-                          type="button"
-                          className="btn-ghost text-xs"
-                          onClick={() => setOpenId(null)}
-                        >
-                          Close
-                        </button>
-                      </div>
-                    </div>
-                  ) : null}
                 </div>
-              );
-            })}
-          </div>
-        )}
-      </div>
+
+                {/* Scrollable answer body */}
+                <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5">
+                  {answerNodes ? (
+                    <div className="space-y-1.5 max-w-3xl">{answerNodes}</div>
+                  ) : (
+                    <div className="text-sm text-slate-400 italic">
+                      No answer was recorded for this consultation.
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
     </>
   );
 }

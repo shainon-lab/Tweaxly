@@ -5,8 +5,8 @@ import { usePathname } from "next/navigation";
 // Tabs shown on every page under the Consultation umbrella.
 // Chat = the active conversation; Chat history = accordion of past Q&As.
 const TABS = [
-  { href: "/consultation",         label: "Chat"         },
-  { href: "/consultation/history", label: "Chat history" },
+  { href: "/consultation",         label: "New Consultation"     },
+  { href: "/consultation/history", label: "Consultation History" },
 ];
 
 export default function ConsultationTabs({ historyCount }: { historyCount?: number }) {
