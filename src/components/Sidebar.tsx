@@ -7,21 +7,21 @@ import ThemeToggle from "./ThemeToggle";
 type AlertKey = "transactions" | "insights" | "businessSignals";
 
 const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] = [
-  { href: "/dashboard", label: "Overview", icon: "▤" },
-  { href: "/business-signals", label: "Business Signals", icon: "◆", alertKey: "businessSignals" },
-  { href: "/forecast", label: "Forecast", icon: "↗" },
-  { href: "/consultation", label: "Consultation", icon: "✉" },
-  { href: "/insights", label: "Insights", icon: "✦", alertKey: "insights" },
-  { href: "/report", label: "Reports", icon: "▦" },
-  { href: "/workforce", label: "Workforce Overview", icon: "☰" },
-  { href: "/notifications", label: "Set notifications", icon: "⚐" },
+  { href: "/dashboard", label: "Overview", icon: "🏠" },
+  { href: "/business-signals", label: "Business Signals", icon: "📡", alertKey: "businessSignals" },
+  { href: "/forecast", label: "Forecast", icon: "📈" },
+  { href: "/consultation", label: "Consultation", icon: "💬" },
+  { href: "/insights", label: "Insights", icon: "💡", alertKey: "insights" },
+  { href: "/report", label: "Reports", icon: "📑" },
+  { href: "/workforce", label: "Workforce Overview", icon: "👥" },
+  { href: "/notifications", label: "Set notifications", icon: "🔔" },
   // Single "Data" entry collapses Import data / Transactions / Data log —
   // those three views share an internal DataTabs row. Default landing is
   // /manual-data so the user opens on the same tab the DataTabs nav puts
   // first.
-  { href: "/manual-data", label: "Data", icon: "≡", alertKey: "transactions" },
-  { href: "/integration", label: "Integration", icon: "⇆" },
-  { href: "/settings", label: "Settings", icon: "⚙" },
+  { href: "/manual-data", label: "Data", icon: "🗂️", alertKey: "transactions" },
+  { href: "/integration", label: "Integration", icon: "🔗" },
+  { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
 export type SidebarAlerts = { transactions?: number; insights?: number; businessSignals?: number };
