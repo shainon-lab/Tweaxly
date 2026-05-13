@@ -189,9 +189,12 @@ export default function PushRecommendations({
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-line flex justify-end">
+      <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-3 flex-wrap">
+        <div className="text-xs text-slate-400 leading-relaxed">
+          Or consult about anything else going on in your business.
+        </div>
         <Link href="/consultation" className="btn-primary">
-          Ask the advisor
+          Consult on any topic
         </Link>
       </div>
     </div>
