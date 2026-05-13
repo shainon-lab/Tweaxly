@@ -158,6 +158,15 @@ export default async function DashboardPage({
                 upIsGood: true,
                 prevLabel: `vs ${compareLabel}`,
               }}
+              explain={{
+                description:
+                  "Total income recognized in the selected period — every Stripe payout, invoice payment, and other inbound transaction tagged as a revenue category.",
+                tips: [
+                  "Compare against the prior period — a healthy business shows revenue growth or stable retention.",
+                  "If revenue rose but profit didn't, the gain was likely consumed by expense growth.",
+                  "Concentration in a small number of customers is the most common quiet risk — keep an eye on the top vendor / category split in Insights.",
+                ],
+              }}
             />
             <Stat
               label="Expenses"
@@ -168,6 +177,15 @@ export default async function DashboardPage({
                 pct: pctDelta(current.expenses, prev.expenses),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
+              }}
+              explain={{
+                description:
+                  "Sum of every outflow — payroll, rent, software, marketing, fees, taxes, one-time costs. Down is good. Up needs a why.",
+                tips: [
+                  "If expenses grew faster than revenue, profit took a hit — open Insights → Top expense categories to see which line drove it.",
+                  "Strip one-time costs (next box) to see the recurring base — that's your monthly floor.",
+                  "Concentrated cost (one category > 30% of total) is where 10% efficiency moves the P&L the most.",
+                ],
               }}
             />
             <Stat
@@ -180,6 +198,15 @@ export default async function DashboardPage({
                 upIsGood: true,
                 prevLabel: `vs ${compareLabel}`,
               }}
+              explain={{
+                description:
+                  "Revenue minus every expense for the period. Positive = the business produced more cash than it consumed; negative = it lost ground that month/quarter/year.",
+                tips: [
+                  "One bad month is noise; three in a row is a trend.",
+                  "Below break-even? Use the Forecast tab to model the path back into the black with hires, cuts, and revenue moves.",
+                  "Healthy SMB net margin (Gross margin tile below) sits in the 10–20%+ band — sub-10% is workable but thin.",
+                ],
+              }}
             />
             <Stat
               label="Normalized profit"
@@ -189,6 +216,14 @@ export default async function DashboardPage({
                 pct: pctDelta(current.normalizedProfit, prev.normalizedProfit),
                 upIsGood: true,
                 prevLabel: `vs ${compareLabel}`,
+              }}
+              explain={{
+                description:
+                  "Net profit with one-time / non-recurring expenses added back. This is the cleaner read of the operating engine — what the business would earn if no unusual costs hit the period.",
+                tips: [
+                  "Use this number for trend reading; use raw net profit for the period's actual cash impact.",
+                  "If Normalized profit is healthy but raw Net profit is weak, the gap is the one-time hit — find it in Insights → Top expense categories.",
+                ],
               }}
             />
           </div>
@@ -203,6 +238,14 @@ export default async function DashboardPage({
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
               }}
+              explain={{
+                description:
+                  "Costs that don't move with sales volume — rent, insurance, subscriptions you'd pay even on a zero-revenue month. These set the floor on what the business has to cover.",
+                tips: [
+                  "Watch the ratio of Fixed to Variable: heavy fixed = less flex in a slow quarter.",
+                  "Renegotiate or convert to variable/usage-based contracts to lower this without cutting capability.",
+                ],
+              }}
             />
             <Stat
               label="Variable expenses"
@@ -212,6 +255,14 @@ export default async function DashboardPage({
                 pct: pctDelta(current.variable, prev.variable),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
+              }}
+              explain={{
+                description:
+                  "Costs that scale with activity — contractors, marketing campaigns, raw materials, transaction fees, anything that grows when the business does.",
+                tips: [
+                  "Variable costs are easier to dial down in a slow period — they're your shock absorber.",
+                  "If they're growing faster than revenue, you're losing efficiency per dollar of sales.",
+                ],
               }}
             />
             <Stat
@@ -226,6 +277,14 @@ export default async function DashboardPage({
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
               }}
+              explain={{
+                description:
+                  "Total fully-loaded compensation cost — salaries plus employer taxes, pension, benefits, and any extras. We use the larger of the booked payroll transactions and the roster-computed cost so missing payroll uploads don't understate it.",
+                tips: [
+                  "Healthy payroll-to-revenue ratio sits under 50%; below 35% is comfortable, above 50% is risky.",
+                  "Use Workforce Overview to see per-employee cost and model the impact of one more hire.",
+                ],
+              }}
             />
             <Stat
               label="Marketing"
@@ -235,6 +294,14 @@ export default async function DashboardPage({
                 pct: pctDelta(current.marketing, prev.marketing),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
+              }}
+              explain={{
+                description:
+                  "Spend in any category tagged for marketing or advertising — Google/Meta/LinkedIn ads, agencies, content writers, sponsorships, events.",
+                tips: [
+                  "Most growth-stage SMBs run 10–20% of revenue on marketing. Above 25% is aggressive — confirm payback and CAC trend.",
+                  "Cutting marketing improves the P&L immediately but the revenue hit lags 60–90 days, so model the trade-off in Forecast first.",
+                ],
               }}
             />
           </div>
@@ -248,6 +315,14 @@ export default async function DashboardPage({
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
               }}
+              explain={{
+                description:
+                  "Payment processor and bank fees — Stripe, PayPal, card networks, ACH, wires. Typically 2-3% of revenue for SMBs taking online payments.",
+                tips: [
+                  "Above 3.5% of revenue means it's worth shopping rates with a different processor.",
+                  "Mostly invisible because they're skimmed off the top — surface them here so they don't quietly grow.",
+                ],
+              }}
             />
             <Stat
               label="Taxes"
@@ -257,6 +332,14 @@ export default async function DashboardPage({
                 pct: pctDelta(current.taxes, prev.taxes),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
+              }}
+              explain={{
+                description:
+                  "Quarterly estimates, sales tax remittances, payroll taxes, and any other tax payments inside the period.",
+                tips: [
+                  "Taxes lag revenue by a quarter — a big revenue quarter often shows up here a couple of months later.",
+                  "If this number swings wildly, double-check that bookkeeping reconciled the right tax category before the next forecast.",
+                ],
               }}
             />
             <Stat
@@ -268,6 +351,14 @@ export default async function DashboardPage({
                 pct: pctDelta(current.oneTime, prev.oneTime),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
+              }}
+              explain={{
+                description:
+                  "Costs flagged as non-recurring — equipment purchases, legal fees, severance, audits, etc. These distort the period's net profit because they won't repeat.",
+                tips: [
+                  "Strip these out to read the run-rate — that's what Normalized profit shows.",
+                  "If one-time costs are >15% of total expenses, the period's headline numbers don't reflect the steady state.",
+                ],
               }}
             />
             <Stat
@@ -287,6 +378,14 @@ export default async function DashboardPage({
                     }
                   : undefined
               }
+              explain={{
+                description:
+                  "Net profit as a percentage of revenue. Tells you how much of every dollar earned actually stays with the business.",
+                tips: [
+                  "Healthy SMB margins typically sit in the 10–20% band; sub-10% is workable but thin; above 30% is excellent.",
+                  "Falling margin while revenue grows means costs are growing faster than sales — surface where in the Insights → Spending shape chart.",
+                ],
+              }}
             />
           </div>
 

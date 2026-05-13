@@ -10,12 +10,41 @@ type Msg = {
   createdAt: string;
 };
 
-type Thread = {
+type HistoryEntry = {
   id: string;
-  title: string;
-  updatedAt: string;
-  messageCount: number;
-  preview: string;
+  question: string;
+  answer: string | null;
+  askedAt: string;
+};
+
+// Lightweight category classifier — keyword match on the question text.
+// Used only for the history accordion badges.
+function categorizeQuestion(text: string): string {
+  const t = text.toLowerCase();
+  if (/save|saving|cut|reduce/.test(t))                       return "Savings";
+  if (/runway|cash|burn|reserves/.test(t))                    return "Cash & runway";
+  if (/hire|fire|terminate|employee|payroll|headcount|team/.test(t)) return "Workforce";
+  if (/forecast|future|project|scenario|model what|model the/.test(t)) return "Forecast";
+  if (/vendor|supplier/.test(t))                              return "Vendors";
+  if (/market|advertis|campaign|ad spend|ads/.test(t))        return "Marketing";
+  if (/grow|growth|expand|scale|increase revenue|new customer/.test(t)) return "Growth";
+  if (/margin|profit|net|p&l|pnl/.test(t))                    return "P&L";
+  if (/category|categor|breakdown|expense/.test(t))           return "Expenses";
+  if (/why|how|what|explain/.test(t))                         return "General";
+  return "General";
+}
+
+const CATEGORY_PILL: Record<string, string> = {
+  "Savings":       "pill-good",
+  "Cash & runway": "pill-bad",
+  "Workforce":     "pill-warn",
+  "Forecast":      "pill-accent",
+  "Vendors":       "pill",
+  "Marketing":     "pill-accent",
+  "Growth":        "pill-good",
+  "P&L":           "pill-accent",
+  "Expenses":      "pill-warn",
+  "General":       "pill",
 };
 
 type Active = {
@@ -214,23 +243,24 @@ function OptionsBlock({
 }
 
 export default function ConsultationClient({
-  threads: initialThreads,
+  history,
   active: initialActive,
   currency,
   claudeEnabled,
 }: {
-  threads: Thread[];
+  history: HistoryEntry[];
   active: Active | null;
   currency: string;
   claudeEnabled: boolean;
 }) {
   const router = useRouter();
-  const [threads, setThreads] = useState<Thread[]>(initialThreads);
   const [active, setActive] = useState<Active | null>(initialActive);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [pending, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const [openHistoryItem, setOpenHistoryItem] = useState<string | null>(null);
 
   useEffect(() => {
     setActive(initialActive);
@@ -242,14 +272,9 @@ export default function ConsultationClient({
     }
   }, [active?.messages.length]);
 
-  function selectThread(id: string) {
-    startTransition(() => {
-      router.push(`/consultation?id=${id}`);
-    });
-  }
-
-  function newThread() {
+  function newConversation() {
     setActive(null);
+    setDraft("");
     startTransition(() => {
       router.push("/consultation");
     });
@@ -280,19 +305,8 @@ export default function ConsultationClient({
       };
       setActive(fresh);
       setDraft("");
-      // refresh thread list ordering
-      setThreads((prev) => {
-        const others = prev.filter((t) => t.id !== fresh.id);
-        const updated: Thread = {
-          id: fresh.id,
-          title: fresh.title,
-          updatedAt: new Date().toISOString(),
-          messageCount: fresh.messages.length,
-          preview: fresh.messages[fresh.messages.length - 1]?.content.slice(0, 80) ?? "",
-        };
-        return [updated, ...others];
-      });
-      // sync URL without full nav
+      // Sync URL without a full nav, then force a fresh server render so
+      // the history accordion picks up the new message.
       if (!active || active.id !== fresh.id) {
         startTransition(() => router.push(`/consultation?id=${fresh.id}`));
       } else {
@@ -300,16 +314,6 @@ export default function ConsultationClient({
       }
     } finally {
       setSending(false);
-    }
-  }
-
-  async function deleteThread(id: string) {
-    if (!confirm("Delete this consultation thread?")) return;
-    await fetch(`/api/consultation?id=${id}`, { method: "DELETE" });
-    setThreads((prev) => prev.filter((t) => t.id !== id));
-    if (active?.id === id) {
-      setActive(null);
-      startTransition(() => router.push("/consultation"));
     }
   }
 
@@ -342,57 +346,92 @@ export default function ConsultationClient({
           </div>
         </div>
       ) : null}
-    <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-4 h-[calc(100vh-260px)] min-h-[500px]">
-      {/* Thread list */}
-      <aside className="card overflow-y-auto">
+    <div className="h-[calc(100vh-260px)] min-h-[500px]">
+      {/* Top action row: History toggle + New conversation. Replaces the
+          old left-hand thread sidebar. */}
+      <div className="flex items-center justify-end gap-2 mb-3 flex-wrap">
         <button
-          className="btn-primary w-full mb-3"
-          onClick={newThread}
+          type="button"
+          className="btn-ghost text-xs"
+          onClick={newConversation}
           disabled={pending}
         >
-          + New consultation
+          + New conversation
         </button>
-        {threads.length === 0 ? (
-          <div className="text-xs text-slate-400 text-center py-6">
-            No conversations yet.
-          </div>
-        ) : (
-          <div className="space-y-1">
-            {threads.map((t) => (
-              <div
-                key={t.id}
-                className={`group rounded-md px-2 py-2 cursor-pointer text-sm flex items-start gap-2 ${
-                  active?.id === t.id
-                    ? "bg-accent-soft border border-accent/40"
-                    : "hover:bg-ink-700"
-                }`}
-                onClick={() => selectThread(t.id)}
-              >
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium truncate">{t.title}</div>
-                  <div className="text-xs text-slate-400 truncate">
-                    {t.messageCount} message{t.messageCount === 1 ? "" : "s"} ·{" "}
-                    {new Date(t.updatedAt).toLocaleDateString()}
-                  </div>
-                </div>
-                <button
-                  className="text-xs text-slate-500 hover:text-bad opacity-0 group-hover:opacity-100"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    deleteThread(t.id);
-                  }}
-                  title="Delete"
-                >
-                  ✕
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
-      </aside>
+        <button
+          type="button"
+          className="btn-ghost text-xs"
+          onClick={() => setHistoryOpen((v) => !v)}
+        >
+          {historyOpen ? "Hide history" : "Check history"}
+          {history.length > 0 ? (
+            <span className="ml-1 text-slate-500">({history.length})</span>
+          ) : null}
+        </button>
+      </div>
 
-      {/* Conversation pane */}
-      <section className="card flex flex-col overflow-hidden">
+      {/* History accordion — only mounted when toggled open. Newest
+          question first; each card expands to reveal the answer. */}
+      {historyOpen ? (
+        <div className="card mb-3">
+          <div className="flex items-center justify-between mb-3">
+            <div className="font-medium">Consultation history</div>
+            <div className="text-xs text-slate-400">
+              {history.length} question{history.length === 1 ? "" : "s"} asked
+            </div>
+          </div>
+          {history.length === 0 ? (
+            <div className="text-sm text-slate-400 py-4 text-center">
+              No questions yet — once you ask the advisor something it&apos;ll show up here.
+            </div>
+          ) : (
+            <div className="space-y-2 max-h-[420px] overflow-y-auto pr-1">
+              {history.map((h) => {
+                const open = openHistoryItem === h.id;
+                const cat = categorizeQuestion(h.question);
+                const pill = CATEGORY_PILL[cat] ?? "pill";
+                return (
+                  <div
+                    key={h.id}
+                    className="rounded-md border border-line bg-ink-800/40"
+                  >
+                    <button
+                      type="button"
+                      className="w-full text-left px-3 py-2 flex items-start gap-3 hover:bg-ink-700/50 transition"
+                      onClick={() => setOpenHistoryItem(open ? null : h.id)}
+                    >
+                      <span className={`${pill} text-[10px] shrink-0 mt-0.5`}>{cat}</span>
+                      <div className="flex-1 min-w-0">
+                        <div className="text-sm text-slate-100 line-clamp-2">{h.question}</div>
+                        <div className="text-[11px] text-slate-500 mt-1">
+                          {new Date(h.askedAt).toLocaleString()}
+                        </div>
+                      </div>
+                      <span className="text-slate-400 text-xs shrink-0 mt-0.5">
+                        {open ? "▴" : "▾"}
+                      </span>
+                    </button>
+                    {open ? (
+                      <div className="px-3 pb-3 pt-2 border-t border-line">
+                        {h.answer ? (
+                          <div className="space-y-1.5">{renderMarkdown(h.answer)}</div>
+                        ) : (
+                          <div className="text-xs text-slate-500 italic">
+                            No answer was recorded for this question.
+                          </div>
+                        )}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {/* Conversation pane (now full-width) */}
+      <section className="card flex flex-col overflow-hidden h-[calc(100%-3rem)]">
         <div ref={scrollRef} className="flex-1 overflow-y-auto pr-1 space-y-4">
           {!active ? (
             <div className="h-full flex flex-col items-center justify-center text-center gap-4 py-12">

@@ -28,6 +28,36 @@ export default async function ConsultationPage({
       })
     : null;
 
+  // History view: pair every past user message with the next assistant
+  // reply from the same thread. Ordered newest-question-first.
+  const allMessages = await prisma.consultationMessage.findMany({
+    where: { consultation: { businessId: business.id } },
+    orderBy: [{ consultationId: "asc" }, { createdAt: "asc" }],
+  });
+  type HistoryEntry = {
+    id: string;
+    question: string;
+    answer: string | null;
+    askedAt: string;
+  };
+  const history: HistoryEntry[] = [];
+  for (let i = 0; i < allMessages.length; i++) {
+    const m = allMessages[i];
+    if (m.role !== "user") continue;
+    const next = allMessages[i + 1];
+    const answer =
+      next && next.consultationId === m.consultationId && next.role === "assistant"
+        ? next.content
+        : null;
+    history.push({
+      id: m.id,
+      question: m.content,
+      answer,
+      askedAt: m.createdAt.toISOString(),
+    });
+  }
+  history.sort((a, b) => b.askedAt.localeCompare(a.askedAt));
+
   // Detect whether the real Claude integration is configured. The advisor
   // checks the same env var at request time; we expose a boolean here so the
   // UI can show a clear banner when free-form Q&A isn't available yet.
@@ -50,13 +80,7 @@ export default async function ConsultationPage({
       <ConsultationClient
         currency={business.currency}
         claudeEnabled={claudeEnabled}
-        threads={threads.map((t) => ({
-          id: t.id,
-          title: t.title,
-          updatedAt: t.updatedAt.toISOString(),
-          messageCount: t._count.messages,
-          preview: t.messages[0]?.content.slice(0, 80) ?? "",
-        }))}
+        history={history}
         active={
           active
             ? {
