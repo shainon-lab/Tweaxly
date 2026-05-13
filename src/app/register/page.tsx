@@ -1,28 +1,17 @@
-import { redirect } from "next/navigation";
-import bcrypt from "bcryptjs";
+// Plain HTML form posting to a Route Handler. See /api/auth/register for
+// the reason this isn't a server action.
+
 import Link from "next/link";
-import { prisma } from "@/lib/db";
-import { getSession } from "@/lib/session";
 import Logo from "@/components/Logo";
 
-async function registerAction(formData: FormData) {
-  "use server";
-  const email = String(formData.get("email") ?? "").toLowerCase().trim();
-  const password = String(formData.get("password") ?? "");
-  const name = String(formData.get("name") ?? "").trim() || null;
-  if (!email || password.length < 6) return;
-  const existing = await prisma.user.findUnique({ where: { email } });
-  if (existing) return;
-  const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { email, passwordHash, name } });
-  const session = await getSession();
-  session.userId = user.id;
-  session.email = user.email;
-  await session.save();
-  redirect("/setup");
-}
-
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: { searchParams: Promise<{ err?: string }> }) {
+  const { err } = await searchParams;
+  const errorMsg =
+    err === "exists" ? "An account with that email already exists. Sign in instead." :
+    err            ? "Please enter a valid email and a password of at least 6 characters." :
+    null;
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="card w-full max-w-md">
@@ -32,7 +21,12 @@ export default function RegisterPage() {
             Create your account — one workspace per business owner.
           </div>
         </div>
-        <form action={registerAction} className="space-y-4">
+        {errorMsg ? (
+          <div className="mb-4 rounded-md border border-bad/40 bg-bad/10 text-bad text-sm px-3 py-2">
+            {errorMsg}
+          </div>
+        ) : null}
+        <form action="/api/auth/register" method="post" className="space-y-4">
           <div>
             <label className="label">Name (optional)</label>
             <input className="input" name="name" />
