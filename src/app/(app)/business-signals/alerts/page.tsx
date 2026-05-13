@@ -3,6 +3,7 @@
 // "no rules", "rules but none enabled", and "all clear", so this page
 // just delegates to ThresholdAlertsBox.
 
+import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import ThresholdAlertsBox from "@/components/ThresholdAlertsBox";
 import { requireBusiness } from "@/lib/auth";
@@ -31,6 +32,11 @@ export default async function BusinessSignalsAlertsPage() {
       <PageHeader
         title="Business Signals"
         subtitle="Threshold rules — when one of your watched metrics crosses its limit, the breach lands here."
+        right={
+          <Link href="/business-signals/alerts/settings" className="btn-primary">
+            Set Alerts
+          </Link>
+        }
       />
       <BusinessSignalsTabs
         firingAlerts={thresholdAlerts.filter((a) => a.acknowledgedAt == null).length}

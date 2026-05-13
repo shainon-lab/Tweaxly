@@ -2,6 +2,7 @@
 // view lives at /insights/yearly/insights.
 
 import PageHeader from "@/components/PageHeader";
+import ReportsTabs from "@/components/ReportsTabs";
 import InsightsTabs from "@/components/InsightsTabs";
 import { requireBusiness } from "@/lib/auth";
 import {
@@ -35,6 +36,7 @@ export default async function YearlyNumbersPage({
           title="Insights"
           subtitle="Yearly retrospective — drill into a completed year's full picture."
         />
+        <ReportsTabs />
         <InsightsTabs />
         <div className="card text-center py-12">
           <div className="text-lg font-medium">No completed years to summarize yet</div>
@@ -59,7 +61,8 @@ export default async function YearlyNumbersPage({
         title={`Insights · ${selected} Summary`}
         subtitle="Headline numbers across financials, workforce, and cost composition for the chosen year."
       />
-      <InsightsTabs />
+      <ReportsTabs />
+        <InsightsTabs />
       <YearlySubTabs />
       <div className="flex items-end justify-end mb-4 flex-wrap gap-3">
         <YearSelect selected={selected} years={years} />

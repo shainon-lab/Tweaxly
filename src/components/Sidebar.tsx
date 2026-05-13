@@ -12,10 +12,13 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   { href: "/business-signals", label: "Business Signals", icon: "📡", alertKey: "businessSignals" },
   { href: "/consultation", label: "Consultation", icon: "💬" },
   { href: "/forecast", label: "Forecast", icon: "📈" },
-  { href: "/insights", label: "Insights", icon: "💡", alertKey: "insights" },
-  { href: "/report", label: "Reports", icon: "📑" },
+  // Reports umbrella now wraps Monthly Reports / Data Flow / Insights —
+  // the standalone Insights entry is gone from the sidebar; its sub-tab
+  // sits inside this group instead.
+  { href: "/report", label: "Reports and Insights", icon: "📑", alertKey: "insights" },
   { href: "/workforce", label: "Workforce Overview", icon: "👥" },
-  { href: "/notifications", label: "Set notifications", icon: "🔔" },
+  // "Set notifications" used to live here; it's now under
+  // Business Signals → Alerts → Set Alerts.
   // Single "Data" entry collapses Import data / Transactions / Data log —
   // those three views share an internal DataTabs row. Default landing is
   // /manual-data so the user opens on the same tab the DataTabs nav puts
@@ -113,13 +116,19 @@ export default function Sidebar({
         <nav className="px-2 py-3 flex-1 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
             // The "Data" entry points at /manual-data but also owns
-            // /transactions and /data-log via the DataTabs row. Treat all
-            // three as the same selection for the active highlight.
+            // /transactions and /data-log via the DataTabs row. The
+            // "Reports and Insights" entry points at /report but also
+            // owns /data-flow and /insights via ReportsTabs. Treat each
+            // group's siblings as the same selection for the active
+            // highlight.
             const dataRoutes = ["/manual-data", "/transactions", "/data-log"];
+            const reportsRoutes = ["/report", "/data-flow", "/insights"];
             const inDataGroup = dataRoutes.some((r) => path === r || path.startsWith(r + "/"));
-            const active = n.href === "/manual-data"
-              ? inDataGroup
-              : path === n.href || path.startsWith(n.href + "/");
+            const inReportsGroup = reportsRoutes.some((r) => path === r || path.startsWith(r + "/"));
+            const active =
+              n.href === "/manual-data" ? inDataGroup :
+              n.href === "/report"      ? inReportsGroup :
+              path === n.href || path.startsWith(n.href + "/");
             const alertCount = n.alertKey ? alerts?.[n.alertKey] ?? 0 : 0;
             return (
               <Link

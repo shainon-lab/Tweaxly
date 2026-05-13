@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import ReportsTabs from "@/components/ReportsTabs";
 import InsightsTabs from "@/components/InsightsTabs";
 import { requireBusiness } from "@/lib/auth";
 import DashboardInsights from "../dashboard/DashboardInsights";
@@ -22,9 +23,10 @@ export default async function InsightsPage({
   return (
     <>
       <PageHeader
-        title="Insights"
+        title="Reports and Insights"
         subtitle="Visual breakdowns of your business — pick a period to drive every chart below."
       />
+      <ReportsTabs />
       <InsightsTabs />
       <DashboardInsights
         businessId={business.id}
