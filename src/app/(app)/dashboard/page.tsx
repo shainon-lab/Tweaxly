@@ -31,6 +31,27 @@ function todayISODate() {
   return new Date().toISOString().slice(0, 10);
 }
 
+// Percent change between two values. Returns null when prior is 0 (no
+// baseline to compare against). Sign is preserved so callers can render
+// "+/−" and color it.
+function pctDelta(current: number, prior: number): number | null {
+  if (prior === 0) return null;
+  return (current - prior) / Math.abs(prior);
+}
+
+// Gross margin delta: ((cur_margin) - (prev_margin)) / |prev_margin|.
+// Used only when both periods have positive revenue.
+function marginPctDelta(
+  cur: { income: number; expenses: number },
+  prev: { income: number; expenses: number },
+): number | null {
+  if (cur.income <= 0 || prev.income <= 0) return null;
+  const curMargin = (cur.income - cur.expenses) / cur.income;
+  const prevMargin = (prev.income - prev.expenses) / prev.income;
+  if (prevMargin === 0) return null;
+  return (curMargin - prevMargin) / Math.abs(prevMargin);
+}
+
 export default async function DashboardPage({
   searchParams,
 }: {
@@ -122,68 +143,132 @@ export default async function DashboardPage({
         </div>
       ) : (
         <>
+          {/* Comparison cards: every numeric stat surfaces the prior-period
+              value and the % move. Color reflects business meaning — for
+              metrics where "down is good" (expenses, payroll, etc.) a
+              negative delta lights up green. */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <Stat
               label="Revenue"
               value={fmtMoneyWhole(current.income, ccy)}
               tone="good"
-              sub={
-                incomeDelta != null
-                  ? `${fmtPct(incomeDelta)} vs ${compareLabel}`
-                  : "—"
-              }
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.income, ccy),
+                pct: pctDelta(current.income, prev.income),
+                upIsGood: true,
+                prevLabel: `vs ${compareLabel}`,
+              }}
             />
             <Stat
               label="Expenses"
               value={fmtMoneyWhole(current.expenses, ccy)}
               tone="bad"
-              sub={
-                expDelta != null
-                  ? `${fmtPct(expDelta)} vs ${compareLabel}`
-                  : "—"
-              }
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.expenses, ccy),
+                pct: pctDelta(current.expenses, prev.expenses),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
             />
             <Stat
               label="Net profit"
               value={fmtMoneyWhole(current.netProfit, ccy)}
               tone={current.netProfit >= 0 ? "good" : "bad"}
-              sub={
-                netDelta != null
-                  ? `${fmtPct(netDelta)} vs ${compareLabel}`
-                  : "—"
-              }
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.netProfit, ccy),
+                pct: pctDelta(current.netProfit, prev.netProfit),
+                upIsGood: true,
+                prevLabel: `vs ${compareLabel}`,
+              }}
             />
             <Stat
               label="Normalized profit"
               value={fmtMoneyWhole(current.normalizedProfit, ccy)}
-              sub={
-                current.oneTime > 0
-                  ? `Excludes ${fmtMoneyWhole(current.oneTime, ccy)} one-time`
-                  : "No one-time items"
-              }
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.normalizedProfit, ccy),
+                pct: pctDelta(current.normalizedProfit, prev.normalizedProfit),
+                upIsGood: true,
+                prevLabel: `vs ${compareLabel}`,
+              }}
             />
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <Stat label="Fixed expenses" value={fmtMoneyWhole(current.fixed, ccy)} />
-            <Stat label="Variable expenses" value={fmtMoneyWhole(current.variable, ccy)} />
+            <Stat
+              label="Fixed expenses"
+              value={fmtMoneyWhole(current.fixed, ccy)}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.fixed, ccy),
+                pct: pctDelta(current.fixed, prev.fixed),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
+            />
+            <Stat
+              label="Variable expenses"
+              value={fmtMoneyWhole(current.variable, ccy)}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.variable, ccy),
+                pct: pctDelta(current.variable, prev.variable),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
+            />
             <Stat
               label="Payroll (txns + roster)"
               value={fmtMoneyWhole(
                 Math.max(current.payroll, employeeCost.recurring),
                 ccy,
               )}
-              sub={`${employeeCost.employeeCount} active`}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.payroll, ccy),
+                pct: pctDelta(current.payroll, prev.payroll),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
             />
-            <Stat label="Marketing" value={fmtMoneyWhole(current.marketing, ccy)} />
+            <Stat
+              label="Marketing"
+              value={fmtMoneyWhole(current.marketing, ccy)}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.marketing, ccy),
+                pct: pctDelta(current.marketing, prev.marketing),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
+            />
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <Stat label="Processing fees" value={fmtMoneyWhole(current.fees, ccy)} />
-            <Stat label="Taxes" value={fmtMoneyWhole(current.taxes, ccy)} />
+            <Stat
+              label="Processing fees"
+              value={fmtMoneyWhole(current.fees, ccy)}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.fees, ccy),
+                pct: pctDelta(current.fees, prev.fees),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
+            />
+            <Stat
+              label="Taxes"
+              value={fmtMoneyWhole(current.taxes, ccy)}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.taxes, ccy),
+                pct: pctDelta(current.taxes, prev.taxes),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
+            />
             <Stat
               label="One-time costs"
               value={fmtMoneyWhole(current.oneTime, ccy)}
               tone={current.oneTime > 0 ? "warn" : "default"}
+              comparison={{
+                prevValue: fmtMoneyWhole(prev.oneTime, ccy),
+                pct: pctDelta(current.oneTime, prev.oneTime),
+                upIsGood: false,
+                prevLabel: `vs ${compareLabel}`,
+              }}
             />
             <Stat
               label="Gross margin"
@@ -191,6 +276,16 @@ export default async function DashboardPage({
                 current.income > 0
                   ? fmtPct((current.income - current.expenses) / current.income)
                   : "—"
+              }
+              comparison={
+                current.income > 0 && prev.income > 0
+                  ? {
+                      prevValue: fmtPct((prev.income - prev.expenses) / prev.income),
+                      pct: marginPctDelta(current, prev),
+                      upIsGood: true,
+                      prevLabel: `vs ${compareLabel}`,
+                    }
+                  : undefined
               }
             />
           </div>
