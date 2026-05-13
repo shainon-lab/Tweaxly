@@ -189,11 +189,20 @@ export default function PushRecommendations({
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-line flex items-center justify-between gap-3 flex-wrap">
-        <div className="text-xs text-slate-400 leading-relaxed">
+      <div
+        className="mt-4 rounded-xl border border-line p-4 md:p-5 flex items-center justify-between gap-3 flex-wrap"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgba(124,92,250,0.14) 0%, rgba(79,125,255,0.10) 50%, rgba(34,211,238,0.10) 100%)",
+        }}
+      >
+        <div className="text-sm md:text-base font-semibold text-slate-100 leading-snug max-w-xl">
           Or consult about anything else going on in your business.
         </div>
-        <Link href="/consultation" className="btn-primary">
+        <Link
+          href="/consultation"
+          className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
+        >
           Consult on any topic
         </Link>
       </div>

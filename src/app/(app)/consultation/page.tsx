@@ -53,7 +53,7 @@ export default async function ConsultationPage({
     <>
       <PageHeader
         title="Consultation"
-        subtitle="Your AI business advisor — tap a suggested trend below or ask anything about cashflow, payroll, expenses, forecasts, profitability, or hiring."
+        subtitle="Your AI business advisor — Tweaxly analyzes your financial activity, payroll, expenses, revenue, and forecasts to help you make smarter business decisions. Tap a suggested trend below or ask anything about cashflow, hiring, vendors, or profitability."
       />
       <ConsultationTabs historyCount={totalQuestions} />
       <ConsultationClient

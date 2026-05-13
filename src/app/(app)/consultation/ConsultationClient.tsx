@@ -214,22 +214,6 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Intro card */}
-      <div
-        className="rounded-2xl p-6 md:p-8 border border-line shadow-sm"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, rgba(124,92,250,0.12) 0%, rgba(79,125,255,0.08) 50%, rgba(34,211,238,0.10) 100%)",
-        }}
-      >
-        <div className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight">
-          Consult with your AI business advisor.
-        </div>
-        <p className="mt-2 text-sm md:text-base text-slate-300 max-w-3xl leading-relaxed">
-          Tweaxly analyzes your financial activity, payroll, expenses, revenue, and forecasts to help you make smarter business decisions.
-        </p>
-      </div>
-
       {/* "Consult About Your Latest Trends" — dynamic suggestion cards
           generated from the user's real BusinessContext. Clicking a card
           auto-submits the question, unlike the ?q= flow from Business
