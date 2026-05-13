@@ -4,14 +4,14 @@ import { usePathname } from "next/navigation";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
-type AlertKey = "transactions" | "insights";
+type AlertKey = "transactions" | "insights" | "businessSignals";
 
 const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] = [
   { href: "/dashboard", label: "Overview", icon: "▤" },
-  { href: "/insights", label: "Insights", icon: "✦", alertKey: "insights" },
-  { href: "/business-signals", label: "Business Signals", icon: "◆" },
+  { href: "/business-signals", label: "Business Signals", icon: "◆", alertKey: "businessSignals" },
   { href: "/forecast", label: "Forecast", icon: "↗" },
   { href: "/consultation", label: "Consultation", icon: "✉" },
+  { href: "/insights", label: "Insights", icon: "✦", alertKey: "insights" },
   { href: "/report", label: "Reports", icon: "▦" },
   { href: "/workforce", label: "Workforce Overview", icon: "☰" },
   { href: "/notifications", label: "Set notifications", icon: "⚐" },
@@ -22,7 +22,7 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   { href: "/data-log", label: "Data log", icon: "⌖" },
 ];
 
-export type SidebarAlerts = { transactions?: number; insights?: number };
+export type SidebarAlerts = { transactions?: number; insights?: number; businessSignals?: number };
 
 export default function Sidebar({
   businessName,

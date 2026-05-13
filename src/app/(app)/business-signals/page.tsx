@@ -1,19 +1,15 @@
-// Business Signals tab — the AI advisor's rotating signal feed plus the
-// threshold-alert box for user-defined notification rules.
-//
-// Previously these lived side-by-side at the top of the Overview tab; they
-// got their own page so Overview can stay focused on the headline numbers.
+// Business Signals → Signals sub-tab. Random 5 from the ~15-signal advisor
+// pool, re-rolled on every visit/refresh. See /business-signals/alerts for
+// the threshold-rule firing list.
 
 import PageHeader from "@/components/PageHeader";
 import PushRecommendations from "@/components/PushRecommendations";
-import ThresholdAlertsBox from "@/components/ThresholdAlertsBox";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
 import { evaluateNotificationRules } from "@/lib/notificationsEval";
+import BusinessSignalsTabs from "./BusinessSignalsTabs";
 
-// Force fresh server render on every request so the visible 5 signals
-// genuinely re-roll on every visit / refresh.
 export const dynamic = "force-dynamic";
 
 const MAX_VISIBLE_SIGNALS = 5;
@@ -31,7 +27,7 @@ export default async function BusinessSignalsPage() {
   const { business } = await requireBusiness();
   const ccy = business.currency;
 
-  const [advisorPool, mutedRows, thresholdAlerts, ruleCounts] = await Promise.all([
+  const [advisorPool, mutedRows, triggeredAlerts] = await Promise.all([
     (async () => {
       const ctx = await buildBusinessContext(business.id);
       return recommendProactive(business.id, ctx);
@@ -39,18 +35,11 @@ export default async function BusinessSignalsPage() {
     prisma.mutedSignal.findMany({
       where: { businessId: business.id, mutedUntil: { gt: new Date() } },
     }),
+    // Pre-compute firing alerts here too so the sub-tab badge stays
+    // in sync with what the user sees on the Alerts tab.
     evaluateNotificationRules(business.id),
-    prisma.notificationRule.groupBy({
-      by: ["enabled"],
-      where: { businessId: business.id },
-      _count: { _all: true },
-    }),
   ]);
-  const totalRules = ruleCounts.reduce((s, r) => s + r._count._all, 0);
-  const enabledRules = ruleCounts.find((r) => r.enabled)?._count._all ?? 0;
 
-  // Severity-first: any "bad" signals are always shown; the rest are a
-  // uniform-random sample so the user sees variety on each visit.
   const mutedKeys = new Set(mutedRows.map((m) => m.signalKey));
   const eligible = advisorPool.filter((r) => !mutedKeys.has(r.signalKey));
   const severityOrder: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
@@ -77,16 +66,10 @@ export default async function BusinessSignalsPage() {
     <>
       <PageHeader
         title="Business Signals"
-        subtitle="The AI advisor's rotating observations plus any threshold-alert rules you've set up. Refresh the page to roll a new random set of signals."
+        subtitle="The AI advisor's rotating observations — refresh the page to roll a new random set."
       />
-      <div className="space-y-3">
-        <PushRecommendations initial={pushRecs} currency={ccy} />
-        <ThresholdAlertsBox
-          alerts={thresholdAlerts}
-          totalRules={totalRules}
-          enabledRules={enabledRules}
-        />
-      </div>
+      <BusinessSignalsTabs firingAlerts={triggeredAlerts.length} />
+      <PushRecommendations initial={pushRecs} currency={ccy} />
     </>
   );
 }
