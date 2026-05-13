@@ -2,6 +2,7 @@ import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ConsultationClient from "./ConsultationClient";
+import ConsultationTabs from "./ConsultationTabs";
 
 export default async function ConsultationPage({
   searchParams,
@@ -11,15 +12,14 @@ export default async function ConsultationPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
 
+  // Active thread: explicitly requested by ?id, otherwise the most recent
+  // thread. The chat view doesn't render the older threads itself anymore
+  // — past Q&As live on /consultation/history.
   const threads = await prisma.consultation.findMany({
     where: { businessId: business.id },
     orderBy: { updatedAt: "desc" },
-    include: {
-      messages: { orderBy: { createdAt: "desc" }, take: 1 },
-      _count: { select: { messages: true } },
-    },
+    select: { id: true },
   });
-
   const activeId = sp.id ?? threads[0]?.id ?? null;
   const active = activeId
     ? await prisma.consultation.findFirst({
@@ -28,35 +28,10 @@ export default async function ConsultationPage({
       })
     : null;
 
-  // History view: pair every past user message with the next assistant
-  // reply from the same thread. Ordered newest-question-first.
-  const allMessages = await prisma.consultationMessage.findMany({
-    where: { consultation: { businessId: business.id } },
-    orderBy: [{ consultationId: "asc" }, { createdAt: "asc" }],
+  // Used by the tab nav to badge Chat history with a count.
+  const totalQuestions = await prisma.consultationMessage.count({
+    where: { consultation: { businessId: business.id }, role: "user" },
   });
-  type HistoryEntry = {
-    id: string;
-    question: string;
-    answer: string | null;
-    askedAt: string;
-  };
-  const history: HistoryEntry[] = [];
-  for (let i = 0; i < allMessages.length; i++) {
-    const m = allMessages[i];
-    if (m.role !== "user") continue;
-    const next = allMessages[i + 1];
-    const answer =
-      next && next.consultationId === m.consultationId && next.role === "assistant"
-        ? next.content
-        : null;
-    history.push({
-      id: m.id,
-      question: m.content,
-      answer,
-      askedAt: m.createdAt.toISOString(),
-    });
-  }
-  history.sort((a, b) => b.askedAt.localeCompare(a.askedAt));
 
   // Detect whether the real Claude integration is configured. The advisor
   // checks the same env var at request time; we expose a boolean here so the
@@ -77,10 +52,10 @@ export default async function ConsultationPage({
             : "Free-form Q&A needs the Claude integration enabled — see the banner below."
         }
       />
+      <ConsultationTabs historyCount={totalQuestions} />
       <ConsultationClient
         currency={business.currency}
         claudeEnabled={claudeEnabled}
-        history={history}
         active={
           active
             ? {
