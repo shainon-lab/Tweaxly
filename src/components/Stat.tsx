@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 
 export type StatComparison = {
   // Compared-period's value (already formatted as a string).
@@ -19,6 +19,23 @@ export type StatExplain = {
   tips?: string[];
 };
 
+// Coordinates which Stat's Learn-more panel is open. Only one box can be
+// expanded at a time so opening a new one collapses the previous.
+type StatGroupCtx = {
+  openKey: string | null;
+  setOpenKey: (k: string | null) => void;
+};
+const StatGroupContext = createContext<StatGroupCtx | null>(null);
+
+export function StatGroup({ children }: { children: React.ReactNode }) {
+  const [openKey, setOpenKey] = useState<string | null>(null);
+  return (
+    <StatGroupContext.Provider value={{ openKey, setOpenKey }}>
+      {children}
+    </StatGroupContext.Provider>
+  );
+}
+
 export function Stat({
   label,
   value,
@@ -34,7 +51,13 @@ export function Stat({
   comparison?: StatComparison;
   explain?: StatExplain;
 }) {
-  const [open, setOpen] = useState(false);
+  const ctx = useContext(StatGroupContext);
+  const statKey = label;
+  const open = ctx ? ctx.openKey === statKey : false;
+  const toggle = () => {
+    if (ctx) ctx.setOpenKey(open ? null : statKey);
+  };
+
   const toneClass =
     tone === "good" ? "text-good" : tone === "bad" ? "text-bad" : tone === "warn" ? "text-warn" : "text-slate-100";
   // When the Learn-more panel is expanded the entire box outline switches to
@@ -52,7 +75,7 @@ export function Stat({
                 ? "border-accent/60 bg-accent-soft text-accent"
                 : "border-line text-slate-400 hover:text-slate-200 hover:border-slate-500"
             }`}
-            onClick={() => setOpen((v) => !v)}
+            onClick={toggle}
             aria-expanded={open}
           >
             {open ? "Close" : "Learn more"}

@@ -1,5 +1,5 @@
 import PageHeader from "@/components/PageHeader";
-import { Stat } from "@/components/Stat";
+import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost } from "@/lib/metrics";
@@ -111,6 +111,12 @@ export default async function DashboardPage({
   const initialStart = sp.start ?? todayISODate();
   const initialEnd = sp.end ?? todayISODate();
 
+  // Has the user explicitly chosen a comparison? When "none", we hide
+  // the prior-value + percent line on every stat tile and switch each
+  // tile's Learn-more copy to the generic flavor instead of the
+  // comparison-flavored one.
+  const comparing = compare !== "none";
+
   return (
     <>
       <PageHeader
@@ -143,28 +149,37 @@ export default async function DashboardPage({
         </div>
       ) : (
         <>
-          {/* Comparison cards: every numeric stat surfaces the prior-period
-              value and the % move. Color reflects business meaning — for
-              metrics where "down is good" (expenses, payroll, etc.) a
-              negative delta lights up green. */}
+          {/* All Overview tiles share a single StatGroup so opening one
+              Learn-more panel automatically closes any other. Comparison
+              data is only rendered when the user has explicitly chosen
+              a comparison; the Learn-more copy also swaps to its
+              comparison-flavored variant in that case. */}
+          <StatGroup>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <Stat
               label="Revenue"
               value={fmtMoneyWhole(current.income, ccy)}
               tone="good"
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.income, ccy),
                 pct: pctDelta(current.income, prev.income),
                 upIsGood: true,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "The change in revenue between periods is the headline growth signal. The absolute prior value gives you the scale; the colored percentage tells you the direction. Green here = the business is bringing in more than it used to.",
+                tips: [
+                  "Compare against the expense change side-by-side — revenue up by 10% while expenses are up 15% means margin shrank.",
+                  "A big revenue swing usually traces back to one customer or one channel. Open Insights → Top vendors / Revenue channel to find the driver.",
+                ],
+              } : {
                 description:
                   "Total income recognized in the selected period — every Stripe payout, invoice payment, and other inbound transaction tagged as a revenue category.",
                 tips: [
-                  "Compare against the prior period — a healthy business shows revenue growth or stable retention.",
-                  "If revenue rose but profit didn't, the gain was likely consumed by expense growth.",
-                  "Concentration in a small number of customers is the most common quiet risk — keep an eye on the top vendor / category split in Insights.",
+                  "Pick a Compare to option in the picker above to see how this period stacks against another.",
+                  "Concentration in a small number of customers is the most common quiet risk — keep an eye on the top vendor / channel split in Insights.",
+                  "Use Forecast to project where this line is heading over the next 3-12 months.",
                 ],
               }}
             />
@@ -172,19 +187,26 @@ export default async function DashboardPage({
               label="Expenses"
               value={fmtMoneyWhole(current.expenses, ccy)}
               tone="bad"
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.expenses, ccy),
                 pct: pctDelta(current.expenses, prev.expenses),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Change in total outflow between periods. Green = expenses are down; red = they grew. Compare with the revenue tile — costs growing faster than revenue is the warning sign.",
+                tips: [
+                  "If expenses grew, open Insights → Top expense categories to see which specific line drove the increase.",
+                  "Watch one-time costs separately (their own tile) — a big one-time hit can make this number look worse than the steady state.",
+                ],
+              } : {
                 description:
                   "Sum of every outflow — payroll, rent, software, marketing, fees, taxes, one-time costs. Down is good. Up needs a why.",
                 tips: [
-                  "If expenses grew faster than revenue, profit took a hit — open Insights → Top expense categories to see which line drove it.",
-                  "Strip one-time costs (next box) to see the recurring base — that's your monthly floor.",
+                  "Strip one-time costs (the dedicated tile) to see the recurring base — that's your monthly floor.",
                   "Concentrated cost (one category > 30% of total) is where 10% efficiency moves the P&L the most.",
+                  "Pick a Compare to option above to see whether this period's spend is in line with history.",
                 ],
               }}
             />
@@ -192,32 +214,46 @@ export default async function DashboardPage({
               label="Net profit"
               value={fmtMoneyWhole(current.netProfit, ccy)}
               tone={current.netProfit >= 0 ? "good" : "bad"}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.netProfit, ccy),
                 pct: pctDelta(current.netProfit, prev.netProfit),
                 upIsGood: true,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Change in bottom-line profit between periods. This is the single most important number on the page — did the business actually keep more cash than before?",
+                tips: [
+                  "A big swing here without a matching revenue swing usually means one-time items hit on either side. Check the Normalized profit tile.",
+                  "Net profit growth that lags revenue growth means margin is shrinking. Open Gross margin's Learn-more for the diagnosis.",
+                ],
+              } : {
                 description:
                   "Revenue minus every expense for the period. Positive = the business produced more cash than it consumed; negative = it lost ground that month/quarter/year.",
                 tips: [
                   "One bad month is noise; three in a row is a trend.",
-                  "Below break-even? Use the Forecast tab to model the path back into the black with hires, cuts, and revenue moves.",
-                  "Healthy SMB net margin (Gross margin tile below) sits in the 10–20%+ band — sub-10% is workable but thin.",
+                  "Below break-even? Use the Forecast tab to model a path back into the black with hires, cuts, and revenue moves.",
+                  "Healthy SMB net margin sits in the 10–20%+ band — see Gross margin for that ratio.",
                 ],
               }}
             />
             <Stat
               label="Normalized profit"
               value={fmtMoneyWhole(current.normalizedProfit, ccy)}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.normalizedProfit, ccy),
                 pct: pctDelta(current.normalizedProfit, prev.normalizedProfit),
                 upIsGood: true,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Comparing normalized profit isolates the operating engine — a clean read on whether the recurring business actually improved versus the prior period, free of one-time noise on either side.",
+                tips: [
+                  "If raw Net profit changed dramatically but Normalized profit barely moved, the swing is one-time, not structural.",
+                  "Use this number as the base for next-period budgeting — it's the closest thing to your run-rate profit.",
+                ],
+              } : {
                 description:
                   "Net profit with one-time / non-recurring expenses added back. This is the cleaner read of the operating engine — what the business would earn if no unusual costs hit the period.",
                 tips: [
@@ -232,13 +268,20 @@ export default async function DashboardPage({
             <Stat
               label="Fixed expenses"
               value={fmtMoneyWhole(current.fixed, ccy)}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.fixed, ccy),
                 pct: pctDelta(current.fixed, prev.fixed),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Change in baseline overhead — rent, insurance, subscriptions. Fixed costs should grow slowly and deliberately; a sharp uptick usually means a new long-term commitment landed in the period.",
+                tips: [
+                  "Big jump? Trace it to a specific contract — a new lease, software upgrade, or insurance renewal.",
+                  "Fixed-cost growth permanently raises your monthly break-even, so any increase needs a matching revenue plan.",
+                ],
+              } : {
                 description:
                   "Costs that don't move with sales volume — rent, insurance, subscriptions you'd pay even on a zero-revenue month. These set the floor on what the business has to cover.",
                 tips: [
@@ -250,13 +293,20 @@ export default async function DashboardPage({
             <Stat
               label="Variable expenses"
               value={fmtMoneyWhole(current.variable, ccy)}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.variable, ccy),
                 pct: pctDelta(current.variable, prev.variable),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Variable costs should scale with revenue. The percentage change here only makes sense alongside the Revenue change — if variable went up 20% and revenue went up 5%, you're losing efficiency per dollar.",
+                tips: [
+                  "Healthy: variable cost % growth ≤ revenue % growth.",
+                  "Compare each variable category individually in Insights → Spending shape to find the inefficient ones.",
+                ],
+              } : {
                 description:
                   "Costs that scale with activity — contractors, marketing campaigns, raw materials, transaction fees, anything that grows when the business does.",
                 tips: [
@@ -271,13 +321,20 @@ export default async function DashboardPage({
                 Math.max(current.payroll, employeeCost.recurring),
                 ccy,
               )}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.payroll, ccy),
                 pct: pctDelta(current.payroll, prev.payroll),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Period-over-period payroll change captures hires, raises, terminations, and bonus payouts. Pair with the revenue change — payroll growing faster than revenue is the most common SMB cash trap.",
+                tips: [
+                  "Use Workforce Overview to see which months added or shed headcount.",
+                  "If payroll grew >15% versus the compared period, there's at least one structural change worth understanding.",
+                ],
+              } : {
                 description:
                   "Total fully-loaded compensation cost — salaries plus employer taxes, pension, benefits, and any extras. We use the larger of the booked payroll transactions and the roster-computed cost so missing payroll uploads don't understate it.",
                 tips: [
@@ -289,13 +346,20 @@ export default async function DashboardPage({
             <Stat
               label="Marketing"
               value={fmtMoneyWhole(current.marketing, ccy)}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.marketing, ccy),
                 pct: pctDelta(current.marketing, prev.marketing),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Change in marketing spend versus the compared period. Pair with the Revenue change to gauge marketing efficiency: revenue rose with less spend = you got more efficient.",
+                tips: [
+                  "Cutting marketing improves the P&L immediately but the revenue hit lags 60–90 days. Watch the next period.",
+                  "If marketing rose but revenue didn't, the campaigns probably aren't paying back yet — model timing in Forecast.",
+                ],
+              } : {
                 description:
                   "Spend in any category tagged for marketing or advertising — Google/Meta/LinkedIn ads, agencies, content writers, sponsorships, events.",
                 tips: [
@@ -309,13 +373,20 @@ export default async function DashboardPage({
             <Stat
               label="Processing fees"
               value={fmtMoneyWhole(current.fees, ccy)}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.fees, ccy),
                 pct: pctDelta(current.fees, prev.fees),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Fee changes should roughly track revenue changes (they're proportional). If fees grew faster than revenue, your effective rate is creeping up — time to renegotiate.",
+                tips: [
+                  "Divide the period's fees by revenue — if that ratio rose, the cost of taking each dollar of revenue went up.",
+                  "Most processors will negotiate at $100k/year in volume. Bring usage numbers to the call.",
+                ],
+              } : {
                 description:
                   "Payment processor and bank fees — Stripe, PayPal, card networks, ACH, wires. Typically 2-3% of revenue for SMBs taking online payments.",
                 tips: [
@@ -327,13 +398,20 @@ export default async function DashboardPage({
             <Stat
               label="Taxes"
               value={fmtMoneyWhole(current.taxes, ccy)}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.taxes, ccy),
                 pct: pctDelta(current.taxes, prev.taxes),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "Tax payments lag revenue by roughly a quarter, so a change here usually reflects the prior period's activity, not the current one. Don't read it as a same-period efficiency signal.",
+                tips: [
+                  "If taxes spiked, look at the period two months back — that's usually what's being settled now.",
+                  "Wild swings often mean a missing reconciliation — make sure the tax category was tagged correctly on imports.",
+                ],
+              } : {
                 description:
                   "Quarterly estimates, sales tax remittances, payroll taxes, and any other tax payments inside the period.",
                 tips: [
@@ -346,13 +424,20 @@ export default async function DashboardPage({
               label="One-time costs"
               value={fmtMoneyWhole(current.oneTime, ccy)}
               tone={current.oneTime > 0 ? "warn" : "default"}
-              comparison={{
+              comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.oneTime, ccy),
                 pct: pctDelta(current.oneTime, prev.oneTime),
                 upIsGood: false,
                 prevLabel: `vs ${compareLabel}`,
-              }}
-              explain={{
+              } : undefined}
+              explain={comparing ? {
+                description:
+                  "One-time costs vary wildly between periods — a big swing here is normal. The number to watch is the recurring base (Normalized profit), not this line.",
+                tips: [
+                  "Use this tile's percent change to explain a confusing Net profit move — if both moved together, the swing was one-time.",
+                  "If neither period had one-times, you'll see —; that's the cleanest read of recurring health.",
+                ],
+              } : {
                 description:
                   "Costs flagged as non-recurring — equipment purchases, legal fees, severance, audits, etc. These distort the period's net profit because they won't repeat.",
                 tips: [
@@ -369,7 +454,7 @@ export default async function DashboardPage({
                   : "—"
               }
               comparison={
-                current.income > 0 && prev.income > 0
+                comparing && current.income > 0 && prev.income > 0
                   ? {
                       prevValue: fmtPct((prev.income - prev.expenses) / prev.income),
                       pct: marginPctDelta(current, prev),
@@ -378,7 +463,14 @@ export default async function DashboardPage({
                     }
                   : undefined
               }
-              explain={{
+              explain={comparing ? {
+                description:
+                  "Margin change is the single best efficiency signal. Up = the business kept more of each dollar than before; down = costs grew faster than revenue.",
+                tips: [
+                  "Margin can rise even when revenue falls — that means costs fell faster. Look at the Expenses tile to confirm.",
+                  "A small margin drop on a big revenue jump is usually an OK trade — you bought growth.",
+                ],
+              } : {
                 description:
                   "Net profit as a percentage of revenue. Tells you how much of every dollar earned actually stays with the business.",
                 tips: [
@@ -388,6 +480,7 @@ export default async function DashboardPage({
               }}
             />
           </div>
+          </StatGroup>
 
         </>
       )}
