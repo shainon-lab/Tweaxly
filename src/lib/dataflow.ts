@@ -114,6 +114,19 @@ export async function buildDataFlow(
     });
     fromYM = earliest?.accountingMonth ?? todayYM();
   }
+  const grid = await buildDataFlowGrid(businessId, fromYM, toYM, categoryFilter);
+  return { ...grid, range };
+}
+
+// Same grid builder as buildDataFlow but takes explicit fromYM/toYM. Used
+// by the unified Reports page where the period is chosen via granularity +
+// anchor instead of the DataFlowRange enum.
+export async function buildDataFlowGrid(
+  businessId: string,
+  fromYM: string,
+  toYM: string,
+  categoryFilter: string | null,
+): Promise<Omit<DataFlowGrid, "range">> {
   const months = ymBetween(fromYM, toYM);
 
   // Pull all transactions ever, grouped by category & accountingMonth.
@@ -177,7 +190,6 @@ export async function buildDataFlow(
   }
 
   return {
-    range,
     fromYM,
     toYM,
     months,

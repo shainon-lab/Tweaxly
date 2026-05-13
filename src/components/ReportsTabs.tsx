@@ -6,10 +6,13 @@ import { usePathname } from "next/navigation";
 // umbrella. The sidebar links to /report — from there the user picks
 // Monthly Reports, Data Flow, or Insights. The Insights tab carries its
 // own second-level nav (General / Yearly Summary) once you're inside.
+// Data Flow used to be a separate tab; it's been merged into the Reports
+// tab itself, which now has an internal "View" toggle (Comparison /
+// Category Grid) controlled via ?view= on the URL. The umbrella nav is
+// just Reports + Insights now.
 const TABS = [
-  { href: "/report",    label: "Monthly Reports" },
-  { href: "/data-flow", label: "Data Flow"       },
-  { href: "/insights",  label: "Insights"        },
+  { href: "/report",    label: "Reports"  },
+  { href: "/insights",  label: "Insights" },
 ];
 
 export default function ReportsTabs() {

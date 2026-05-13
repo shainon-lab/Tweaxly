@@ -14,18 +14,22 @@ import {
   isValidGranularity,
   type Granularity,
 } from "@/lib/reportPeriod";
-import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
+import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct, ymToLabel } from "@/lib/format";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
+import { buildDataFlowGrid } from "@/lib/dataflow";
 
 const MAX_COMPARE = 3;
+
+type ReportView = "comparison" | "grid";
 
 export default async function ReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ gran?: string; period?: string; compare?: string }>;
+  searchParams: Promise<{ gran?: string; period?: string; compare?: string; view?: string }>;
 }) {
   const { business } = await requireBusiness();
   const sp = await searchParams;
+  const view: ReportView = sp.view === "grid" ? "grid" : "comparison";
 
   // ── URL params with safe defaults ─────────────────────────────────────────
   const granularity: Granularity = isValidGranularity(sp.gran) ? sp.gran : "month";
@@ -59,12 +63,17 @@ export default async function ReportPage({
   const allPeriods = [primary, ...compareSpecs];
 
   // Fetch an aggregate for every period (parallel) plus the canonical
-  // category list so we can label income vs outcome rows.
-  const [aggregates, categories] = await Promise.all([
+  // category list so we can label income vs outcome rows. In Category
+  // Grid view we additionally build the category × month grid for the
+  // primary period so we can render a per-month breakdown.
+  const [aggregates, categories, gridData] = await Promise.all([
     Promise.all(
       allPeriods.map((p) => buildPeriodAggregate(business.id, p.fromYM, p.toYM)),
     ),
     prisma.category.findMany({ where: { businessId: business.id } }),
+    view === "grid"
+      ? buildDataFlowGrid(business.id, primary.fromYM, primary.toYM, null)
+      : Promise.resolve(null),
   ]);
 
   const ccy = business.currency;
@@ -130,13 +139,18 @@ export default async function ReportPage({
   return (
     <>
       <PageHeader
-        title={`Monthly Reports — ${primary.label}`}
-        subtitle={business.name}
+        title={`Reports — ${primary.label}`}
+        subtitle={
+          view === "grid"
+            ? "Category × month grid for the chosen period."
+            : business.name
+        }
         right={
           <ReportPeriodPicker
             granularity={granularity}
             anchor={primary.anchor}
             compare={compare}
+            view={view}
           />
         }
       />
@@ -198,6 +212,7 @@ export default async function ReportPage({
         />
       </div>
 
+      {view === "comparison" ? (
       <div className="card mb-6 overflow-x-auto">
         <div className="font-medium mb-3">
           Categories — {primary.label}
@@ -355,7 +370,136 @@ export default async function ReportPage({
           Pick a primary period above. Add comparison columns to see up to {MAX_COMPARE} prior {granularity}s alongside it. Every category that has appeared in your data is listed; categories with no activity in a given period show <span className="text-slate-300">—</span>.
         </div>
       </div>
+      ) : gridData ? (
+        <CategoryGrid grid={gridData} ccy={ccy} categories={categories} />
+      ) : null}
     </>
+  );
+}
+
+// Category × month grid for the chosen period. Each row is a category;
+// columns are the months in the period plus a total. Net-per-month
+// summary row at the bottom.
+function CategoryGrid({
+  grid,
+  ccy,
+  categories,
+}: {
+  grid: Awaited<ReturnType<typeof buildDataFlowGrid>>;
+  ccy: string;
+  categories: { name: string; kind: string }[];
+}) {
+  // Sort: revenue (income) categories first, then outcomes — same rule the
+  // Comparison view uses.
+  const kindByName = new Map<string, string>();
+  for (const c of categories) kindByName.set(c.name, c.kind);
+  const sortedCategories = [...grid.categories].sort((a, b) => {
+    const aKind = kindByName.get(a.name) ?? a.kind;
+    const bKind = kindByName.get(b.name) ?? b.kind;
+    return compareCategoriesIncomeFirst(
+      { kind: aKind, name: a.name },
+      { kind: bKind, name: b.name },
+    );
+  });
+  const incomeTotal = grid.months.reduce(
+    (s, ym) => s + (grid.totalsByMonth[ym]?.income ?? 0),
+    0,
+  );
+  const expenseTotal = grid.months.reduce(
+    (s, ym) => s + (grid.totalsByMonth[ym]?.expense ?? 0),
+    0,
+  );
+  return (
+    <div className="card mb-6 overflow-x-auto">
+      <div className="font-medium mb-3">
+        Category grid — {ymToLabel(grid.fromYM)} → {ymToLabel(grid.toYM)}
+        <span className="text-slate-400 text-sm ml-2">
+          {grid.months.length} month{grid.months.length === 1 ? "" : "s"}
+        </span>
+      </div>
+      <table className="table-base">
+        <thead>
+          <tr>
+            <th className="sticky left-0 bg-ink-900 z-10">Category</th>
+            <th className="sticky left-[140px] bg-ink-900 z-10">Bucket</th>
+            {grid.months.map((ym) => (
+              <th key={ym} className="text-right whitespace-nowrap">
+                {ymToLabel(ym)}
+              </th>
+            ))}
+            <th className="text-right whitespace-nowrap font-bold">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sortedCategories.map((cat) => (
+            <tr key={cat.name}>
+              <td className="sticky left-0 bg-ink-900/95 font-medium">{cat.name}</td>
+              <td className="sticky left-[140px] bg-ink-900/95">
+                <span className="pill">{cat.kind}</span>
+              </td>
+              {grid.months.map((ym) => {
+                const v = grid.cells[ym]?.[cat.name];
+                if (v == null) {
+                  return (
+                    <td key={ym} className="text-right text-slate-600">
+                      —
+                    </td>
+                  );
+                }
+                const tone =
+                  v > 0 ? "text-good" : v < 0 ? "text-bad" : "text-slate-500";
+                const display = v === 0 ? "0" : fmtMoney(v, ccy);
+                return (
+                  <td key={ym} className={`text-right ${tone}`}>
+                    {display}
+                  </td>
+                );
+              })}
+              <td
+                className={`text-right font-semibold ${
+                  (grid.totalsByCategory[cat.name] ?? 0) > 0
+                    ? "text-good"
+                    : (grid.totalsByCategory[cat.name] ?? 0) < 0
+                      ? "text-bad"
+                      : "text-slate-400"
+                }`}
+              >
+                {fmtMoney(grid.totalsByCategory[cat.name] ?? 0, ccy)}
+              </td>
+            </tr>
+          ))}
+          <tr className="border-t-2 border-line">
+            <td
+              className="sticky left-0 bg-ink-900/95 font-bold uppercase text-xs tracking-wide"
+              colSpan={2}
+            >
+              Net per month
+            </td>
+            {grid.months.map((ym) => {
+              const net = grid.totalsByMonth[ym]?.net ?? 0;
+              return (
+                <td
+                  key={ym}
+                  className={`text-right font-semibold ${net >= 0 ? "text-good" : "text-bad"}`}
+                >
+                  {fmtMoney(net, ccy)}
+                </td>
+              );
+            })}
+            <td
+              className={`text-right font-bold ${
+                incomeTotal - expenseTotal >= 0 ? "text-good" : "text-bad"
+              }`}
+            >
+              {fmtMoney(incomeTotal - expenseTotal, ccy)}
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div className="text-xs text-slate-500 mt-3">
+        Once a category appears anywhere in your history, it persists in every later month — 0 means &quot;no transactions in that month after the category was introduced&quot;. A dash &quot;—&quot; means the category hadn&apos;t been introduced yet.
+      </div>
+    </div>
   );
 }
 

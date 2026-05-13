@@ -24,18 +24,23 @@ function defaultAnchor(g: Granularity): string {
   return String(y);
 }
 
-// Period picker for the Monthly report.
+// Period picker for the Reports page.
+//   - View:        Comparison (period vs prior periods) | Category Grid
+//                  (one row per category × one column per month in window)
 //   - Granularity: Month / Quarter / Year
 //   - Period:      which month / quarter / year (anchor)
-//   - Compare:     0 (default) | 1 | 2 | 3 prior periods of the same granularity
+//   - Compare:     0 (default) | 1 | 2 | 3 prior periods of the same
+//                  granularity. Only meaningful in the Comparison view.
 export default function ReportPeriodPicker({
   granularity,
   anchor,
   compare,
+  view,
 }: {
   granularity: Granularity;
   anchor: string;
   compare: number;
+  view: "comparison" | "grid";
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -98,6 +103,18 @@ export default function ReportPeriodPicker({
 
   return (
     <div className="flex items-end gap-2 flex-wrap justify-end">
+      <div>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">View</label>
+        <select
+          className="input"
+          value={view}
+          onChange={(e) => update({ view: e.target.value === "grid" ? "grid" : undefined })}
+          disabled={pending}
+        >
+          <option value="comparison">Comparison</option>
+          <option value="grid">Category Grid</option>
+        </select>
+      </div>
       <div>
         <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Granularity</label>
         <select
@@ -189,20 +206,22 @@ export default function ReportPeriodPicker({
         </div>
       ) : null}
 
-      <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Compare</label>
-        <select
-          className="input"
-          value={compare}
-          onChange={(e) => update({ compare: e.target.value === "0" ? undefined : e.target.value })}
-          disabled={pending}
-        >
-          <option value="0">No comparison</option>
-          <option value="1">vs prior 1 {granularity}</option>
-          <option value="2">vs prior 2 {granularity}s</option>
-          <option value="3">vs prior 3 {granularity}s</option>
-        </select>
-      </div>
+      {view === "comparison" ? (
+        <div>
+          <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Compare</label>
+          <select
+            className="input"
+            value={compare}
+            onChange={(e) => update({ compare: e.target.value === "0" ? undefined : e.target.value })}
+            disabled={pending}
+          >
+            <option value="0">No comparison</option>
+            <option value="1">vs prior 1 {granularity}</option>
+            <option value="2">vs prior 2 {granularity}s</option>
+            <option value="3">vs prior 3 {granularity}s</option>
+          </select>
+        </div>
+      ) : null}
     </div>
   );
 }
