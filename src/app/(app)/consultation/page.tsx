@@ -4,31 +4,15 @@ import { prisma } from "@/lib/db";
 import ConsultationClient from "./ConsultationClient";
 import ConsultationTabs from "./ConsultationTabs";
 
-export default async function ConsultationPage({
-  searchParams,
-}: {
-  searchParams: Promise<{ id?: string }>;
-}) {
+export default async function ConsultationPage() {
   const { business } = await requireBusiness();
-  const sp = await searchParams;
 
-  // Active thread: explicitly requested by ?id, otherwise the most recent
-  // thread. The chat view doesn't render the older threads itself anymore
-  // — past Q&As live on /consultation/history.
-  const threads = await prisma.consultation.findMany({
-    where: { businessId: business.id },
-    orderBy: { updatedAt: "desc" },
-    select: { id: true },
-  });
-  const activeId = sp.id ?? threads[0]?.id ?? null;
-  const active = activeId
-    ? await prisma.consultation.findFirst({
-        where: { id: activeId, businessId: business.id },
-        include: { messages: { orderBy: { createdAt: "asc" } } },
-      })
-    : null;
+  // The New Consultation view always lands clean — no pre-loaded thread,
+  // no ?id= state to honor. Every Start Consultation creates a fresh
+  // Consultation row server-side, and past Q&As live on /history.
+  const active = null;
 
-  // Used by the tab nav to badge Chat history with a count.
+  // Used by the tab nav to badge Consultation History with a count.
   const totalQuestions = await prisma.consultationMessage.count({
     where: { consultation: { businessId: business.id }, role: "user" },
   });
@@ -56,21 +40,7 @@ export default async function ConsultationPage({
       <ConsultationClient
         currency={business.currency}
         claudeEnabled={claudeEnabled}
-        active={
-          active
-            ? {
-                id: active.id,
-                title: active.title,
-                messages: active.messages.map((m) => ({
-                  id: m.id,
-                  role: m.role as "user" | "assistant",
-                  content: m.content,
-                  payload: m.payload,
-                  createdAt: m.createdAt.toISOString(),
-                })),
-              }
-            : null
-        }
+        active={active}
       />
     </>
   );

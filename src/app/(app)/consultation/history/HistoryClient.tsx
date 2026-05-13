@@ -46,6 +46,17 @@ export default function HistoryClient({
 
   function newConversation() {
     startTransition(() => router.push("/consultation"));
+    // The layout uses a custom <main> as the scroll container, so
+    // Next.js's window-level scroll-restoration doesn't reset it on
+    // route change. Force the pane to the top so the user lands on the
+    // intro card instead of mid-page.
+    if (typeof window !== "undefined") {
+      requestAnimationFrame(() => {
+        const main = document.querySelector("main");
+        if (main) main.scrollTop = 0;
+        window.scrollTo({ top: 0 });
+      });
+    }
   }
 
   function closeViewer() {

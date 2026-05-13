@@ -145,21 +145,23 @@ export default function ConsultationClient({
     if (!message || sending) return;
     setSending(true);
     try {
+      // Every Start Consultation creates a fresh thread — never re-uses
+      // a previous one. That way each question shows up as its own row
+      // in Consultation History.
       const res = await fetch("/api/consultation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ consultationId: active?.id, message }),
+        body: JSON.stringify({ message }),
       });
       if (!res.ok) { alert(await res.text()); return; }
       const data = await res.json();
       const fresh = data.consultation as Active;
       setActive(fresh);
       setDraft("");
-      if (!active || active.id !== fresh.id) {
-        startTransition(() => router.push(`/consultation?id=${fresh.id}`));
-      } else {
-        startTransition(() => router.refresh());
-      }
+      // Don't push ?id= into the URL — the page is "start a new
+      // consultation", not "edit consultation X". On reload we'll
+      // happily land back on the empty intro screen.
+      startTransition(() => router.refresh());
     } finally {
       setSending(false);
     }

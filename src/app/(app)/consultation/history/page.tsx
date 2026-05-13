@@ -1,6 +1,8 @@
-// Consultation History — split-screen: list of past consultations on the
-// left, the selected consultation's response on the right. Selection is
-// driven by ?id= so deep-linking and back/forward work cleanly.
+// Consultation History — split-screen: list of past questions on the
+// left, the selected question's response on the right. Selection is
+// driven by ?id= (consultation-message id, not consultation id) so
+// every question shows up as its own row even when several were asked
+// inside the same thread.
 
 import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
@@ -17,42 +19,51 @@ export default async function ConsultationHistoryPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
 
-  // Top-level list shows one row per Consultation, dated by its most
-  // recent message timestamp so newest activity bubbles up first.
-  const consultations = await prisma.consultation.findMany({
-    where: { businessId: business.id },
-    orderBy: { updatedAt: "desc" },
-    include: {
-      messages: {
-        orderBy: { createdAt: "asc" },
-        // First user message = the question; last assistant message =
-        // the answer shown in the right panel.
-        take: 50,
-      },
-    },
+  // Flatten every user message across every consultation thread into a
+  // single list. Each user message gets paired with the next assistant
+  // message from the same thread; if there's no follow-up assistant
+  // message yet, answer is null and the row still appears with the
+  // question text.
+  const allMessages = await prisma.consultationMessage.findMany({
+    where: { consultation: { businessId: business.id } },
+    orderBy: [{ consultationId: "asc" }, { createdAt: "asc" }],
   });
 
-  const list: HistoryListItem[] = consultations.map((c) => {
-    const firstUser = c.messages.find((m) => m.role === "user");
-    return {
-      id: c.id,
-      title: firstUser?.content ?? c.title,
-      askedAt: (firstUser?.createdAt ?? c.createdAt).toISOString(),
-    };
-  });
+  type Pair = { id: string; question: string; answer: string | null; askedAt: Date };
+  const pairs: Pair[] = [];
+  for (let i = 0; i < allMessages.length; i++) {
+    const m = allMessages[i];
+    if (m.role !== "user") continue;
+    const next = allMessages[i + 1];
+    const answer =
+      next && next.consultationId === m.consultationId && next.role === "assistant"
+        ? next.content
+        : null;
+    pairs.push({
+      id: m.id,
+      question: m.content,
+      answer,
+      askedAt: m.createdAt,
+    });
+  }
+  pairs.sort((a, b) => b.askedAt.getTime() - a.askedAt.getTime());
+
+  const list: HistoryListItem[] = pairs.map((p) => ({
+    id: p.id,
+    title: p.question,
+    askedAt: p.askedAt.toISOString(),
+  }));
 
   let detail: HistoryDetail | null = null;
   const selectedId = sp.id ?? list[0]?.id ?? null;
   if (selectedId) {
-    const chosen = consultations.find((c) => c.id === selectedId);
+    const chosen = pairs.find((p) => p.id === selectedId);
     if (chosen) {
-      const firstUser = chosen.messages.find((m) => m.role === "user");
-      const lastAssistant = chosen.messages.slice().reverse().find((m) => m.role === "assistant");
       detail = {
         id: chosen.id,
-        question: firstUser?.content ?? chosen.title,
-        askedAt: (firstUser?.createdAt ?? chosen.createdAt).toISOString(),
-        answerMarkdown: lastAssistant?.content ?? null,
+        question: chosen.question,
+        askedAt: chosen.askedAt.toISOString(),
+        answerMarkdown: chosen.answer,
       };
     }
   }
