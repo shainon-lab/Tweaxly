@@ -500,6 +500,108 @@ export async function recommendProactive(
     });
   }
 
+  // ─── Always-fire observation signals so the pool never goes empty ────
+  // These are intentionally informational. They give the box something
+  // useful to show on day-one when no other condition has triggered yet.
+
+  // 14. Current-month revenue snapshot
+  if (current.income > 0) {
+    recs.push({
+      level: "info",
+      title: `${curLabel} revenue: ${fmtMoney(current.income, ccy)}`,
+      detail: `Booked income for ${curLabel}. Compare against the average to gauge whether ${curLabel} is on track.`,
+      impact: 0,
+      category: "growth",
+      signalKey: "monthly_revenue_snapshot",
+    });
+  }
+
+  // 15. Current-month expense snapshot
+  if (current.expenses > 0) {
+    recs.push({
+      level: "info",
+      title: `${curLabel} total expenses: ${fmtMoney(current.expenses, ccy)}`,
+      detail: `Includes payroll, recurring software, marketing, and any one-time costs booked in ${curLabel}. Use the Insights tab to see which categories drove it.`,
+      impact: 0,
+      category: "cashflow",
+      signalKey: "monthly_expense_snapshot",
+    });
+  }
+
+  // 16. Trailing 3-month average revenue
+  if (avgRevenue > 0) {
+    recs.push({
+      level: "info",
+      title: `${fmtMoney(avgRevenue, ccy)}/mo average revenue across ${trail3Label}`,
+      detail: `Your rolling 3-month revenue baseline. Anchored at the latest complete month so an in-progress month never drags it down.`,
+      impact: 0,
+      category: "growth",
+      signalKey: "avg_revenue_trail3",
+    });
+  }
+
+  // 17. Recurring expense run-rate (one-times stripped)
+  const recurringMonthly = current.expenses - current.oneTime;
+  if (recurringMonthly > 0) {
+    recs.push({
+      level: "info",
+      title: `Recurring expense base: ${fmtMoney(recurringMonthly, ccy)}/mo`,
+      detail: `${curLabel} expenses with one-time items stripped out. This is the floor — the number you have to cover every month no matter what.`,
+      impact: 0,
+      category: "cashflow",
+      signalKey: "recurring_expense_base",
+    });
+  }
+
+  // 18. Year-to-date snapshot if we have at least 3 months of trailing data
+  // in the current year. Uses trailing[] which is already in ctx (last 6 mo).
+  const ytdYear = ctx.ym.slice(0, 4);
+  const ytdMonths = ctx.trailing.filter((m) => m.ym.startsWith(ytdYear));
+  if (ytdMonths.length >= 2) {
+    const ytdRev = ytdMonths.reduce((s, m) => s + m.income, 0);
+    const ytdExp = ytdMonths.reduce((s, m) => s + m.expenses, 0);
+    const ytdNet = ytdRev - ytdExp;
+    recs.push({
+      level: ytdNet >= 0 ? "good" : "warn",
+      title: `${ytdYear} YTD net: ${fmtMoney(ytdNet, ccy)} across ${ytdMonths.length} month${ytdMonths.length === 1 ? "" : "s"}`,
+      detail: `Revenue ${fmtMoney(ytdRev, ccy)} − expenses ${fmtMoney(ytdExp, ccy)} so far this year. Margin ${ytdRev > 0 ? fmtPct(ytdNet / ytdRev) : "—"}.`,
+      impact: 0,
+      category: "other",
+      signalKey: "ytd_snapshot",
+    });
+  }
+
+  // 19. Active employee headcount + cost
+  if (ctx.employees.length > 0) {
+    recs.push({
+      level: "info",
+      title: `${ctx.employees.length} active employee${ctx.employees.length === 1 ? "" : "s"} on the roster`,
+      detail: `Fully-loaded monthly cost: ${fmtMoney(ctx.employeeCostMonthly, ccy)}. Use the Workforce Overview tab for the per-employee breakdown.`,
+      impact: 0,
+      category: "payroll",
+      signalKey: "headcount_snapshot",
+    });
+  }
+
+  // 20. Recent upload / data freshness reminder
+  if (ctx.recentUploads.length > 0) {
+    const latest = ctx.recentUploads[0];
+    const latestDate = new Date(latest.createdAt);
+    const daysAgo = Math.floor((Date.now() - latestDate.getTime()) / (1000 * 60 * 60 * 24));
+    recs.push({
+      level: daysAgo > 21 ? "warn" : "info",
+      title: daysAgo > 21
+        ? `No new uploads in ${daysAgo} days`
+        : `${ctx.recentUploads.length} upload${ctx.recentUploads.length === 1 ? "" : "s"} processed recently`,
+      detail: daysAgo > 21
+        ? `Last upload was ${daysAgo} days ago. Stale data makes every other signal less reliable — import this month's transactions when you can.`
+        : `Latest upload was ${daysAgo === 0 ? "today" : `${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`}. Data is fresh.`,
+      impact: 0,
+      category: "accuracy",
+      signalKey: "upload_freshness",
+    });
+  }
+
   // Empty fallback
   if (recs.length === 0) {
     recs.push({

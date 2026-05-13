@@ -1,5 +1,6 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 
 export type PushRec = {
@@ -62,27 +63,35 @@ export default function PushRecommendations({
   initial: PushRec[];
   currency: string;
 }) {
+  // The dashboard re-rolls the visible 5 signals on every server render,
+  // so refresh just re-runs the server transition. Each render samples a
+  // fresh random 5 from the ~15-signal pool. `initial` updates between
+  // renders because pushRecs is recomputed in the page on every visit.
+  const router = useRouter();
   const [recs, setRecs] = useState<PushRec[]>(initial);
-  const [pending] = useTransition();
+  const [pending, startTransition] = useTransition();
   const [refreshing, setRefreshing] = useState(false);
+  const prevInitialRef = useRef(initial);
 
-  async function refresh() {
+  // Sync to server-provided initial whenever the parent re-renders with a
+  // new sample (e.g. after router.refresh() returns).
+  if (initial !== prevInitialRef.current) {
+    prevInitialRef.current = initial;
+    setRecs(initial);
+  }
+
+  function refresh() {
     setRefreshing(true);
-    try {
-      const res = await fetch("/api/recommendations", { method: "POST" });
-      if (!res.ok) {
-        alert(await res.text());
-        return;
-      }
-      const data = await res.json();
-      setRecs(data.recommendations);
-    } finally {
-      setRefreshing(false);
-    }
+    startTransition(() => {
+      router.refresh();
+      // The new render will swap `initial` underneath us; clear the spinner
+      // shortly after to cover the transition.
+      setTimeout(() => setRefreshing(false), 600);
+    });
   }
 
   // Close = local-only hide. The row is still active server-side, so the
-  // next page reload brings it back. This is the user-intended behavior:
+  // next page reload brings it back. Matches the user-intended behavior:
   // "if it's close, whenever you refresh it may repeat again".
   function close(id: string) {
     setRecs((prev) => prev.filter((r) => r.id !== id));
@@ -124,9 +133,9 @@ export default function PushRecommendations({
 
       {recs.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-4">
-          <div className="text-sm font-medium text-slate-200 mb-1">No urgent notifications</div>
+          <div className="text-sm font-medium text-slate-200 mb-1">No signals to show</div>
           <div className="text-xs text-slate-400 max-w-xs">
-            The AI advisor scans your last 3 months for revenue dips, expense anomalies, vendor cost spikes, and cash-flow risks. Click the refresh icon to run an analysis.
+            Once there's a few months of data, the advisor surfaces signals about revenue, expenses, vendor spikes, and cash-flow risks here automatically.
           </div>
         </div>
       ) : (
