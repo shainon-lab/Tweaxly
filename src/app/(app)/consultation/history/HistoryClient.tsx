@@ -87,10 +87,9 @@ export default function HistoryClient({
           </div>
         </div>
       ) : (
-        // Split-screen. The OUTER container is the only thing that controls
-        // height; both panels manage their own internal scroll so nested
-        // scrollbars never appear.
-        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 h-[calc(100vh-300px)] min-h-[480px]">
+        // Split-screen on lg+. On mobile both panes stack and grow with
+        // their content (no inner-scroll wrestling on small viewports).
+        <div className="grid grid-cols-1 lg:grid-cols-[340px_1fr] gap-4 lg:h-[calc(100vh-300px)] lg:min-h-[480px]">
           {/* Left panel: list */}
           <aside className="rounded-xl border border-line bg-ink-900/30 overflow-y-auto">
             <ul className="p-2 space-y-1">

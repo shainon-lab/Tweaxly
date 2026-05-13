@@ -24,7 +24,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         alerts={alerts}
       />
       <main className="flex-1 min-w-0 overflow-y-auto">
-        <div className="px-8 py-8 max-w-[1400px] mx-auto">{children}</div>
+        {/* pt-16 on mobile leaves room for the floating hamburger button
+            (sidebar lives behind a drawer below the lg breakpoint). */}
+        <div className="px-4 sm:px-6 lg:px-8 pt-16 pb-6 lg:py-8 max-w-[1400px] mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
