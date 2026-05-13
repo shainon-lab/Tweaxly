@@ -94,6 +94,13 @@ export default function ThresholdAlertsBox({
         }`}
       >
         <span className={LEVEL_PILL[a.level]}>{a.level}</span>
+        {/* Read-state tag: red Unread for new rows, green Read for the
+            ones the user has acknowledged. */}
+        {opts.showMarkRead ? (
+          <span className="pill-bad shrink-0">Unread</span>
+        ) : (
+          <span className="pill-good shrink-0">Read</span>
+        )}
         <div className="min-w-0 flex-1">
           <div className={`font-medium text-sm ${opts.showMarkRead ? "text-slate-100" : "text-slate-300"}`}>
             {a.headline}
