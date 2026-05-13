@@ -1,14 +1,14 @@
 import PageHeader from "@/components/PageHeader";
 import ReportsTabs from "@/components/ReportsTabs";
-import InsightsTabs from "@/components/InsightsTabs";
 import { requireBusiness } from "@/lib/auth";
 import DashboardInsights from "../dashboard/DashboardInsights";
 
-// Insights tab — the chart grid (Trend, Cash flow, Top expense categories,
-// Revenue channel, Spending shape, Swing, Top vendors) all scoped to a
-// user-selected period. Same component the dashboard used to render inline;
-// it lives at this URL now.
-export default async function InsightsPage({
+// "Charts" tab in the Reports umbrella. Renders the seven-chart period
+// grid (Trend, Cash flow, Top expense categories, Revenue channel,
+// Spending shape, Swing, Top vendors). The Yearly Summary view used to
+// live under this URL too; it now sits under Reports → Yearly Summary
+// at /insights/yearly.
+export default async function ChartsPage({
   searchParams,
 }: {
   searchParams: Promise<{
@@ -23,11 +23,10 @@ export default async function InsightsPage({
   return (
     <>
       <PageHeader
-        title="Reports and Insights"
+        title="Charts"
         subtitle="Visual breakdowns of your business — pick a period to drive every chart below."
       />
       <ReportsTabs />
-      <InsightsTabs />
       <DashboardInsights
         businessId={business.id}
         currency={business.currency}

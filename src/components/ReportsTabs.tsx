@@ -2,22 +2,31 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
-// Tab nav shown at the top of every page under the "Reports and Insights"
-// umbrella. The sidebar links to /report — from there the user picks
-// Monthly Reports, Data Flow, or Insights. The Insights tab carries its
-// own second-level nav (General / Yearly Summary) once you're inside.
+// Umbrella tab nav for the Reports section. Two top-level views:
+//   Reports — the formal data-review pages: P&L Statement, Category Trends,
+//             Yearly Summary. Its second-level nav (ReportsInnerTabs) sits
+//             below this row on those pages.
+//   Charts  — the visual exploration grid (the seven-chart period view).
 const TABS = [
-  { href: "/report",    label: "P&L Statement"   },
-  { href: "/data-flow", label: "Category Trends" },
-  { href: "/insights",  label: "Insights"        },
+  { href: "/report",   label: "Reports" },
+  { href: "/insights", label: "Charts"  },
 ];
+
+const REPORTS_ROUTES = ["/report", "/data-flow", "/insights/yearly"];
 
 export default function ReportsTabs() {
   const path = usePathname();
   return (
-    <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+    <div className="mb-3 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => {
-        const active = path === t.href || path.startsWith(t.href + "/");
+        // Reports stays active across all three report sub-pages
+        // (P&L Statement / Category Trends / Yearly Summary). Charts is
+        // matched exactly so visiting /insights/yearly doesn't also
+        // highlight it.
+        const active =
+          t.href === "/report"
+            ? REPORTS_ROUTES.some((r) => path === r || path.startsWith(r + "/"))
+            : path === t.href;
         return (
           <Link
             key={t.href}

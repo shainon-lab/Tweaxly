@@ -3,7 +3,7 @@
 
 import PageHeader from "@/components/PageHeader";
 import ReportsTabs from "@/components/ReportsTabs";
-import InsightsTabs from "@/components/InsightsTabs";
+import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { requireBusiness } from "@/lib/auth";
 import {
   computeYearlyStats,
@@ -32,7 +32,7 @@ export default async function YearlyInsightsTextPage({
           subtitle="Yearly retrospective — drill into a completed year's full picture."
         />
         <ReportsTabs />
-        <InsightsTabs />
+        <ReportsInnerTabs />
         <div className="card text-center py-12">
           <div className="text-lg font-medium">No completed years to summarize yet</div>
           <div className="text-sm text-slate-400 mt-1">
@@ -57,7 +57,7 @@ export default async function YearlyInsightsTextPage({
         subtitle="Plain-English observations about the chosen year, each paired with a tip you can act on."
       />
       <ReportsTabs />
-        <InsightsTabs />
+        <ReportsInnerTabs />
       <YearlySubTabs />
       <div className="flex items-end justify-end mb-4 flex-wrap gap-3">
         <YearSelect selected={selected} years={years} />
