@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import DataTabs from "@/components/DataTabs";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -25,9 +26,10 @@ export default async function ManualDataPage() {
   return (
     <>
       <PageHeader
-        title="Manual data"
+        title="Import data"
         subtitle="Add income or outcome entries manually — for things that aren't in your uploaded files."
       />
+      <DataTabs />
       <ManualDataClient
         entries={entries.map((e) => ({
           id: e.id,
