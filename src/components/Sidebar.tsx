@@ -10,8 +10,8 @@ type AlertKey = "transactions" | "insights" | "businessSignals";
 const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] = [
   { href: "/dashboard", label: "Overview", icon: "🏠" },
   { href: "/business-signals", label: "Business Signals", icon: "📡", alertKey: "businessSignals" },
-  { href: "/forecast", label: "Forecast", icon: "📈" },
   { href: "/consultation", label: "Consultation", icon: "💬" },
+  { href: "/forecast", label: "Forecast", icon: "📈" },
   { href: "/insights", label: "Insights", icon: "💡", alertKey: "insights" },
   { href: "/report", label: "Reports", icon: "📑" },
   { href: "/workforce", label: "Workforce Overview", icon: "👥" },
