@@ -13,3 +13,4 @@ uploads/
 .env.production
 .env.development.local
 .env.preview.local
+tsconfig.tsbuildinfo

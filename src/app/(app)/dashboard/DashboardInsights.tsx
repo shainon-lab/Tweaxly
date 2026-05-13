@@ -18,7 +18,7 @@ import { prisma } from "@/lib/db";
 import { TrendChart, CategoryBars, CashflowChart } from "@/components/Charts";
 import DashboardInsightsPicker from "./DashboardInsightsPicker";
 
-type PickerGranularity = Granularity | "custom" | "trailing6";
+type PickerGranularity = Granularity | "custom" | "trailing6" | "all";
 
 export default async function DashboardInsights({
   businessId,
@@ -50,6 +50,7 @@ export default async function DashboardInsights({
   const effectiveGran =
     granularity === "custom"    ? "custom"    :
     granularity === "trailing6" ? "trailing6" :
+    granularity === "all"       ? "all"       :
     isValidGranularity(granularity) ? granularity :
     "trailing6";
 
@@ -93,6 +94,26 @@ export default async function DashboardInsights({
     pickerGran = "trailing6";
     pickerAnchor = toYM;
     priorLabel = "prior 6 months";
+  } else if (effectiveGran === "all") {
+    // All time — earliest data month through latest. listAccountingMonths
+    // returns desc, so [0] = latest, last = earliest.
+    const months = await listAccountingMonths(businessId);
+    const toYM = months[0] ?? todayYM();
+    const fromYM = months[months.length - 1] ?? toYM;
+    monthSpan = monthsBetween(fromYM, toYM);
+    period = {
+      granularity: "month",
+      anchor: toYM,
+      fromYM,
+      toYM,
+      label:
+        fromYM === toYM
+          ? ymToLabel(fromYM)
+          : `${ymToLabel(fromYM)} → ${ymToLabel(toYM)}`,
+    };
+    pickerGran = "all";
+    pickerAnchor = toYM;
+    priorLabel = "prior window";
   } else {
     const gran: Granularity = effectiveGran as Granularity;
     let chosen = anchor;

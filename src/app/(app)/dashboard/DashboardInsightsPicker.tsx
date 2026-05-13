@@ -3,11 +3,12 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 // Insights period picker: Last 6 months / Monthly / Quarterly / Yearly /
-// Custom. "Last 6 months" is the default and needs no extra inputs (it's a
-// fixed window anchored at the latest data month). "Custom" exposes a
-// calendar date range (From / To) that the user applies once they've picked
-// both dates.
-type Granularity = "trailing6" | "month" | "quarter" | "year" | "custom";
+// All time / Custom. "Last 6 months" is the default and needs no extra
+// inputs (it's a fixed window anchored at the latest data month). "All
+// time" spans from the earliest accounting month with data to the latest.
+// "Custom" exposes a calendar date range (From / To) that the user applies
+// once they've picked both dates.
+type Granularity = "trailing6" | "month" | "quarter" | "year" | "all" | "custom";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -98,9 +99,9 @@ export default function DashboardInsightsPicker({
       });
       return;
     }
-    if (g === "trailing6") {
+    if (g === "trailing6" || g === "all") {
       update({
-        insights_gran: "trailing6",
+        insights_gran: g,
         insights_period: undefined,
         insights_from: undefined,
         insights_to: undefined,
@@ -148,6 +149,7 @@ export default function DashboardInsightsPicker({
           <option value="month">Monthly</option>
           <option value="quarter">Quarterly</option>
           <option value="year">Yearly</option>
+          <option value="all">All time</option>
           <option value="custom">Custom</option>
         </select>
       </div>
