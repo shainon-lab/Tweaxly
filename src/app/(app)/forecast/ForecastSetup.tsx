@@ -79,7 +79,7 @@ export default function ForecastSetup({
         <div className="font-medium">Forecast setup</div>
         <button
           type="button"
-          className="btn-ghost text-xs"
+          className="text-xs px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft text-accent hover:bg-accent hover:text-white transition"
           onClick={jumpToBuilder}
         >
           ↓ Scenario Builder
