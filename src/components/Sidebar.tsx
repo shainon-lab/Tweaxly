@@ -15,9 +15,11 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   { href: "/report", label: "Reports", icon: "▦" },
   { href: "/workforce", label: "Workforce Overview", icon: "☰" },
   { href: "/notifications", label: "Set notifications", icon: "⚐" },
-  // Single "Data" entry collapses Transactions / Import data / Data log —
-  // those three views now share an internal DataTabs row.
-  { href: "/transactions", label: "Data", icon: "≡", alertKey: "transactions" },
+  // Single "Data" entry collapses Import data / Transactions / Data log —
+  // those three views share an internal DataTabs row. Default landing is
+  // /manual-data so the user opens on the same tab the DataTabs nav puts
+  // first.
+  { href: "/manual-data", label: "Data", icon: "≡", alertKey: "transactions" },
   { href: "/integration", label: "Integration", icon: "⇆" },
   { href: "/settings", label: "Settings", icon: "⚙" },
 ];
@@ -55,12 +57,12 @@ export default function Sidebar({
       </div>
       <nav className="px-2 py-3 flex-1 space-y-0.5">
         {NAV.map((n) => {
-          // The "Data" entry points at /transactions but also owns
-          // /manual-data and /data-log via the DataTabs row. Treat all
+          // The "Data" entry points at /manual-data but also owns
+          // /transactions and /data-log via the DataTabs row. Treat all
           // three as the same selection for the active highlight.
-          const dataRoutes = ["/transactions", "/manual-data", "/data-log"];
+          const dataRoutes = ["/manual-data", "/transactions", "/data-log"];
           const inDataGroup = dataRoutes.some((r) => path === r || path.startsWith(r + "/"));
-          const active = n.href === "/transactions"
+          const active = n.href === "/manual-data"
             ? inDataGroup
             : path === n.href || path.startsWith(n.href + "/");
           const alertCount = n.alertKey ? alerts?.[n.alertKey] ?? 0 : 0;

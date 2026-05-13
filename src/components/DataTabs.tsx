@@ -6,8 +6,8 @@ import { usePathname } from "next/navigation";
 // Transactions / Import data / Data log into one Data entry — the user
 // picks the view from this row instead of the sidebar.
 const TABS = [
-  { href: "/transactions", label: "Transactions" },
   { href: "/manual-data",  label: "Import data"  },
+  { href: "/transactions", label: "Transactions" },
   { href: "/data-log",     label: "Data log"     },
 ];
 
