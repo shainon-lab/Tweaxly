@@ -86,8 +86,6 @@ export default function ThresholdAlertsBox({
   }
 
   function renderAlert(a: TriggeredAlert, opts: { showMarkRead: boolean }) {
-    const stampDate = opts.showMarkRead ? a.firstFiredAt : a.acknowledgedAt;
-    const stampLabel = opts.showMarkRead ? "appeared" : "read";
     return (
       <div
         key={a.ruleId}
@@ -101,11 +99,28 @@ export default function ThresholdAlertsBox({
             {a.headline}
           </div>
           <div className="text-xs text-slate-400 mt-0.5">{a.detail}</div>
-          {stampDate ? (
-            <div className="text-[11px] text-slate-500 mt-1" title={fmtTimestamp(stampDate)}>
-              {stampLabel} {relTime(stampDate)} · {fmtTimestamp(stampDate)}
+          {/* New rows: just the appearance date. Previous rows: both —
+              when it appeared and when it was marked read, side by side. */}
+          {opts.showMarkRead ? (
+            a.firstFiredAt ? (
+              <div className="text-[11px] text-slate-500 mt-1" title={fmtTimestamp(a.firstFiredAt)}>
+                Appeared {relTime(a.firstFiredAt)} · {fmtTimestamp(a.firstFiredAt)}
+              </div>
+            ) : null
+          ) : (
+            <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-x-3 gap-y-0.5">
+              {a.firstFiredAt ? (
+                <span title={fmtTimestamp(a.firstFiredAt)}>
+                  Appeared {relTime(a.firstFiredAt)} · {fmtTimestamp(a.firstFiredAt)}
+                </span>
+              ) : null}
+              {a.acknowledgedAt ? (
+                <span title={fmtTimestamp(a.acknowledgedAt)}>
+                  Read {relTime(a.acknowledgedAt)} · {fmtTimestamp(a.acknowledgedAt)}
+                </span>
+              ) : null}
             </div>
-          ) : null}
+          )}
         </div>
         {opts.showMarkRead ? (
           <button
