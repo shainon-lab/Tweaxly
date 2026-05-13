@@ -1,8 +1,8 @@
 "use client";
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-type Granularity = "month" | "quarter" | "year" | "all" | "custom";
+type Granularity = "month" | "quarter" | "year";
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",
@@ -21,13 +21,7 @@ function defaultAnchor(g: Granularity): string {
   const m = d.getUTCMonth() + 1;
   if (g === "month") return `${y}-${pad2(m)}`;
   if (g === "quarter") return `${y}-${QUARTERS[Math.ceil(m / 3) - 1]}`;
-  if (g === "year") return String(y);
-  return ""; // all / custom have no anchor
-}
-
-function thisYM(): string {
-  const d = new Date();
-  return `${d.getUTCFullYear()}-${pad2(d.getUTCMonth() + 1)}`;
+  return String(y);
 }
 
 // Period picker for the Reports page.
@@ -42,21 +36,15 @@ export default function ReportPeriodPicker({
   anchor,
   compare,
   view,
-  start,
-  end,
 }: {
   granularity: Granularity;
   anchor: string;
   compare: number;
   view: "comparison" | "grid";
-  start?: string;
-  end?: string;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
   const [pending, startTransition] = useTransition();
-  const [draftStart, setDraftStart] = useState(start || thisYM());
-  const [draftEnd, setDraftEnd] = useState(end || thisYM());
 
   const today = useMemo(() => {
     const d = new Date();
@@ -74,24 +62,8 @@ export default function ReportPeriodPicker({
 
   function changeGranularity(g: Granularity) {
     // Pick a sensible default anchor for the new granularity so the form
-    // doesn't jump to "no period selected". All time / Custom have no
-    // anchor and force compare=0 since there's no prior period to shift to.
-    if (g === "all") {
-      update({ gran: "all", period: undefined, compare: undefined, start: undefined, end: undefined });
-      return;
-    }
-    if (g === "custom") {
-      update({ gran: "custom", period: undefined, compare: undefined, start: draftStart, end: draftEnd });
-      return;
-    }
-    update({ gran: g, period: defaultAnchor(g), compare: compare ? String(compare) : undefined, start: undefined, end: undefined });
-  }
-
-  function applyCustom() {
-    if (!draftStart || !draftEnd) return;
-    const a = draftStart <= draftEnd ? draftStart : draftEnd;
-    const b = draftStart <= draftEnd ? draftEnd : draftStart;
-    update({ gran: "custom", start: a, end: b, period: undefined, compare: undefined });
+    // doesn't jump to "no period selected".
+    update({ gran: g, period: defaultAnchor(g), compare: compare ? String(compare) : undefined });
   }
 
   // The "Period" selector adapts to the chosen granularity. We never show a
@@ -139,12 +111,12 @@ export default function ReportPeriodPicker({
           onChange={(e) => update({ view: e.target.value === "grid" ? "grid" : undefined })}
           disabled={pending}
         >
-          <option value="comparison">P&amp;L</option>
-          <option value="grid">Detail</option>
+          <option value="comparison">Comparison</option>
+          <option value="grid">Category Grid</option>
         </select>
       </div>
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Period</label>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Granularity</label>
         <select
           className="input"
           value={granularity}
@@ -154,8 +126,6 @@ export default function ReportPeriodPicker({
           <option value="month">Month</option>
           <option value="quarter">Quarter</option>
           <option value="year">Year</option>
-          <option value="all">All time</option>
-          <option value="custom">Custom</option>
         </select>
       </div>
 
@@ -236,45 +206,7 @@ export default function ReportPeriodPicker({
         </div>
       ) : null}
 
-      {granularity === "custom" ? (
-        <>
-          <div>
-            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
-            <input
-              type="month"
-              className="input"
-              value={draftStart}
-              max={draftEnd || undefined}
-              onChange={(e) => setDraftStart(e.target.value)}
-              disabled={pending}
-            />
-          </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">To</label>
-            <input
-              type="month"
-              className="input"
-              value={draftEnd}
-              min={draftStart || undefined}
-              onChange={(e) => setDraftEnd(e.target.value)}
-              disabled={pending}
-            />
-          </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1 opacity-0">Apply</label>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={applyCustom}
-              disabled={pending || !draftStart || !draftEnd}
-            >
-              Apply
-            </button>
-          </div>
-        </>
-      ) : null}
-
-      {view === "comparison" && (granularity === "month" || granularity === "quarter" || granularity === "year") ? (
+      {view === "comparison" ? (
         <div>
           <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Compare</label>
           <select
