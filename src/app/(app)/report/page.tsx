@@ -10,9 +10,9 @@ import { buildPeriodAggregate } from "@/lib/period";
 import {
   resolvePeriod,
   shiftPeriod,
-  defaultAnchor,
   isValidGranularity,
   type Granularity,
+  type PeriodSpec,
 } from "@/lib/reportPeriod";
 import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct, ymToLabel } from "@/lib/format";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -21,45 +21,89 @@ import { buildDataFlowGrid } from "@/lib/dataflow";
 const MAX_COMPARE = 3;
 
 type ReportView = "comparison" | "grid";
+// "all" and "custom" are picker-only options that map to a fixed period
+// with no comparison; "month" / "quarter" / "year" still support compare.
+type PeriodKind = Granularity | "all" | "custom";
+
+function isPeriodKind(g: string | undefined): g is PeriodKind {
+  return isValidGranularity(g) || g === "all" || g === "custom";
+}
 
 export default async function ReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ gran?: string; period?: string; compare?: string; view?: string }>;
+  searchParams: Promise<{
+    gran?: string;
+    period?: string;
+    compare?: string;
+    view?: string;
+    start?: string;
+    end?: string;
+  }>;
 }) {
   const { business } = await requireBusiness();
   const sp = await searchParams;
   const view: ReportView = sp.view === "grid" ? "grid" : "comparison";
 
   // ── URL params with safe defaults ─────────────────────────────────────────
-  const granularity: Granularity = isValidGranularity(sp.gran) ? sp.gran : "month";
+  const periodKind: PeriodKind = isPeriodKind(sp.gran) ? sp.gran : "month";
   // Default the anchor to the LATEST month that actually has data, not
   // today's calendar month — uploads usually trail real time.
-  let anchor = sp.period;
-  if (!anchor) {
-    const months = await listAccountingMonths(business.id);
-    const latestYM = months[0]; // listAccountingMonths returns desc
-    if (latestYM && /^\d{4}-\d{2}$/.test(latestYM)) {
-      const [y, m] = latestYM.split("-").map(Number);
-      if (granularity === "month") {
-        anchor = latestYM;
-      } else if (granularity === "quarter") {
-        const q = Math.ceil(m / 3);
-        anchor = `${y}-Q${q}`;
-      } else {
-        anchor = String(y);
-      }
-    } else {
-      anchor = defaultAnchor(granularity);
-    }
-  }
-  const compare = Math.max(0, Math.min(MAX_COMPARE, Number(sp.compare) || 0));
+  const months = await listAccountingMonths(business.id);
+  const latestYM = months[0]; // listAccountingMonths returns desc
+  const earliestYM = months[months.length - 1];
 
-  // Primary period + (compare) prior periods of the same granularity.
-  const primary = resolvePeriod(granularity, anchor);
-  const compareSpecs = Array.from({ length: compare }, (_, i) =>
-    resolvePeriod(granularity, shiftPeriod(granularity, anchor, i + 1)),
-  );
+  // Resolve the primary period. All time = earliest..latest data months.
+  // Custom = the from/to month params. Otherwise resolvePeriod handles
+  // month/quarter/year via the anchor.
+  let primary: PeriodSpec;
+  let granularity: Granularity = "month";
+  let anchor = sp.period;
+  let compare = 0;
+  let compareSpecs: PeriodSpec[] = [];
+  if (periodKind === "all") {
+    const fromYM = earliestYM ?? latestYM ?? "2020-01";
+    const toYM = latestYM ?? "2020-01";
+    primary = {
+      granularity: "month",
+      anchor: toYM,
+      fromYM, toYM,
+      label: fromYM === toYM ? ymToLabel(fromYM) : `${ymToLabel(fromYM)} → ${ymToLabel(toYM)} · All time`,
+    };
+  } else if (periodKind === "custom") {
+    const sRaw = sp.start ?? latestYM ?? "2020-01";
+    const eRaw = sp.end ?? latestYM ?? "2020-01";
+    const fromYM = sRaw <= eRaw ? sRaw : eRaw;
+    const toYM = sRaw <= eRaw ? eRaw : sRaw;
+    primary = {
+      granularity: "month",
+      anchor: toYM,
+      fromYM, toYM,
+      label: fromYM === toYM ? ymToLabel(fromYM) : `${ymToLabel(fromYM)} → ${ymToLabel(toYM)}`,
+    };
+  } else {
+    granularity = periodKind;
+    if (!anchor) {
+      if (latestYM && /^\d{4}-\d{2}$/.test(latestYM)) {
+        const [y, m] = latestYM.split("-").map(Number);
+        if (granularity === "month") {
+          anchor = latestYM;
+        } else if (granularity === "quarter") {
+          const q = Math.ceil(m / 3);
+          anchor = `${y}-Q${q}`;
+        } else {
+          anchor = String(y);
+        }
+      } else {
+        anchor = latestYM ?? "2020-01";
+      }
+    }
+    compare = Math.max(0, Math.min(MAX_COMPARE, Number(sp.compare) || 0));
+    primary = resolvePeriod(granularity, anchor);
+    compareSpecs = Array.from({ length: compare }, (_, i) =>
+      resolvePeriod(granularity, shiftPeriod(granularity, anchor!, i + 1)),
+    );
+  }
   const allPeriods = [primary, ...compareSpecs];
 
   // Fetch an aggregate for every period (parallel) plus the canonical
@@ -147,10 +191,12 @@ export default async function ReportPage({
         }
         right={
           <ReportPeriodPicker
-            granularity={granularity}
+            granularity={periodKind}
             anchor={primary.anchor}
             compare={compare}
             view={view}
+            start={sp.start}
+            end={sp.end}
           />
         }
       />
