@@ -164,14 +164,25 @@ export default function PushRecommendations({
                     ) : null}
                   </div>
                 </div>
-                <button
-                  className="text-xs text-slate-400 hover:text-slate-200 shrink-0"
-                  onClick={() => close(r.id)}
-                  title="Close — may reappear on refresh"
-                  aria-label="Close"
-                >
-                  ✕
-                </button>
+                <div className="flex flex-col items-end gap-1.5 shrink-0">
+                  <Link
+                    href={`/consultation?q=${encodeURIComponent(
+                      `${r.title}. ${r.detail} — what should I know and what should I do about it?`
+                    )}`}
+                    className="text-[11px] px-2 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition whitespace-nowrap"
+                    title="Open this signal in the AI advisor"
+                  >
+                    Consult AI
+                  </Link>
+                  <button
+                    className="text-xs text-slate-400 hover:text-slate-200"
+                    onClick={() => close(r.id)}
+                    title="Close — may reappear on refresh"
+                    aria-label="Close"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
             );
           })}

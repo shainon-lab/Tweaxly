@@ -115,14 +115,21 @@ export default function ConsultationClient({
   active: initialActive,
   currency,
   claudeEnabled,
+  prompts,
+  initialDraft,
 }: {
   active: Active | null;
   currency: string;
   claudeEnabled: boolean;
+  prompts: string[];
+  initialDraft?: string;
 }) {
   const router = useRouter();
   const [active, setActive] = useState<Active | null>(initialActive);
-  const [draft, setDraft] = useState("");
+  // Initial draft is seeded from ?q= when the user arrives from a
+  // "Consult AI" link on a Business Signal. We never auto-submit — the
+  // user gets to read and edit before clicking Start Consultation.
+  const [draft, setDraft] = useState(initialDraft ?? "");
   const [sending, setSending] = useState(false);
   const [, startTransition] = useTransition();
   const responseRef = useRef<HTMLDivElement | null>(null);
@@ -156,6 +163,12 @@ export default function ConsultationClient({
       const fresh = data.consultation as Active;
       setActive(fresh);
       setDraft("");
+      // After a submit we drop any ?q= that came from a Business Signal
+      // link so a reload doesn't re-prefill the textarea with the same
+      // question. Replace (not push) keeps Back behavior sane.
+      if (typeof window !== "undefined" && window.location.search) {
+        router.replace("/consultation");
+      }
       // Don't push ?id= into the URL — the page is "start a new
       // consultation", not "edit consultation X". On reload we'll
       // happily land back on the empty intro screen.
@@ -202,8 +215,49 @@ export default function ConsultationClient({
         </p>
       </div>
 
-      {/* Input area */}
+      {/* "Consult About Your Latest Trends" — dynamic suggestion cards
+          generated from the user's real BusinessContext. Clicking a card
+          auto-submits the question, unlike the ?q= flow from Business
+          Signals (which only pre-fills the textarea). */}
+      {prompts.length > 0 ? (
+        <div className="space-y-3">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h2 className="text-lg md:text-xl font-semibold text-slate-100">
+              Consult About Your Latest Trends
+            </h2>
+            <span className="text-xs text-slate-400">
+              Picked from your live business data — tap to ask.
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {prompts.map((p, i) => (
+              <button
+                key={i}
+                type="button"
+                disabled={sending}
+                onClick={() => void send(p)}
+                className="text-left rounded-xl border border-line bg-ink-900/40 hover:border-accent/50 hover:bg-accent-soft/20 transition px-4 py-3 disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                <div className="flex items-start gap-2">
+                  <span className="text-accent text-xs mt-1 shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
+                  <span className="text-sm text-slate-200 leading-relaxed">{p}</span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {/* Free-form input area */}
       <div className="rounded-2xl border border-line bg-ink-900/40 p-4 md:p-5 shadow-sm">
+        <div className="mb-3">
+          <h2 className="text-lg md:text-xl font-semibold text-slate-100">
+            Ask Any Question About Your Business
+          </h2>
+          <p className="text-xs text-slate-400 mt-0.5">
+            Anything goes — cashflow, hiring, pricing, vendors, runway, growth.
+          </p>
+        </div>
         <textarea
           className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none resize-none min-h-[88px]"
           rows={3}
