@@ -44,15 +44,15 @@ export default async function DashboardInsights({
   let monthSpan: number;
   let priorLabel: string;
 
-  // Default to "Last 6 months" when no explicit granularity is in the URL —
-  // it's the most useful at-a-glance window for charts and avoids forcing
-  // the user to pick something on first visit.
+  // Default to the current year (or the latest year that has data) when no
+  // explicit granularity is in the URL — Charts opens on a 12-month view
+  // so the user immediately sees the full year's shape.
   const effectiveGran =
     granularity === "custom"    ? "custom"    :
     granularity === "trailing6" ? "trailing6" :
     granularity === "all"       ? "all"       :
     isValidGranularity(granularity) ? granularity :
-    "trailing6";
+    "year";
 
   if (effectiveGran === "custom" && from && to) {
     // Custom date-to-date range. We always work in YM buckets because that's
