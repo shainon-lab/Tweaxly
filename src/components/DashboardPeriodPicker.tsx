@@ -107,69 +107,86 @@ export default function DashboardPeriodPicker({
   }
 
   return (
-    <div className="flex items-center gap-2 flex-wrap justify-end">
-      <label className="text-xs uppercase tracking-wide text-slate-400">Period</label>
-      <select
-        className="input"
-        value={range}
-        onChange={(e) => {
-          const v = e.target.value as Range;
-          if (v === "custom") {
-            update({ range: v, start: draftStart, end: draftEnd });
-          } else {
-            update({ range: v, start: undefined, end: undefined });
-          }
-        }}
-        disabled={pending}
-      >
-        {RANGE_OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+    // Label-above-input per group, groups laid out left-to-right with
+    // items-end so the controls line up at the bottom even when one
+    // group has a stacked label and another expands.
+    <div className="flex items-end gap-3 flex-wrap justify-end">
+      <div>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+          Period
+        </label>
+        <select
+          className="input"
+          value={range}
+          onChange={(e) => {
+            const v = e.target.value as Range;
+            if (v === "custom") {
+              update({ range: v, start: draftStart, end: draftEnd });
+            } else {
+              update({ range: v, start: undefined, end: undefined });
+            }
+          }}
+          disabled={pending}
+        >
+          {RANGE_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
-      <label className="text-xs uppercase tracking-wide text-slate-400 ml-2">
-        Compare to
-      </label>
-      <select
-        className="input"
-        value={compare}
-        onChange={(e) => update({ compare: e.target.value === "none" ? undefined : e.target.value })}
-        disabled={pending}
-      >
-        {compareOptionsFor(range).map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
+      <div>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+          Compare to
+        </label>
+        <select
+          className="input"
+          value={compare}
+          onChange={(e) => update({ compare: e.target.value === "none" ? undefined : e.target.value })}
+          disabled={pending}
+        >
+          {compareOptionsFor(range).map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+      </div>
 
       {range === "custom" ? (
         <>
-          <label className="text-xs uppercase tracking-wide text-slate-400 ml-1">From</label>
-          <input
-            type="date"
-            className="input"
-            value={draftStart}
-            onChange={(e) => setDraftStart(e.target.value)}
-            disabled={pending}
-          />
-          <label className="text-xs uppercase tracking-wide text-slate-400">To</label>
-          <input
-            type="date"
-            className="input"
-            value={draftEnd}
-            onChange={(e) => setDraftEnd(e.target.value)}
-            disabled={pending}
-          />
-          <button
-            className="btn-primary"
-            disabled={pending || !draftStart || !draftEnd}
-            onClick={applyCustom}
-          >
-            Apply
-          </button>
+          <div>
+            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
+            <input
+              type="date"
+              className="input"
+              value={draftStart}
+              onChange={(e) => setDraftStart(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">To</label>
+            <input
+              type="date"
+              className="input"
+              value={draftEnd}
+              onChange={(e) => setDraftEnd(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1 opacity-0">Apply</label>
+            <button
+              type="button"
+              className="btn-primary"
+              disabled={pending || !draftStart || !draftEnd}
+              onClick={applyCustom}
+            >
+              Apply
+            </button>
+          </div>
         </>
       ) : null}
     </div>
