@@ -41,12 +41,10 @@ type HorizonBlock = {
 
 type OptionPayload = { horizons?: HorizonBlock[] };
 
-const EXAMPLES = [
-  "Where can I reduce $20,000 in expenses?",
-  "Can I afford to hire another employee?",
-  "Why did profitability decrease last quarter?",
-  "What happens if revenue drops 15%?",
-];
+// Shown as placeholder text inside the textarea so the user has an
+// immediate sense of what they can ask. Two examples is plenty.
+const PLACEHOLDER =
+  "e.g. \"Where can I reduce $20,000 in expenses?\" or \"Can I afford to hire another employee?\"";
 
 function fmtMoney(value: number, currency: string) {
   try {
@@ -167,11 +165,6 @@ export default function ConsultationClient({
     }
   }
 
-  function pickExample(q: string) {
-    setDraft(q);
-    void send(q);
-  }
-
   // The most recent question + the most recent assistant reply for display.
   const lastUserMsg = active?.messages.slice().reverse().find((m) => m.role === "user") ?? null;
   const lastAssistantMsg = active?.messages.slice().reverse().find((m) => m.role === "assistant") ?? null;
@@ -209,40 +202,12 @@ export default function ConsultationClient({
         </p>
       </div>
 
-      {/* Example questions */}
-      <div>
-        <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-2">Suggested questions</div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          {EXAMPLES.map((q) => (
-            <button
-              key={q}
-              type="button"
-              disabled={sending}
-              onClick={() => pickExample(q)}
-              className="group relative rounded-xl border border-line bg-ink-900/40 px-4 py-3 text-left text-sm text-slate-200 hover:border-accent/40 hover:bg-accent-soft/40 transition disabled:opacity-50"
-            >
-              {/* Subtle gradient border on hover */}
-              <span
-                aria-hidden
-                className="absolute inset-0 rounded-xl opacity-0 group-hover:opacity-100 transition pointer-events-none"
-                style={{
-                  background:
-                    "linear-gradient(135deg, rgba(124,92,250,0.18) 0%, rgba(34,211,238,0.18) 100%)",
-                  mixBlendMode: "overlay",
-                }}
-              />
-              <span className="relative">{q}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
       {/* Input area */}
       <div className="rounded-2xl border border-line bg-ink-900/40 p-4 md:p-5 shadow-sm">
         <textarea
           className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none resize-none min-h-[88px]"
           rows={3}
-          placeholder="Ask about cashflow, payroll, expenses, forecasts, profitability, hiring decisions, or business performance…"
+          placeholder={PLACEHOLDER}
           value={draft}
           onChange={(e) => setDraft(e.target.value)}
           onKeyDown={(e) => {

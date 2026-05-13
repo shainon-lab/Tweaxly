@@ -30,11 +30,7 @@ export default async function ConsultationPage() {
     <>
       <PageHeader
         title="Consultation"
-        subtitle={
-          claudeEnabled
-            ? "Ask anything about your business. Claude has your last 18 months of data on hand and can answer general business questions too."
-            : "Free-form Q&A needs the Claude integration enabled — see the banner below."
-        }
+        subtitle="Ask about cashflow, payroll, expenses, forecasts, profitability, hiring decisions, or business performance."
       />
       <ConsultationTabs historyCount={totalQuestions} />
       <ConsultationClient
