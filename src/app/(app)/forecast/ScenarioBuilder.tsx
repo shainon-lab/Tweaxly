@@ -1,9 +1,20 @@
 "use client";
 
-// Scenario builder + assumptions panel. The user clicks an event card to open
-// a small form panel, fills in the fields relevant to that event type, and
-// submits — the assumption is persisted server-side and the page re-renders
-// with the scenario line updated.
+// Scenario builder + assumptions panel.
+//
+// Three card variants beyond the simple amount/percent form:
+//
+//   1. Terminate employee  → roster picker filtered to active employees.
+//      Selecting an employee auto-fills label + monthly cost; the user just
+//      sets a start month and saves.
+//   2. Remove contractor   → same idea, filtered to contractors/freelancers.
+//   3. Salary increase     → two sub-modes:
+//        • Specific employee → pick from roster, enter % OR $ amount.
+//          If a % is entered, we compute the dollar amount client-side from
+//          the chosen employee's gross salary and store as `amount`.
+//        • Overall salary   → no employee picker. Stored as
+//          `salary_increase_overall` so the engine applies the % to the
+//          baseline payroll (or the flat amount across the team).
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
@@ -23,6 +34,16 @@ type AssumptionRow = {
   notes: string | null;
 };
 
+export type RosterMember = {
+  id: string;
+  name: string;
+  role: string | null;
+  employmentType: string;     // "employee" | "contractor" | "freelancer"
+  status: string;             // "active" | "planned" | "terminated"
+  monthlyCost: number;        // fully-loaded
+  grossSalary: number;        // gross monthly — used to compute % raises
+};
+
 // Definition of every scenario event card. `fields` decides which inputs
 // appear in the form when this card is opened.
 type EventDef = {
@@ -34,6 +55,11 @@ type EventDef = {
   fields: ("amount" | "percentage" | "endMonth" | "recurring")[];
   amountHint?: string;
   defaultRecurring?: boolean;
+  // If set, opens a roster picker filtered to this employmentType list.
+  // The picker also requires status==="active".
+  pickFromRoster?: ("employee" | "contractor" | "freelancer")[];
+  // If true, the card supports the Specific/Overall mode toggle.
+  hasScopeToggle?: boolean;
 };
 
 const EVENTS: EventDef[] = [
@@ -45,11 +71,11 @@ const EVENTS: EventDef[] = [
   { key: "rev-decl",   family: "revenue", type: "revenue_decline",       label: "Revenue decline %",      icon: "↘", fields: ["percentage", "endMonth"],          defaultRecurring: true },
   // ── Payroll ─────────────────────────────────────────────────────────
   { key: "hire",       family: "payroll", type: "hire",                  label: "Hire employee",          icon: "+", fields: ["amount", "endMonth"],              amountHint: "Monthly salary cost", defaultRecurring: true },
-  { key: "term",       family: "payroll", type: "terminate",             label: "Terminate employee",     icon: "−", fields: ["amount", "endMonth"],              amountHint: "Monthly salary saved", defaultRecurring: true },
-  { key: "raise",      family: "payroll", type: "salary_increase",       label: "Salary increase",        icon: "↑", fields: ["amount", "endMonth"],              amountHint: "Monthly raise amount", defaultRecurring: true },
+  { key: "term",       family: "payroll", type: "terminate",             label: "Terminate employee",     icon: "−", fields: ["endMonth"],                        defaultRecurring: true, pickFromRoster: ["employee"] },
+  { key: "raise",      family: "payroll", type: "salary_increase",       label: "Salary increase",        icon: "↑", fields: ["amount", "percentage", "endMonth"], amountHint: "Monthly raise amount", defaultRecurring: true, hasScopeToggle: true },
   { key: "bonus",      family: "payroll", type: "bonus",                 label: "One-time bonus",         icon: "★", fields: ["amount"],                          amountHint: "One-time bonus amount", defaultRecurring: false },
   { key: "contr-add",  family: "payroll", type: "contractor_add",        label: "Add contractor",         icon: "+", fields: ["amount", "endMonth"],              amountHint: "Monthly cost", defaultRecurring: true },
-  { key: "contr-rem",  family: "payroll", type: "contractor_remove",     label: "Remove contractor",      icon: "−", fields: ["amount", "endMonth"],              amountHint: "Monthly cost removed", defaultRecurring: true },
+  { key: "contr-rem",  family: "payroll", type: "contractor_remove",     label: "Remove contractor",      icon: "−", fields: ["endMonth"],                        defaultRecurring: true, pickFromRoster: ["contractor", "freelancer"] },
   // ── Expense ─────────────────────────────────────────────────────────
   { key: "mkt-up",     family: "expense", type: "marketing_change",      label: "Increase marketing",     icon: "↑", fields: ["amount", "endMonth"],              amountHint: "Monthly increase ($)", defaultRecurring: true },
   { key: "mkt-down",   family: "expense", type: "marketing_change",      label: "Reduce marketing",       icon: "↓", fields: ["amount", "endMonth"],              amountHint: "Monthly cut ($, will be subtracted)", defaultRecurring: true },
@@ -80,12 +106,18 @@ function fmtMoney(value: number, currency: string) {
   }
 }
 
+type RaiseScope = "specific" | "overall";
+
 export default function ScenarioBuilder({
   assumptions,
+  roster,
+  activePayrollSum,
   maxMonthsAhead,
   currency,
 }: {
   assumptions: AssumptionRow[];
+  roster: RosterMember[];
+  activePayrollSum: number;
   maxMonthsAhead: number;
   currency: string;
 }) {
@@ -100,12 +132,23 @@ export default function ScenarioBuilder({
     endMonth: string;
     isRecurring: boolean;
     notes: string;
+    employeeId: string;    // selected from roster picker (terminate / remove contractor / specific raise)
+    raiseScope: RaiseScope; // for salary_increase only
   }>({
     label: "", amount: "", percentagePct: "", startMonth: "1", endMonth: "",
-    isRecurring: true, notes: "",
+    isRecurring: true, notes: "", employeeId: "", raiseScope: "specific",
   });
 
   const def = openKey ? EVENTS.find((e) => e.key === openKey) ?? null : null;
+
+  // Roster filtered for the currently-open card
+  const eligibleRoster = def?.pickFromRoster
+    ? roster.filter((r) => r.status === "active" && def.pickFromRoster!.includes(r.employmentType as "employee" | "contractor" | "freelancer"))
+    : [];
+
+  // For "Salary increase" we want the same active-employee picker when the
+  // scope is "specific".
+  const raiseEmployees = roster.filter((r) => r.status === "active" && r.employmentType === "employee");
 
   function openCard(key: string) {
     const d = EVENTS.find((e) => e.key === key);
@@ -118,25 +161,110 @@ export default function ScenarioBuilder({
       endMonth: "",
       isRecurring: d?.defaultRecurring ?? true,
       notes: "",
+      employeeId: "",
+      raiseScope: "specific",
     });
   }
 
   async function submit() {
     if (!def) return;
-    if (!form.label.trim()) { alert("Please add a short label."); return; }
-    const amt = Number(form.amount || 0);
-    const pct = Number(form.percentagePct || 0) / 100;
-    // For "Reduce marketing" / "Remove cost" we want the amount to be applied
-    // as a negative (cost reduction). The engine handles signs per type, but
-    // we normalize the input here: the user types a positive number and we
-    // flip when the event is a "down/reduce/remove" semantically.
-    const isReductionUI = ["mkt-down"].includes(def.key);
-    const signedAmount = isReductionUI ? -Math.abs(amt) : amt;
 
     const startMonth = Math.max(1, Math.min(maxMonthsAhead, Number(form.startMonth || 1)));
     const endMonth = form.endMonth.trim() === ""
       ? null
       : Math.max(startMonth, Math.min(maxMonthsAhead, Number(form.endMonth)));
+
+    // Roster-picker variants: terminate / remove contractor
+    if (def.pickFromRoster) {
+      const emp = eligibleRoster.find((r) => r.id === form.employeeId);
+      if (!emp) {
+        alert(`Please pick a ${def.pickFromRoster.includes("employee") ? "n employee" : " contractor"} from the dropdown.`);
+        return;
+      }
+      try {
+        await createAssumption({
+          family: "payroll",
+          type: def.type,
+          label: `${emp.name}${emp.role ? ` · ${emp.role}` : ""}`,
+          amount: Math.round(emp.monthlyCost * 100) / 100,
+          percentage: 0,
+          startMonth,
+          endMonth,
+          isRecurring: true,
+          notes: form.notes || null,
+        });
+        setOpenKey(null);
+        startTransition(() => router.refresh());
+      } catch (e) {
+        alert(`Failed to save: ${(e as Error).message}`);
+      }
+      return;
+    }
+
+    // Salary increase variants
+    if (def.type === "salary_increase") {
+      const pct = Number(form.percentagePct || 0) / 100;
+      const amtFromForm = Number(form.amount || 0);
+      if (form.raiseScope === "specific") {
+        const emp = raiseEmployees.find((r) => r.id === form.employeeId);
+        if (!emp) { alert("Pick an employee for the raise."); return; }
+        // Resolve $ amount: if user entered a percent, compute it against
+        // the employee's gross salary; otherwise use the typed amount.
+        const monthlyDelta = pct > 0 ? emp.grossSalary * pct : amtFromForm;
+        if (monthlyDelta <= 0) { alert("Enter a positive percent OR amount for the raise."); return; }
+        try {
+          await createAssumption({
+            family: "payroll",
+            type: "salary_increase",
+            label: `${emp.name}${emp.role ? ` · ${emp.role}` : ""}`,
+            amount: Math.round(monthlyDelta * 100) / 100,
+            percentage: pct,
+            startMonth,
+            endMonth,
+            isRecurring: true,
+            notes: form.notes || null,
+          });
+          setOpenKey(null);
+          startTransition(() => router.refresh());
+        } catch (e) {
+          alert(`Failed to save: ${(e as Error).message}`);
+        }
+        return;
+      }
+      // Overall: stored as a different type so the engine handles it
+      // against the baseline payroll instead of as a single per-employee delta.
+      if (pct <= 0 && amtFromForm <= 0) {
+        alert("Enter a positive percent OR amount for the overall raise.");
+        return;
+      }
+      try {
+        await createAssumption({
+          family: "payroll",
+          type: "salary_increase_overall",
+          label: pct > 0
+            ? `Overall raise · +${(pct * 100).toFixed(1)}%`
+            : `Overall raise · +${fmtMoney(amtFromForm, currency)}/mo`,
+          amount: amtFromForm > 0 ? Math.round(amtFromForm * 100) / 100 : 0,
+          percentage: pct,
+          startMonth,
+          endMonth,
+          isRecurring: true,
+          notes: form.notes || null,
+        });
+        setOpenKey(null);
+        startTransition(() => router.refresh());
+      } catch (e) {
+        alert(`Failed to save: ${(e as Error).message}`);
+      }
+      return;
+    }
+
+    // ── Default form path (everything else) ──────────────────────────
+    if (!form.label.trim()) { alert("Please add a short label."); return; }
+    const amt = Number(form.amount || 0);
+    const pct = Number(form.percentagePct || 0) / 100;
+    const isReductionUI = ["mkt-down"].includes(def.key);
+    const signedAmount = isReductionUI ? -Math.abs(amt) : amt;
 
     try {
       await createAssumption({
@@ -168,6 +296,9 @@ export default function ScenarioBuilder({
     await clearAllAssumptions();
     startTransition(() => router.refresh());
   }
+
+  const selectedRosterEmp = eligibleRoster.find((r) => r.id === form.employeeId);
+  const selectedRaiseEmp = raiseEmployees.find((r) => r.id === form.employeeId);
 
   return (
     <>
@@ -202,19 +333,132 @@ export default function ScenarioBuilder({
         {def ? (
           <div className="mt-4 pt-4 border-t border-line">
             <div className="font-medium mb-3">{def.label}</div>
-            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
-              <div className="md:col-span-2">
-                <label className="label">Label</label>
-                <input
-                  className="input"
-                  value={form.label}
-                  onChange={(e) => setForm({ ...form, label: e.target.value })}
-                  placeholder="e.g. Marketing manager, Acme contract"
-                />
+
+            {/* Salary-increase scope toggle */}
+            {def.hasScopeToggle ? (
+              <div className="mb-4 flex items-center gap-2">
+                <span className="text-xs text-slate-400 mr-1">Apply to</span>
+                <button
+                  type="button"
+                  className={`text-xs px-3 py-1 rounded-md border transition ${
+                    form.raiseScope === "specific"
+                      ? "bg-accent-soft border-accent text-accent"
+                      : "border-line text-slate-300 hover:bg-ink-700"
+                  }`}
+                  onClick={() => setForm({ ...form, raiseScope: "specific" })}
+                >
+                  Specific employee
+                </button>
+                <button
+                  type="button"
+                  className={`text-xs px-3 py-1 rounded-md border transition ${
+                    form.raiseScope === "overall"
+                      ? "bg-accent-soft border-accent text-accent"
+                      : "border-line text-slate-300 hover:bg-ink-700"
+                  }`}
+                  onClick={() => setForm({ ...form, raiseScope: "overall" })}
+                >
+                  Overall salary
+                </button>
               </div>
-              {def.fields.includes("amount") ? (
+            ) : null}
+
+            <div className="grid grid-cols-1 md:grid-cols-6 gap-3 items-end">
+              {/* Roster picker (terminate / remove contractor) */}
+              {def.pickFromRoster ? (
+                <div className="md:col-span-3">
+                  <label className="label">
+                    {def.pickFromRoster.includes("employee") ? "Employee" : "Contractor"}
+                  </label>
+                  {eligibleRoster.length === 0 ? (
+                    <div className="text-xs text-slate-400 px-3 py-2 rounded-md border border-line">
+                      No active {def.pickFromRoster.includes("employee") ? "employees" : "contractors"} on the roster. Add one in the Employees tab.
+                    </div>
+                  ) : (
+                    <select
+                      className="input"
+                      value={form.employeeId}
+                      onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
+                    >
+                      <option value="">— pick from roster —</option>
+                      {eligibleRoster.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}{r.role ? ` · ${r.role}` : ""} — {fmtMoney(r.monthlyCost, currency)}/mo
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {selectedRosterEmp ? (
+                    <div className="text-xs text-slate-400 mt-1">
+                      Fully-loaded monthly cost: <span className="text-slate-200">{fmtMoney(selectedRosterEmp.monthlyCost, currency)}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* Salary-increase: specific scope — employee picker */}
+              {def.type === "salary_increase" && form.raiseScope === "specific" ? (
+                <div className="md:col-span-3">
+                  <label className="label">Employee</label>
+                  {raiseEmployees.length === 0 ? (
+                    <div className="text-xs text-slate-400 px-3 py-2 rounded-md border border-line">
+                      No active employees yet. Add one in the Employees tab.
+                    </div>
+                  ) : (
+                    <select
+                      className="input"
+                      value={form.employeeId}
+                      onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
+                    >
+                      <option value="">— pick from roster —</option>
+                      {raiseEmployees.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.name}{r.role ? ` · ${r.role}` : ""} — gross {fmtMoney(r.grossSalary, currency)}/mo
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {selectedRaiseEmp ? (
+                    <div className="text-xs text-slate-400 mt-1">
+                      Current gross: <span className="text-slate-200">{fmtMoney(selectedRaiseEmp.grossSalary, currency)}</span>
+                    </div>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {/* Salary-increase: overall — global hint */}
+              {def.type === "salary_increase" && form.raiseScope === "overall" ? (
+                <div className="md:col-span-3">
+                  <label className="label">Scope</label>
+                  <div className="text-xs text-slate-400 px-3 py-2 rounded-md border border-line">
+                    Applied across the active roster (~{fmtMoney(activePayrollSum, currency)}/mo total payroll baseline).
+                  </div>
+                </div>
+              ) : null}
+
+              {/* Label — only needed when there's no roster pick AND no overall scope */}
+              {!def.pickFromRoster && def.type !== "salary_increase" ? (
+                <div className="md:col-span-2">
+                  <label className="label">Label</label>
+                  <input
+                    className="input"
+                    value={form.label}
+                    onChange={(e) => setForm({ ...form, label: e.target.value })}
+                    placeholder="e.g. Marketing manager, Acme contract"
+                  />
+                </div>
+              ) : null}
+
+              {/* Amount field — shown for all non-roster cards that include it */}
+              {!def.pickFromRoster && def.fields.includes("amount") ? (
                 <div>
-                  <label className="label">Amount</label>
+                  <label className="label">
+                    {def.type === "salary_increase" && form.raiseScope === "overall"
+                      ? "Or flat amount ($/mo, all team)"
+                      : def.type === "salary_increase"
+                        ? "Or flat amount ($/mo)"
+                        : "Amount"}
+                  </label>
                   <input
                     className="input"
                     type="number"
@@ -225,9 +469,13 @@ export default function ScenarioBuilder({
                   />
                 </div>
               ) : null}
-              {def.fields.includes("percentage") ? (
+
+              {/* Percent field */}
+              {!def.pickFromRoster && def.fields.includes("percentage") ? (
                 <div>
-                  <label className="label">Percent</label>
+                  <label className="label">
+                    {def.type === "salary_increase" ? "Percent raise" : "Percent"}
+                  </label>
                   <input
                     className="input"
                     type="number"
@@ -238,6 +486,7 @@ export default function ScenarioBuilder({
                   />
                 </div>
               ) : null}
+
               <div>
                 <label className="label">Start month</label>
                 <input

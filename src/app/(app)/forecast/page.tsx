@@ -23,9 +23,10 @@ import {
   type Assumption,
 } from "@/lib/forecast";
 import { fmtMoney } from "@/lib/format";
+import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/workforce";
 import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
-import ScenarioBuilder from "./ScenarioBuilder";
+import ScenarioBuilder, { type RosterMember } from "./ScenarioBuilder";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
   return v === "3m" || v === "6m" || v === "12m" || v === "ytd" || v === "last_year" || v === "custom";
@@ -48,13 +49,45 @@ export default async function ForecastPage({
   const horizon = horizonByForecastValue(sp.horizon ?? "12m");
   const range = resolveHistoricalRange(historical, sp.hist_from, sp.hist_to);
 
-  const [baseline, assumptionRows] = await Promise.all([
+  const [baseline, assumptionRows, employees] = await Promise.all([
     loadBaseline(business.id, range.fromYM, range.toYM, range.label),
     prisma.forecastAssumption.findMany({
       where: { businessId: business.id },
       orderBy: { createdAt: "asc" },
     }),
+    prisma.employee.findMany({
+      where: { businessId: business.id },
+      orderBy: { name: "asc" },
+    }),
   ]);
+
+  // The Scenario Builder uses this roster to constrain "Terminate employee",
+  // "Remove contractor", and the "Specific employee" salary-increase mode —
+  // so each picks from the actual roster, not free-text.
+  const roster: RosterMember[] = employees.map((e) => {
+    const row: EmployeeRow = {
+      id: e.id, name: e.name, role: e.role,
+      employmentType: e.employmentType, department: e.department,
+      employerTaxes: e.employerTaxes, pension: e.pension,
+      benefits: e.benefits, additionalCosts: e.additionalCosts,
+      status: e.status,
+      grossMonthlySalary: e.grossMonthlySalary,
+      employerCostMultiplier: e.employerCostMultiplier,
+      startDate: e.startDate, endDate: e.endDate, notes: e.notes,
+    };
+    return {
+      id: e.id,
+      name: e.name,
+      role: e.role ?? null,
+      employmentType: (e.employmentType ?? "employee").toLowerCase(),
+      status: effectiveStatus(row),
+      monthlyCost: computeEmployeeCost(row).total,
+      grossSalary: e.grossMonthlySalary,
+    };
+  });
+  const activePayrollSum = roster
+    .filter((r) => r.status === "active" && r.employmentType === "employee")
+    .reduce((s, r) => s + r.monthlyCost, 0);
 
   // Hide assumptions whose startMonth is beyond the forecast horizon so the
   // engine doesn't pull them into a chart they wouldn't show on anyway.
@@ -159,6 +192,8 @@ export default async function ForecastPage({
           isRecurring: a.isRecurring,
           notes: a.notes ?? null,
         }))}
+        roster={roster}
+        activePayrollSum={activePayrollSum}
         maxMonthsAhead={horizon.months}
         currency={ccy}
       />

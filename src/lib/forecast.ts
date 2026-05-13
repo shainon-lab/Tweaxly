@@ -554,6 +554,19 @@ export function runScenario(
           scExpenses += a.amount;
           notes.push(`raise ${a.label}`);
           break;
+        case "salary_increase_overall": {
+          // Overall raise applies to the whole roster. Two flavors:
+          //   - percentage: scaled against the historical payroll baseline
+          //   - flat amount: added wholesale every active month
+          // Whichever is non-zero takes effect; if both, the percent wins.
+          const delta = a.percentage > 0
+            ? baseline.avgPayroll * a.percentage
+            : a.amount;
+          scPayroll += delta;
+          scExpenses += delta;
+          notes.push(a.label || `overall raise +${(a.percentage * 100).toFixed(1)}%`);
+          break;
+        }
         case "bonus":
           if (oneTimeMonth || a.isRecurring) {
             scPayroll += a.amount;
@@ -740,6 +753,9 @@ function displayAssumption(a: Assumption): string {
     case "hire":             return `Hiring ${a.label}`;
     case "terminate":        return `Terminating ${a.label}`;
     case "salary_increase":  return `Salary increase for ${a.label}`;
+    case "salary_increase_overall": return a.percentage > 0
+      ? `Overall salary increase of ${(a.percentage * 100).toFixed(1)}%`
+      : `Overall salary increase of ${a.label}`;
     case "bonus":            return `Bonus for ${a.label}`;
     case "contractor_add":   return `Adding contractor ${a.label}`;
     case "contractor_remove":return `Removing contractor ${a.label}`;
@@ -767,6 +783,12 @@ function estimateAssumptionAnnualImpact(a: Assumption): number {
     case "hire":
     case "contractor_add":
     case "salary_increase":
+      return -a.amount * months;
+    case "salary_increase_overall":
+      // Both legs of the overall raise hurt profit by `amount × months`.
+      // When stored as a percent we don't know the dollar value here
+      // (engine reconstructs it against baseline.avgPayroll) — return 0
+      // so the ranking falls back to other signals.
       return -a.amount * months;
     case "terminate":
     case "contractor_remove":
