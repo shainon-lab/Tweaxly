@@ -17,8 +17,7 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   // sits inside this group instead.
   { href: "/report", label: "Reports and Insights", icon: "📑", alertKey: "insights" },
   { href: "/workforce", label: "Workforce Overview", icon: "👥" },
-  // "Set notifications" used to live here; it's now under
-  // Business Signals → Alerts → Set Alerts.
+  { href: "/notifications", label: "Set notifications", icon: "🔔" },
   // Single "Data" entry collapses Import data / Transactions / Data log —
   // those three views share an internal DataTabs row. Default landing is
   // /manual-data so the user opens on the same tab the DataTabs nav puts

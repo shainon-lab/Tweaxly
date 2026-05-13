@@ -158,7 +158,7 @@ export default function ThresholdAlertsBox({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/business-signals/alerts/settings" className="btn-ghost">
+          <Link href="/notifications" className="btn-ghost">
             {hasAny ? "Manage notifications" : "Set notifications"}
           </Link>
           <button
@@ -212,7 +212,7 @@ export default function ThresholdAlertsBox({
               <div className="text-xs text-slate-400 max-w-xs">
                 When a metric you&apos;re watching crosses a threshold (e.g. revenue drops 10% MoM, expenses rise above $5,000 QoQ), it&apos;ll show up here with the current value, the prior period, and the change.
                 {" "}
-                <Link href="/business-signals/alerts/settings" className="text-accent hover:underline">Set up your first notification →</Link>
+                <Link href="/notifications" className="text-accent hover:underline">Set up your first notification →</Link>
               </div>
             </>
           ) : enabledRules === 0 ? (
@@ -220,7 +220,7 @@ export default function ThresholdAlertsBox({
               <div className="text-sm font-medium text-slate-200 mb-1">No active notifications</div>
               <div className="text-xs text-slate-400 max-w-xs">
                 You have {totalRules} notification{totalRules === 1 ? "" : "s"} configured, but none are enabled right now.{" "}
-                <Link href="/business-signals/alerts/settings" className="text-accent hover:underline">Enable a notification →</Link>
+                <Link href="/notifications" className="text-accent hover:underline">Enable a notification →</Link>
               </div>
             </>
           ) : (
@@ -228,7 +228,7 @@ export default function ThresholdAlertsBox({
               <div className="text-sm font-medium text-slate-200 mb-1">All clear</div>
               <div className="text-xs text-slate-400 max-w-xs">
                 You have {enabledRules} active notification{enabledRules === 1 ? "" : "s"} — none have crossed their threshold yet.{" "}
-                <Link href="/business-signals/alerts/settings" className="text-accent hover:underline">View notifications →</Link>
+                <Link href="/notifications" className="text-accent hover:underline">View notifications →</Link>
               </div>
             </>
           )}

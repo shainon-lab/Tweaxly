@@ -23,14 +23,9 @@ export default function BusinessSignalsTabs({
   return (
     <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => {
-        // Alerts tab stays active for everything nested under /alerts,
-        // including the Set Alerts settings page at /alerts/settings.
-        // Signals tab is matched exactly so visiting /alerts doesn't
-        // also highlight it.
         const active =
-          t.href === "/business-signals/alerts"
-            ? path.startsWith("/business-signals/alerts")
-            : path === t.href;
+          path === t.href ||
+          (t.href === "/business-signals" && path === "/business-signals");
         return (
           <Link
             key={t.href}

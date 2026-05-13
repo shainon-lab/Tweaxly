@@ -2,7 +2,6 @@
 // pool, re-rolled on every visit/refresh. See /business-signals/alerts for
 // the threshold-rule firing list.
 
-import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import PushRecommendations from "@/components/PushRecommendations";
 import { requireBusiness } from "@/lib/auth";
@@ -68,11 +67,6 @@ export default async function BusinessSignalsPage() {
       <PageHeader
         title="Business Signals"
         subtitle="The AI advisor's rotating observations — refresh the page to roll a new random set."
-        right={
-          <Link href="/business-signals/alerts/settings" className="btn-primary">
-            Set Alerts
-          </Link>
-        }
       />
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}
