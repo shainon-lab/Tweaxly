@@ -8,12 +8,26 @@
 import type { BusinessContext } from "./advisor";
 import { ymToLabel } from "./format";
 
+// General advisor prompts that always make sense regardless of the
+// data state. We keep enough of these (≥10) that even a brand-new
+// account with no data-driven prompts still fills a full 10-card grid
+// after capping at MAX_PROMPTS.
 const ALWAYS_ON_GENERAL: string[] = [
   "What should I prioritize this week to improve the business?",
   "Where am I overspending right now, and what can I cut without hurting growth?",
   "Which parts of my business are working well — and which are at risk?",
   "If you were my CFO, what would you flag for me today?",
+  "Can I afford to hire another employee, and what role would give me the highest return?",
+  "What's my cash runway, and what would extend it the most?",
+  "Are there recurring charges or subscriptions I should renegotiate or cancel?",
+  "What are my early-warning signs that something is going wrong financially?",
+  "How can I make my revenue more predictable month to month?",
+  "How does my profitability compare to where it should be for a business my size?",
+  "What would a board ask me about my latest numbers?",
+  "What's the smartest use of my next bit of extra cash — reinvest, save, or pay down debt?",
 ];
+
+const MAX_PROMPTS = 10;
 
 function pct(curr: number, prev: number): number | null {
   if (!isFinite(curr) || !isFinite(prev) || prev <= 0) return null;
@@ -148,20 +162,19 @@ export function generateConsultationPrompts(ctx: BusinessContext): string[] {
     }
   }
 
-  // Always add a couple general advisor prompts so there's never fewer
-  // than ~4 visible suggestions even on a brand-new account with no
-  // numbers yet. We append rather than prepend so the data-driven ones
-  // show first.
+  // Append general advisor prompts after the data-driven ones so the
+  // data-specific suggestions show first. We keep appending until we
+  // have at least MIN_PROMPTS unique entries — even on a brand-new
+  // account with zero data we still display a full grid.
   prompts.push(...ALWAYS_ON_GENERAL);
 
-  // Dedupe while preserving order, then cap at 10.
   const seen = new Set<string>();
   const unique: string[] = [];
   for (const p of prompts) {
     if (!seen.has(p)) {
       seen.add(p);
       unique.push(p);
-      if (unique.length >= 10) break;
+      if (unique.length >= MAX_PROMPTS) break;
     }
   }
   return unique;
