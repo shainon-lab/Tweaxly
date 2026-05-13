@@ -7,13 +7,14 @@ import ThemeToggle from "./ThemeToggle";
 type AlertKey = "transactions" | "insights";
 
 const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "▤" },
+  { href: "/dashboard", label: "Overview", icon: "▤" },
   { href: "/insights", label: "Insights", icon: "✦", alertKey: "insights" },
+  { href: "/business-signals", label: "Business Signals", icon: "◆" },
+  { href: "/forecast", label: "Forecast", icon: "↗" },
+  { href: "/consultation", label: "Consultation", icon: "✉" },
   { href: "/report", label: "Reports", icon: "▦" },
   { href: "/workforce", label: "Workforce Overview", icon: "☰" },
-  { href: "/forecast", label: "Forecast", icon: "↗" },
   { href: "/notifications", label: "Set notifications", icon: "⚐" },
-  { href: "/consultation", label: "Consultation", icon: "✉" },
   { href: "/transactions", label: "Transactions", icon: "≡", alertKey: "transactions" },
   { href: "/manual-data", label: "Import data", icon: "✎" },
   { href: "/integration", label: "Integration", icon: "⇆" },

@@ -1,29 +1,8 @@
 import PageHeader from "@/components/PageHeader";
 import { Stat } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
-import PushRecommendations from "@/components/PushRecommendations";
-import ThresholdAlertsBox from "@/components/ThresholdAlertsBox";
 import { requireBusiness } from "@/lib/auth";
-import { evaluateNotificationRules } from "@/lib/notificationsEval";
 import { activeEmployeeCost } from "@/lib/metrics";
-import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
-
-// Dashboard page is fully server-rendered, so re-randomizing on every
-// request means each refresh shows a different random 5 from the same
-// pool. That matches the user's intent — "always around 15 signals, show
-// only 5 randomly upon visiting and refreshing".
-export const dynamic = "force-dynamic";
-
-const MAX_VISIBLE_SIGNALS = 5;
-function pickRandom<T>(arr: T[], n: number): T[] {
-  if (arr.length <= n) return arr.slice();
-  const a = arr.slice();
-  for (let i = a.length - 1; i > a.length - 1 - n; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a.slice(a.length - n);
-}
 import {
   resolveDashboardRange,
   resolveCompareRange,
@@ -84,57 +63,11 @@ export default async function DashboardPage({
   const compareToYM   = compareRange ? compareRange.toYM   : resolved.prevToYM;
   const compareLabel  = compareRange ? compareRange.label  : resolved.prevLabel;
 
-  // Business Signals: generate the full pool live on every render and
-  // sample 5 — no DB persistence, so refreshing the page genuinely
-  // re-rolls the visible mix instead of pinning to a stored batch.
-  const [current, prev, employeeCost, advisorPool, mutedRows, thresholdAlerts, ruleCounts] = await Promise.all([
+  const [current, prev, employeeCost] = await Promise.all([
     buildPeriodAggregate(business.id, resolved.fromYM, resolved.toYM),
     buildPeriodAggregate(business.id, compareFromYM, compareToYM),
     activeEmployeeCost(business.id, resolved.toYM),
-    (async () => {
-      const ctx = await buildBusinessContext(business.id);
-      return recommendProactive(business.id, ctx);
-    })(),
-    prisma.mutedSignal.findMany({
-      where: { businessId: business.id, mutedUntil: { gt: new Date() } },
-    }),
-    evaluateNotificationRules(business.id),
-    prisma.notificationRule.groupBy({
-      by: ["enabled"],
-      where: { businessId: business.id },
-      _count: { _all: true },
-    }),
   ]);
-  const totalRules = ruleCounts.reduce((s, r) => s + r._count._all, 0);
-  const enabledRules = ruleCounts.find((r) => r.enabled)?._count._all ?? 0;
-
-  // Filter out muted signal-kinds, then severity-sort and sample.
-  const mutedKeys = new Set(mutedRows.map((m) => m.signalKey));
-  const eligible = advisorPool.filter((r) => !mutedKeys.has(r.signalKey));
-  const severityOrder: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
-  const sorted = [...eligible].sort(
-    (a, b) => severityOrder[a.level] - severityOrder[b.level] || b.impact - a.impact,
-  );
-  // Always show every "bad" signal we have, then fill the remaining slots
-  // with a uniform-random sample from the rest. That way critical alerts
-  // never get hidden by randomness but the user still sees variety.
-  const required = sorted.filter((r) => r.level === "bad").slice(0, MAX_VISIBLE_SIGNALS);
-  const remaining = sorted.filter((r) => r.level !== "bad");
-  const sampled = pickRandom(remaining, Math.max(0, MAX_VISIBLE_SIGNALS - required.length));
-  const chosenSignals = [...required, ...sampled];
-  // Map into the shape PushRecommendations expects. We synthesize id and
-  // timestamps since these aren't persisted any more.
-  const nowISO = new Date().toISOString();
-  const pushRecs = chosenSignals.map((r, i) => ({
-    id: `${r.signalKey}-${i}`,
-    level: r.level,
-    title: r.title,
-    detail: r.detail,
-    impact: r.impact,
-    category: r.category,
-    status: "active",
-    createdAt: nowISO,
-  }));
 
   const ccy = business.currency;
   const incomeDelta =
@@ -160,7 +93,7 @@ export default async function DashboardPage({
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title="Overview"
         subtitle={`${DASHBOARD_RANGE_LABEL[range]}: ${resolved.label} (${current.monthCount} month${current.monthCount === 1 ? "" : "s"}) — ${business.name}`}
         right={
           <DashboardPeriodPicker
@@ -189,18 +122,6 @@ export default async function DashboardPage({
         </div>
       ) : (
         <>
-          <div className="space-y-3 mb-3">
-            <PushRecommendations
-              initial={pushRecs}
-              currency={ccy}
-            />
-            <ThresholdAlertsBox
-              alerts={thresholdAlerts}
-              totalRules={totalRules}
-              enabledRules={enabledRules}
-            />
-          </div>
-
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <Stat
               label="Revenue"
