@@ -140,86 +140,11 @@ export default function PushRecommendations({
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-4">
           <div className="text-sm font-medium text-slate-200 mb-1">No signals to show</div>
           <div className="text-xs text-slate-400 max-w-xs">
-            Once there's a few months of data, the advisor surfaces signals about revenue, expenses, vendor spikes, and cash-flow risks here automatically.
+            Once there&apos;s a few months of data, the advisor surfaces signals about revenue, expenses, vendor spikes, and cash-flow risks here automatically.
           </div>
         </div>
       ) : (
-        <div className="space-y-4">
-          {recs.map((r) => {
-            const accent =
-              r.level === "bad"  ? "border-bad/40"   :
-              r.level === "warn" ? "border-warn/40"  :
-              r.level === "good" ? "border-good/40"  :
-                                   "border-accent/40";
-            // The question pre-filled into the Consultation textarea
-            // combines all three parts so the AI advisor has full
-            // context for follow-up analysis.
-            const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
-            return (
-              <div
-                key={r.id}
-                className={`relative border-l-2 pl-4 pr-2 py-3 rounded-r-lg bg-ink-900/40 ${accent}`}
-              >
-                <button
-                  className="absolute top-2 right-2 text-xs text-slate-500 hover:text-slate-200"
-                  onClick={() => close(r.id)}
-                  title="Dismiss — may reappear on refresh"
-                  aria-label="Dismiss"
-                >
-                  ✕
-                </button>
-
-                {/* Level + category pill row */}
-                <div className="flex items-center gap-2 flex-wrap mb-2 pr-6">
-                  <span className={LEVEL_PILL[r.level] ?? "pill"}>{r.level}</span>
-                  <span className="pill text-[10px]">{CATEGORY_LABEL[r.category] ?? r.category}</span>
-                  {r.impact > 0 ? (
-                    <span className="pill-good text-[10px]">
-                      ≈ {fmtMoney(r.impact, currency)}/mo
-                    </span>
-                  ) : null}
-                </div>
-
-                {/* 1. Observation — WHAT happened */}
-                <div className="font-semibold text-sm text-slate-100 leading-snug">
-                  {r.observation}
-                </div>
-
-                {/* 2. Interpretation — WHY it matters */}
-                <div className="mt-2">
-                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
-                    Why this matters
-                  </div>
-                  <div className="text-xs text-slate-300 leading-relaxed">
-                    {r.interpretation}
-                  </div>
-                </div>
-
-                {/* 3. Recommendation — WHAT to do */}
-                <div className="mt-2">
-                  <div className="text-[10px] uppercase tracking-wide text-accent mb-0.5">
-                    Recommended action
-                  </div>
-                  <div className="text-xs text-slate-200 leading-relaxed">
-                    {r.recommendation}
-                  </div>
-                </div>
-
-                {/* 4. CTA — Analyze with AI */}
-                <div className="mt-3">
-                  <Link
-                    href={`/consultation?q=${encodeURIComponent(consultQuestion)}`}
-                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition"
-                    title="Open this signal in the AI advisor for deeper analysis"
-                  >
-                    <span>Analyze with AI</span>
-                    <span className="text-[10px]">→</span>
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        <SignalGroups recs={recs} currency={currency} onClose={close} />
       )}
 
       <div
@@ -237,6 +162,164 @@ export default function PushRecommendations({
           className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
         >
           Consult on any topic
+        </Link>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Signal card grid
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Three labeled rows of cards, grouped by severity:
+//   1. Needs your attention — bad + warn (the urgent ones)
+//   2. Positive signals     — good
+//   3. Context & snapshots  — info
+// Each row is a 3-column grid on md+; empty rows collapse out.
+function SignalGroups({
+  recs,
+  currency,
+  onClose,
+}: {
+  recs: PushRec[];
+  currency: string;
+  onClose: (id: string) => void;
+}) {
+  const urgent   = recs.filter((r) => r.level === "bad" || r.level === "warn");
+  const positive = recs.filter((r) => r.level === "good");
+  const context  = recs.filter((r) => r.level === "info");
+
+  const groups: { key: string; title: string; subtitle: string; tone: "bad" | "good" | "neutral"; items: PushRec[] }[] = [
+    {
+      key: "urgent",
+      title: "Needs your attention",
+      subtitle: "Risks and outliers worth acting on first.",
+      tone: "bad",
+      items: urgent,
+    },
+    {
+      key: "positive",
+      title: "Positive signals",
+      subtitle: "What's working — lean into these.",
+      tone: "good",
+      items: positive,
+    },
+    {
+      key: "context",
+      title: "Context & snapshots",
+      subtitle: "Baseline numbers and observations to keep in mind.",
+      tone: "neutral",
+      items: context,
+    },
+  ];
+
+  return (
+    <div className="space-y-6">
+      {groups.map((g) => {
+        if (g.items.length === 0) return null;
+        const headingClass =
+          g.tone === "bad"  ? "text-bad"  :
+          g.tone === "good" ? "text-good" :
+                              "text-slate-200";
+        return (
+          <section key={g.key}>
+            <div className="flex items-baseline gap-2 flex-wrap mb-3">
+              <h3 className={`text-sm md:text-base font-semibold ${headingClass}`}>
+                {g.title}
+              </h3>
+              <span className="text-xs text-slate-500">· {g.subtitle}</span>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              {g.items.map((r) => (
+                <SignalCard
+                  key={r.id}
+                  rec={r}
+                  currency={currency}
+                  onClose={onClose}
+                />
+              ))}
+            </div>
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
+function SignalCard({
+  rec: r,
+  currency,
+  onClose,
+}: {
+  rec: PushRec;
+  currency: string;
+  onClose: (id: string) => void;
+}) {
+  const border =
+    r.level === "bad"  ? "border-bad/40"     :
+    r.level === "warn" ? "border-warn/40"    :
+    r.level === "good" ? "border-good/40"    :
+                         "border-line";
+  const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+  return (
+    <div
+      className={`relative rounded-xl border ${border} bg-ink-900/40 p-4 flex flex-col h-full`}
+    >
+      <button
+        className="absolute top-2 right-2 text-xs text-slate-500 hover:text-slate-200"
+        onClick={() => onClose(r.id)}
+        title="Dismiss — may reappear on refresh"
+        aria-label="Dismiss"
+      >
+        ✕
+      </button>
+
+      {/* Pill row */}
+      <div className="flex items-center gap-2 flex-wrap mb-2 pr-6">
+        <span className={LEVEL_PILL[r.level] ?? "pill"}>{r.level}</span>
+        <span className="pill text-[10px]">{CATEGORY_LABEL[r.category] ?? r.category}</span>
+        {r.impact > 0 ? (
+          <span className="pill-good text-[10px]">
+            ≈ {fmtMoney(r.impact, currency)}/mo
+          </span>
+        ) : null}
+      </div>
+
+      {/* Observation */}
+      <div className="font-semibold text-sm text-slate-100 leading-snug">
+        {r.observation}
+      </div>
+
+      {/* Interpretation */}
+      <div className="mt-2">
+        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
+          Why this matters
+        </div>
+        <div className="text-xs text-slate-300 leading-relaxed">
+          {r.interpretation}
+        </div>
+      </div>
+
+      {/* Recommendation */}
+      <div className="mt-2">
+        <div className="text-[10px] uppercase tracking-wide text-accent mb-0.5">
+          Recommended action
+        </div>
+        <div className="text-xs text-slate-200 leading-relaxed">
+          {r.recommendation}
+        </div>
+      </div>
+
+      {/* CTA — pushed to the bottom so all cards in a row align */}
+      <div className="mt-auto pt-3">
+        <Link
+          href={`/consultation?q=${encodeURIComponent(consultQuestion)}`}
+          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition"
+          title="Open this signal in the AI advisor for deeper analysis"
+        >
+          <span>Analyze with AI</span>
+          <span className="text-[10px]">→</span>
         </Link>
       </div>
     </div>

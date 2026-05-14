@@ -12,16 +12,10 @@ import BusinessSignalsTabs from "./BusinessSignalsTabs";
 
 export const dynamic = "force-dynamic";
 
-const MAX_VISIBLE_SIGNALS = 5;
-function pickRandom<T>(arr: T[], n: number): T[] {
-  if (arr.length <= n) return arr.slice();
-  const a = arr.slice();
-  for (let i = a.length - 1; i > a.length - 1 - n; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a.slice(a.length - n);
-}
+// Per-row cap. The Business Signals view renders three rows of cards
+// grouped by severity (urgent · positive · context), so we surface up
+// to N signals per row to fit a 3-column grid cleanly.
+const MAX_PER_GROUP = 3;
 
 export default async function BusinessSignalsPage() {
   const { business } = await requireBusiness();
@@ -42,14 +36,24 @@ export default async function BusinessSignalsPage() {
 
   const mutedKeys = new Set(mutedRows.map((m) => m.signalKey));
   const eligible = advisorPool.filter((r) => !mutedKeys.has(r.signalKey));
-  const severityOrder: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
-  const sorted = [...eligible].sort(
-    (a, b) => severityOrder[a.level] - severityOrder[b.level] || b.impact - a.impact,
-  );
-  const required = sorted.filter((r) => r.level === "bad").slice(0, MAX_VISIBLE_SIGNALS);
-  const remaining = sorted.filter((r) => r.level !== "bad");
-  const sampled = pickRandom(remaining, Math.max(0, MAX_VISIBLE_SIGNALS - required.length));
-  const chosenSignals = [...required, ...sampled];
+  // Within each row, rank by impact (signed monthly $) so the most
+  // consequential items lead. Urgency row mixes bad and warn but pins
+  // bad ahead of warn — they share the row visually but bad still
+  // wins ties.
+  const byImpact = (a: typeof eligible[number], b: typeof eligible[number]) => b.impact - a.impact;
+  const urgent = eligible
+    .filter((r) => r.level === "bad" || r.level === "warn")
+    .sort((a, b) => (a.level === b.level ? 0 : a.level === "bad" ? -1 : 1) || byImpact(a, b))
+    .slice(0, MAX_PER_GROUP);
+  const positive = eligible
+    .filter((r) => r.level === "good")
+    .sort(byImpact)
+    .slice(0, MAX_PER_GROUP);
+  const context = eligible
+    .filter((r) => r.level === "info")
+    .sort(byImpact)
+    .slice(0, MAX_PER_GROUP);
+  const chosenSignals = [...urgent, ...positive, ...context];
   const nowISO = new Date().toISOString();
   const pushRecs = chosenSignals.map((r, i) => ({
     id: `${r.signalKey}-${i}`,
