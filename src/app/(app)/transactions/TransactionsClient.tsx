@@ -257,7 +257,13 @@ export default function TransactionsClient({
                       }}
                     />
                   </td>
-                  <td><span className="pill">{t.source}</span></td>
+                  <td>
+                    {t.source === "manual" ? (
+                      <span className="pill-accent" title="Added via manual entry">Manual</span>
+                    ) : (
+                      <span className="pill">{t.source}</span>
+                    )}
+                  </td>
                   <td className="max-w-[360px]">
                     <div className="flex items-start gap-2">
                       {t.isDuplicateCandidate ? (
