@@ -1,5 +1,5 @@
 import PageHeader from "@/components/PageHeader";
-import DataTabs from "@/components/DataTabs";
+import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -47,10 +47,10 @@ export default async function TransactionsPage({
   return (
     <>
       <PageHeader
-        title="Transactions"
-        subtitle={`${txns.length} shown — categorize, mark one-time, exclude from P&L, override accounting month`}
+        title="Business Settings"
+        subtitle={`Transactions — ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
       />
-      <DataTabs />
+      <BusinessSettingsTabs />
       <TransactionsClient
         txns={txns.map((t) => ({
           id: t.id,

@@ -1,15 +1,21 @@
 "use client";
 import { useState, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import RulesClient from "../rules/RulesClient";
 import IntegrationClient from "../integration/IntegrationClient";
+import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
 
-// Settings is split into top-level tabs so the page reads as focused
-// panes: profile-and-branding, categories-and-rules, and integrations.
-// Account (billing, password, security, close) lives at a separate
-// top-level route — /account — alongside Settings in the sidebar.
+// Settings shares a top-level tab row with the Data section
+// (/manual-data, /transactions, /data-log). The shared
+// BusinessSettingsTabs component renders that nav; this file owns the
+// three panels that live under the /settings route.
 type SettingsTab = "profile" | "categories" | "integration";
+
+function resolveSettingsTab(raw: string | null): SettingsTab {
+  if (raw === "categories" || raw === "integration") return raw;
+  return "profile";
+}
 
 type Rule = {
   id: string;
@@ -80,12 +86,18 @@ export default function SettingsClient({
   rules: Rule[];
 }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [pending, startTransition] = useTransition();
   const [biz, setBiz] = useState<Biz>(business);
   const [cats, setCats] = useState<Cat[]>(categories);
   const [vends, setVends] = useState<Vendor[]>(vendors);
   const [view, setView] = useState<View>("categories");
-  const [tab, setTab] = useState<SettingsTab>("profile");
+  // The active panel is driven by the ?tab= query so the shared
+  // BusinessSettingsTabs nav (which is just a row of Links) and the
+  // panel selection stay in sync — switching tabs is a navigation, not
+  // local state. Defaulting to "profile" means /settings with no query
+  // renders the Business Profile panel.
+  const tab: SettingsTab = resolveSettingsTab(searchParams.get("tab"));
   // Modal state for Add category / Add vendor.
   const [addCatOpen, setAddCatOpen] = useState(false);
   const [addCatDraft, setAddCatDraft] = useState<{ name: string; isIncome: boolean; isOneTime: boolean }>({
@@ -376,27 +388,7 @@ export default function SettingsClient({
 
   return (
     <>
-      {/* Internal settings tabs */}
-      <div className="mb-6 -mt-2 flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
-        {([
-          { value: "profile",     label: "Business Profile" },
-          { value: "categories",  label: "Categories & Vendors" },
-          { value: "integration", label: "Integration" },
-        ] as { value: SettingsTab; label: string }[]).map((t) => (
-          <button
-            key={t.value}
-            type="button"
-            onClick={() => setTab(t.value)}
-            className={`px-4 py-1.5 rounded transition ${
-              tab === t.value
-                ? "bg-accent-soft text-accent"
-                : "text-slate-300 hover:text-white"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <BusinessSettingsTabs />
 
       {tab === "profile" ? (
         <>

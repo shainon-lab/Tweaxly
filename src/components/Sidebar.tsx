@@ -18,13 +18,12 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   { href: "/report", label: "Reports & Charts", icon: "📑", alertKey: "insights" },
   { href: "/workforce", label: "Workforce Overview", icon: "👥" },
   { href: "/notifications", label: "Set notifications", icon: "🔔" },
-  // Single "Data" entry collapses Import data / Transactions / Data log —
-  // those three views share an internal DataTabs row. Default landing is
-  // /manual-data so the user opens on the same tab the DataTabs nav puts
-  // first.
-  { href: "/manual-data", label: "Data", icon: "🗂️", alertKey: "transactions" },
-  // Integration lives inside Settings → Integration sub-tab now.
-  { href: "/settings", label: "Business Settings", icon: "⚙️" },
+  // Data (Import / Transactions / Data log) lives inside Business
+  // Settings as sub-tabs now — no standalone sidebar entry. The
+  // transactions alert badge (open duplicate groups) moves onto the
+  // Business Settings entry so it still surfaces in the sidebar.
+  // Integration also lives inside Business Settings as a sub-tab.
+  { href: "/settings", label: "Business Settings", icon: "⚙️", alertKey: "transactions" },
   { href: "/account", label: "Account", icon: "👤" },
 ];
 
@@ -115,19 +114,20 @@ export default function Sidebar({
         </div>
         <nav className="px-2 py-3 flex-1 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
-            // The "Data" entry points at /manual-data but also owns
-            // /transactions and /data-log via the DataTabs row. The
-            // "Reports and Insights" entry points at /report but also
-            // owns /data-flow and /insights via ReportsTabs. Treat each
-            // group's siblings as the same selection for the active
-            // highlight.
-            const dataRoutes = ["/manual-data", "/transactions", "/data-log"];
+            // Business Settings owns /settings AND the data sub-tab
+            // routes (/manual-data, /transactions, /data-log) AND the
+            // /integration route that still exists as a backwards-
+            // compatible landing for the Integration tab. Reports & Charts
+            // owns /report, /data-flow, /insights via ReportsTabs.
+            const settingsRoutes = [
+              "/settings", "/manual-data", "/transactions", "/data-log", "/integration",
+            ];
             const reportsRoutes = ["/report", "/data-flow", "/insights"];
-            const inDataGroup = dataRoutes.some((r) => path === r || path.startsWith(r + "/"));
+            const inSettingsGroup = settingsRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const inReportsGroup = reportsRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const active =
-              n.href === "/manual-data" ? inDataGroup :
-              n.href === "/report"      ? inReportsGroup :
+              n.href === "/settings" ? inSettingsGroup :
+              n.href === "/report"   ? inReportsGroup :
               path === n.href || path.startsWith(n.href + "/");
             const alertCount = n.alertKey ? alerts?.[n.alertKey] ?? 0 : 0;
             return (
