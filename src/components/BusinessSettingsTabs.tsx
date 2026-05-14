@@ -21,9 +21,9 @@ const TABS: { href: string; label: string; activeWhen: (path: string, tab: strin
     activeWhen: (path, tab) => path === "/settings" && (!tab || tab === "profile"),
   },
   {
-    href: "/settings?tab=categories",
-    label: "Categories & Vendors",
-    activeWhen: (path, tab) => path === "/settings" && tab === "categories",
+    href: "/manual-data",
+    label: "Import Data",
+    activeWhen: (path) => path === "/manual-data" || path.startsWith("/manual-data/"),
   },
   {
     href: "/settings?tab=integration",
@@ -31,9 +31,9 @@ const TABS: { href: string; label: string; activeWhen: (path: string, tab: strin
     activeWhen: (path, tab) => path === "/settings" && tab === "integration",
   },
   {
-    href: "/manual-data",
-    label: "Import data",
-    activeWhen: (path) => path === "/manual-data" || path.startsWith("/manual-data/"),
+    href: "/settings?tab=categories",
+    label: "Categories & Vendors",
+    activeWhen: (path, tab) => path === "/settings" && tab === "categories",
   },
   {
     href: "/transactions",
@@ -42,7 +42,7 @@ const TABS: { href: string; label: string; activeWhen: (path: string, tab: strin
   },
   {
     href: "/data-log",
-    label: "Data log",
+    label: "Data Log",
     activeWhen: (path) => path === "/data-log" || path.startsWith("/data-log/"),
   },
 ];
