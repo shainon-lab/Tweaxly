@@ -25,6 +25,7 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   { href: "/manual-data", label: "Data", icon: "🗂️", alertKey: "transactions" },
   // Integration lives inside Settings → Integration sub-tab now.
   { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "/account", label: "Account", icon: "👤" },
 ];
 
 export type SidebarAlerts = { transactions?: number; insights?: number; businessSignals?: number };
