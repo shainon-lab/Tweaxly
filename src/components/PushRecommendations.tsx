@@ -172,11 +172,14 @@ export default function PushRecommendations({
 // Signal card grid
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Three labeled rows of cards, grouped by severity:
-//   1. Needs your attention — bad + warn (the urgent ones)
-//   2. Positive signals     — good
-//   3. Context & snapshots  — info
-// Each row is a 3-column grid on md+; empty rows collapse out.
+// Four labeled rows of cards, grouped strictly by severity in the
+// hierarchy the product spec calls for. Rows with zero items collapse
+// out — not all four are populated at the same time:
+//   Critical   — level "bad"
+//   Attention  — level "warn"
+//   Positive   — level "good"
+//   Insight    — level "info"
+// Each row is a 3-column grid on md+.
 function SignalGroups({
   recs,
   currency,
@@ -186,31 +189,39 @@ function SignalGroups({
   currency: string;
   onClose: (id: string) => void;
 }) {
-  const urgent   = recs.filter((r) => r.level === "bad" || r.level === "warn");
-  const positive = recs.filter((r) => r.level === "good");
-  const context  = recs.filter((r) => r.level === "info");
+  const critical  = recs.filter((r) => r.level === "bad");
+  const attention = recs.filter((r) => r.level === "warn");
+  const positive  = recs.filter((r) => r.level === "good");
+  const insight   = recs.filter((r) => r.level === "info");
 
-  const groups: { key: string; title: string; subtitle: string; tone: "bad" | "good" | "neutral"; items: PushRec[] }[] = [
+  const groups: { key: string; title: string; subtitle: string; tone: "bad" | "warn" | "good" | "neutral"; items: PushRec[] }[] = [
     {
-      key: "urgent",
-      title: "Needs your attention",
-      subtitle: "Risks and outliers worth acting on first.",
+      key: "critical",
+      title: "Critical",
+      subtitle: "Act on these first — risks with material impact.",
       tone: "bad",
-      items: urgent,
+      items: critical,
+    },
+    {
+      key: "attention",
+      title: "Attention",
+      subtitle: "Watch closely — emerging issues worth a look.",
+      tone: "warn",
+      items: attention,
     },
     {
       key: "positive",
-      title: "Positive signals",
+      title: "Positive",
       subtitle: "What's working — lean into these.",
       tone: "good",
       items: positive,
     },
     {
-      key: "context",
-      title: "Context & snapshots",
-      subtitle: "Baseline numbers and observations to keep in mind.",
+      key: "insight",
+      title: "Insight",
+      subtitle: "Context and baseline numbers worth knowing.",
       tone: "neutral",
-      items: context,
+      items: insight,
     },
   ];
 
@@ -219,8 +230,9 @@ function SignalGroups({
       {groups.map((g) => {
         if (g.items.length === 0) return null;
         const headingClass =
-          g.tone === "bad"  ? "text-bad"  :
-          g.tone === "good" ? "text-good" :
+          g.tone === "bad"  ? "text-bad"     :
+          g.tone === "warn" ? "text-warn"    :
+          g.tone === "good" ? "text-good"    :
                               "text-slate-200";
         return (
           <section key={g.key}>
@@ -286,39 +298,46 @@ function SignalCard({
         ) : null}
       </div>
 
-      {/* Observation */}
-      <div className="font-semibold text-sm text-slate-100 leading-snug">
-        {r.observation}
+      {/* 1. What happened — the observation */}
+      <div>
+        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
+          What Happened
+        </div>
+        <div className="font-semibold text-sm text-slate-100 leading-snug">
+          {r.observation}
+        </div>
       </div>
 
-      {/* Interpretation */}
-      <div className="mt-2">
+      {/* 2. Why it matters — the interpretation */}
+      <div className="mt-3">
         <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
-          Why this matters
+          Why It Matters
         </div>
         <div className="text-xs text-slate-300 leading-relaxed">
           {r.interpretation}
         </div>
       </div>
 
-      {/* Recommendation */}
-      <div className="mt-2">
+      {/* 3. Recommended action — the suggested next step */}
+      <div className="mt-3">
         <div className="text-[10px] uppercase tracking-wide text-accent mb-0.5">
-          Recommended action
+          Recommended Action
         </div>
         <div className="text-xs text-slate-200 leading-relaxed">
           {r.recommendation}
         </div>
       </div>
 
-      {/* CTA — pushed to the bottom so all cards in a row align */}
+      {/* CTA — purple primary button so it matches the rest of the
+          system's primary actions. Pinned to the bottom so cards in a
+          row line up. */}
       <div className="mt-auto pt-3">
         <Link
           href={`/consultation?q=${encodeURIComponent(consultQuestion)}`}
-          className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition"
+          className="btn-primary text-xs px-3 py-1.5 rounded-md inline-flex items-center gap-1.5"
           title="Open this signal in the AI advisor for deeper analysis"
         >
-          <span>Analyze with AI</span>
+          <span>Consult with AI</span>
           <span className="text-[10px]">→</span>
         </Link>
       </div>

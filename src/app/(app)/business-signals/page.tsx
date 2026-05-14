@@ -36,24 +36,18 @@ export default async function BusinessSignalsPage() {
 
   const mutedKeys = new Set(mutedRows.map((m) => m.signalKey));
   const eligible = advisorPool.filter((r) => !mutedKeys.has(r.signalKey));
-  // Within each row, rank by impact (signed monthly $) so the most
-  // consequential items lead. Urgency row mixes bad and warn but pins
-  // bad ahead of warn — they share the row visually but bad still
-  // wins ties.
+  // Four severity buckets, each its own row in the UI:
+  //   Critical  — level "bad"
+  //   Attention — level "warn"
+  //   Positive  — level "good"
+  //   Insight   — level "info"
+  // Within a row, impact descending. Rows with zero items collapse out.
   const byImpact = (a: typeof eligible[number], b: typeof eligible[number]) => b.impact - a.impact;
-  const urgent = eligible
-    .filter((r) => r.level === "bad" || r.level === "warn")
-    .sort((a, b) => (a.level === b.level ? 0 : a.level === "bad" ? -1 : 1) || byImpact(a, b))
-    .slice(0, MAX_PER_GROUP);
-  const positive = eligible
-    .filter((r) => r.level === "good")
-    .sort(byImpact)
-    .slice(0, MAX_PER_GROUP);
-  const context = eligible
-    .filter((r) => r.level === "info")
-    .sort(byImpact)
-    .slice(0, MAX_PER_GROUP);
-  const chosenSignals = [...urgent, ...positive, ...context];
+  const critical  = eligible.filter((r) => r.level === "bad" ).sort(byImpact).slice(0, MAX_PER_GROUP);
+  const attention = eligible.filter((r) => r.level === "warn").sort(byImpact).slice(0, MAX_PER_GROUP);
+  const positive  = eligible.filter((r) => r.level === "good").sort(byImpact).slice(0, MAX_PER_GROUP);
+  const insight   = eligible.filter((r) => r.level === "info").sort(byImpact).slice(0, MAX_PER_GROUP);
+  const chosenSignals = [...critical, ...attention, ...positive, ...insight];
   const nowISO = new Date().toISOString();
   const pushRecs = chosenSignals.map((r, i) => ({
     id: `${r.signalKey}-${i}`,
