@@ -6,7 +6,7 @@ import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import SettingsClient from "./SettingsClient";
 
 export default async function SettingsPage() {
-  const { business } = await requireBusiness();
+  const { user, business } = await requireBusiness();
   // Backfill / catch up the Vendor registry from the actual transactions
   // before we render. Existing assignments are preserved; only brand-new
   // vendors get inserted.
@@ -54,6 +54,10 @@ export default async function SettingsPage() {
           categoryId: r.categoryId, priority: r.priority,
           setRecurring: r.setRecurring, setOneTime: r.setOneTime,
         }))}
+        user={{
+          email: user.email,
+          createdAt: user.createdAt.toISOString(),
+        }}
       />
     </>
   );

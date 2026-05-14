@@ -8,7 +8,7 @@ import ThemeToggle from "./ThemeToggle";
 type AlertKey = "transactions" | "insights" | "businessSignals";
 
 const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] = [
-  { href: "/dashboard", label: "Overview", icon: "🏠" },
+  { href: "/dashboard", label: "Executive Summary", icon: "🏠" },
   { href: "/business-signals", label: "Business Signals", icon: "📡", alertKey: "businessSignals" },
   { href: "/consultation", label: "Consultation", icon: "💬" },
   { href: "/forecast", label: "Forecast", icon: "📈" },
@@ -23,7 +23,7 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   // /manual-data so the user opens on the same tab the DataTabs nav puts
   // first.
   { href: "/manual-data", label: "Data", icon: "🗂️", alertKey: "transactions" },
-  { href: "/integration", label: "Integration", icon: "🔗" },
+  // Integration lives inside Settings → Integration sub-tab now.
   { href: "/settings", label: "Settings", icon: "⚙️" },
 ];
 
