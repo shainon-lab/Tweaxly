@@ -2,6 +2,9 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BulkUploadCard from "./BulkUploadCard";
+import DatedUploadCard from "./DatedUploadCard";
+
+type UploadMode = "dated" | "monthly";
 
 type Category = { id: string; name: string; kind: string };
 
@@ -52,6 +55,14 @@ export default function ManualDataClient({
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Bulk upload now has two flavors:
+  //   "dated"   — each row carries its own date (bank export / template).
+  //               System derives accountingMonth per row.
+  //   "monthly" — one file per month, user picks the month for the whole
+  //               file (legacy P&L summary style).
+  // Default to "dated" since it matches what most people upload.
+  const [uploadMode, setUploadMode] = useState<UploadMode>("dated");
 
   // Form state
   const [type, setType] = useState<"income" | "outcome">("outcome");
@@ -175,7 +186,60 @@ export default function ManualDataClient({
         </div>
       </div>
 
-      <BulkUploadCard currency={currency} />
+      {/* Mode selector — two upload patterns. Each renders the matching card. */}
+      <div className="card mb-4">
+        <div className="font-medium mb-1">How are you uploading?</div>
+        <div className="text-sm text-slate-400 mb-3">
+          Pick the option that matches your file. You can switch any time.
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => setUploadMode("dated")}
+            className={`text-left rounded-xl border p-4 transition ${
+              uploadMode === "dated"
+                ? "border-accent bg-accent-soft/30"
+                : "border-line bg-ink-900/30 hover:border-accent/40"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className={uploadMode === "dated" ? "pill-accent" : "pill text-[10px]"}>
+                {uploadMode === "dated" ? "selected" : "option 1"}
+              </span>
+              <span className="font-medium text-slate-100">Dated transactions</span>
+            </div>
+            <div className="text-xs text-slate-400 leading-relaxed">
+              Each row has its own date. We assign every transaction to the right month automatically.
+              Works with our CSV template or most bank exports.
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setUploadMode("monthly")}
+            className={`text-left rounded-xl border p-4 transition ${
+              uploadMode === "monthly"
+                ? "border-accent bg-accent-soft/30"
+                : "border-line bg-ink-900/30 hover:border-accent/40"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className={uploadMode === "monthly" ? "pill-accent" : "pill text-[10px]"}>
+                {uploadMode === "monthly" ? "selected" : "option 2"}
+              </span>
+              <span className="font-medium text-slate-100">Monthly summary</span>
+            </div>
+            <div className="text-xs text-slate-400 leading-relaxed">
+              All rows in the file belong to the same month — like a P&L sheet for May. You pick the month, we apply it to every row.
+            </div>
+          </button>
+        </div>
+      </div>
+
+      {uploadMode === "dated" ? (
+        <DatedUploadCard currency={currency} />
+      ) : (
+        <BulkUploadCard currency={currency} />
+      )}
 
       <div className="card mb-6">
         <div className="font-medium mb-3">Add a single manual entry</div>
