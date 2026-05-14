@@ -144,7 +144,7 @@ export default function ThresholdAlertsBox({
   }
 
   return (
-    <div className={`card mb-0 h-full flex flex-col ${newAlerts.length > 0 ? "border-bad/40" : ""}`}>
+    <div className={`card mb-0 flex flex-col min-h-[280px] ${newAlerts.length > 0 ? "border-bad/40" : ""}`}>
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {newAlerts.length > 0 ? (
@@ -208,12 +208,13 @@ export default function ThresholdAlertsBox({
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-4">
           {totalRules === 0 ? (
             <>
-              <div className="text-sm font-medium text-slate-200 mb-1">No alerts firing</div>
-              <div className="text-xs text-slate-400 max-w-xs">
-                When a metric you&apos;re watching crosses a threshold (e.g. revenue drops 10% MoM, expenses rise above $5,000 QoQ), it&apos;ll show up here with the current value, the prior period, and the change.
-                {" "}
-                <Link href="/notifications" className="text-accent hover:underline">Set up your first notification →</Link>
+              <div className="text-base font-medium text-slate-100 mb-2">No notifications set yet</div>
+              <div className="text-sm text-slate-400 max-w-md leading-relaxed mb-4">
+                You haven&apos;t set up any threshold notifications. Add your first one to get alerted when revenue, expenses, net profit, or any category crosses a limit (e.g. revenue drops 10% MoM, expenses rise above $5,000 QoQ).
               </div>
+              <Link href="/notifications" className="btn-primary">
+                Set up your first notification
+              </Link>
             </>
           ) : enabledRules === 0 ? (
             <>

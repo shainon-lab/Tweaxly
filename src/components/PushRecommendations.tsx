@@ -103,7 +103,7 @@ export default function PushRecommendations({
     Date.now() - new Date(newest.createdAt).getTime() > 1000 * 60 * 60 * 24;
 
   return (
-    <div className="card mb-0 h-full flex flex-col">
+    <div className="card mb-0 flex flex-col min-h-[280px]">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-medium">Business Signals</span>
