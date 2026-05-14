@@ -2,8 +2,10 @@
 
 // Sub-tab nav for the Business Signals page.
 //   Signals — rotating advisor observations (the random-5-of-15 feed).
-//   Alerts  — threshold rules that have fired.
-// When `firingAlerts > 0`, the Alerts tab gets a red "!" badge so the
+//   Monitor — threshold rules that have fired (formerly "Alerts"). The
+//             Monitor sub-tab also houses notification rule management
+//             via an inline "Monitor Events" toggle.
+// When `firingAlerts > 0`, the Monitor tab gets a red count badge so the
 // user can see at a glance that something is over-threshold. The sidebar
 // shows the same badge on the Business Signals entry itself.
 
@@ -18,7 +20,7 @@ export default function BusinessSignalsTabs({
   const path = usePathname();
   const TABS: { href: string; label: string; alert?: boolean }[] = [
     { href: "/business-signals",        label: "Signals" },
-    { href: "/business-signals/alerts", label: "Alerts", alert: firingAlerts > 0 },
+    { href: "/business-signals/alerts", label: "Monitor", alert: firingAlerts > 0 },
   ];
   return (
     <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">

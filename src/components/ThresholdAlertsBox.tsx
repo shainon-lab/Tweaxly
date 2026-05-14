@@ -1,8 +1,24 @@
 "use client";
 import { useState, useTransition } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { TriggeredAlert } from "@/lib/notificationsEval";
+import NotificationsClient from "@/app/(app)/notifications/NotificationsClient";
+
+type RuleRow = {
+  id: string;
+  metric: string;
+  categoryId: string | null;
+  categoryName: string | null;
+  direction: string;
+  thresholdType: string;
+  thresholdValue: number;
+  period: string;
+  label: string | null;
+  enabled: boolean;
+  createdAt: string;
+};
+
+type CategoryRow = { id: string; name: string; kind: string };
 
 const LEVEL_PILL: Record<TriggeredAlert["level"], string> = {
   good: "pill-good",
@@ -40,15 +56,25 @@ export default function ThresholdAlertsBox({
   alerts,
   totalRules = 0,
   enabledRules = 0,
+  rules = [],
+  categories = [],
+  currency = "USD",
 }: {
   alerts: TriggeredAlert[];
   totalRules?: number;
   enabledRules?: number;
+  rules?: RuleRow[];
+  categories?: CategoryRow[];
+  currency?: string;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // "Monitor Events" toggle — when open, the full notification-rule
+  // manager renders inline below the alerts card. Replaces the previous
+  // "Manage notifications" Link to /notifications.
+  const [eventsOpen, setEventsOpen] = useState(false);
 
   // Split into "New" (unacknowledged) and "Previous" (read but still firing).
   // Newest first by firstFiredAt within each section.
@@ -144,6 +170,7 @@ export default function ThresholdAlertsBox({
   }
 
   return (
+    <>
     <div className={`card mb-0 flex flex-col min-h-[280px] ${newAlerts.length > 0 ? "border-bad/40" : ""}`}>
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
@@ -164,9 +191,15 @@ export default function ThresholdAlertsBox({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
-          <Link href="/notifications" className="btn-ghost">
-            {hasAny ? "Manage notifications" : "Set notifications"}
-          </Link>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={() => setEventsOpen((v) => !v)}
+            aria-expanded={eventsOpen}
+            title={eventsOpen ? "Hide the rule editor" : "Add or edit notification rules"}
+          >
+            {eventsOpen ? "Hide Monitor Events" : "Monitor Events"}
+          </button>
           <button
             type="button"
             className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-line text-slate-300 hover:text-white hover:bg-ink-700 transition disabled:opacity-50"
@@ -218,16 +251,26 @@ export default function ThresholdAlertsBox({
               <div className="text-sm text-slate-400 max-w-md leading-relaxed mb-4">
                 You haven&apos;t set up any threshold notifications. Add your first one to get alerted when revenue, expenses, net profit, or any category crosses a limit (e.g. revenue drops 10% MoM, expenses rise above $5,000 QoQ).
               </div>
-              <Link href="/notifications" className="btn-primary">
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setEventsOpen(true)}
+              >
                 Set up your first notification
-              </Link>
+              </button>
             </>
           ) : enabledRules === 0 ? (
             <>
               <div className="text-sm font-medium text-slate-200 mb-1">No active notifications</div>
               <div className="text-xs text-slate-400 max-w-xs">
                 You have {totalRules} notification{totalRules === 1 ? "" : "s"} configured, but none are enabled right now.{" "}
-                <Link href="/notifications" className="text-accent hover:underline">Enable a notification →</Link>
+                <button
+                  type="button"
+                  className="text-accent hover:underline"
+                  onClick={() => setEventsOpen(true)}
+                >
+                  Enable a notification →
+                </button>
               </div>
             </>
           ) : (
@@ -235,13 +278,49 @@ export default function ThresholdAlertsBox({
               <div className="text-sm font-medium text-slate-200 mb-1">All clear</div>
               <div className="text-xs text-slate-400 max-w-xs">
                 You have {enabledRules} active notification{enabledRules === 1 ? "" : "s"} — none have crossed their threshold yet.{" "}
-                <Link href="/notifications" className="text-accent hover:underline">View notifications →</Link>
+                <button
+                  type="button"
+                  className="text-accent hover:underline"
+                  onClick={() => setEventsOpen(true)}
+                >
+                  View notifications →
+                </button>
               </div>
             </>
           )}
         </div>
       )}
     </div>
+
+    {/* Monitor Events — the notification-rule manager. Toggled inline
+        below the alerts card so the user can add/edit/disable rules
+        without leaving the Monitor sub-tab. */}
+    {eventsOpen ? (
+      <div className="mt-6 card border-accent/30">
+        <div className="flex items-center justify-between mb-3">
+          <div>
+            <div className="text-base font-semibold text-slate-100">Monitor Events</div>
+            <div className="text-xs text-slate-400">
+              Pick the metrics you want watched and what should trigger a notification.
+            </div>
+          </div>
+          <button
+            type="button"
+            className="text-xs text-slate-400 hover:text-slate-200"
+            onClick={() => setEventsOpen(false)}
+            aria-label="Close Monitor Events"
+          >
+            ✕ Hide
+          </button>
+        </div>
+        <NotificationsClient
+          currency={currency}
+          initialRules={rules}
+          categories={categories}
+        />
+      </div>
+    ) : null}
+    </>
   );
 }
 
