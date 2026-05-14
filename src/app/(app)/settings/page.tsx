@@ -31,7 +31,7 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader
-        title="Settings"
+        title="Business Settings"
         subtitle="Business profile and branding, plus categories, vendors, and the rules that auto-classify your transactions."
       />
       <SettingsClient

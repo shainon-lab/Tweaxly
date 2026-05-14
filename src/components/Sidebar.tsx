@@ -24,7 +24,7 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   // first.
   { href: "/manual-data", label: "Data", icon: "🗂️", alertKey: "transactions" },
   // Integration lives inside Settings → Integration sub-tab now.
-  { href: "/settings", label: "Settings", icon: "⚙️" },
+  { href: "/settings", label: "Business Settings", icon: "⚙️" },
   { href: "/account", label: "Account", icon: "👤" },
 ];
 
