@@ -104,6 +104,21 @@ export type BusinessContext = {
   dataFlow: DataFlowGrid;
   manualEntries: ManualEntryInfo[];
   recentUploads: RecentUploadInfo[];
+  // User-supplied free-text notes from the underlying transactions,
+  // bucketed by vendor and by category for the trailing 3 months. Used
+  // by the signal generators to quote real context the user provided
+  // (e.g. "Owner funding due to delayed USD conversion") rather than
+  // describing numbers in the abstract.
+  notesByVendor: Record<string, NoteInfo[]>;
+  notesByCategory: Record<string, NoteInfo[]>;
+};
+
+export type NoteInfo = {
+  date: string;          // ISO yyyy-mm-dd
+  ym: string;            // accounting month
+  vendor: string | null;
+  amount: number;        // signed
+  note: string;
 };
 
 const safeDiv = (a: number, b: number) => (b > 0 ? a / b : 0);
@@ -258,6 +273,42 @@ export async function buildBusinessContext(
     transactionCount: u._count.transactions,
   }));
 
+  // Pull every transaction with a non-empty note from the last 3 accounting
+  // months, then bucket by vendor and by category name. Signal generators
+  // read these maps to quote the user's own context back at them when a
+  // flagged vendor or category has a note attached.
+  const trail3YMs = [0, 1, 2].map((i) => shiftYM(baseYM, -i));
+  const notedTxns = await prisma.transaction.findMany({
+    where: {
+      businessId,
+      accountingMonth: { in: trail3YMs },
+      notes: { not: null },
+    },
+    include: { category: { select: { name: true } } },
+    orderBy: { transactionDate: "desc" },
+    take: 200,
+  });
+  const notesByVendor: Record<string, NoteInfo[]> = {};
+  const notesByCategory: Record<string, NoteInfo[]> = {};
+  for (const t of notedTxns) {
+    const note = (t.notes ?? "").trim();
+    if (!note) continue;
+    const entry: NoteInfo = {
+      date: t.transactionDate.toISOString().slice(0, 10),
+      ym: t.accountingMonth,
+      vendor: t.vendor,
+      amount: t.amount,
+      note,
+    };
+    if (t.vendor) {
+      (notesByVendor[t.vendor] ??= []).push(entry);
+    }
+    const catName = t.category?.name;
+    if (catName) {
+      (notesByCategory[catName] ??= []).push(entry);
+    }
+  }
+
   return {
     ccy,
     ym: baseYM,
@@ -279,7 +330,19 @@ export async function buildBusinessContext(
     dataFlow,
     manualEntries,
     recentUploads,
+    notesByVendor,
+    notesByCategory,
   };
+}
+
+// Pick the most relevant note for a given key and format it as a short
+// inline quote the signal interpretation can append. Most-recent note
+// wins, capped at ~140 chars so it doesn't overrun the card.
+function quoteRelevantNote(notes: NoteInfo[] | undefined): string {
+  if (!notes || notes.length === 0) return "";
+  const n = notes[0]; // already sorted desc by transactionDate
+  const trimmed = n.note.length > 140 ? `${n.note.slice(0, 137).trim()}…` : n.note;
+  return ` Your own note on this from ${ymToLabel(n.ym)}: "${trimmed}"`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -356,7 +419,7 @@ export async function recommendProactive(
         recs.push({
           level: "warn",
           observation: `${v.vendor} cost rose ${fmtPct((v.amount - prevAmt) / prevAmt)} in ${curLabel} vs ${prevLabel}.`,
-          interpretation: `${v.vendor} went from ${fmtMoney(prevAmt, ccy)} to ${fmtMoney(v.amount, ccy)} in a single month. Spend moves of this size are usually a scope change, a price hike, or an unauthorized add-on — rarely random.`,
+          interpretation: `${v.vendor} went from ${fmtMoney(prevAmt, ccy)} to ${fmtMoney(v.amount, ccy)} in a single month. Spend moves of this size are usually a scope change, a price hike, or an unauthorized add-on — rarely random.${quoteRelevantNote(ctx.notesByVendor[v.vendor])}`,
           recommendation: `Ask the vendor for a line-item breakdown of the increase. A 10% renegotiation on the new total would recover ${fmtMoney(v.amount * 0.10, ccy)}/mo.`,
           impact: round0(v.amount * 0.10),
           category: "vendor",
@@ -426,7 +489,7 @@ export async function recommendProactive(
     recs.push({
       level: "warn",
       observation: `${topVendors[0].vendor} is ${fmtPct(topVendors[0].amount / current.expenses)} of your ${curLabel} expenses.`,
-      interpretation: `When a single vendor controls this much of your spend, you have concentration risk: a price hike, outage, or scope shift hits the business disproportionately and your negotiating leverage drops over time.`,
+      interpretation: `When a single vendor controls this much of your spend, you have concentration risk: a price hike, outage, or scope shift hits the business disproportionately and your negotiating leverage drops over time.${quoteRelevantNote(ctx.notesByVendor[topVendors[0].vendor])}`,
       recommendation: `Open a renegotiation conversation. Even a 10% discount frees ${fmtMoney(topVendors[0].amount * 0.10, ccy)}/mo — and identifying a secondary vendor as a backup is cheap insurance.`,
       impact: round0(topVendors[0].amount * 0.10),
       category: "vendor",
@@ -489,7 +552,7 @@ export async function recommendProactive(
       recs.push({
         level: "info",
         observation: `${catName} is your largest expense in ${curLabel} — ${fmtMoney(amt, ccy)} (${fmtPct(share)} of total).`,
-        interpretation: `When a single bucket dominates this much of your spend, it defines the floor on what you can cut without structural changes — every other category combined is smaller.`,
+        interpretation: `When a single bucket dominates this much of your spend, it defines the floor on what you can cut without structural changes — every other category combined is smaller.${quoteRelevantNote(ctx.notesByCategory[catName])}`,
         recommendation: `Categorize this bucket: fixed (rent, salaries) vs variable (vendors, tools). The variable share is where realistic cuts live.`,
         impact: 0,
         category: "other",
@@ -501,10 +564,15 @@ export async function recommendProactive(
   // 12. Expense MoM jump — separate from vendor spikes
   if (prev.expenses > 1000 && current.expenses > prev.expenses * 1.15) {
     const delta = current.expenses - prev.expenses;
+    // If any of the current-month notes might explain the jump (e.g.
+    // "One-time office renovation"), surface the most recent one inline.
+    const curMonthNotes = Object.values(ctx.notesByCategory)
+      .flat()
+      .filter((n) => n.ym === ctx.ym);
     recs.push({
       level: "warn",
       observation: `Total expenses jumped ${fmtPct(delta / prev.expenses)} in ${curLabel} (+${fmtMoney(delta, ccy)}).`,
-      interpretation: `An expense jump this size in a single month is rarely organic — it usually points to a new vendor contract, a one-time charge that should be flagged, or a creep across multiple categories that needs attention.`,
+      interpretation: `An expense jump this size in a single month is rarely organic — it usually points to a new vendor contract, a one-time charge that should be flagged, or a creep across multiple categories that needs attention.${quoteRelevantNote(curMonthNotes)}`,
       recommendation: `Scan the Transactions tab filtered to ${curLabel}. Sort by amount and isolate the two or three line items that account for the bulk of the increase.`,
       impact: 0,
       category: "cashflow",

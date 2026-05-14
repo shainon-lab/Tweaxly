@@ -12,6 +12,7 @@ type Txn = {
   source: string;
   vendor: string | null;
   description: string;
+  notes: string | null;
   isRecurring: boolean;
   isOneTime: boolean;
   isExcludedFromPnl: boolean;
@@ -280,6 +281,15 @@ export default function TransactionsClient({
                           {t.description || "—"}
                         </div>
                         {t.vendor ? <div className={`text-xs truncate ${ignored ? "text-slate-600" : "text-slate-400"}`}>{t.vendor}</div> : null}
+                        {t.notes ? (
+                          <div
+                            className={`text-xs mt-0.5 italic flex items-start gap-1 ${ignored ? "text-slate-600" : "text-accent/80"}`}
+                            title={t.notes}
+                          >
+                            <span aria-hidden="true">📝</span>
+                            <span className="truncate">{t.notes}</span>
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </td>

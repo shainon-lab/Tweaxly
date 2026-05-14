@@ -62,6 +62,7 @@ export default async function TransactionsPage({
           source: t.source,
           vendor: t.vendor,
           description: t.description,
+          notes: t.notes,
           isRecurring: t.isRecurring,
           isOneTime: t.isOneTime,
           isExcludedFromPnl: t.isExcludedFromPnl,
