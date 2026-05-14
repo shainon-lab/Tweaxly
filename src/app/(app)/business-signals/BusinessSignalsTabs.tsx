@@ -43,7 +43,7 @@ export default function BusinessSignalsTabs({
                 title={`${firingAlerts} alert${firingAlerts === 1 ? "" : "s"} firing`}
                 aria-label={`${firingAlerts} alerts`}
               >
-                !
+                {firingAlerts > 99 ? "99+" : firingAlerts}
               </span>
             ) : null}
           </Link>

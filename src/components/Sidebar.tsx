@@ -148,7 +148,7 @@ export default function Sidebar({
                     title={`${alertCount} need${alertCount === 1 ? "s" : ""} your attention`}
                     aria-label={`${alertCount} alerts`}
                   >
-                    !
+                    {alertCount > 99 ? "99+" : alertCount}
                   </span>
                 ) : null}
               </Link>

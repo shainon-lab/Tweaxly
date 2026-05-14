@@ -148,7 +148,13 @@ export default function ThresholdAlertsBox({
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           {newAlerts.length > 0 ? (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-bad text-white text-[11px] font-bold">!</span>
+            <span
+              className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-bad text-white text-[11px] font-bold leading-none"
+              title={`${newAlerts.length} unread alert${newAlerts.length === 1 ? "" : "s"}`}
+              aria-label={`${newAlerts.length} unread alerts`}
+            >
+              {newAlerts.length > 99 ? "99+" : newAlerts.length}
+            </span>
           ) : null}
           <span className="text-base font-medium">Notifications Alerts</span>
           {newAlerts.length > 0 ? (
