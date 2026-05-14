@@ -4,7 +4,6 @@ import { prisma } from "@/lib/db";
 import { syncVendorsFromTransactions } from "@/lib/vendorSync";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import SettingsClient from "./SettingsClient";
-import RulesClient from "../rules/RulesClient";
 
 export default async function SettingsPage() {
   const { business } = await requireBusiness();
@@ -31,7 +30,10 @@ export default async function SettingsPage() {
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
   return (
     <>
-      <PageHeader title="Settings" subtitle="Business profile, categories, vendors, and categorization rules." />
+      <PageHeader
+        title="Settings"
+        subtitle="Business profile and branding, plus categories, vendors, and the rules that auto-classify your transactions."
+      />
       <SettingsClient
         business={{
           id: business.id, name: business.name, currency: business.currency,
@@ -47,22 +49,12 @@ export default async function SettingsPage() {
         vendors={vendors.map((v) => ({
           id: v.id, name: v.name, categoryId: v.categoryId, isOneTime: v.isOneTime,
         }))}
+        rules={rules.map((r) => ({
+          id: r.id, matchField: r.matchField, matchType: r.matchType, pattern: r.pattern,
+          categoryId: r.categoryId, priority: r.priority,
+          setRecurring: r.setRecurring, setOneTime: r.setOneTime,
+        }))}
       />
-
-      <div className="mt-8">
-        <div className="flex items-baseline justify-between mb-3">
-          <h2 className="text-lg font-semibold text-slate-100">Categorization rules</h2>
-          <p className="text-xs text-slate-400">If a description or vendor matches your pattern, the system auto-assigns the category. Higher priority wins.</p>
-        </div>
-        <RulesClient
-          rules={rules.map((r) => ({
-            id: r.id, matchField: r.matchField, matchType: r.matchType, pattern: r.pattern,
-            categoryId: r.categoryId, priority: r.priority,
-            setRecurring: r.setRecurring, setOneTime: r.setOneTime,
-          }))}
-          categories={categories.map((c) => ({ id: c.id, name: c.name }))}
-        />
-      </div>
     </>
   );
 }

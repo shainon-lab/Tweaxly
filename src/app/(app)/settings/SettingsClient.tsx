@@ -2,6 +2,22 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import CurrencyPicker from "@/components/CurrencyPicker";
+import RulesClient from "../rules/RulesClient";
+
+// Settings is split into two top-level tabs so the page reads as a
+// focused profile-and-branding pane vs a categorization-rules pane.
+type SettingsTab = "profile" | "categories";
+
+type Rule = {
+  id: string;
+  matchField: string;
+  matchType: string;
+  pattern: string;
+  categoryId: string;
+  priority: number;
+  setRecurring: boolean;
+  setOneTime: boolean;
+};
 
 type Biz = {
   id: string; name: string; currency: string; fiscalStartMonth: number;
@@ -53,10 +69,12 @@ export default function SettingsClient({
   business,
   categories,
   vendors,
+  rules,
 }: {
   business: Biz;
   categories: Cat[];
   vendors: Vendor[];
+  rules: Rule[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -64,6 +82,7 @@ export default function SettingsClient({
   const [cats, setCats] = useState<Cat[]>(categories);
   const [vends, setVends] = useState<Vendor[]>(vendors);
   const [view, setView] = useState<View>("categories");
+  const [tab, setTab] = useState<SettingsTab>("profile");
   // Modal state for Add category / Add vendor.
   const [addCatOpen, setAddCatOpen] = useState(false);
   const [addCatDraft, setAddCatDraft] = useState<{ name: string; isIncome: boolean; isOneTime: boolean }>({
@@ -354,8 +373,31 @@ export default function SettingsClient({
 
   return (
     <>
+      {/* Internal settings tabs */}
+      <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+        {([
+          { value: "profile",    label: "Business Profile" },
+          { value: "categories", label: "Categories & Vendors" },
+        ] as { value: SettingsTab; label: string }[]).map((t) => (
+          <button
+            key={t.value}
+            type="button"
+            onClick={() => setTab(t.value)}
+            className={`px-4 py-1.5 rounded transition ${
+              tab === t.value
+                ? "bg-accent-soft text-accent"
+                : "text-slate-300 hover:text-white"
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {tab === "profile" ? (
+        <>
       <div className="card mb-6">
-        <div className="font-medium mb-3">Business</div>
+        <div className="font-medium mb-3">Business Profile</div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
           <div className="md:col-span-2"><label className="label">Name</label>
             <input className="input" value={biz.name} onChange={(e) => setBiz({ ...biz, name: e.target.value })} />
@@ -442,7 +484,12 @@ export default function SettingsClient({
         ) : null}
       </div>
 
-      <div className="card">
+        </>
+      ) : null}
+
+      {tab === "categories" ? (
+        <>
+      <div className="card mb-6">
         <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
           <div className="font-medium">Categories &amp; vendors</div>
           <div className="inline-flex items-center rounded-md border border-line overflow-hidden text-xs">
@@ -585,6 +632,25 @@ export default function SettingsClient({
           </>
         ) : null}
       </div>
+
+      {/* Categorization rules — auto-assign categories to incoming
+          transactions when their description or vendor matches a
+          pattern. Lives inside this tab because rules edit how
+          categories get applied. */}
+      <div className="card">
+        <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
+          <div className="font-medium">Categorization rules</div>
+          <p className="text-xs text-slate-400 max-w-md">
+            If a description or vendor matches your pattern, the system auto-assigns the category. Higher priority wins.
+          </p>
+        </div>
+        <RulesClient
+          rules={rules}
+          categories={cats.map((c) => ({ id: c.id, name: c.name }))}
+        />
+      </div>
+        </>
+      ) : null}
 
       {/* Add category modal */}
       {addCatOpen ? (
