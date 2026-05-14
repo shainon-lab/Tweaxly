@@ -17,7 +17,9 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   // sits inside this group instead.
   { href: "/report", label: "Reports & Charts", icon: "📑", alertKey: "insights" },
   { href: "/workforce", label: "Workforce Overview", icon: "👥" },
-  { href: "/notifications", label: "Set notifications", icon: "🔔" },
+  // "Set notifications" lives inline inside Business Signals → Monitor
+  // → Set Monitor Events now, so no standalone sidebar entry. The
+  // /notifications route still exists as a fallback destination.
   // Data (Import / Transactions / Data log) lives inside Business
   // Settings as sub-tabs now — no standalone sidebar entry. The
   // transactions alert badge (open duplicate groups) moves onto the
