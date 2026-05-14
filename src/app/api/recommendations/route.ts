@@ -65,8 +65,12 @@ export async function POST(_req: NextRequest) {
       data: chosen.map((r) => ({
         businessId: business.id,
         level: r.level,
-        title: r.title,
-        detail: r.detail,
+        // The Prisma table predates the observation/interpretation/recommendation
+        // split, so we collapse them back into title + detail for persistence.
+        // The table is currently unused by the UI; if we ever wire it back up,
+        // migrate the schema first.
+        title: r.observation,
+        detail: `${r.interpretation}\n\nRecommended action: ${r.recommendation}`,
         impact: r.impact,
         category: r.category,
         signalKey: r.signalKey,

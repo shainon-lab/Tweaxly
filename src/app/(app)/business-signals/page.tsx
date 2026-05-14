@@ -54,8 +54,9 @@ export default async function BusinessSignalsPage() {
   const pushRecs = chosenSignals.map((r, i) => ({
     id: `${r.signalKey}-${i}`,
     level: r.level,
-    title: r.title,
-    detail: r.detail,
+    observation: r.observation,
+    interpretation: r.interpretation,
+    recommendation: r.recommendation,
     impact: r.impact,
     category: r.category,
     status: "active",

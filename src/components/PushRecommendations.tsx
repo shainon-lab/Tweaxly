@@ -6,8 +6,13 @@ import Link from "next/link";
 export type PushRec = {
   id: string;
   level: string;
-  title: string;
-  detail: string;
+  // Three-part executive signal structure:
+  //   observation     — WHAT happened (headline)
+  //   interpretation  — WHY it matters (AI analysis)
+  //   recommendation  — WHAT to do next (suggested action)
+  observation: string;
+  interpretation: string;
+  recommendation: string;
   impact: number;
   category: string;
   status: string;
@@ -139,49 +144,77 @@ export default function PushRecommendations({
           </div>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="space-y-4">
           {recs.map((r) => {
             const accent =
               r.level === "bad"  ? "border-bad/40"   :
               r.level === "warn" ? "border-warn/40"  :
               r.level === "good" ? "border-good/40"  :
                                    "border-accent/40";
+            // The question pre-filled into the Consultation textarea
+            // combines all three parts so the AI advisor has full
+            // context for follow-up analysis.
+            const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
             return (
               <div
                 key={r.id}
-                className={`flex items-start gap-3 border-l-2 pl-3 ${accent}`}
+                className={`relative border-l-2 pl-4 pr-2 py-3 rounded-r-lg bg-ink-900/40 ${accent}`}
               >
-                <span className={LEVEL_PILL[r.level] ?? "pill"}>{r.level}</span>
-                <div className="min-w-0 flex-1">
-                  <div className="font-medium text-sm">{r.title}</div>
-                  <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">{r.detail}</div>
-                  <div className="flex items-center gap-2 flex-wrap mt-1.5">
-                    <span className="pill text-[10px]">{CATEGORY_LABEL[r.category] ?? r.category}</span>
-                    {r.impact > 0 ? (
-                      <span className="pill-good text-[10px]">
-                        ≈ {fmtMoney(r.impact, currency)}/mo
-                      </span>
-                    ) : null}
+                <button
+                  className="absolute top-2 right-2 text-xs text-slate-500 hover:text-slate-200"
+                  onClick={() => close(r.id)}
+                  title="Dismiss — may reappear on refresh"
+                  aria-label="Dismiss"
+                >
+                  ✕
+                </button>
+
+                {/* Level + category pill row */}
+                <div className="flex items-center gap-2 flex-wrap mb-2 pr-6">
+                  <span className={LEVEL_PILL[r.level] ?? "pill"}>{r.level}</span>
+                  <span className="pill text-[10px]">{CATEGORY_LABEL[r.category] ?? r.category}</span>
+                  {r.impact > 0 ? (
+                    <span className="pill-good text-[10px]">
+                      ≈ {fmtMoney(r.impact, currency)}/mo
+                    </span>
+                  ) : null}
+                </div>
+
+                {/* 1. Observation — WHAT happened */}
+                <div className="font-semibold text-sm text-slate-100 leading-snug">
+                  {r.observation}
+                </div>
+
+                {/* 2. Interpretation — WHY it matters */}
+                <div className="mt-2">
+                  <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
+                    Why this matters
+                  </div>
+                  <div className="text-xs text-slate-300 leading-relaxed">
+                    {r.interpretation}
                   </div>
                 </div>
-                <div className="flex flex-col items-end gap-1.5 shrink-0">
+
+                {/* 3. Recommendation — WHAT to do */}
+                <div className="mt-2">
+                  <div className="text-[10px] uppercase tracking-wide text-accent mb-0.5">
+                    Recommended action
+                  </div>
+                  <div className="text-xs text-slate-200 leading-relaxed">
+                    {r.recommendation}
+                  </div>
+                </div>
+
+                {/* 4. CTA — Analyze with AI */}
+                <div className="mt-3">
                   <Link
-                    href={`/consultation?q=${encodeURIComponent(
-                      `${r.title}. ${r.detail} — what should I know and what should I do about it?`
-                    )}`}
-                    className="text-[11px] px-2 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition whitespace-nowrap"
-                    title="Open this signal in the AI advisor"
+                    href={`/consultation?q=${encodeURIComponent(consultQuestion)}`}
+                    className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition"
+                    title="Open this signal in the AI advisor for deeper analysis"
                   >
-                    Consult AI
+                    <span>Analyze with AI</span>
+                    <span className="text-[10px]">→</span>
                   </Link>
-                  <button
-                    className="text-xs text-slate-400 hover:text-slate-200"
-                    onClick={() => close(r.id)}
-                    title="Close — may reappear on refresh"
-                    aria-label="Close"
-                  >
-                    ✕
-                  </button>
                 </div>
               </div>
             );

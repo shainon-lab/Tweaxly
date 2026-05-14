@@ -36,9 +36,10 @@ async function main() {
   console.log("\n— Proactive recommendations —");
   const recs = await recommendProactive(business.id, ctx);
   for (const r of recs) {
-    console.log(`[${r.level.toUpperCase()}] (${r.category}) ${r.title}`);
+    console.log(`[${r.level.toUpperCase()}] (${r.category}) ${r.observation}`);
     console.log(`        impact ≈ $${Math.round(r.impact)}/mo`);
-    console.log(`        ${r.detail}`);
+    console.log(`        why: ${r.interpretation}`);
+    console.log(`        do : ${r.recommendation}`);
   }
 
   console.log("\n— Persisting recommendations —");
@@ -48,8 +49,8 @@ async function main() {
       data: recs.map((r) => ({
         businessId: business.id,
         level: r.level,
-        title: r.title,
-        detail: r.detail,
+        title: r.observation,
+        detail: `${r.interpretation}\n\nRecommended action: ${r.recommendation}`,
         impact: r.impact,
         category: r.category,
         payload: r.payload ? JSON.stringify(r.payload) : null,

@@ -26,8 +26,14 @@ export type RecommendationItem = {
 
 export type AdvisorRecommendation = {
   level: "info" | "good" | "warn" | "bad";
-  title: string;
-  detail: string;
+  // Each signal is structured as three explicit parts so the UI can
+  // render them with distinct emphasis (executive briefing tone):
+  //   observation     — WHAT happened. Concise, headline-style.
+  //   interpretation  — WHY it matters. The AI's analytical read.
+  //   recommendation  — WHAT to do next. Suggested action.
+  observation: string;
+  interpretation: string;
+  recommendation: string;
   impact: number; // signed monthly $ — positive = savings or new revenue
   category:
     | "marketing"
@@ -303,8 +309,9 @@ export async function recommendProactive(
     const trim = Math.max(0, avgMarketing - target);
     recs.push({
       level: "warn",
-      title: `Marketing is ${fmtPct(marketingRatio)} of revenue across ${trail3Label} — above the 25% threshold`,
-      detail: `Across ${trail3Label} you averaged ${fmtMoney(avgMarketing, ccy)}/mo in marketing on ${fmtMoney(avgRevenue, ccy)}/mo of revenue. Trimming to ~20% of revenue would free roughly ${fmtMoney(trim, ccy)}/mo. Worth A/B-testing a reduced spend month before committing.`,
+      observation: `Marketing is ${fmtPct(marketingRatio)} of revenue — above the 25% guardrail.`,
+      interpretation: `Across ${trail3Label} you averaged ${fmtMoney(avgMarketing, ccy)}/mo in marketing on ${fmtMoney(avgRevenue, ccy)}/mo of revenue. Spend at this intensity leaves little room to absorb a slow month and usually signals declining campaign efficiency.`,
+      recommendation: `A/B-test a reduced spend month before committing — trimming to ~20% of revenue would free roughly ${fmtMoney(trim, ccy)}/mo without disrupting top performers.`,
       impact: round0(trim),
       category: "marketing",
       signalKey: "marketing_intensity_high",
@@ -316,8 +323,9 @@ export async function recommendProactive(
       Math.abs(current.income - prev.income) / Math.max(prev.income, 1) < 0.10) {
     recs.push({
       level: "good",
-      title: `Marketing cut held in ${curLabel} without hurting revenue`,
-      detail: `Marketing went from ${fmtMoney(prev.marketing, ccy)} in ${prevLabel} to ${fmtMoney(current.marketing, ccy)} in ${curLabel} while revenue stayed flat. Lock in the savings unless you're seeing pipeline drop in 60–90 days.`,
+      observation: `Marketing cut held in ${curLabel} without hurting revenue.`,
+      interpretation: `Marketing went from ${fmtMoney(prev.marketing, ccy)} in ${prevLabel} to ${fmtMoney(current.marketing, ccy)} in ${curLabel} while revenue stayed flat — efficiency improved, not just spend.`,
+      recommendation: `Lock in the savings unless you start seeing pipeline drop in 60–90 days. Watch CAC and conversion rates as your leading indicators.`,
       impact: round0(prev.marketing - current.marketing),
       category: "marketing",
       signalKey: "marketing_cut_held",
@@ -347,8 +355,9 @@ export async function recommendProactive(
       if (prevAmt > 100 && v.amount > prevAmt * 1.4 && v.amount - prevAmt > 200) {
         recs.push({
           level: "warn",
-          title: `${v.vendor} cost up ${fmtPct((v.amount - prevAmt) / prevAmt)} in ${curLabel} vs ${prevLabel}`,
-          detail: `${v.vendor} went from ${fmtMoney(prevAmt, ccy)} in ${prevLabel} to ${fmtMoney(v.amount, ccy)} in ${curLabel}. If you didn't authorize a scope change, ask for a line-item breakdown. A 10% renegotiation on the new total would save ${fmtMoney(v.amount * 0.10, ccy)}/mo.`,
+          observation: `${v.vendor} cost rose ${fmtPct((v.amount - prevAmt) / prevAmt)} in ${curLabel} vs ${prevLabel}.`,
+          interpretation: `${v.vendor} went from ${fmtMoney(prevAmt, ccy)} to ${fmtMoney(v.amount, ccy)} in a single month. Spend moves of this size are usually a scope change, a price hike, or an unauthorized add-on — rarely random.`,
+          recommendation: `Ask the vendor for a line-item breakdown of the increase. A 10% renegotiation on the new total would recover ${fmtMoney(v.amount * 0.10, ccy)}/mo.`,
           impact: round0(v.amount * 0.10),
           category: "vendor",
           signalKey: `vendor_spike:${v.vendor}`,
@@ -362,8 +371,9 @@ export async function recommendProactive(
     const gap = Math.abs(forecast[0].expectedNet);
     recs.push({
       level: "bad",
-      title: `${ymToLabel(forecast[0].ym)} is forecast to run negative`,
-      detail: `Projected net for ${ymToLabel(forecast[0].ym)}: ${fmtMoney(forecast[0].expectedNet, ccy)}. You'd need to find ${fmtMoney(gap, ccy)} either by accelerating receivables, cutting ${fmtMoney(gap, ccy)} of recurring spend, or pulling from reserves. See the Consultation page to model specific cuts.`,
+      observation: `${ymToLabel(forecast[0].ym)} is forecast to run negative — projected net ${fmtMoney(forecast[0].expectedNet, ccy)}.`,
+      interpretation: `Based on current trailing run-rates of revenue and expenses, next month closes ${fmtMoney(gap, ccy)} short. This is the kind of gap that compounds — if you don't close it now, the month after gets worse.`,
+      recommendation: `Pick one lever today: accelerate receivables, cut ${fmtMoney(gap, ccy)} of recurring spend, or draw from reserves. Use Consultation to model which path costs the business least.`,
       impact: round0(gap),
       category: "cashflow",
       signalKey: "forecast_negative_next_month",
@@ -374,8 +384,9 @@ export async function recommendProactive(
   if (avgRevenue > 0 && ctx.avgPayroll / avgRevenue > 0.5) {
     recs.push({
       level: "warn",
-      title: `Payroll is ${fmtPct(ctx.avgPayroll / avgRevenue)} of revenue across ${trail3Label}`,
-      detail: `Average payroll across ${trail3Label} is ${fmtMoney(ctx.avgPayroll, ccy)}/mo against ${fmtMoney(avgRevenue, ccy)}/mo revenue. Above 50% leaves little room for overheads or downturns. Either grow revenue or rebalance the team.`,
+      observation: `Payroll is ${fmtPct(ctx.avgPayroll / avgRevenue)} of revenue — heavy for your run-rate.`,
+      interpretation: `Across ${trail3Label}, ${fmtMoney(ctx.avgPayroll, ccy)}/mo of payroll sits against ${fmtMoney(avgRevenue, ccy)}/mo revenue. Above 50% the business runs on a thin operational margin and a slow month flips you to a loss.`,
+      recommendation: `Grow revenue per head or rebalance the team. Start with role-level revenue contribution — under-utilized seats are the safest place to look first.`,
       impact: 0,
       category: "payroll",
       signalKey: "payroll_heavy",
@@ -386,8 +397,9 @@ export async function recommendProactive(
   if (totalThisMonth > 0 && uncategorizedCount / totalThisMonth > 0.20) {
     recs.push({
       level: "info",
-      title: `${uncategorizedCount} transactions still uncategorized in ${curLabel}`,
-      detail: `${fmtPct(uncategorizedCount / totalThisMonth)} of ${curLabel} is uncategorized. Every other recommendation here gets sharper once you fix this — start with the Rules page to auto-classify the recurring stuff.`,
+      observation: `${uncategorizedCount} ${curLabel} transactions are still uncategorized (${fmtPct(uncategorizedCount / totalThisMonth)}).`,
+      interpretation: `Uncategorized transactions hide in your totals as "Other" — they distort every category-based signal here, including margin, payroll ratio, and vendor concentration.`,
+      recommendation: `Start with the Rules page to auto-classify the recurring stuff. Cleaning this is the single highest-leverage data action you can take.`,
       impact: 0,
       category: "accuracy",
       signalKey: "uncategorized_high",
@@ -400,8 +412,9 @@ export async function recommendProactive(
       marketingRatio < 0.10) {
     recs.push({
       level: "info",
-      title: `${curLabel}: healthy margin, light marketing — room to invest`,
-      detail: `In ${curLabel}, net profit is ${fmtPct(current.netProfit / avgRevenue)} of revenue and marketing is only ${fmtPct(marketingRatio)}. You have headroom to test a +25% marketing month and measure CAC. See Consultation to model the impact.`,
+      observation: `Healthy margin with light marketing in ${curLabel} — you have growth headroom.`,
+      interpretation: `Net profit is ${fmtPct(current.netProfit / avgRevenue)} of revenue and marketing is only ${fmtPct(marketingRatio)}. Profitable businesses under-investing in acquisition tend to plateau — you're leaving growth on the table.`,
+      recommendation: `Test a +25% marketing month and measure CAC against your current baseline. Use Consultation to model the cashflow impact before committing.`,
       impact: 0,
       category: "growth",
       signalKey: "growth_headroom",
@@ -412,8 +425,9 @@ export async function recommendProactive(
   if (topVendors[0] && current.expenses > 0 && topVendors[0].amount / current.expenses > 0.20) {
     recs.push({
       level: "warn",
-      title: `${topVendors[0].vendor} is ${fmtPct(topVendors[0].amount / current.expenses)} of ${curLabel} expenses`,
-      detail: `In ${curLabel}, that's a concentrated dependency. Worth a renegotiation conversation — even a 10% discount frees ${fmtMoney(topVendors[0].amount * 0.10, ccy)}/mo.`,
+      observation: `${topVendors[0].vendor} is ${fmtPct(topVendors[0].amount / current.expenses)} of your ${curLabel} expenses.`,
+      interpretation: `When a single vendor controls this much of your spend, you have concentration risk: a price hike, outage, or scope shift hits the business disproportionately and your negotiating leverage drops over time.`,
+      recommendation: `Open a renegotiation conversation. Even a 10% discount frees ${fmtMoney(topVendors[0].amount * 0.10, ccy)}/mo — and identifying a secondary vendor as a backup is cheap insurance.`,
       impact: round0(topVendors[0].amount * 0.10),
       category: "vendor",
       signalKey: `vendor_concentration:${topVendors[0].vendor}`,
@@ -426,10 +440,15 @@ export async function recommendProactive(
     const pct = delta / prev.income;
     recs.push({
       level: delta >= 0 ? "good" : "warn",
-      title: delta >= 0
-        ? `Revenue up ${fmtPct(pct)} in ${curLabel} vs ${prevLabel}`
-        : `Revenue down ${fmtPct(Math.abs(pct))} in ${curLabel} vs ${prevLabel}`,
-      detail: `Revenue moved from ${fmtMoney(prev.income, ccy)} in ${prevLabel} to ${fmtMoney(current.income, ccy)} in ${curLabel} (${delta >= 0 ? "+" : "−"}${fmtMoney(Math.abs(delta), ccy)}). Worth checking which channel or contract drove the change.`,
+      observation: delta >= 0
+        ? `Revenue rose ${fmtPct(pct)} in ${curLabel} (${fmtMoney(prev.income, ccy)} → ${fmtMoney(current.income, ccy)}).`
+        : `Revenue fell ${fmtPct(Math.abs(pct))} in ${curLabel} (${fmtMoney(prev.income, ccy)} → ${fmtMoney(current.income, ccy)}).`,
+      interpretation: delta >= 0
+        ? `A month-over-month swing of this size usually traces to a single channel or contract — knowing which one tells you whether it's repeatable or a one-off bump.`
+        : `A drop of this size typically reflects either lost contracts, channel decay, or seasonal softness. Identifying which determines whether you act or wait.`,
+      recommendation: delta >= 0
+        ? `Identify the channel or deal that drove the upside and check whether you can replicate the conditions next month.`
+        : `Pull the top 5 revenue sources in ${prevLabel} vs ${curLabel} and isolate which one moved. That's where the answer is.`,
       impact: 0,
       category: "growth",
       signalKey: "revenue_mom_swing",
@@ -441,12 +460,17 @@ export async function recommendProactive(
     const margin = current.netProfit / current.income;
     recs.push({
       level: margin >= 0.20 ? "good" : margin >= 0 ? "info" : "warn",
-      title: `Net margin in ${curLabel}: ${fmtPct(margin)}`,
-      detail: margin >= 0.20
-        ? `${curLabel}: ${fmtMoney(current.netProfit, ccy)} net on ${fmtMoney(current.income, ccy)} revenue — healthy. Hold the line on discretionary spend to keep this through any slow months.`
+      observation: `Net margin in ${curLabel}: ${fmtPct(margin)} (${fmtMoney(current.netProfit, ccy)} on ${fmtMoney(current.income, ccy)} revenue).`,
+      interpretation: margin >= 0.20
+        ? `Margins above 20% give you the operational cushion to invest, retain talent through downturns, and weather slow months without painful cuts.`
         : margin >= 0
-          ? `${curLabel}: ${fmtMoney(current.netProfit, ccy)} net on ${fmtMoney(current.income, ccy)} revenue. Sub-20% margin is workable but thin — one slow month could flip it negative.`
-          : `${curLabel}: ${fmtMoney(current.netProfit, ccy)} net on ${fmtMoney(current.income, ccy)} revenue — running at a loss. Use Forecast to model what trimming top expense categories does.`,
+          ? `Sub-20% margin is workable but thin. One slow month or a single unplanned expense can flip the period negative — you're operating without much of a safety net.`
+          : `Running at a loss this month means every expense is eroding cash reserves. The longer this state continues, the fewer options you have when you finally act.`,
+      recommendation: margin >= 0.20
+        ? `Hold the line on discretionary spend so this margin survives any slow months. Use the cushion to make one growth bet, not five.`
+        : margin >= 0
+          ? `Identify two expense categories you can trim by 10% without operational impact — that's typically enough to lift margin into a healthier band.`
+          : `Use Forecast to model what trimming your top two expense categories does. Treat this as urgent, not a "next quarter" project.`,
       impact: 0,
       category: "cashflow",
       signalKey: "net_margin_observation",
@@ -464,8 +488,9 @@ export async function recommendProactive(
     if (share > 0.15) {
       recs.push({
         level: "info",
-        title: `${catName} is your largest expense bucket in ${curLabel}`,
-        detail: `In ${curLabel}: ${fmtMoney(amt, ccy)} (${fmtPct(share)} of expenses). If this is fixed, it sets a floor on what you can cut without structural changes.`,
+        observation: `${catName} is your largest expense in ${curLabel} — ${fmtMoney(amt, ccy)} (${fmtPct(share)} of total).`,
+        interpretation: `When a single bucket dominates this much of your spend, it defines the floor on what you can cut without structural changes — every other category combined is smaller.`,
+        recommendation: `Categorize this bucket: fixed (rent, salaries) vs variable (vendors, tools). The variable share is where realistic cuts live.`,
         impact: 0,
         category: "other",
         signalKey: `top_expense_category:${catName}`,
@@ -478,8 +503,9 @@ export async function recommendProactive(
     const delta = current.expenses - prev.expenses;
     recs.push({
       level: "warn",
-      title: `Total expenses jumped ${fmtPct(delta / prev.expenses)} in ${curLabel} vs ${prevLabel}`,
-      detail: `Expenses went from ${fmtMoney(prev.expenses, ccy)} in ${prevLabel} to ${fmtMoney(current.expenses, ccy)} in ${curLabel} (+${fmtMoney(delta, ccy)}). Worth scanning the Transactions tab to see which categories drove it.`,
+      observation: `Total expenses jumped ${fmtPct(delta / prev.expenses)} in ${curLabel} (+${fmtMoney(delta, ccy)}).`,
+      interpretation: `An expense jump this size in a single month is rarely organic — it usually points to a new vendor contract, a one-time charge that should be flagged, or a creep across multiple categories that needs attention.`,
+      recommendation: `Scan the Transactions tab filtered to ${curLabel}. Sort by amount and isolate the two or three line items that account for the bulk of the increase.`,
       impact: 0,
       category: "cashflow",
       signalKey: "expense_mom_jump",
@@ -492,8 +518,11 @@ export async function recommendProactive(
     const trailingNet = last3.reduce((s, m) => s + m.net, 0);
     recs.push({
       level: trailingNet >= 0 ? "good" : "warn",
-      title: `Net for ${trail3Label}: ${fmtMoney(trailingNet, ccy)}`,
-      detail: `Sum of net profit across ${last3.map((m) => ymToLabel(m.ym)).join(", ")}. Use this as a stability check — a single bad month is noise, three in a row is a trend.`,
+      observation: `Trailing 3-month net (${trail3Label}): ${fmtMoney(trailingNet, ccy)}.`,
+      interpretation: `The 3-month view smooths out single-month noise. A single bad month is variance — three in a row is a trend that needs an explanation.`,
+      recommendation: trailingNet >= 0
+        ? `You're operating in a stable band. Use the breathing room to make one investment in growth or resilience, not five.`
+        : `Treat this as your direction of travel, not a one-off. Identify the structural cause (revenue softening, expense creep, payroll growth) and act on that, not the symptom.`,
       impact: 0,
       category: "other",
       signalKey: "trailing_3_net",
@@ -508,8 +537,9 @@ export async function recommendProactive(
   if (current.income > 0) {
     recs.push({
       level: "info",
-      title: `${curLabel} revenue: ${fmtMoney(current.income, ccy)}`,
-      detail: `Booked income for ${curLabel}. Compare against the average to gauge whether ${curLabel} is on track.`,
+      observation: `${curLabel} revenue: ${fmtMoney(current.income, ccy)}.`,
+      interpretation: `Booked income for ${curLabel}. The number itself doesn't say much in isolation — context comes from comparing to your trailing average and the same month last year.`,
+      recommendation: `Compare against your ${trail3Label} average to gauge whether ${curLabel} is on track. Open Charts for the full trend view.`,
       impact: 0,
       category: "growth",
       signalKey: "monthly_revenue_snapshot",
@@ -520,8 +550,9 @@ export async function recommendProactive(
   if (current.expenses > 0) {
     recs.push({
       level: "info",
-      title: `${curLabel} total expenses: ${fmtMoney(current.expenses, ccy)}`,
-      detail: `Includes payroll, recurring software, marketing, and any one-time costs booked in ${curLabel}. Use the Insights tab to see which categories drove it.`,
+      observation: `${curLabel} total expenses: ${fmtMoney(current.expenses, ccy)}.`,
+      interpretation: `Captures payroll, recurring software, marketing, and any one-time costs booked in ${curLabel}. Without a breakdown, it's just a number — the categories underneath are where decisions live.`,
+      recommendation: `Open the Charts tab to see which categories drove ${curLabel}'s spend. Look for any single category over 25% of total — that's your biggest lever.`,
       impact: 0,
       category: "cashflow",
       signalKey: "monthly_expense_snapshot",
@@ -532,8 +563,9 @@ export async function recommendProactive(
   if (avgRevenue > 0) {
     recs.push({
       level: "info",
-      title: `${fmtMoney(avgRevenue, ccy)}/mo average revenue across ${trail3Label}`,
-      detail: `Your rolling 3-month revenue baseline. Anchored at the latest complete month so an in-progress month never drags it down.`,
+      observation: `Trailing 3-month average revenue: ${fmtMoney(avgRevenue, ccy)}/mo.`,
+      interpretation: `Your operational revenue baseline. Anchored at the latest complete month so an in-progress month never drags the average down — this is the number to plan against.`,
+      recommendation: `Treat this as your floor for forecasting. Any commitment whose monthly cost exceeds 10% of this baseline deserves a second look.`,
       impact: 0,
       category: "growth",
       signalKey: "avg_revenue_trail3",
@@ -545,8 +577,9 @@ export async function recommendProactive(
   if (recurringMonthly > 0) {
     recs.push({
       level: "info",
-      title: `Recurring expense base: ${fmtMoney(recurringMonthly, ccy)}/mo`,
-      detail: `${curLabel} expenses with one-time items stripped out. This is the floor — the number you have to cover every month no matter what.`,
+      observation: `Recurring expense base: ${fmtMoney(recurringMonthly, ccy)}/mo.`,
+      interpretation: `${curLabel} expenses with one-time items stripped out. This is the number you have to cover every month no matter what happens to revenue — the structural floor of the business.`,
+      recommendation: `Know this number cold. It's your minimum-revenue target and your runway divisor when calculating how long reserves will last.`,
       impact: 0,
       category: "cashflow",
       signalKey: "recurring_expense_base",
@@ -563,8 +596,11 @@ export async function recommendProactive(
     const ytdNet = ytdRev - ytdExp;
     recs.push({
       level: ytdNet >= 0 ? "good" : "warn",
-      title: `${ytdYear} YTD net: ${fmtMoney(ytdNet, ccy)} across ${ytdMonths.length} month${ytdMonths.length === 1 ? "" : "s"}`,
-      detail: `Revenue ${fmtMoney(ytdRev, ccy)} − expenses ${fmtMoney(ytdExp, ccy)} so far this year. Margin ${ytdRev > 0 ? fmtPct(ytdNet / ytdRev) : "—"}.`,
+      observation: `${ytdYear} YTD net: ${fmtMoney(ytdNet, ccy)} across ${ytdMonths.length} month${ytdMonths.length === 1 ? "" : "s"} (margin ${ytdRev > 0 ? fmtPct(ytdNet / ytdRev) : "—"}).`,
+      interpretation: `Revenue ${fmtMoney(ytdRev, ccy)} − expenses ${fmtMoney(ytdExp, ccy)}. The year-to-date view tells you whether you're operationally on plan or whether monthly variance is masking a structural issue.`,
+      recommendation: ytdNet >= 0
+        ? `Hold pace. Compare against your full-year target — if you're tracking ahead, that's where to think about strategic investments.`
+        : `Build a recovery plan now while there's still time in the year. A mid-year cut is far less painful than a year-end one.`,
       impact: 0,
       category: "other",
       signalKey: "ytd_snapshot",
@@ -575,8 +611,9 @@ export async function recommendProactive(
   if (ctx.employees.length > 0) {
     recs.push({
       level: "info",
-      title: `${ctx.employees.length} active employee${ctx.employees.length === 1 ? "" : "s"} on the roster`,
-      detail: `Fully-loaded monthly cost: ${fmtMoney(ctx.employeeCostMonthly, ccy)}. Use the Workforce Overview tab for the per-employee breakdown.`,
+      observation: `${ctx.employees.length} active employee${ctx.employees.length === 1 ? "" : "s"} — fully-loaded cost ${fmtMoney(ctx.employeeCostMonthly, ccy)}/mo.`,
+      interpretation: `Payroll is usually the largest single commitment in a business and the slowest to flex. Knowing the fully-loaded number — not just gross — is the difference between accurate planning and surprise overruns.`,
+      recommendation: `Open Workforce Overview for the per-employee breakdown. Verify roles, multipliers, and end dates are current.`,
       impact: 0,
       category: "payroll",
       signalKey: "headcount_snapshot",
@@ -590,12 +627,15 @@ export async function recommendProactive(
     const daysAgo = Math.floor((Date.now() - latestDate.getTime()) / (1000 * 60 * 60 * 24));
     recs.push({
       level: daysAgo > 21 ? "warn" : "info",
-      title: daysAgo > 21
-        ? `No new uploads in ${daysAgo} days`
-        : `${ctx.recentUploads.length} upload${ctx.recentUploads.length === 1 ? "" : "s"} processed recently`,
-      detail: daysAgo > 21
-        ? `Last upload was ${daysAgo} days ago. Stale data makes every other signal less reliable — import this month's transactions when you can.`
-        : `Latest upload was ${daysAgo === 0 ? "today" : `${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`}. Data is fresh.`,
+      observation: daysAgo > 21
+        ? `No new data uploads in ${daysAgo} days.`
+        : `Latest upload was ${daysAgo === 0 ? "today" : `${daysAgo} day${daysAgo === 1 ? "" : "s"} ago`} — data is fresh.`,
+      interpretation: daysAgo > 21
+        ? `Every signal on this page depends on the freshness of your underlying data. After three weeks of staleness, recommendations start drifting from your actual operational reality.`
+        : `Fresh data means the signals you're looking at reflect what's actually happening in the business — not last quarter's snapshot.`,
+      recommendation: daysAgo > 21
+        ? `Import ${curLabel}'s transactions this week. The longer you wait, the more decisions get made against stale numbers.`
+        : `Keep this cadence. A weekly or twice-monthly upload rhythm gives you the cleanest read on trends.`,
       impact: 0,
       category: "accuracy",
       signalKey: "upload_freshness",
@@ -606,8 +646,9 @@ export async function recommendProactive(
   if (recs.length === 0) {
     recs.push({
       level: "good",
-      title: "No urgent recommendations",
-      detail: `Nothing in ${trail3Label} triggers an immediate action. Use Consultation to model specific scenarios.`,
+      observation: `No urgent signals across ${trail3Label}.`,
+      interpretation: `Nothing currently crosses the thresholds we monitor for revenue swings, expense jumps, vendor concentration, payroll burden, or cashflow risk. Either the business is operating in a stable band or there isn't enough data yet to surface meaningful patterns.`,
+      recommendation: `Use Consultation to model specific scenarios — pricing changes, hiring decisions, or cost reductions you're considering.`,
       impact: 0,
       category: "other",
       signalKey: "empty_fallback",
