@@ -193,12 +193,12 @@ export default function ThresholdAlertsBox({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            className="btn-ghost"
+            className={eventsOpen ? "btn-ghost" : "btn-primary"}
             onClick={() => setEventsOpen((v) => !v)}
             aria-expanded={eventsOpen}
             title={eventsOpen ? "Hide the rule editor" : "Add or edit notification rules"}
           >
-            {eventsOpen ? "Hide Monitor Events" : "Monitor Events"}
+            {eventsOpen ? "Hide Monitor Events" : "Set Monitor Events"}
           </button>
           <button
             type="button"
