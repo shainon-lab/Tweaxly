@@ -209,16 +209,48 @@ function recommendedFromSignal(
     s.level === "warn" ? "warn" :
     s.level === "good" ? "good" :
     "info";
+  // The hero needs an executive-tight interpretation — the full
+  // Business-Signals interpretation can run long because it carries
+  // user notes, peer context, and supporting nuance. Strip those and
+  // greedy-fit sentences up to ~140 chars so the hero reads as a
+  // confident one- or two-sentence insight.
+  const tightInterpretation = tightenInterpretation(s.interpretation);
   const question = `${s.observation} ${s.interpretation} The recommended action was: ${s.recommendation} Walk me through the diagnosis — is that read correct, and what should I actually do next, in order of priority? Use my recent data (latest month is ${ymToLabel(ctx.ym)}) and be specific.`;
   return {
     title: ctaForSignal(),
     observation: s.observation,
-    interpretation: s.interpretation,
+    interpretation: tightInterpretation,
     question,
     cta: ctaForSignal(),
     tone,
     signalKey: s.signalKey,
   };
+}
+
+// Trim a Business-Signals interpretation down to the most strategic
+// 1–2 sentences. Used for the consultation hero where verbosity
+// undermines the confident-AI tone we want.
+function tightenInterpretation(text: string, maxChars = 140): string {
+  // Drop appended user-note quotes — they belong in the deep dive,
+  // not the hero. Match the exact prefix used by quoteRelevantNote
+  // in advisor.ts ("Your own note on this from ...").
+  const cleaned = text.split(/\s+Your own note on this from/i)[0].trim();
+  // Split into sentences and greedy-fit up to maxChars.
+  const sentences = cleaned.split(/(?<=[.!?])\s+/);
+  let out = "";
+  for (const sentence of sentences) {
+    if (!sentence) continue;
+    if (out.length === 0) {
+      out = sentence;
+      continue;
+    }
+    if (out.length + 1 + sentence.length <= maxChars) {
+      out += " " + sentence;
+    } else {
+      break;
+    }
+  }
+  return out;
 }
 
 // Fallback recommendation when there are no urgent signals — surface a

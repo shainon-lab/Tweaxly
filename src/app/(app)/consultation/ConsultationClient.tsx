@@ -533,7 +533,7 @@ function RecommendedConsultationCard({
             </p>
             <button
               type="button"
-              className="text-sm md:text-base px-6 py-3 rounded-lg border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition disabled:opacity-50 shrink-0"
+              className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200 disabled:opacity-50 shrink-0"
               onClick={onConsult}
               disabled={disabled}
             >
@@ -574,22 +574,24 @@ function RelatedDirections({
       </div>
       <ul className="divide-y divide-line/40">
         {visible.map((s) => (
-          <li key={s.id} className="py-2.5 flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <div className="text-sm text-slate-200 leading-tight">
-                {s.title}
-              </div>
-              <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
-                {s.blurb}
-              </div>
-            </div>
+          <li key={s.id}>
             <button
               type="button"
               disabled={disabled}
               onClick={() => onPick(s.question)}
-              className="shrink-0 mt-0.5 text-[11px] px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className="w-full text-left py-2.5 flex items-start justify-between gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Consult AI
+              <div className="min-w-0 flex-1">
+                <div className="text-sm text-slate-200 group-hover:text-slate-50 transition duration-200 leading-tight">
+                  {s.title}
+                </div>
+                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
+                  {s.blurb}
+                </div>
+              </div>
+              <span className="shrink-0 mt-1 text-xs text-slate-500 group-hover:text-accent group-hover:translate-x-0.5 transition duration-200">
+                →
+              </span>
             </button>
           </li>
         ))}
@@ -637,8 +639,8 @@ function FreeformConsultation({
 
       <textarea
         ref={textareaRef}
-        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[120px] px-4 py-3"
-        rows={4}
+        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition duration-200 resize-none min-h-[88px] px-4 py-3"
+        rows={3}
         placeholder={PLACEHOLDER}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -654,11 +656,11 @@ function FreeformConsultation({
       <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
         {!arrivalMode ? (
           <div className="flex flex-wrap items-center gap-1.5">
-            {FREEFORM_EXAMPLES.map((ex) => (
+            {FREEFORM_EXAMPLES.slice(0, 3).map((ex) => (
               <button
                 key={ex}
                 type="button"
-                className="text-xs text-slate-400 hover:text-slate-100 border border-line/60 hover:border-accent/40 rounded-full px-2.5 py-0.5 transition"
+                className="text-xs text-slate-400 hover:text-slate-100 border border-line/60 hover:border-accent/40 rounded-full px-2.5 py-0.5 transition duration-200"
                 disabled={sending}
                 onClick={() => {
                   setDraft(ex);
@@ -672,7 +674,7 @@ function FreeformConsultation({
         ) : <span />}
         <button
           type="button"
-          className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="btn-primary text-sm px-5 py-2.5 rounded-md shadow-sm hover:shadow-md transition-transform duration-200 active:scale-[0.98] disabled:opacity-50"
           disabled={sending || !draft.trim()}
           onClick={onSend}
         >
