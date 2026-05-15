@@ -375,24 +375,11 @@ function RecommendedConsultationCard({
         }
       >
         <div className={hasSuggestions ? "lg:col-span-8" : ""}>
-          <div className="flex items-baseline gap-3 flex-wrap mb-3">
-            <span className="text-[10px] uppercase tracking-wide text-accent font-semibold">
-              Recommended Consultation
-            </span>
-            <span className="text-[10px] uppercase tracking-wide text-slate-500">
-              AI-prioritized for your business
-            </span>
-          </div>
-
-          {/* Today's AI Focus — folded inline as a subhead. */}
+          {/* Focus themes sit as a quiet pre-heading — no label,
+              no divider. Spacing alone carries the hierarchy. */}
           {focus && focus.themes.length > 0 ? (
-            <div className="mb-4 pb-4 border-b border-line/60">
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
-                Today&apos;s AI Focus
-              </div>
-              <div className="text-sm md:text-base text-slate-200 font-medium">
-                {focus.themes.join(" · ")}
-              </div>
+            <div className="text-sm text-slate-400 mb-2">
+              {focus.themes.join(" · ")}
             </div>
           ) : null}
 
@@ -404,7 +391,7 @@ function RecommendedConsultationCard({
             <p className="text-sm md:text-base text-slate-100 leading-relaxed">
               {rec.observation}
             </p>
-            <p className="text-sm text-slate-300 leading-relaxed">
+            <p className="text-sm text-slate-400 leading-relaxed">
               {rec.interpretation}
             </p>
           </div>
@@ -450,10 +437,7 @@ function RelatedDirections({
   const hidden = Math.max(0, items.length - 3);
   return (
     <aside className="lg:col-span-4 lg:border-l lg:border-line/60 lg:pl-6">
-      <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
-        More to Consult
-      </div>
-      <ul className="divide-y divide-line/60 border-y border-line/60">
+      <ul className="divide-y divide-line/40">
         {visible.map((s) => (
           <li key={s.id}>
             <button
@@ -480,7 +464,7 @@ function RelatedDirections({
       {hidden > 0 ? (
         <button
           type="button"
-          className="mt-3 text-xs text-slate-400 hover:text-accent transition"
+          className="mt-3 text-xs text-slate-500 hover:text-accent transition"
           onClick={() => setShowAll((v) => !v)}
         >
           {showAll ? "Show fewer" : `Show ${hidden} more →`}
@@ -514,26 +498,18 @@ function FreeformConsultation({
   arrivalMode?: boolean;
 }) {
   const heading = arrivalMode
-    ? "Continue this investigation with the AI advisor"
-    : "What would you like to understand about your business today?";
-  const subtitle = arrivalMode
-    ? "The question is pre-filled from where you came from. Edit it if you want, then send."
-    : "Ask anything — performance, growth, profitability, hiring, vendors, operations. The advisor uses your actual data.";
+    ? "Continue this consultation"
+    : "Ask the AI advisor";
   return (
     <section className="space-y-3">
-      <div>
-        <h3 className="text-lg md:text-xl font-semibold text-slate-100 leading-tight">
-          {heading}
-        </h3>
-        <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-          {subtitle}
-        </p>
-      </div>
+      <h3 className="text-lg md:text-xl font-semibold text-slate-100 leading-tight">
+        {heading}
+      </h3>
 
       <textarea
         ref={textareaRef}
-        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[120px] px-4 py-3"
-        rows={4}
+        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[96px] px-4 py-3"
+        rows={3}
         placeholder={PLACEHOLDER}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -547,38 +523,33 @@ function FreeformConsultation({
       />
 
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="text-[11px] text-slate-500">
-          Press ⌘/Ctrl + Enter to send.
-        </div>
+        {!arrivalMode ? (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {FREEFORM_EXAMPLES.map((ex) => (
+              <button
+                key={ex}
+                type="button"
+                className="text-xs text-slate-400 hover:text-slate-100 border border-line/60 hover:border-accent/40 rounded-full px-2.5 py-0.5 transition"
+                disabled={sending}
+                onClick={() => {
+                  setDraft(ex);
+                  if (textareaRef.current) textareaRef.current.focus();
+                }}
+              >
+                {ex}
+              </button>
+            ))}
+          </div>
+        ) : <span />}
         <button
           type="button"
           className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
           disabled={sending || !draft.trim()}
           onClick={onSend}
         >
-          {sending ? "Analyzing…" : arrivalMode ? "Continue Consultation" : "Start Consultation"}
+          {sending ? "Analyzing…" : arrivalMode ? "Continue" : "Ask"}
         </button>
       </div>
-
-      {!arrivalMode ? (
-        <div className="flex flex-wrap items-center gap-2 pt-1">
-          <span className="text-[10px] uppercase tracking-wide text-slate-500">Try</span>
-          {FREEFORM_EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              className="text-xs text-slate-400 hover:text-slate-100 border border-line hover:border-accent/40 rounded-full px-3 py-1 transition"
-              disabled={sending}
-              onClick={() => {
-                setDraft(ex);
-                if (textareaRef.current) textareaRef.current.focus();
-              }}
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-      ) : null}
     </section>
   );
 }

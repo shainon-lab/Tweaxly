@@ -259,8 +259,9 @@ function recommendedFromContext(
   };
 }
 
-// Turn an advisor signal into a Suggested Strategic Consultation. Same
-// tone as the Recommended hero but card-sized rather than hero-sized.
+// Turn an advisor signal into a Suggested Strategic Consultation.
+// Title is a tight business theme, blurb is a one-line interpreted
+// insight — short, scannable, signal-oriented, not a mini paragraph.
 function situationForSignal(
   s: AdvisorRecommendation,
   ctx: BusinessContext,
@@ -272,43 +273,43 @@ function situationForSignal(
     "neutral";
   const key = s.signalKey.split(":")[0];
   const target = s.signalKey.includes(":") ? s.signalKey.split(":")[1] : null;
-  const titleMap: Record<string, string> = {
-    vendor_spike:                 `${target ?? "Vendor"} Cost Spike`,
-    vendor_concentration:         "Vendor Concentration",
-    forecast_negative_next_month: "Cash Flow Risk",
-    expense_mom_jump:             "Expense Pressure",
-    marketing_intensity_high:     "Marketing Efficiency",
-    payroll_heavy:                "Payroll Efficiency",
-    revenue_mom_swing:            s.level === "good" ? "Revenue Momentum" : "Revenue Decline",
-    net_margin_observation:       "Margin Health",
-    growth_headroom:              "Growth Headroom",
-    uncategorized_high:           "Data Hygiene",
-    top_expense_category:         `${target ?? "Top Category"} Spend`,
-    expense_concentration:        "Spend Concentration",
+  const meta: Record<string, { title: string; blurb: string }> = {
+    vendor_spike:                 { title: `${target ?? "Vendor"} Spike`,        blurb: "Costs jumped sharply month over month." },
+    vendor_concentration:         { title: "Vendor Concentration",                blurb: "A single vendor dominates spend." },
+    forecast_negative_next_month: { title: "Cash Flow Risk",                      blurb: "Next month projects negative." },
+    expense_mom_jump:             { title: "Expense Pressure",                    blurb: "Total expenses outpaced revenue this period." },
+    marketing_intensity_high:     { title: "Marketing Efficiency",                blurb: "Marketing share of revenue is running high." },
+    payroll_heavy:                { title: "Payroll Efficiency",                  blurb: "Payroll is heavy relative to revenue." },
+    revenue_mom_swing:            s.level === "good"
+      ? { title: "Revenue Momentum",   blurb: "Top-line moved meaningfully higher." }
+      : { title: "Revenue Decline",    blurb: "Top-line softened vs prior period." },
+    net_margin_observation:       { title: "Margin Health",                       blurb: "Profitability tightened this period." },
+    growth_headroom:              { title: "Growth Headroom",                     blurb: "Margins support a measured growth bet." },
+    uncategorized_high:           { title: "Data Hygiene",                        blurb: "Uncategorized transactions distort the numbers." },
+    top_expense_category:         { title: `${target ?? "Top Category"} Spend`,   blurb: "Single category dominates expenses." },
   };
-  const title = titleMap[key];
-  if (!title) return null;
+  const m = meta[key];
+  if (!m) return null;
   return {
     id: s.signalKey,
-    title,
-    blurb: s.observation,
+    title: m.title,
+    blurb: m.blurb,
     question: `${s.observation} ${s.interpretation} The advisor's recommended action was: ${s.recommendation} Walk me through this in depth — is the diagnosis correct, what would you actually do first, and what should I be tracking after I act? Use my recent data (latest month: ${ymToLabel(ctx.ym)}).`,
     tone,
   };
 }
 
-// Always-on strategic themes — used to fill remaining slots so the
-// section never feels empty. Each maps to a high-leverage CFO
-// conversation that's worth having even when nothing urgent is firing.
+// Always-on strategic themes — fill remaining slots so the section
+// never feels empty. Each is one-line tight; the long-form question
+// fed into the advisor still carries all the necessary context.
 function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
   const out: StrategicSituation[] = [];
 
-  // Hiring expansion — most common executive question.
   if (ctx.employees.length > 0) {
     out.push({
       id: "evergreen_hiring",
       title: "Hiring Expansion",
-      blurb: "Can current margins support additional headcount?",
+      blurb: "Can current margins absorb another hire?",
       question: `I have ${ctx.employees.length} employees today and a fully-loaded payroll cost of ${fmtMoney(ctx.employeeCostMonthly, ctx.ccy)}/mo. Walk me through whether my current revenue and margin trajectory could absorb one additional hire, and which role would have the highest leverage. Use my numbers and be specific about the break-even threshold.`,
       tone: "neutral",
     });
@@ -316,35 +317,32 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
     out.push({
       id: "evergreen_first_hire",
       title: "First Hire Readiness",
-      blurb: "When would the business be ready to bring on its first employee?",
+      blurb: "When does the business support a first hire?",
       question: `I have no employees today. Walk me through the revenue and margin thresholds I'd need to clear before considering my first hire, and what role would unlock the most growth. Use my actual numbers.`,
       tone: "neutral",
     });
   }
 
-  // Expense pressure — always useful.
   out.push({
     id: "evergreen_expense_pressure",
     title: "Expense Pressure",
-    blurb: "Identify the categories creating the highest operational drag.",
+    blurb: "Where the biggest cost drag is hiding.",
     question: `Walk me through my current expense base. Identify the 2–3 categories with the highest operational drag relative to revenue, the largest variance vs prior periods, or the most realistic optimization potential. Be specific — name the categories and the dollar amounts.`,
     tone: "neutral",
   });
 
-  // Strategic priorities — broadest, always relevant.
   out.push({
     id: "evergreen_priorities",
     title: "Strategic Priorities",
-    blurb: "What operational areas currently deserve immediate attention?",
+    blurb: "The top 3 areas worth attention this quarter.",
     question: `Based on my recent business activity, what are the 3 most important operational priorities I should be focused on this quarter? Rank them by leverage and explain which specific numbers in my data drive each one.`,
     tone: "neutral",
   });
 
-  // Cash flow durability — universal CFO question.
   out.push({
     id: "evergreen_cashflow",
     title: "Cash Flow Durability",
-    blurb: "How resilient is the business to a soft month?",
+    blurb: "How a 20% revenue drop would land.",
     question: `Walk me through how durable my current cash flow position is. If revenue dropped 20% next month, how would the numbers look? What would I need to cut, and which fixed commitments would force my hand first?`,
     tone: "neutral",
   });
