@@ -15,7 +15,7 @@ const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] 
   // Reports umbrella now wraps Monthly Reports / Data Flow / Insights —
   // the standalone Insights entry is gone from the sidebar; its sub-tab
   // sits inside this group instead.
-  { href: "/report", label: "Reports & Charts", icon: "📑", alertKey: "insights" },
+  { href: "/report", label: "Reports", icon: "📑", alertKey: "insights" },
   { href: "/workforce", label: "Workforce Overview", icon: "👥" },
   // "Set notifications" lives inline inside Business Signals → Monitor
   // → Set Monitor Events now, so no standalone sidebar entry. The
