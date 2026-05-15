@@ -223,125 +223,77 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Today's AI Focus — calm banner anchoring the whole screen to
-          what's most material in the business right now. Picked up
-          from the same BusinessContext the dashboard and Business
-          Signals use, so the Consultation surface feels like a
-          continuation, not a separate module. */}
-      {focus && focus.themes.length > 0 ? (
-        <div className="flex items-baseline gap-3 flex-wrap">
-          <span className="text-[10px] uppercase tracking-wide text-slate-500">
-            Today&apos;s AI Focus
-          </span>
-          <span className="text-sm md:text-base text-slate-100 font-medium">
-            {focus.themes.join(" · ")}
-          </span>
-        </div>
-      ) : null}
+      {/* Arrival mode — if the user came in with a prefilled question
+          (?q= from Analyze / Investigate / Explain This elsewhere),
+          the screen pivots: the freeform conversation leads, and the
+          AI's own recommendations are tucked below as secondary
+          context. The user's intent is the priority, not the AI's. */}
+      {initialDraft ? (
+        <>
+          <FreeformConsultation
+            textareaRef={textareaRef}
+            draft={draft}
+            setDraft={setDraft}
+            sending={sending}
+            onSend={() => void send()}
+            arrivalMode
+          />
 
-      {/* LEVEL 1 — Recommended Consultation. The single AI-prioritized
-          strategic discussion. Always the visual lead. */}
-      {recommended ? (
-        <RecommendedConsultationCard
-          rec={recommended}
-          onConsult={() => void send(recommended.question)}
-          disabled={sending}
-        />
-      ) : null}
-
-      {/* LEVEL 2 — Suggested Strategic Consultations. A small curated
-          grid of business-situation cards, each themed (Hiring
-          Expansion, Expense Pressure, etc.) rather than phrased as a
-          generic question. */}
-      {suggested.length > 0 ? (
-        <section className="space-y-3">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h3 className="text-base md:text-lg font-semibold text-slate-100">
-              Suggested Strategic Consultations
-            </h3>
-            <span className="text-xs text-slate-400">
-              Curated from your live business data.
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {suggested.map((s) => (
-              <StrategicSituationCard
-                key={s.id}
-                situation={s}
-                onConsult={() => void send(s.question)}
-                disabled={sending}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
-
-      {/* LEVEL 3 — Freeform Consultation. Always visible, intentionally
-          prominent. This is a core product interaction — the user
-          should never feel like asking anything is a footer action. */}
-      <section
-        className="rounded-2xl border border-line p-5 md:p-7 shadow-sm"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
-        }}
-      >
-        <h3 className="text-lg md:text-xl font-semibold text-slate-100 leading-tight">
-          What would you like to understand about your business today?
-        </h3>
-        <p className="text-xs md:text-sm text-slate-400 mt-1 mb-4 max-w-2xl leading-relaxed">
-          Ask anything — performance, growth, profitability, hiring, vendors, operations. The advisor uses your actual data to answer.
-        </p>
-
-        <textarea
-          ref={textareaRef}
-          className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[120px] px-4 py-3"
-          rows={4}
-          placeholder={PLACEHOLDER}
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-              e.preventDefault();
-              void send();
-            }
-          }}
-          disabled={sending}
-        />
-        <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
-          <div className="text-[11px] text-slate-500">
-            Press ⌘/Ctrl + Enter to send.
-          </div>
-          <button
-            type="button"
-            className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
-            disabled={sending || !draft.trim()}
-            onClick={() => void send()}
-          >
-            {sending ? "Analyzing…" : "Start Consultation"}
-          </button>
-        </div>
-
-        {/* Quiet seed prompts under the input — single click pre-fills
-            the textarea so the user can edit before sending. */}
-        <div className="mt-4 flex flex-wrap items-center gap-2">
-          <span className="text-[10px] uppercase tracking-wide text-slate-500">Try</span>
-          {FREEFORM_EXAMPLES.map((ex) => (
-            <button
-              key={ex}
-              type="button"
-              className="text-xs text-slate-400 hover:text-slate-100 border border-line hover:border-accent/40 rounded-full px-3 py-1 transition"
+          {/* Secondary context — kept available but quieter when the
+              user already has a question loaded. */}
+          {recommended ? (
+            <details className="rounded-xl border border-line bg-ink-900/30 px-4 py-3">
+              <summary className="cursor-pointer text-sm text-slate-300 hover:text-slate-100">
+                Or pivot to what the AI flagged today
+              </summary>
+              <div className="mt-3">
+                <RecommendedConsultationCard
+                  rec={recommended}
+                  focus={focus}
+                  onConsult={() => void send(recommended.question)}
+                  disabled={sending}
+                />
+              </div>
+            </details>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {/* LEVEL 1 — Recommended Consultation. Today's AI Focus is
+              folded into this hero so the screen has a single
+              AI-guided starting point instead of stacked banners. */}
+          {recommended ? (
+            <RecommendedConsultationCard
+              rec={recommended}
+              focus={focus}
+              onConsult={() => void send(recommended.question)}
               disabled={sending}
-              onClick={() => {
-                setDraft(ex);
-                if (textareaRef.current) textareaRef.current.focus();
-              }}
-            >
-              {ex}
-            </button>
-          ))}
-        </div>
-      </section>
+            />
+          ) : null}
+
+          {/* LEVEL 2 — Suggested Strategic Consultations. Capped at 2
+              visible so they support the hero rather than competing
+              with it; the remainder live behind "More AI Suggestions". */}
+          {suggested.length > 0 ? (
+            <SuggestedConsultations
+              items={suggested}
+              onConsult={(q) => void send(q)}
+              disabled={sending}
+            />
+          ) : null}
+
+          {/* LEVEL 3 — Freeform Consultation. Always-visible major
+              element; lighter container in this mode so it doesn't
+              compete with the hero. */}
+          <FreeformConsultation
+            textareaRef={textareaRef}
+            draft={draft}
+            setDraft={setDraft}
+            sending={sending}
+            onSend={() => void send()}
+          />
+        </>
+      )}
 
       {/* Loading shimmer while we wait for the advisor */}
       {sending ? (
@@ -391,10 +343,12 @@ export default function ConsultationClient({
 
 function RecommendedConsultationCard({
   rec,
+  focus,
   onConsult,
   disabled,
 }: {
   rec: RecommendedConsultation;
+  focus: TodaysFocus | null;
   onConsult: () => void;
   disabled: boolean;
 }) {
@@ -423,6 +377,19 @@ function RecommendedConsultationCard({
         </span>
       </div>
 
+      {/* Today's AI Focus — folded inline so the screen has one unified
+          AI-guided starting point instead of a stacked banner. */}
+      {focus && focus.themes.length > 0 ? (
+        <div className="mb-4 pb-4 border-b border-line/60">
+          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+            Today&apos;s AI Focus
+          </div>
+          <div className="text-sm md:text-base text-slate-200 font-medium">
+            {focus.themes.join(" · ")}
+          </div>
+        </div>
+      ) : null}
+
       <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
         {rec.title}
       </h2>
@@ -446,6 +413,151 @@ function RecommendedConsultationCard({
           {rec.cta} →
         </button>
       </div>
+    </section>
+  );
+}
+
+// SuggestedConsultations — caps visible cards at 2 so they support the
+// hero rather than competing with it. The rest fold behind a "More AI
+// Suggestions" toggle.
+function SuggestedConsultations({
+  items,
+  onConsult,
+  disabled,
+}: {
+  items: StrategicSituation[];
+  onConsult: (question: string) => void;
+  disabled: boolean;
+}) {
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? items : items.slice(0, 2);
+  const hidden = Math.max(0, items.length - 2);
+  return (
+    <section className="space-y-3">
+      <div className="flex items-baseline gap-2 flex-wrap">
+        <h3 className="text-base md:text-lg font-semibold text-slate-100">
+          Suggested Strategic Consultations
+        </h3>
+        <span className="text-xs text-slate-400">
+          Curated from your live business data.
+        </span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {visible.map((s) => (
+          <StrategicSituationCard
+            key={s.id}
+            situation={s}
+            onConsult={() => onConsult(s.question)}
+            disabled={disabled}
+          />
+        ))}
+      </div>
+      {hidden > 0 ? (
+        <div>
+          <button
+            type="button"
+            className="text-xs text-slate-400 hover:text-accent transition"
+            onClick={() => setShowAll((v) => !v)}
+          >
+            {showAll
+              ? "Show fewer"
+              : `More AI Suggestions (${hidden}) →`}
+          </button>
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+// FreeformConsultation — lighter container than before (no heavy
+// gradient bg, no thick padding). Still prominent — it's a core
+// product interaction — but reads as a conversational workspace
+// rather than a large dashboard widget.
+//
+// arrivalMode = true means the user arrived from elsewhere with a
+// prefilled question. In that mode we lead the screen with this
+// component, so the framing copy reflects that it's a continuation.
+function FreeformConsultation({
+  textareaRef,
+  draft,
+  setDraft,
+  sending,
+  onSend,
+  arrivalMode = false,
+}: {
+  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  draft: string;
+  setDraft: (v: string) => void;
+  sending: boolean;
+  onSend: () => void;
+  arrivalMode?: boolean;
+}) {
+  const heading = arrivalMode
+    ? "Continue this investigation with the AI advisor"
+    : "What would you like to understand about your business today?";
+  const subtitle = arrivalMode
+    ? "The question is pre-filled from where you came from. Edit it if you want, then send."
+    : "Ask anything — performance, growth, profitability, hiring, vendors, operations. The advisor uses your actual data.";
+  return (
+    <section className="space-y-3">
+      <div>
+        <h3 className="text-lg md:text-xl font-semibold text-slate-100 leading-tight">
+          {heading}
+        </h3>
+        <p className="text-xs md:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
+          {subtitle}
+        </p>
+      </div>
+
+      <textarea
+        ref={textareaRef}
+        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[120px] px-4 py-3"
+        rows={4}
+        placeholder={PLACEHOLDER}
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+            e.preventDefault();
+            onSend();
+          }
+        }}
+        disabled={sending}
+      />
+
+      <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="text-[11px] text-slate-500">
+          Press ⌘/Ctrl + Enter to send.
+        </div>
+        <button
+          type="button"
+          className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+          disabled={sending || !draft.trim()}
+          onClick={onSend}
+        >
+          {sending ? "Analyzing…" : arrivalMode ? "Continue Consultation" : "Start Consultation"}
+        </button>
+      </div>
+
+      {!arrivalMode ? (
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <span className="text-[10px] uppercase tracking-wide text-slate-500">Try</span>
+          {FREEFORM_EXAMPLES.map((ex) => (
+            <button
+              key={ex}
+              type="button"
+              className="text-xs text-slate-400 hover:text-slate-100 border border-line hover:border-accent/40 rounded-full px-3 py-1 transition"
+              disabled={sending}
+              onClick={() => {
+                setDraft(ex);
+                if (textareaRef.current) textareaRef.current.focus();
+              }}
+            >
+              {ex}
+            </button>
+          ))}
+        </div>
+      ) : null}
     </section>
   );
 }
