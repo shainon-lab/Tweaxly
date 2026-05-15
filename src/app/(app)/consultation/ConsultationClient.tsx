@@ -8,6 +8,11 @@
 import { useState, useTransition, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { renderMarkdown } from "./markdown";
+import type {
+  RecommendedConsultation,
+  StrategicSituation,
+  TodaysFocus,
+} from "@/lib/consultationFocus";
 
 type Msg = {
   id: string;
@@ -41,10 +46,19 @@ type HorizonBlock = {
 
 type OptionPayload = { horizons?: HorizonBlock[] };
 
-// Shown as placeholder text inside the textarea so the user has an
-// immediate sense of what they can ask. Two examples is plenty.
+// Placeholder for the freeform consultation textarea. The conversational
+// framing reinforces the AI-advisor positioning over a generic chat box.
 const PLACEHOLDER =
-  "e.g. \"Where can I reduce $20,000 in expenses?\" or \"Can I afford to hire another employee?\"";
+  "e.g. \"Why did profitability decline this quarter?\" or \"Can I safely hire another employee?\"";
+
+// Example prompts shown under the freeform input to seed thinking
+// without committing the user to any specific question.
+const FREEFORM_EXAMPLES = [
+  "Why did profitability decline this quarter?",
+  "Can I safely hire another employee?",
+  "What is currently hurting growth the most?",
+  "Where is my biggest unnecessary expense?",
+];
 
 function fmtMoney(value: number, currency: string) {
   try {
@@ -115,39 +129,34 @@ export default function ConsultationClient({
   active: initialActive,
   currency,
   claudeEnabled,
-  prompts,
+  focus,
+  recommended,
+  suggested,
   initialDraft,
 }: {
   active: Active | null;
   currency: string;
   claudeEnabled: boolean;
-  prompts: string[];
+  focus: TodaysFocus | null;
+  recommended: RecommendedConsultation | null;
+  suggested: StrategicSituation[];
   initialDraft?: string;
 }) {
   const router = useRouter();
   const [active, setActive] = useState<Active | null>(initialActive);
-  // Initial draft is seeded from ?q= when the user arrives from a
-  // "Consult AI" link on a Business Signal. We never auto-submit — the
-  // user gets to read and edit before clicking Start Consultation.
   const [draft, setDraft] = useState(initialDraft ?? "");
   const [sending, setSending] = useState(false);
-  // The free-form question textarea stays collapsed by default — the
-  // primary affordance is the trends grid above. Clicking "Consult on
-  // any topic" reveals the input. If we landed with ?q= (from a
-  // Business Signal), we auto-expand so the prefilled question is
-  // visible and editable immediately.
-  const [askExpanded, setAskExpanded] = useState(!!initialDraft);
   const [, startTransition] = useTransition();
   const responseRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // When the user clicks "Consult on any topic" to expand the input,
-  // pull focus into the textarea so they can start typing immediately.
+  // If we landed via ?q= (a "Consult AI" link from a Business Signal),
+  // focus the textarea so the user can edit immediately.
   useEffect(() => {
-    if (askExpanded && textareaRef.current) {
+    if (initialDraft && textareaRef.current) {
       textareaRef.current.focus();
     }
-  }, [askExpanded]);
+  }, [initialDraft]);
 
   useEffect(() => {
     setActive(initialActive);
@@ -214,115 +223,125 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* "Consult About Your Latest Trends" — dynamic suggestion cards
-          generated from the user's real BusinessContext. Clicking a card
-          auto-submits the question, unlike the ?q= flow from Business
-          Signals (which only pre-fills the textarea). */}
-      {prompts.length > 0 ? (
-        <div className="space-y-3">
-          <div className="flex items-baseline gap-2 flex-wrap">
-            <h2 className="text-lg md:text-xl font-semibold text-slate-100">
-              Consult About Your Latest Trends
-            </h2>
-            <span className="text-xs text-slate-400">
-              Picked from your live business data — tap to ask.
-            </span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {prompts.map((p, i) => (
-              <button
-                key={i}
-                type="button"
-                disabled={sending}
-                onClick={() => void send(p)}
-                className="text-left rounded-xl border border-line bg-ink-900/40 hover:border-accent/50 hover:bg-accent-soft/20 transition px-4 py-3 disabled:opacity-50 disabled:cursor-not-allowed group"
-              >
-                <div className="flex items-start gap-2">
-                  <span className="text-accent text-xs mt-1 shrink-0 group-hover:translate-x-0.5 transition-transform">→</span>
-                  <span className="text-sm text-slate-200 leading-relaxed">{p}</span>
-                </div>
-              </button>
-            ))}
-          </div>
+      {/* Today's AI Focus — calm banner anchoring the whole screen to
+          what's most material in the business right now. Picked up
+          from the same BusinessContext the dashboard and Business
+          Signals use, so the Consultation surface feels like a
+          continuation, not a separate module. */}
+      {focus && focus.themes.length > 0 ? (
+        <div className="flex items-baseline gap-3 flex-wrap">
+          <span className="text-[10px] uppercase tracking-wide text-slate-500">
+            Today&apos;s AI Focus
+          </span>
+          <span className="text-sm md:text-base text-slate-100 font-medium">
+            {focus.themes.join(" · ")}
+          </span>
         </div>
       ) : null}
 
-      {/* Free-form input area — collapsed by default into a single-line
-          CTA matching the Business Signals footer language. Expands into
-          the full textarea when the user clicks "Consult on any topic". */}
-      {!askExpanded ? (
-        <div
-          className="rounded-xl border border-line p-4 md:p-5 flex items-center justify-between gap-3 flex-wrap"
-          style={{
-            backgroundImage:
-              "linear-gradient(135deg, rgba(124,92,250,0.14) 0%, rgba(79,125,255,0.10) 50%, rgba(34,211,238,0.10) 100%)",
+      {/* LEVEL 1 — Recommended Consultation. The single AI-prioritized
+          strategic discussion. Always the visual lead. */}
+      {recommended ? (
+        <RecommendedConsultationCard
+          rec={recommended}
+          onConsult={() => void send(recommended.question)}
+          disabled={sending}
+        />
+      ) : null}
+
+      {/* LEVEL 2 — Suggested Strategic Consultations. A small curated
+          grid of business-situation cards, each themed (Hiring
+          Expansion, Expense Pressure, etc.) rather than phrased as a
+          generic question. */}
+      {suggested.length > 0 ? (
+        <section className="space-y-3">
+          <div className="flex items-baseline gap-2 flex-wrap">
+            <h3 className="text-base md:text-lg font-semibold text-slate-100">
+              Suggested Strategic Consultations
+            </h3>
+            <span className="text-xs text-slate-400">
+              Curated from your live business data.
+            </span>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {suggested.map((s) => (
+              <StrategicSituationCard
+                key={s.id}
+                situation={s}
+                onConsult={() => void send(s.question)}
+                disabled={sending}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
+      {/* LEVEL 3 — Freeform Consultation. Always visible, intentionally
+          prominent. This is a core product interaction — the user
+          should never feel like asking anything is a footer action. */}
+      <section
+        className="rounded-2xl border border-line p-5 md:p-7 shadow-sm"
+        style={{
+          backgroundImage:
+            "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
+        }}
+      >
+        <h3 className="text-lg md:text-xl font-semibold text-slate-100 leading-tight">
+          What would you like to understand about your business today?
+        </h3>
+        <p className="text-xs md:text-sm text-slate-400 mt-1 mb-4 max-w-2xl leading-relaxed">
+          Ask anything — performance, growth, profitability, hiring, vendors, operations. The advisor uses your actual data to answer.
+        </p>
+
+        <textarea
+          ref={textareaRef}
+          className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[120px] px-4 py-3"
+          rows={4}
+          placeholder={PLACEHOLDER}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              void send();
+            }
           }}
-        >
-          <div className="text-sm md:text-base font-semibold text-slate-100 leading-snug max-w-xl">
-            Or consult about anything else going on in your business.
+          disabled={sending}
+        />
+        <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
+          <div className="text-[11px] text-slate-500">
+            Press ⌘/Ctrl + Enter to send.
           </div>
           <button
             type="button"
-            className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
-            onClick={() => setAskExpanded(true)}
+            className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+            disabled={sending || !draft.trim()}
+            onClick={() => void send()}
           >
-            Consult on any topic
+            {sending ? "Analyzing…" : "Start Consultation"}
           </button>
         </div>
-      ) : (
-        <div className="rounded-2xl border border-line bg-ink-900/40 p-4 md:p-5 shadow-sm">
-          <div className="mb-3 flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg md:text-xl font-semibold text-slate-100">
-                Ask Any Question About Your Business
-              </h2>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Anything goes — cashflow, hiring, pricing, vendors, runway, growth.
-              </p>
-            </div>
+
+        {/* Quiet seed prompts under the input — single click pre-fills
+            the textarea so the user can edit before sending. */}
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <span className="text-[10px] uppercase tracking-wide text-slate-500">Try</span>
+          {FREEFORM_EXAMPLES.map((ex) => (
             <button
+              key={ex}
               type="button"
-              className="text-xs text-slate-400 hover:text-slate-200 shrink-0"
+              className="text-xs text-slate-400 hover:text-slate-100 border border-line hover:border-accent/40 rounded-full px-3 py-1 transition"
+              disabled={sending}
               onClick={() => {
-                setAskExpanded(false);
-                setDraft("");
+                setDraft(ex);
+                if (textareaRef.current) textareaRef.current.focus();
               }}
-              title="Hide the input"
-              aria-label="Hide the input"
             >
-              ✕
+              {ex}
             </button>
-          </div>
-          <textarea
-            ref={textareaRef}
-            className="w-full bg-transparent text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none resize-none min-h-[88px]"
-            rows={3}
-            placeholder={PLACEHOLDER}
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-                e.preventDefault();
-                void send();
-              }
-            }}
-            disabled={sending}
-          />
-          <div className="mt-3 flex items-center justify-between flex-wrap gap-2">
-            <div className="text-[11px] text-slate-500">
-              Press ⌘/Ctrl + Enter to send.
-            </div>
-            <button
-              type="button"
-              className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
-              disabled={sending || !draft.trim()}
-              onClick={() => void send()}
-            >
-              {sending ? "Analyzing…" : "Start Consultation"}
-            </button>
-          </div>
+          ))}
         </div>
-      )}
+      </section>
 
       {/* Loading shimmer while we wait for the advisor */}
       {sending ? (
@@ -363,5 +382,102 @@ export default function ConsultationClient({
         </div>
       ) : null}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Strategic consultation cards
+// ─────────────────────────────────────────────────────────────────────────────
+
+function RecommendedConsultationCard({
+  rec,
+  onConsult,
+  disabled,
+}: {
+  rec: RecommendedConsultation;
+  onConsult: () => void;
+  disabled: boolean;
+}) {
+  // Tone drives a subtle border accent so the card carries the same
+  // severity language the dashboard uses, but in a calmer hero form
+  // (no heavy fill, no alert chrome).
+  const borderTone =
+    rec.tone === "bad"  ? "border-bad/40"     :
+    rec.tone === "warn" ? "border-warn/40"    :
+    rec.tone === "good" ? "border-good/40"    :
+                          "border-accent/30";
+  return (
+    <section
+      className={`rounded-2xl border ${borderTone} p-6 md:p-8 shadow-sm`}
+      style={{
+        backgroundImage:
+          "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
+      }}
+    >
+      <div className="flex items-baseline gap-3 flex-wrap mb-3">
+        <span className="text-[10px] uppercase tracking-wide text-accent font-semibold">
+          Recommended Consultation
+        </span>
+        <span className="text-[10px] uppercase tracking-wide text-slate-500">
+          AI-prioritized for your business
+        </span>
+      </div>
+
+      <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
+        {rec.title}
+      </h2>
+
+      <div className="space-y-2 max-w-3xl">
+        <p className="text-sm md:text-base text-slate-100 leading-relaxed">
+          {rec.observation}
+        </p>
+        <p className="text-sm text-slate-300 leading-relaxed">
+          {rec.interpretation}
+        </p>
+      </div>
+
+      <div className="mt-5">
+        <button
+          type="button"
+          className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+          onClick={onConsult}
+          disabled={disabled}
+        >
+          {rec.cta} →
+        </button>
+      </div>
+    </section>
+  );
+}
+
+function StrategicSituationCard({
+  situation: s,
+  onConsult,
+  disabled,
+}: {
+  situation: StrategicSituation;
+  onConsult: () => void;
+  disabled: boolean;
+}) {
+  const borderTone =
+    s.tone === "bad"  ? "border-bad/40 hover:border-bad/70"    :
+    s.tone === "warn" ? "border-warn/40 hover:border-warn/70"  :
+    s.tone === "good" ? "border-good/40 hover:border-good/70"  :
+                        "border-line hover:border-accent/50";
+  return (
+    <button
+      type="button"
+      onClick={onConsult}
+      disabled={disabled}
+      className={`text-left rounded-xl border ${borderTone} bg-ink-900/40 hover:bg-accent-soft/10 transition px-4 py-3.5 disabled:opacity-50 disabled:cursor-not-allowed group flex flex-col gap-1.5`}
+    >
+      <div className="flex items-baseline justify-between gap-3">
+        <div className="font-medium text-sm text-slate-100">{s.title}</div>
+        <span className="text-accent text-xs group-hover:translate-x-0.5 transition-transform">
+          →
+        </span>
+      </div>
+      <div className="text-xs text-slate-300 leading-relaxed">{s.blurb}</div>
+    </button>
   );
 }
