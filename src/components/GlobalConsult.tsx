@@ -17,8 +17,65 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { MessageSquareText, X } from "lucide-react";
+import { MessageSquareText, Sparkles, X } from "lucide-react";
 import { renderMarkdown } from "@/app/(app)/consultation/markdown";
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Proactive nudge configuration. The values here are tuned to feel
+// rare and intelligent — not engagement-hacky. If the system fires the
+// nudge and the user dismisses twice, it goes silent for the rest of
+// the session. If a nudge has just shown anywhere, we wait at least
+// MIN_COOLDOWN before considering another.
+// ─────────────────────────────────────────────────────────────────────────────
+const NUDGE_DWELL_MS    = 15_000;       // idle dwell before nudging
+const NUDGE_MIN_COOLDOWN = 5 * 60_000;  // min ms between any two nudges in a session
+const NUDGE_MAX_PER_SESSION = 2;        // hard cap per session
+
+const SS_SHOWN_COUNT      = "consult.session.shownCount";
+const SS_LAST_SHOWN_AT    = "consult.session.lastShownAt";
+const SS_DISMISS_COUNT    = "consult.session.dismissCount";
+const SS_PERMA_DISMISSED  = "consult.session.permadismissed";
+const SS_DISMISSED_PREFIX = "consult.session.dismissed:";
+
+function ssGetNum(key: string): number {
+  if (typeof window === "undefined") return 0;
+  return Number(window.sessionStorage.getItem(key) ?? "0");
+}
+function ssSet(key: string, val: string) {
+  if (typeof window === "undefined") return;
+  window.sessionStorage.setItem(key, val);
+}
+function ssGet(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  return window.sessionStorage.getItem(key);
+}
+
+// Decide whether the nudge is even eligible to schedule on this path.
+function isNudgeEligible(pathname: string): boolean {
+  if (typeof window === "undefined") return false;
+  if (ssGet(SS_PERMA_DISMISSED) === "1") return false;
+  if (ssGetNum(SS_SHOWN_COUNT) >= NUDGE_MAX_PER_SESSION) return false;
+  const last = ssGetNum(SS_LAST_SHOWN_AT);
+  if (last > 0 && Date.now() - last < NUDGE_MIN_COOLDOWN) return false;
+  if (ssGet(SS_DISMISSED_PREFIX + pathname) === "1") return false;
+  return true;
+}
+
+// Per-view nudge copy. Tighter and more contextual than the panel's
+// suggested prompts — the nudge itself is just a one-liner offer.
+function deriveNudgeText(pathname: string): string {
+  if (pathname.startsWith("/dashboard"))         return "Want help understanding this period?";
+  if (pathname.startsWith("/business-signals"))  return "Want help understanding these signals?";
+  if (pathname.startsWith("/forecast"))          return "Want to analyze this forecast?";
+  if (pathname.startsWith("/insights/yearly"))   return "Want help reading this year?";
+  if (pathname.startsWith("/insights"))          return "Want help understanding these charts?";
+  if (pathname.startsWith("/report") || pathname.startsWith("/data-flow")) {
+    return "Want help understanding this report?";
+  }
+  if (pathname.startsWith("/transactions"))      return "Want help reviewing these transactions?";
+  if (pathname.startsWith("/workforce"))         return "Want to investigate payroll patterns?";
+  return "Need deeper analysis here?";
+}
 
 type ViewMeta = {
   title: string;       // Short identifier of the view, e.g. "Executive Summary".
@@ -165,15 +222,19 @@ export default function GlobalConsult() {
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
+  const [showNudge, setShowNudge] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const lastActivityRef = useRef<number>(Date.now());
 
   const meta = useMemo(() => deriveViewMeta(pathname ?? ""), [pathname]);
+  const nudgeText = useMemo(() => deriveNudgeText(pathname ?? ""), [pathname]);
 
   // Reset state on path change so the panel doesn't carry stale
   // context if the user navigates while it's open.
   useEffect(() => {
     setResponse(null);
     setDraft("");
+    setShowNudge(false);
   }, [pathname]);
 
   // Pull focus when the panel opens so the user can start typing.
@@ -192,6 +253,69 @@ export default function GlobalConsult() {
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
+
+  // ─── Proactive nudge scheduler ─────────────────────────────────────
+  //
+  // Per the spec this is intentionally rare and quiet. We schedule a
+  // single-shot timer when the user lands on a new page; meaningful
+  // interactions (click / scroll / keydown) reset the activity clock.
+  // If the panel is already open, or the user has dismissed the
+  // session, we skip entirely.
+  useEffect(() => {
+    if (open) return;
+    if (!pathname) return;
+    if (!isNudgeEligible(pathname)) return;
+
+    lastActivityRef.current = Date.now();
+
+    const tick = setInterval(() => {
+      const now = Date.now();
+      if (now - lastActivityRef.current < NUDGE_DWELL_MS) return;
+      // Time-up — re-check eligibility (state may have changed in
+      // the meantime if the user opened or dismissed elsewhere) and
+      // fire the nudge once.
+      if (!isNudgeEligible(pathname)) {
+        clearInterval(tick);
+        return;
+      }
+      setShowNudge(true);
+      ssSet(SS_LAST_SHOWN_AT, String(now));
+      ssSet(SS_SHOWN_COUNT, String(ssGetNum(SS_SHOWN_COUNT) + 1));
+      clearInterval(tick);
+    }, 1_000);
+
+    const onActivity = () => {
+      lastActivityRef.current = Date.now();
+    };
+    // We deliberately don't bind mousemove — it would reset the
+    // timer too aggressively and the nudge would never fire while a
+    // user reads a report.
+    window.addEventListener("scroll",  onActivity, { passive: true });
+    window.addEventListener("click",   onActivity);
+    window.addEventListener("keydown", onActivity);
+
+    return () => {
+      clearInterval(tick);
+      window.removeEventListener("scroll",  onActivity);
+      window.removeEventListener("click",   onActivity);
+      window.removeEventListener("keydown", onActivity);
+    };
+  }, [pathname, open]);
+
+  function dismissNudge() {
+    setShowNudge(false);
+    if (pathname) ssSet(SS_DISMISSED_PREFIX + pathname, "1");
+    const next = ssGetNum(SS_DISMISS_COUNT) + 1;
+    ssSet(SS_DISMISS_COUNT, String(next));
+    // Two dismissals is enough signal that the user doesn't want
+    // these — go silent for the rest of the session.
+    if (next >= 2) ssSet(SS_PERMA_DISMISSED, "1");
+  }
+
+  function openFromNudge() {
+    setShowNudge(false);
+    setOpen(true);
+  }
 
   // The consultation page itself is the full consultation surface —
   // don't double up the experience there.
@@ -236,6 +360,54 @@ export default function GlobalConsult() {
 
   return (
     <>
+      {/* Proactive nudge — small floating card pinned just above the
+          Consult button. Appears once after ~15s of low activity on a
+          page, never on top of the open panel, never repeatedly. */}
+      {showNudge && !open ? (
+        <div
+          className="fixed bottom-[68px] right-5 z-40 max-w-[280px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]"
+          role="status"
+          aria-live="polite"
+        >
+          <div className="flex items-start gap-2.5">
+            <Sparkles
+              size={14}
+              strokeWidth={1.75}
+              className="text-accent shrink-0 mt-0.5"
+              aria-hidden="true"
+            />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm text-slate-100 leading-snug">{nudgeText}</div>
+              <div className="mt-2 flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={openFromNudge}
+                  className="text-xs px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200"
+                >
+                  Consult
+                </button>
+                <button
+                  type="button"
+                  onClick={dismissNudge}
+                  className="text-xs text-slate-400 hover:text-slate-200 transition duration-200"
+                  aria-label="Dismiss suggestion"
+                >
+                  Not now
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={dismissNudge}
+              className="shrink-0 text-slate-500 hover:text-slate-200 transition duration-200"
+              aria-label="Dismiss suggestion"
+            >
+              <X size={14} strokeWidth={1.5} />
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {/* Floating button — anchors bottom-right of every screen, stays
           accessible while scrolling. Quiet pill style, never glowing. */}
       <button

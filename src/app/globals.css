@@ -191,3 +191,9 @@ html[data-theme="light"] [data-surface="sub"] {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
+
+/* Proactive nudge fade/slide-in. Quieter than the panel slide. */
+@keyframes nudgeIn {
+  from { transform: translateY(6px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
