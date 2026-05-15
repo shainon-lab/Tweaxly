@@ -59,13 +59,6 @@ export default function HistoryClient({
     }
   }
 
-  function closeViewer() {
-    const params = new URLSearchParams(sp.toString());
-    params.delete("id");
-    const qs = params.toString();
-    startTransition(() => router.push(`/consultation/history${qs ? `?${qs}` : ""}`));
-  }
-
   return (
     <>
       <div className="flex items-center justify-end mb-4">
@@ -148,14 +141,6 @@ export default function HistoryClient({
                       {new Date(detail.askedAt).toLocaleString()}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    className="text-xs text-slate-300 hover:text-white border border-line rounded-md px-2 py-1 shrink-0"
-                    onClick={closeViewer}
-                    disabled={pending}
-                  >
-                    Close
-                  </button>
                 </div>
 
                 {/* Scrollable answer body */}
