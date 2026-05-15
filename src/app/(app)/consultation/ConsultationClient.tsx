@@ -247,7 +247,6 @@ export default function ConsultationClient({
               <div className="mt-3">
                 <RecommendedConsultationCard
                   rec={recommended}
-                  focus={focus}
                   suggested={suggested}
                   onConsult={() => void send(recommended.question)}
                   onPickSuggested={(q) => void send(q)}
@@ -265,7 +264,6 @@ export default function ConsultationClient({
           {recommended ? (
             <RecommendedConsultationCard
               rec={recommended}
-              focus={focus}
               suggested={suggested}
               onConsult={() => void send(recommended.question)}
               onPickSuggested={(q) => void send(q)}
@@ -333,14 +331,12 @@ export default function ConsultationClient({
 
 function RecommendedConsultationCard({
   rec,
-  focus,
   suggested,
   onConsult,
   onPickSuggested,
   disabled,
 }: {
   rec: RecommendedConsultation;
-  focus: TodaysFocus | null;
   suggested: StrategicSituation[];
   onConsult: () => void;
   onPickSuggested: (question: string) => void;
@@ -375,13 +371,11 @@ function RecommendedConsultationCard({
         }
       >
         <div className={hasSuggestions ? "lg:col-span-8" : ""}>
-          {/* Focus themes sit as a quiet pre-heading — no label,
-              no divider. Spacing alone carries the hierarchy. */}
-          {focus && focus.themes.length > 0 ? (
-            <div className="text-sm text-slate-400 mb-2">
-              {focus.themes.join(" · ")}
-            </div>
-          ) : null}
+          {/* Section anchor — quiet pre-heading that names the block
+              instead of describing what's inside it. */}
+          <div className="text-xs uppercase tracking-wide text-accent font-semibold mb-2">
+            Recommended Consultation
+          </div>
 
           <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
             {rec.title}
@@ -396,14 +390,17 @@ function RecommendedConsultationCard({
             </p>
           </div>
 
-          <div className="mt-5">
+          {/* CTA right-aligned so the eye lands on the action after
+              reading the recommendation. Label is just 'Consult' —
+              the section title already says what it is. */}
+          <div className="mt-5 flex justify-end">
             <button
               type="button"
               className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
               onClick={onConsult}
               disabled={disabled}
             >
-              {rec.cta} →
+              Consult →
             </button>
           </div>
         </div>
@@ -437,26 +434,27 @@ function RelatedDirections({
   const hidden = Math.max(0, items.length - 3);
   return (
     <aside className="lg:col-span-4 lg:border-l lg:border-line/60 lg:pl-6">
+      <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-2">
+        More trends to consult
+      </div>
       <ul className="divide-y divide-line/40">
         {visible.map((s) => (
-          <li key={s.id}>
+          <li key={s.id} className="py-2.5 flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <div className="text-sm text-slate-200 leading-tight">
+                {s.title}
+              </div>
+              <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
+                {s.blurb}
+              </div>
+            </div>
             <button
               type="button"
               disabled={disabled}
               onClick={() => onPick(s.question)}
-              className="w-full text-left py-2.5 flex items-start justify-between gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 mt-0.5 text-[11px] px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <div className="min-w-0">
-                <div className="text-sm text-slate-200 group-hover:text-slate-50 transition leading-tight">
-                  {s.title}
-                </div>
-                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
-                  {s.blurb}
-                </div>
-              </div>
-              <span className="text-xs text-slate-500 group-hover:text-accent group-hover:translate-x-0.5 transition shrink-0 mt-1">
-                →
-              </span>
+              Consult
             </button>
           </li>
         ))}
@@ -501,15 +499,23 @@ function FreeformConsultation({
     ? "Continue this consultation"
     : "Ask the AI advisor";
   return (
-    <section className="space-y-3">
-      <h3 className="text-lg md:text-xl font-semibold text-slate-100 leading-tight">
+    // Same card chrome (border + gradient + padding) as the hero so
+    // the two blocks read as visual peers.
+    <section
+      className="rounded-2xl border border-line p-6 md:p-8 shadow-sm"
+      style={{
+        backgroundImage:
+          "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
+      }}
+    >
+      <h3 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
         {heading}
       </h3>
 
       <textarea
         ref={textareaRef}
-        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[96px] px-4 py-3"
-        rows={3}
+        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition resize-none min-h-[120px] px-4 py-3"
+        rows={4}
         placeholder={PLACEHOLDER}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -522,7 +528,7 @@ function FreeformConsultation({
         disabled={sending}
       />
 
-      <div className="flex items-center justify-between flex-wrap gap-2">
+      <div className="mt-4 flex items-center justify-between flex-wrap gap-2">
         {!arrivalMode ? (
           <div className="flex flex-wrap items-center gap-1.5">
             {FREEFORM_EXAMPLES.map((ex) => (
@@ -543,7 +549,7 @@ function FreeformConsultation({
         ) : <span />}
         <button
           type="button"
-          className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+          className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
           disabled={sending || !draft.trim()}
           onClick={onSend}
         >
