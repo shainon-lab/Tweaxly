@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Sidebar from "@/components/Sidebar";
+import GlobalConsult from "@/components/GlobalConsult";
 import { requireBusiness } from "@/lib/auth";
 import { getSidebarAlerts } from "@/lib/alerts";
 
@@ -30,6 +31,10 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           {children}
         </div>
       </main>
+      {/* Global floating Consult button + slide-in panel. Rendered
+          once at the layout level so every app screen has the AI
+          advisor available without navigating away. */}
+      <GlobalConsult />
     </div>
   );
 }

@@ -185,3 +185,9 @@ html[data-theme="light"] [data-surface="sub"] {
   color: rgb(var(--c-body-fg)) !important;
   border-radius: 8px !important;
 }
+
+/* Global Consult panel slide-in. Subtle, fast — premium pacing. */
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
