@@ -1,6 +1,7 @@
 import PageHeader from "@/components/PageHeader";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
+import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost } from "@/lib/metrics";
 import {
@@ -11,6 +12,11 @@ import {
   type DashboardRange,
   type CompareMode,
 } from "@/lib/period";
+import {
+  buildExecutiveSummary,
+  timeframeForRange,
+  periodLabelForHero,
+} from "@/lib/executiveSummary";
 import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
@@ -106,6 +112,24 @@ export default async function DashboardPage({
   });
   const empty = totalTxnCount === 0;
 
+  // AI-generated executive narrative. Built server-side so it lands
+  // with the rest of the page. Falls back to a deterministic narrative
+  // when no API key is configured or the model call errors. We skip the
+  // call entirely when the business has no data — there's nothing to
+  // narrate yet, and the empty-state card below covers that case.
+  const summary = empty
+    ? null
+    : await buildExecutiveSummary({
+        ccy,
+        businessName: business.name,
+        rangeLabel: DASHBOARD_RANGE_LABEL[range],
+        periodLabel: periodLabelForHero(resolved.fromYM, resolved.toYM),
+        timeframe: timeframeForRange(range),
+        current,
+        prev,
+        employeeCostMonthly: employeeCost.total,
+      });
+
   // Default custom-range start/end fed into the picker — used when user
   // switches to "custom" and we need initial values.
   const initialStart = sp.start ?? todayISODate();
@@ -149,6 +173,12 @@ export default async function DashboardPage({
         </div>
       ) : (
         <>
+          {/* Summary hero — the AI-generated executive narrative is the
+              primary entry point of the dashboard. Sits above the stat
+              tiles so the user reads the interpretation before the
+              numbers. */}
+          {summary ? <ExecutiveSummaryHero summary={summary} /> : null}
+
           {/* All Overview tiles share a single StatGroup so opening one
               Learn-more panel automatically closes any other. Comparison
               data is only rendered when the user has explicitly chosen
