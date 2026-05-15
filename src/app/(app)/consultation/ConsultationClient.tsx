@@ -226,8 +226,8 @@ export default function ConsultationClient({
       {/* Arrival mode — if the user came in with a prefilled question
           (?q= from Analyze / Investigate / Explain This elsewhere),
           the screen pivots: the freeform conversation leads, and the
-          AI's own recommendations are tucked below as secondary
-          context. The user's intent is the priority, not the AI's. */}
+          hero is tucked behind a disclosure. The user's intent is the
+          priority, not the AI's. */}
       {initialDraft ? (
         <>
           <FreeformConsultation
@@ -239,8 +239,6 @@ export default function ConsultationClient({
             arrivalMode
           />
 
-          {/* Secondary context — kept available but quieter when the
-              user already has a question loaded. */}
           {recommended ? (
             <details className="rounded-xl border border-line bg-ink-900/30 px-4 py-3">
               <summary className="cursor-pointer text-sm text-slate-300 hover:text-slate-100">
@@ -250,7 +248,9 @@ export default function ConsultationClient({
                 <RecommendedConsultationCard
                   rec={recommended}
                   focus={focus}
+                  suggested={suggested}
                   onConsult={() => void send(recommended.question)}
+                  onPickSuggested={(q) => void send(q)}
                   disabled={sending}
                 />
               </div>
@@ -259,32 +259,22 @@ export default function ConsultationClient({
         </>
       ) : (
         <>
-          {/* LEVEL 1 — Recommended Consultation. Today's AI Focus is
-              folded into this hero so the screen has a single
-              AI-guided starting point instead of stacked banners. */}
+          {/* One unified hero — main AI recommendation on the left,
+              lightweight related directions on the right. Replaces
+              the previous stacked Recommended + Suggested sections. */}
           {recommended ? (
             <RecommendedConsultationCard
               rec={recommended}
               focus={focus}
+              suggested={suggested}
               onConsult={() => void send(recommended.question)}
+              onPickSuggested={(q) => void send(q)}
               disabled={sending}
             />
           ) : null}
 
-          {/* LEVEL 2 — Suggested Strategic Consultations. Capped at 2
-              visible so they support the hero rather than competing
-              with it; the remainder live behind "More AI Suggestions". */}
-          {suggested.length > 0 ? (
-            <SuggestedConsultations
-              items={suggested}
-              onConsult={(q) => void send(q)}
-              disabled={sending}
-            />
-          ) : null}
-
-          {/* LEVEL 3 — Freeform Consultation. Always-visible major
-              element; lighter container in this mode so it doesn't
-              compete with the hero. */}
+          {/* Freeform consultation — always-visible major element,
+              calm container so it doesn't compete with the hero. */}
           <FreeformConsultation
             textareaRef={textareaRef}
             draft={draft}
@@ -344,12 +334,16 @@ export default function ConsultationClient({
 function RecommendedConsultationCard({
   rec,
   focus,
+  suggested,
   onConsult,
+  onPickSuggested,
   disabled,
 }: {
   rec: RecommendedConsultation;
   focus: TodaysFocus | null;
+  suggested: StrategicSituation[];
   onConsult: () => void;
+  onPickSuggested: (question: string) => void;
   disabled: boolean;
 }) {
   // Tone drives a subtle border accent so the card carries the same
@@ -360,6 +354,7 @@ function RecommendedConsultationCard({
     rec.tone === "warn" ? "border-warn/40"    :
     rec.tone === "good" ? "border-good/40"    :
                           "border-accent/30";
+  const hasSuggestions = suggested.length > 0;
   return (
     <section
       className={`rounded-2xl border ${borderTone} p-6 md:p-8 shadow-sm`}
@@ -368,104 +363,130 @@ function RecommendedConsultationCard({
           "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
       }}
     >
-      <div className="flex items-baseline gap-3 flex-wrap mb-3">
-        <span className="text-[10px] uppercase tracking-wide text-accent font-semibold">
-          Recommended Consultation
-        </span>
-        <span className="text-[10px] uppercase tracking-wide text-slate-500">
-          AI-prioritized for your business
-        </span>
-      </div>
-
-      {/* Today's AI Focus — folded inline so the screen has one unified
-          AI-guided starting point instead of a stacked banner. */}
-      {focus && focus.themes.length > 0 ? (
-        <div className="mb-4 pb-4 border-b border-line/60">
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
-            Today&apos;s AI Focus
+      {/* Two-column hero layout. Left: AI focus + main recommendation
+          + CTA. Right: lightweight related directions, vertically
+          stacked, no heavy chrome — the user reads them as supporting
+          AI guidance, not as another section of feature cards. */}
+      <div
+        className={
+          hasSuggestions
+            ? "grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10"
+            : "block"
+        }
+      >
+        <div className={hasSuggestions ? "lg:col-span-8" : ""}>
+          <div className="flex items-baseline gap-3 flex-wrap mb-3">
+            <span className="text-[10px] uppercase tracking-wide text-accent font-semibold">
+              Recommended Consultation
+            </span>
+            <span className="text-[10px] uppercase tracking-wide text-slate-500">
+              AI-prioritized for your business
+            </span>
           </div>
-          <div className="text-sm md:text-base text-slate-200 font-medium">
-            {focus.themes.join(" · ")}
+
+          {/* Today's AI Focus — folded inline as a subhead. */}
+          {focus && focus.themes.length > 0 ? (
+            <div className="mb-4 pb-4 border-b border-line/60">
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-1">
+                Today&apos;s AI Focus
+              </div>
+              <div className="text-sm md:text-base text-slate-200 font-medium">
+                {focus.themes.join(" · ")}
+              </div>
+            </div>
+          ) : null}
+
+          <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
+            {rec.title}
+          </h2>
+
+          <div className="space-y-2 max-w-3xl">
+            <p className="text-sm md:text-base text-slate-100 leading-relaxed">
+              {rec.observation}
+            </p>
+            <p className="text-sm text-slate-300 leading-relaxed">
+              {rec.interpretation}
+            </p>
+          </div>
+
+          <div className="mt-5">
+            <button
+              type="button"
+              className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+              onClick={onConsult}
+              disabled={disabled}
+            >
+              {rec.cta} →
+            </button>
           </div>
         </div>
-      ) : null}
 
-      <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
-        {rec.title}
-      </h2>
-
-      <div className="space-y-2 max-w-3xl">
-        <p className="text-sm md:text-base text-slate-100 leading-relaxed">
-          {rec.observation}
-        </p>
-        <p className="text-sm text-slate-300 leading-relaxed">
-          {rec.interpretation}
-        </p>
-      </div>
-
-      <div className="mt-5">
-        <button
-          type="button"
-          className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
-          onClick={onConsult}
-          disabled={disabled}
-        >
-          {rec.cta} →
-        </button>
+        {hasSuggestions ? (
+          <RelatedDirections
+            items={suggested}
+            onPick={onPickSuggested}
+            disabled={disabled}
+          />
+        ) : null}
       </div>
     </section>
   );
 }
 
-// SuggestedConsultations — caps visible cards at 2 so they support the
-// hero rather than competing with it. The rest fold behind a "More AI
-// Suggestions" toggle.
-function SuggestedConsultations({
+// RelatedDirections — the right rail of the hero. Lightweight stacked
+// list of optional AI follow-ups. Intentionally not styled as cards,
+// not bordered, no equal weight to the main recommendation.
+function RelatedDirections({
   items,
-  onConsult,
+  onPick,
   disabled,
 }: {
   items: StrategicSituation[];
-  onConsult: (question: string) => void;
+  onPick: (question: string) => void;
   disabled: boolean;
 }) {
   const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? items : items.slice(0, 2);
-  const hidden = Math.max(0, items.length - 2);
+  const visible = showAll ? items : items.slice(0, 3);
+  const hidden = Math.max(0, items.length - 3);
   return (
-    <section className="space-y-3">
-      <div className="flex items-baseline gap-2 flex-wrap">
-        <h3 className="text-base md:text-lg font-semibold text-slate-100">
-          Suggested Strategic Consultations
-        </h3>
-        <span className="text-xs text-slate-400">
-          Curated from your live business data.
-        </span>
+    <aside className="lg:col-span-4 lg:border-l lg:border-line/60 lg:pl-6">
+      <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+        Related Directions
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+      <ul className="divide-y divide-line/60 border-y border-line/60">
         {visible.map((s) => (
-          <StrategicSituationCard
-            key={s.id}
-            situation={s}
-            onConsult={() => onConsult(s.question)}
-            disabled={disabled}
-          />
+          <li key={s.id}>
+            <button
+              type="button"
+              disabled={disabled}
+              onClick={() => onPick(s.question)}
+              className="w-full text-left py-2.5 flex items-start justify-between gap-2 group disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <div className="min-w-0">
+                <div className="text-sm text-slate-200 group-hover:text-slate-50 transition leading-tight">
+                  {s.title}
+                </div>
+                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
+                  {s.blurb}
+                </div>
+              </div>
+              <span className="text-xs text-slate-500 group-hover:text-accent group-hover:translate-x-0.5 transition shrink-0 mt-1">
+                →
+              </span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
       {hidden > 0 ? (
-        <div>
-          <button
-            type="button"
-            className="text-xs text-slate-400 hover:text-accent transition"
-            onClick={() => setShowAll((v) => !v)}
-          >
-            {showAll
-              ? "Show fewer"
-              : `More AI Suggestions (${hidden}) →`}
-          </button>
-        </div>
+        <button
+          type="button"
+          className="mt-3 text-xs text-slate-400 hover:text-accent transition"
+          onClick={() => setShowAll((v) => !v)}
+        >
+          {showAll ? "Show fewer" : `Show ${hidden} more →`}
+        </button>
       ) : null}
-    </section>
+    </aside>
   );
 }
 
@@ -562,34 +583,3 @@ function FreeformConsultation({
   );
 }
 
-function StrategicSituationCard({
-  situation: s,
-  onConsult,
-  disabled,
-}: {
-  situation: StrategicSituation;
-  onConsult: () => void;
-  disabled: boolean;
-}) {
-  const borderTone =
-    s.tone === "bad"  ? "border-bad/40 hover:border-bad/70"    :
-    s.tone === "warn" ? "border-warn/40 hover:border-warn/70"  :
-    s.tone === "good" ? "border-good/40 hover:border-good/70"  :
-                        "border-line hover:border-accent/50";
-  return (
-    <button
-      type="button"
-      onClick={onConsult}
-      disabled={disabled}
-      className={`text-left rounded-xl border ${borderTone} bg-ink-900/40 hover:bg-accent-soft/10 transition px-4 py-3.5 disabled:opacity-50 disabled:cursor-not-allowed group flex flex-col gap-1.5`}
-    >
-      <div className="flex items-baseline justify-between gap-3">
-        <div className="font-medium text-sm text-slate-100">{s.title}</div>
-        <span className="text-accent text-xs group-hover:translate-x-0.5 transition-transform">
-          →
-        </span>
-      </div>
-      <div className="text-xs text-slate-300 leading-relaxed">{s.blurb}</div>
-    </button>
-  );
-}
