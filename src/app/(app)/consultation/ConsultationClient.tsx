@@ -679,7 +679,7 @@ function FreeformConsultation({
           disabled={sending || !draft.trim()}
           onClick={onSend}
         >
-          {sending ? "Analyzing…" : arrivalMode ? "Continue" : "Ask"}
+          {sending ? "Analyzing…" : arrivalMode ? "Continue" : "Consult AI"}
         </button>
       </div>
     </section>
