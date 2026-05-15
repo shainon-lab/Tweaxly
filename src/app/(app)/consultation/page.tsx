@@ -59,7 +59,7 @@ export default async function ConsultationPage({
     <>
       <PageHeader
         title="Consultation"
-        subtitle="Your AI business advisor. The recommendations below are derived from your live business data — start with what the AI has flagged, or ask anything."
+        subtitle="Strategic AI recommendations based on your business data."
       />
       <ConsultationTabs historyCount={totalQuestions} />
       <ConsultationClient

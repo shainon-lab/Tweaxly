@@ -491,7 +491,7 @@ function RecommendedConsultationCard({
   const hasSuggestions = suggested.length > 0;
   return (
     <section
-      className={`rounded-2xl border ${borderTone} p-6 md:p-8 shadow-sm`}
+      className={`rounded-2xl border ${borderTone} p-6 md:p-8 shadow-sm transition-all duration-300 hover:shadow-md hover:border-accent/40`}
       style={{
         backgroundImage:
           "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
@@ -508,38 +508,37 @@ function RecommendedConsultationCard({
             : "block"
         }
       >
-        <div className={`flex flex-col h-full ${hasSuggestions ? "lg:col-span-8" : ""}`}>
+        <div className={hasSuggestions ? "lg:col-span-8" : ""}>
           {/* Section anchor — quiet pre-heading that names the block
               instead of describing what's inside it. */}
           <div className="text-xs uppercase tracking-wide text-accent font-semibold mb-2">
             Recommended Consultation
           </div>
 
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
+          <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-2.5">
             {rec.title}
           </h2>
 
-          <p className="text-sm md:text-base text-slate-100 leading-relaxed max-w-3xl mb-3">
+          {/* Observation + interpretation form one tight content
+              cluster — the interpretation should read as a direct
+              continuation of the metric, not a separate paragraph. */}
+          <p className="text-sm md:text-base text-slate-100 leading-relaxed max-w-3xl mb-1.5">
             {rec.observation}
           </p>
+          <p className="text-sm text-slate-400 leading-relaxed max-w-3xl mb-4">
+            {rec.interpretation}
+          </p>
 
-          {/* Interpretation paragraph + Consult button live in the
-              bottom region of the column. mt-auto pushes this whole
-              row down so its bottom edge aligns with the bottom of
-              the three trends on the right rail. */}
-          <div className="mt-auto flex items-end justify-between gap-4 flex-wrap">
-            <p className="text-sm text-slate-400 leading-relaxed max-w-3xl flex-1 min-w-[260px]">
-              {rec.interpretation}
-            </p>
-            <button
-              type="button"
-              className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200 disabled:opacity-50 shrink-0"
-              onClick={onConsult}
-              disabled={disabled}
-            >
-              Consult AI →
-            </button>
-          </div>
+          {/* CTA sits flush left under the content cluster — close to
+              the recommendation it acts on, no horizontal vacuum. */}
+          <button
+            type="button"
+            className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200 disabled:opacity-50"
+            onClick={onConsult}
+            disabled={disabled}
+          >
+            Consult AI →
+          </button>
         </div>
 
         {hasSuggestions ? (
@@ -582,10 +581,10 @@ function RelatedDirections({
               className="w-full text-left py-2.5 flex items-start justify-between gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <div className="min-w-0 flex-1">
-                <div className="text-sm text-slate-200 group-hover:text-slate-50 transition duration-200 leading-tight">
+                <div className="text-sm font-medium text-slate-100 group-hover:text-white transition duration-200 leading-tight">
                   {s.title}
                 </div>
-                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
+                <div className="text-xs text-slate-500 leading-snug mt-1 line-clamp-2">
                   {s.blurb}
                 </div>
               </div>
