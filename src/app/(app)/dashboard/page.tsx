@@ -157,6 +157,7 @@ export default async function DashboardPage({
             start={initialStart}
             end={initialEnd}
             compare={compare}
+            controls="period"
           />
         }
       />
@@ -183,6 +184,20 @@ export default async function DashboardPage({
               tiles so the user reads the interpretation before the
               numbers. */}
           {summary ? <ExecutiveSummaryHero summary={summary} /> : null}
+
+          {/* Comparison control lives here — between the AI summary
+              and the metrics. The summary is AI-led interpretation and
+              doesn't take direction from this dropdown; the KPI tiles
+              and category deltas below do. */}
+          <div className="mb-4 flex items-end justify-end gap-3 flex-wrap">
+            <DashboardPeriodPicker
+              range={range}
+              start={initialStart}
+              end={initialEnd}
+              compare={compare}
+              controls="compare"
+            />
+          </div>
 
           {/* All Overview tiles share a single StatGroup so opening one
               Learn-more panel automatically closes any other. Comparison

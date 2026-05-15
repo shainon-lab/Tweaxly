@@ -80,11 +80,16 @@ export default function DashboardPeriodPicker({
   start,
   end,
   compare = "none",
+  controls = "all",
 }: {
   range: Range;
   start: string;
   end: string;
   compare?: Compare;
+  // Which sub-controls to render. "period" → range + custom dates only
+  // (the dashboard header). "compare" → just the comparison dropdown
+  // (placed above the stat tiles). "all" preserves the legacy layout.
+  controls?: "all" | "period" | "compare";
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -106,55 +111,62 @@ export default function DashboardPeriodPicker({
     update({ range: "custom", start: draftStart, end: draftEnd });
   }
 
+  const showPeriod = controls === "all" || controls === "period";
+  const showCompare = controls === "all" || controls === "compare";
+
   return (
     // Label-above-input per group, groups laid out left-to-right with
     // items-end so the controls line up at the bottom even when one
     // group has a stacked label and another expands.
     <div className="flex items-end gap-3 flex-wrap justify-end">
-      <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-          Period
-        </label>
-        <select
-          className="input"
-          value={range}
-          onChange={(e) => {
-            const v = e.target.value as Range;
-            if (v === "custom") {
-              update({ range: v, start: draftStart, end: draftEnd });
-            } else {
-              update({ range: v, start: undefined, end: undefined });
-            }
-          }}
-          disabled={pending}
-        >
-          {RANGE_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {showPeriod ? (
+        <div>
+          <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+            Period
+          </label>
+          <select
+            className="input"
+            value={range}
+            onChange={(e) => {
+              const v = e.target.value as Range;
+              if (v === "custom") {
+                update({ range: v, start: draftStart, end: draftEnd });
+              } else {
+                update({ range: v, start: undefined, end: undefined });
+              }
+            }}
+            disabled={pending}
+          >
+            {RANGE_OPTIONS.map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
-      <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-          Compare to
-        </label>
-        <select
-          className="input"
-          value={compare}
-          onChange={(e) => update({ compare: e.target.value === "none" ? undefined : e.target.value })}
-          disabled={pending}
-        >
-          {compareOptionsFor(range).map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-      </div>
+      {showCompare ? (
+        <div>
+          <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+            Compare to
+          </label>
+          <select
+            className="input"
+            value={compare}
+            onChange={(e) => update({ compare: e.target.value === "none" ? undefined : e.target.value })}
+            disabled={pending}
+          >
+            {compareOptionsFor(range).map((o) => (
+              <option key={o.value} value={o.value}>
+                {o.label}
+              </option>
+            ))}
+          </select>
+        </div>
+      ) : null}
 
-      {range === "custom" ? (
+      {showPeriod && range === "custom" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
