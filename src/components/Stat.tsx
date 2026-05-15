@@ -78,7 +78,7 @@ export function Stat({
             onClick={toggle}
             aria-expanded={open}
           >
-            {open ? "Close" : "Learn more"}
+            {open ? "Close" : "Explain this"}
           </button>
         ) : null}
       </div>

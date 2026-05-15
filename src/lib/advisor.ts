@@ -484,16 +484,24 @@ export async function recommendProactive(
     });
   }
 
-  // 8. Largest single vendor concentration
+  // 8. Largest single vendor concentration. Includes a peer-context
+  // sentence comparing against the second-largest vendor so the user
+  // can see how dominant the top one really is.
   if (topVendors[0] && current.expenses > 0 && topVendors[0].amount / current.expenses > 0.20) {
+    const top = topVendors[0];
+    const second = topVendors[1];
+    const ratio = second && second.amount > 0 ? top.amount / second.amount : null;
+    const peerContext = ratio != null
+      ? ` By comparison, your next-largest vendor (${second.vendor}) is ${ratio.toFixed(1)}× smaller — concentration in ${top.vendor} is structural, not noise.`
+      : ` ${top.vendor} is the only vendor at this scale in your data, which is precisely why a price move there has nowhere to hide.`;
     recs.push({
       level: "warn",
-      observation: `${topVendors[0].vendor} is ${fmtPct(topVendors[0].amount / current.expenses)} of your ${curLabel} expenses.`,
-      interpretation: `When a single vendor controls this much of your spend, you have concentration risk: a price hike, outage, or scope shift hits the business disproportionately and your negotiating leverage drops over time.${quoteRelevantNote(ctx.notesByVendor[topVendors[0].vendor])}`,
-      recommendation: `Open a renegotiation conversation. Even a 10% discount frees ${fmtMoney(topVendors[0].amount * 0.10, ccy)}/mo — and identifying a secondary vendor as a backup is cheap insurance.`,
-      impact: round0(topVendors[0].amount * 0.10),
+      observation: `${top.vendor} accounts for ${fmtPct(top.amount / current.expenses)} of your ${curLabel} expenses (${fmtMoney(top.amount, ccy)}).`,
+      interpretation: `When a single vendor controls this much of your spend, a price hike, outage, or scope shift hits the business disproportionately, and negotiating leverage erodes over time.${peerContext}${quoteRelevantNote(ctx.notesByVendor[top.vendor])}`,
+      recommendation: `Open a renegotiation conversation with ${top.vendor} — even a 10% discount frees ${fmtMoney(top.amount * 0.10, ccy)}/mo. In parallel, identify one credible alternative; the leverage of having an option matters more than the option itself.`,
+      impact: round0(top.amount * 0.10),
       category: "vendor",
-      signalKey: `vendor_concentration:${topVendors[0].vendor}`,
+      signalKey: `vendor_concentration:${top.vendor}`,
     });
   }
 
@@ -561,19 +569,55 @@ export async function recommendProactive(
     }
   }
 
-  // 12. Expense MoM jump — separate from vendor spikes
+  // 12. Expense MoM jump — separate from vendor spikes. Drills into
+  // which expense categories actually drove the increase, so the
+  // signal reads like a CFO note ("Software up X, Marketing up Y")
+  // instead of a generic alert.
   if (prev.expenses > 1000 && current.expenses > prev.expenses * 1.15) {
     const delta = current.expenses - prev.expenses;
+    // Compute per-category contribution to the jump. byCategory stores
+    // signed amounts (negative for expenses), so we compare |current| to
+    // |prev| per category and rank by the largest positive contribution.
+    const catDeltas: { name: string; delta: number; cur: number }[] = [];
+    const allCats = new Set([
+      ...Object.keys(current.byCategory),
+      ...Object.keys(prev.byCategory),
+    ]);
+    for (const name of allCats) {
+      const curVal = Math.abs(current.byCategory[name] ?? 0);
+      const prevVal = Math.abs(prev.byCategory[name] ?? 0);
+      const d = curVal - prevVal;
+      // Only count categories whose net moved in the expense direction.
+      // We require both that the signed value in current is negative
+      // (i.e. an expense category) and that the delta is positive (grew).
+      if ((current.byCategory[name] ?? 0) <= 0 && d > 0) {
+        catDeltas.push({ name, delta: d, cur: curVal });
+      }
+    }
+    catDeltas.sort((a, b) => b.delta - a.delta);
+    const drivers = catDeltas.slice(0, 2);
+    const driversShare = drivers.reduce((s, d) => s + d.delta, 0) / Math.max(delta, 1);
+
+    const driverText =
+      drivers.length === 0
+        ? `The increase is spread across many small categories rather than a single dominant driver.`
+        : drivers.length === 1
+          ? `Most of the move came from ${drivers[0].name} (${fmtMoney(drivers[0].delta, ccy)} higher than ${prevLabel}, or roughly ${fmtPct(driversShare)} of the total increase).`
+          : `${drivers[0].name} and ${drivers[1].name} drove the bulk of it — ${fmtMoney(drivers[0].delta, ccy)} and ${fmtMoney(drivers[1].delta, ccy)} above ${prevLabel} respectively, together about ${fmtPct(driversShare)} of the increase.`;
+
     // If any of the current-month notes might explain the jump (e.g.
     // "One-time office renovation"), surface the most recent one inline.
     const curMonthNotes = Object.values(ctx.notesByCategory)
       .flat()
       .filter((n) => n.ym === ctx.ym);
+
     recs.push({
       level: "warn",
-      observation: `Total expenses jumped ${fmtPct(delta / prev.expenses)} in ${curLabel} (+${fmtMoney(delta, ccy)}).`,
-      interpretation: `An expense jump this size in a single month is rarely organic — it usually points to a new vendor contract, a one-time charge that should be flagged, or a creep across multiple categories that needs attention.${quoteRelevantNote(curMonthNotes)}`,
-      recommendation: `Scan the Transactions tab filtered to ${curLabel}. Sort by amount and isolate the two or three line items that account for the bulk of the increase.`,
+      observation: `Operating expenses rose ${fmtPct(delta / prev.expenses)} in ${curLabel} — ${fmtMoney(delta, ccy)} above ${prevLabel}.`,
+      interpretation: `${driverText} A jump of this size usually traces to a new vendor contract, an annual charge landing in-month, or quiet creep across recurring tools — rarely random.${quoteRelevantNote(curMonthNotes)}`,
+      recommendation: drivers.length > 0
+        ? `Open ${drivers[0].name} in the Transactions tab filtered to ${curLabel} and isolate the line items that account for the bulk of the increase. The answer is almost always 2–3 specific transactions.`
+        : `Scan the Transactions tab filtered to ${curLabel}, sort by amount, and isolate the 2–3 line items doing the most work.`,
       impact: 0,
       category: "cashflow",
       signalKey: "expense_mom_jump",
