@@ -187,8 +187,12 @@ function ResponseBriefing({
   );
 }
 
-// Strategic paths list — tiered visual hierarchy so the user
-// immediately sees which path is primary vs high-impact vs low-impact.
+// Strategic paths list — single responsive grid so cards sit side
+// by side and don't leave empty horizontal space. Tier is still
+// communicated per card via a small pill at the top + a border tone
+// (primary = accent, high-impact = warn, low-impact = neutral). Cards
+// are ordered primary → high-impact → low-impact so the visual flow
+// is still tier-aware even without per-tier headings.
 function StrategicPathsList({
   paths,
   currency,
@@ -196,74 +200,51 @@ function StrategicPathsList({
   paths: StrategicPath[];
   currency: string;
 }) {
-  const primary    = paths.filter((p) => p.tier === "primary");
-  const highImpact = paths.filter((p) => p.tier === "high_impact");
-  const lowImpact  = paths.filter((p) => p.tier === "low_impact");
+  const ordered = [...paths].sort((a, b) => tierRank(a.tier) - tierRank(b.tier));
   return (
-    <div className="space-y-4">
-      {primary.length > 0 ? (
-        <PathTierBlock label="Primary Recommendation" paths={primary} currency={currency} tone="primary" />
-      ) : null}
-      {highImpact.length > 0 ? (
-        <PathTierBlock label="High-Impact Options" paths={highImpact} currency={currency} tone="warn" />
-      ) : null}
-      {lowImpact.length > 0 ? (
-        <PathTierBlock label="Low-Impact Options" paths={lowImpact} currency={currency} tone="neutral" />
-      ) : null}
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+      {ordered.map((p, i) => (
+        <PathCard key={i} path={p} currency={currency} />
+      ))}
     </div>
   );
 }
 
-function PathTierBlock({
-  label,
-  paths,
-  currency,
-  tone,
-}: {
-  label: string;
-  paths: StrategicPath[];
-  currency: string;
-  tone: "primary" | "warn" | "neutral";
-}) {
-  const labelClass =
-    tone === "primary" ? "text-accent" :
-    tone === "warn"    ? "text-warn"   :
-                         "text-slate-400";
-  return (
-    <div>
-      <div className={`text-[10px] uppercase tracking-wide font-semibold mb-2 ${labelClass}`}>
-        {label}
-      </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {paths.map((p, i) => (
-          <PathCard key={i} path={p} currency={currency} tone={tone} />
-        ))}
-      </div>
-    </div>
-  );
+function tierRank(t: StrategicPath["tier"]): number {
+  if (t === "primary") return 0;
+  if (t === "high_impact") return 1;
+  return 2;
 }
 
 function PathCard({
   path: p,
   currency,
-  tone,
 }: {
   path: StrategicPath;
   currency: string;
-  tone: "primary" | "warn" | "neutral";
 }) {
+  const tone = p.tier;
   const border =
-    tone === "primary" ? "border-accent/40 bg-accent-soft/10" :
-    tone === "warn"    ? "border-warn/40 bg-warn/5"           :
-                         "border-line bg-ink-900/30";
+    tone === "primary"     ? "border-accent/40 bg-accent-soft/10" :
+    tone === "high_impact" ? "border-warn/40 bg-warn/5"           :
+                             "border-line bg-ink-900/30";
+  const tierLabel =
+    tone === "primary"     ? "Primary"     :
+    tone === "high_impact" ? "High Impact" :
+                             "Low Impact";
+  const tierPill =
+    tone === "primary"     ? "pill-accent" :
+    tone === "high_impact" ? "pill-warn"   :
+                             "pill";
   const o = p.option;
   const coverage = Math.round(p.coveragePct * 100);
   return (
     <div className={`rounded-lg border ${border} p-4 flex flex-col gap-2`}>
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <div className="font-medium text-sm text-slate-100">{o.title}</div>
+        <span className={`${tierPill} text-[10px]`}>{tierLabel}</span>
         <div className="pill-good">{fmtMoney(o.monthlySavings, currency)}/mo</div>
       </div>
+      <div className="font-medium text-sm text-slate-100">{o.title}</div>
       <div className="text-xs text-slate-400">
         {fmtMoney(o.annualSavings, currency)} per year · covers {coverage}% over {p.horizonMonths}mo
       </div>

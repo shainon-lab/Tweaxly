@@ -278,25 +278,41 @@ function HistoryBriefing({
           <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-3">
             Strategic Paths
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {briefing.paths.map((p, i) => (
-              <div
-                key={i}
-                className={`rounded-lg border p-4 flex flex-col gap-2 ${
-                  p.tier === "primary"     ? "border-accent/40 bg-accent-soft/10" :
-                  p.tier === "high_impact" ? "border-warn/40 bg-warn/5"            :
-                                             "border-line bg-ink-900/30"
-                }`}
-              >
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="font-medium text-sm text-slate-100">{p.option.title}</div>
-                  <div className="pill-good">{formatMoney(p.option.monthlySavings, currency)}/mo</div>
-                </div>
-                <div className="text-xs text-slate-400">
-                  {formatMoney(p.option.annualSavings, currency)} per year · covers {Math.round(p.coveragePct * 100)}% over {p.horizonMonths}mo
-                </div>
-              </div>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
+            {[...briefing.paths]
+              .sort((a, b) => {
+                const r = (t: typeof a.tier) => (t === "primary" ? 0 : t === "high_impact" ? 1 : 2);
+                return r(a.tier) - r(b.tier);
+              })
+              .map((p, i) => {
+                const tierLabel =
+                  p.tier === "primary"     ? "Primary"     :
+                  p.tier === "high_impact" ? "High Impact" :
+                                             "Low Impact";
+                const tierPill =
+                  p.tier === "primary"     ? "pill-accent" :
+                  p.tier === "high_impact" ? "pill-warn"   :
+                                             "pill";
+                return (
+                  <div
+                    key={i}
+                    className={`rounded-lg border p-4 flex flex-col gap-2 ${
+                      p.tier === "primary"     ? "border-accent/40 bg-accent-soft/10" :
+                      p.tier === "high_impact" ? "border-warn/40 bg-warn/5"            :
+                                                 "border-line bg-ink-900/30"
+                    }`}
+                  >
+                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                      <span className={`${tierPill} text-[10px]`}>{tierLabel}</span>
+                      <div className="pill-good">{formatMoney(p.option.monthlySavings, currency)}/mo</div>
+                    </div>
+                    <div className="font-medium text-sm text-slate-100">{p.option.title}</div>
+                    <div className="text-xs text-slate-400">
+                      {formatMoney(p.option.annualSavings, currency)} per year · covers {Math.round(p.coveragePct * 100)}% over {p.horizonMonths}mo
+                    </div>
+                  </div>
+                );
+              })}
           </div>
         </div>
       ) : null}
