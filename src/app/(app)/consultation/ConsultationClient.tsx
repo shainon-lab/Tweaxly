@@ -5,7 +5,7 @@
 // with gradient "Start Consultation" CTA → the response cards once an
 // answer comes back. No chat bubbles, no sidebar, no clutter.
 
-import { useState, useTransition, useEffect, useRef } from "react";
+import { useState, useTransition, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { renderMarkdown } from "./markdown";
 import type {
@@ -13,6 +13,11 @@ import type {
   StrategicSituation,
   TodaysFocus,
 } from "@/lib/consultationFocus";
+import {
+  buildDecisionBriefing,
+  type DecisionBriefing,
+  type StrategicPath,
+} from "@/lib/decisionBriefing";
 
 type Msg = {
   id: string;
@@ -27,24 +32,6 @@ type Active = {
   title: string;
   messages: Msg[];
 };
-
-type SavingsOption = {
-  title: string;
-  monthlySavings: number;
-  annualSavings: number;
-  tradeoff: string;
-  items: { label: string; amount: number; note?: string }[];
-};
-
-type HorizonBlock = {
-  label: string;
-  months: number;
-  monthlyTarget: number;
-  totalTarget: number;
-  options: SavingsOption[];
-};
-
-type OptionPayload = { horizons?: HorizonBlock[] };
 
 // Placeholder for the freeform consultation textarea. The conversational
 // framing reinforces the AI-advisor positioning over a generic chat box.
@@ -71,56 +58,225 @@ function fmtMoney(value: number, currency: string) {
   }
 }
 
-function OptionsBlock({
+// ResponseBriefing — structured executive briefing built from a
+// consultation response. Replaces the old single-blob "Advisor
+// analysis" render. Splits the response into:
+//   - Executive Takeaway (top)
+//   - Decision Anchors + AI Reasoning (two-column)
+//   - Strategic Paths (tiered cards)
+//   - Risks & Tradeoffs (collected from option tradeoffs + warnings)
+function ResponseBriefing({
+  content,
   payload,
   currency,
 }: {
+  content: string;
   payload: string | null;
   currency: string;
 }) {
-  if (!payload) return null;
-  let parsed: OptionPayload;
-  try { parsed = JSON.parse(payload); } catch { return null; }
-  if (!parsed.horizons || parsed.horizons.length === 0) return null;
-  const multi = parsed.horizons.length > 1;
+  const briefing: DecisionBriefing = useMemo(
+    () => buildDecisionBriefing(content, payload, currency),
+    [content, payload, currency],
+  );
+  const hasReasoning = briefing.reasoning.trim().length > 0;
+  const hasAnchors = briefing.anchors.length > 0;
+  const hasPaths = briefing.paths.length > 0;
+  const hasRisks = briefing.risks.length > 0;
   return (
-    <div className="mt-4 space-y-4">
-      {parsed.horizons.map((h, hi) => (
-        <div key={hi} className="space-y-2">
-          {multi ? (
-            <div className="flex items-baseline gap-2 mt-1">
-              <span className="pill-accent">{h.label}</span>
-              <span className="text-xs text-slate-400">
-                {h.months} months · ~{fmtMoney(h.monthlyTarget, currency)}/mo target
-              </span>
+    <div className="space-y-5">
+      {/* 1. Executive Takeaway */}
+      {briefing.takeaway ? (
+        <div className="rounded-xl border border-accent/40 bg-accent-soft/15 p-4 md:p-5">
+          <div className="text-[10px] uppercase tracking-wide text-accent font-semibold mb-1">
+            Executive Takeaway
+          </div>
+          <div className="text-base md:text-lg font-semibold text-slate-100 leading-snug">
+            {briefing.takeaway.headline}
+          </div>
+          {briefing.takeaway.subhead ? (
+            <div className="text-sm text-slate-300 mt-1.5 leading-relaxed">
+              {briefing.takeaway.subhead}
             </div>
           ) : null}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {h.options.map((o, i) => (
-              <div key={i} className="rounded-lg border border-line bg-ink-950/40 p-4 flex flex-col gap-2">
-                <div className="flex items-center justify-between gap-2 flex-wrap">
-                  <div className="font-medium text-sm">{o.title}</div>
-                  <div className="pill-good">{fmtMoney(o.monthlySavings, currency)}/mo</div>
-                </div>
-                <div className="text-xs text-slate-400">
-                  {fmtMoney(o.annualSavings, currency)} per year · covers {Math.round((o.monthlySavings * h.months / Math.max(h.totalTarget, 1)) * 100)}% over {h.months}mo
-                </div>
-                <div className="text-xs text-slate-300 leading-relaxed mt-1">{o.tradeoff}</div>
-                {o.items.length > 0 ? (
-                  <ul className="text-xs text-slate-300 list-disc pl-4 space-y-0.5 mt-1">
-                    {o.items.map((it, ii) => (
-                      <li key={ii}>
-                        <span className="font-medium">{it.label}</span>
-                        <span className="text-slate-400"> — {fmtMoney(it.amount, currency)}/mo{it.note ? <> · {it.note}</> : null}</span>
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
-              </div>
-            ))}
-          </div>
         </div>
-      ))}
+      ) : null}
+
+      {/* 2 + 3. Anchors (right) + Reasoning (left). On mobile they stack. */}
+      {hasReasoning || hasAnchors ? (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8">
+          {hasReasoning ? (
+            <div className={hasAnchors ? "lg:col-span-8" : "lg:col-span-12"}>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+                AI Reasoning
+              </div>
+              <div className="space-y-1.5 text-sm text-slate-200">
+                {renderMarkdown(briefing.reasoning)}
+              </div>
+            </div>
+          ) : null}
+
+          {hasAnchors ? (
+            <aside className={`lg:col-span-4 ${hasReasoning ? "lg:border-l lg:border-line/60 lg:pl-6" : ""}`}>
+              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+                Decision Anchors
+              </div>
+              <ul className="divide-y divide-line/40">
+                {briefing.anchors.map((a, i) => (
+                  <li key={i} className="py-2.5 flex items-start justify-between gap-3">
+                    <span className="text-xs text-slate-400 shrink-0">{a.label}</span>
+                    <span
+                      className={`text-sm font-medium text-right ${
+                        a.tone === "good" ? "text-good" :
+                        a.tone === "warn" ? "text-warn" :
+                        a.tone === "bad"  ? "text-bad"  :
+                                            "text-slate-100"
+                      }`}
+                    >
+                      {a.value}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </aside>
+          ) : null}
+        </div>
+      ) : null}
+
+      {/* 4. Strategic Paths */}
+      {hasPaths ? (
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-3">
+            Strategic Paths
+          </div>
+          <StrategicPathsList paths={briefing.paths} currency={currency} />
+        </div>
+      ) : null}
+
+      {/* 5. Risks & Tradeoffs */}
+      {hasRisks ? (
+        <div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+            Risks &amp; Tradeoffs
+          </div>
+          <ul className="space-y-2">
+            {briefing.risks.map((r, i) => (
+              <li
+                key={i}
+                className={`rounded-lg border px-3 py-2 ${
+                  r.tone === "bad"  ? "border-bad/40 bg-bad/5"  :
+                  r.tone === "warn" ? "border-warn/40 bg-warn/5" :
+                                      "border-line bg-ink-900/30"
+                }`}
+              >
+                <div className={`text-xs font-medium ${
+                  r.tone === "bad"  ? "text-bad"  :
+                  r.tone === "warn" ? "text-warn" :
+                                      "text-slate-200"
+                }`}>
+                  {r.label}
+                </div>
+                <div className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                  {r.text}
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// Strategic paths list — tiered visual hierarchy so the user
+// immediately sees which path is primary vs high-impact vs low-impact.
+function StrategicPathsList({
+  paths,
+  currency,
+}: {
+  paths: StrategicPath[];
+  currency: string;
+}) {
+  const primary    = paths.filter((p) => p.tier === "primary");
+  const highImpact = paths.filter((p) => p.tier === "high_impact");
+  const lowImpact  = paths.filter((p) => p.tier === "low_impact");
+  return (
+    <div className="space-y-4">
+      {primary.length > 0 ? (
+        <PathTierBlock label="Primary Recommendation" paths={primary} currency={currency} tone="primary" />
+      ) : null}
+      {highImpact.length > 0 ? (
+        <PathTierBlock label="High-Impact Options" paths={highImpact} currency={currency} tone="warn" />
+      ) : null}
+      {lowImpact.length > 0 ? (
+        <PathTierBlock label="Low-Impact Options" paths={lowImpact} currency={currency} tone="neutral" />
+      ) : null}
+    </div>
+  );
+}
+
+function PathTierBlock({
+  label,
+  paths,
+  currency,
+  tone,
+}: {
+  label: string;
+  paths: StrategicPath[];
+  currency: string;
+  tone: "primary" | "warn" | "neutral";
+}) {
+  const labelClass =
+    tone === "primary" ? "text-accent" :
+    tone === "warn"    ? "text-warn"   :
+                         "text-slate-400";
+  return (
+    <div>
+      <div className={`text-[10px] uppercase tracking-wide font-semibold mb-2 ${labelClass}`}>
+        {label}
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {paths.map((p, i) => (
+          <PathCard key={i} path={p} currency={currency} tone={tone} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PathCard({
+  path: p,
+  currency,
+  tone,
+}: {
+  path: StrategicPath;
+  currency: string;
+  tone: "primary" | "warn" | "neutral";
+}) {
+  const border =
+    tone === "primary" ? "border-accent/40 bg-accent-soft/10" :
+    tone === "warn"    ? "border-warn/40 bg-warn/5"           :
+                         "border-line bg-ink-900/30";
+  const o = p.option;
+  const coverage = Math.round(p.coveragePct * 100);
+  return (
+    <div className={`rounded-lg border ${border} p-4 flex flex-col gap-2`}>
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="font-medium text-sm text-slate-100">{o.title}</div>
+        <div className="pill-good">{fmtMoney(o.monthlySavings, currency)}/mo</div>
+      </div>
+      <div className="text-xs text-slate-400">
+        {fmtMoney(o.annualSavings, currency)} per year · covers {coverage}% over {p.horizonMonths}mo
+      </div>
+      {o.items.length > 0 ? (
+        <ul className="text-xs text-slate-300 list-disc pl-4 space-y-0.5 mt-1">
+          {o.items.map((it, ii) => (
+            <li key={ii}>
+              <span className="font-medium">{it.label}</span>
+              <span className="text-slate-400"> — {fmtMoney(it.amount, currency)}/mo{it.note ? <> · {it.note}</> : null}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -311,14 +467,15 @@ export default function ConsultationClient({
             </div>
           </div>
 
-          {/* Advisor analysis */}
-          <div className="rounded-xl border border-line bg-ink-900/40 p-5 md:p-6 shadow-sm">
-            <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-3">Advisor analysis</div>
-            <div className="space-y-1.5">
-              {renderMarkdown(lastAssistantMsg.content)}
-            </div>
-            <OptionsBlock payload={lastAssistantMsg.payload} currency={currency} />
-          </div>
+          {/* Structured executive briefing — replaces the old
+              advisor-analysis blob. Builds takeaway + anchors + reasoning
+              + paths + risks from the same content + payload, then
+              renders each section with its own visual weight. */}
+          <ResponseBriefing
+            content={lastAssistantMsg.content}
+            payload={lastAssistantMsg.payload}
+            currency={currency}
+          />
         </div>
       ) : null}
     </div>

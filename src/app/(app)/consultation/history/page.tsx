@@ -9,7 +9,6 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ConsultationTabs from "../ConsultationTabs";
 import HistoryClient, { type HistoryListItem, type HistoryDetail } from "./HistoryClient";
-import { renderMarkdown } from "../markdown";
 
 export default async function ConsultationHistoryPage({
   searchParams,
@@ -19,30 +18,32 @@ export default async function ConsultationHistoryPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
 
-  // Flatten every user message across every consultation thread into a
-  // single list. Each user message gets paired with the next assistant
-  // message from the same thread; if there's no follow-up assistant
-  // message yet, answer is null and the row still appears with the
-  // question text.
   const allMessages = await prisma.consultationMessage.findMany({
     where: { consultation: { businessId: business.id } },
     orderBy: [{ consultationId: "asc" }, { createdAt: "asc" }],
   });
 
-  type Pair = { id: string; question: string; answer: string | null; askedAt: Date };
+  type Pair = {
+    id: string;
+    question: string;
+    answer: string | null;
+    payload: string | null;
+    askedAt: Date;
+  };
   const pairs: Pair[] = [];
   for (let i = 0; i < allMessages.length; i++) {
     const m = allMessages[i];
     if (m.role !== "user") continue;
     const next = allMessages[i + 1];
-    const answer =
+    const paired =
       next && next.consultationId === m.consultationId && next.role === "assistant"
-        ? next.content
+        ? next
         : null;
     pairs.push({
       id: m.id,
       question: m.content,
-      answer,
+      answer: paired?.content ?? null,
+      payload: paired?.payload ?? null,
       askedAt: m.createdAt,
     });
   }
@@ -64,14 +65,10 @@ export default async function ConsultationHistoryPage({
         question: chosen.question,
         askedAt: chosen.askedAt.toISOString(),
         answerMarkdown: chosen.answer,
+        payload: chosen.payload,
       };
     }
   }
-
-  // Pre-render the markdown server-side so the client component doesn't
-  // need to re-parse it on every selection.
-  const answerNodes =
-    detail && detail.answerMarkdown ? renderMarkdown(detail.answerMarkdown) : null;
 
   return (
     <>
@@ -80,7 +77,11 @@ export default async function ConsultationHistoryPage({
         subtitle="Review previous consultations and business recommendations."
       />
       <ConsultationTabs historyCount={list.length} />
-      <HistoryClient list={list} detail={detail} answerNodes={answerNodes} />
+      <HistoryClient
+        list={list}
+        detail={detail}
+        currency={business.currency}
+      />
     </>
   );
 }
