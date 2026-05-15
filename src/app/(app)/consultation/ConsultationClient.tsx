@@ -519,22 +519,22 @@ function RecommendedConsultationCard({
             {rec.title}
           </h2>
 
-          <div className="space-y-2 max-w-3xl">
-            <p className="text-sm md:text-base text-slate-100 leading-relaxed">
-              {rec.observation}
-            </p>
-            <p className="text-sm text-slate-400 leading-relaxed">
+          <p className="text-sm md:text-base text-slate-100 leading-relaxed max-w-3xl mb-3">
+            {rec.observation}
+          </p>
+
+          {/* Interpretation paragraph and the Consult button sit on
+              the same row — the button is anchored at the bottom-right
+              of the row so the eye lands on it as the explanation
+              ends. On narrow screens (mobile) the row collapses and
+              the button drops below naturally. */}
+          <div className="flex items-end justify-between gap-4 flex-wrap">
+            <p className="text-sm text-slate-400 leading-relaxed max-w-3xl flex-1 min-w-[260px]">
               {rec.interpretation}
             </p>
-          </div>
-
-          {/* CTA right-aligned so the eye lands on the action after
-              reading the recommendation. Label is just 'Consult' —
-              the section title already says what it is. */}
-          <div className="mt-5 flex justify-end">
             <button
               type="button"
-              className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50"
+              className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50 shrink-0"
               onClick={onConsult}
               disabled={disabled}
             >
