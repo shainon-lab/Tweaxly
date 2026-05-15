@@ -533,7 +533,7 @@ function RecommendedConsultationCard({
             </p>
             <button
               type="button"
-              className="btn-primary text-sm md:text-base px-6 py-3 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98] disabled:opacity-50 shrink-0"
+              className="text-sm md:text-base px-6 py-3 rounded-lg border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition disabled:opacity-50 shrink-0"
               onClick={onConsult}
               disabled={disabled}
             >
