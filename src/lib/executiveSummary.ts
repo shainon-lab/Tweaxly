@@ -21,9 +21,20 @@ export type SummaryChip = {
   tone: "good" | "warn" | "bad" | "neutral";
 };
 
+// Bulletin — a single anchor in the right-side "Business Bulletins"
+// column. Lightweight by design: a short label + a short value, with
+// an optional trend arrow. NOT a KPI card.
+export type Bulletin = {
+  label: string;          // "Revenue", "Operating Margin", "Cost Pressure"
+  value: string;          // "$2.05M", "21.8%", "Accelerating", "Moderate"
+  trend?: "up" | "down" | "flat";
+  tone?: "good" | "warn" | "bad" | "neutral";
+};
+
 export type ExecutiveSummary = {
   narrative: string;
   chips: SummaryChip[];
+  bulletins: Bulletin[];
   source: "claude" | "deterministic";
   periodLabel: string;
 };
@@ -47,6 +58,7 @@ export async function buildExecutiveSummary(
   input: SummaryInput,
 ): Promise<ExecutiveSummary> {
   const chips = buildChips(input);
+  const bulletins = buildBulletins(input);
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const claudeEnabled =
@@ -59,6 +71,7 @@ export async function buildExecutiveSummary(
         return {
           narrative,
           chips,
+          bulletins,
           source: "claude",
           periodLabel: input.periodLabel,
         };
@@ -72,6 +85,7 @@ export async function buildExecutiveSummary(
   return {
     narrative: buildDeterministicNarrative(input),
     chips,
+    bulletins,
     source: "deterministic",
     periodLabel: input.periodLabel,
   };
@@ -558,6 +572,177 @@ function buildChips(input: SummaryInput): SummaryChip[] {
     seen.add(c.label);
     return true;
   }).slice(0, 5);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Bulletins — the right-side anchor list. Lightweight, max 5, dynamically
+// chosen so the most material business dimensions are surfaced first.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function buildBulletins(input: SummaryInput): Bulletin[] {
+  const { ccy, current, prev } = input;
+  const revDelta = pctDeltaSafe(current.income, prev.income);
+  const expDelta = pctDeltaSafe(current.expenses, prev.expenses);
+  const netDelta = pctDeltaSafe(current.netProfit, prev.netProfit);
+  const curMargin = current.income > 0 ? (current.income - current.expenses) / current.income : null;
+  const prevMargin = prev.income > 0 ? (prev.income - prev.expenses) / prev.income : null;
+  const marginShift = curMargin != null && prevMargin != null ? curMargin - prevMargin : null;
+
+  // Each candidate has a priority score; we sort desc and take the top 5.
+  // Always-on anchors get a generous baseline so they appear when nothing
+  // else is more material.
+  type Candidate = Bulletin & { priority: number };
+  const candidates: Candidate[] = [];
+
+  // ── Anchor 1: Revenue (always-on)
+  candidates.push({
+    label: "Revenue",
+    value: shortMoney(current.income, ccy),
+    trend: revDelta == null ? undefined : revDelta > 0.02 ? "up" : revDelta < -0.02 ? "down" : "flat",
+    tone: revDelta == null ? "neutral" : revDelta > 0.02 ? "good" : revDelta < -0.05 ? "warn" : "neutral",
+    priority: 100,
+  });
+
+  // ── Anchor 2: Operating margin (when revenue exists)
+  if (curMargin != null) {
+    const marginTone: Bulletin["tone"] =
+      curMargin >= 0.20 ? "good" :
+      curMargin >= 0.05 ? "neutral" :
+      curMargin >= 0    ? "warn" :
+                          "bad";
+    const marginTrend: Bulletin["trend"] =
+      marginShift == null ? undefined :
+      marginShift > 0.02  ? "up" :
+      marginShift < -0.02 ? "down" :
+                            "flat";
+    candidates.push({
+      label: "Operating Margin",
+      value: fmtPct(curMargin),
+      trend: marginTrend,
+      tone: marginTone,
+      priority: 95,
+    });
+  }
+
+  // ── Anchor 3: Revenue trend (qualitative) — only when meaningful movement
+  if (revDelta != null && Math.abs(revDelta) >= 0.05) {
+    candidates.push({
+      label: "Revenue Trend",
+      value: revDelta >= 0.10 ? "Accelerating" : revDelta > 0 ? "Improving" : revDelta > -0.10 ? "Softening" : "Slowing",
+      tone: revDelta > 0 ? "good" : "warn",
+      priority: revDelta >= 0.10 || revDelta <= -0.10 ? 90 : 60,
+    });
+  }
+
+  // ── Anchor 4: Cost pressure (qualitative) — only when expense move is non-trivial
+  if (expDelta != null && Math.abs(expDelta) >= 0.05) {
+    const elevated = expDelta >= 0.15;
+    const moderate = expDelta >= 0.05;
+    const easing   = expDelta <= -0.05;
+    const value =
+      elevated ? "Elevated" :
+      moderate ? "Moderate" :
+      easing   ? "Easing"   : "Stable";
+    candidates.push({
+      label: "Cost Pressure",
+      value,
+      tone: elevated ? "warn" : easing ? "good" : "neutral",
+      priority: elevated ? 85 : 50,
+    });
+  }
+
+  // ── Anchor 5: Cash Flow (qualitative)
+  let cashState: { value: string; tone: Bulletin["tone"]; priority: number } | null = null;
+  if (current.netProfit < 0) {
+    cashState = { value: "Under Pressure", tone: "bad", priority: 90 };
+  } else if (current.netProfit > 0 && (netDelta == null || netDelta >= -0.05)) {
+    cashState = { value: current.netProfit >= prev.netProfit ? "Healthy" : "Stable", tone: "good", priority: 70 };
+  } else if (current.netProfit > 0 && netDelta != null && netDelta < -0.20) {
+    cashState = { value: "Softening", tone: "warn", priority: 75 };
+  }
+  if (cashState) {
+    candidates.push({
+      label: "Cash Flow",
+      value: cashState.value,
+      tone: cashState.tone,
+      priority: cashState.priority,
+    });
+  }
+
+  // ── Anchor 6: Payroll load (when heavy)
+  if (current.payroll > 0 && current.income > 0) {
+    const ratio = current.payroll / current.income;
+    if (ratio >= 0.5) {
+      candidates.push({
+        label: "Payroll Load",
+        value: ratio >= 0.70 ? "Very Heavy" : "Heavy",
+        tone: "warn",
+        priority: 65,
+      });
+    } else if (ratio >= 0.30 && ratio < 0.50) {
+      // Only worth surfacing if payroll dominates a not-overly-heavy mix —
+      // skip otherwise so we don't crowd the panel.
+    }
+  }
+
+  // ── Anchor 7: Net Profit (when there's a story to tell vs prev)
+  if (current.netProfit !== 0 && netDelta != null && Math.abs(netDelta) >= 0.10) {
+    candidates.push({
+      label: "Net Profit",
+      value: shortMoney(current.netProfit, ccy),
+      trend: netDelta > 0 ? "up" : "down",
+      tone: current.netProfit < 0 ? "bad" : netDelta > 0 ? "good" : "warn",
+      priority: 55,
+    });
+  }
+
+  // Sort by priority desc, dedup labels (first wins), cap at 5.
+  candidates.sort((a, b) => b.priority - a.priority);
+  const seen = new Set<string>();
+  const out: Bulletin[] = [];
+  for (const c of candidates) {
+    if (seen.has(c.label)) continue;
+    seen.add(c.label);
+    out.push({ label: c.label, value: c.value, trend: c.trend, tone: c.tone });
+    if (out.length >= 5) break;
+  }
+  // Floor at 3: if we somehow have fewer, pad with a quiet baseline.
+  if (out.length < 3) {
+    if (!seen.has("Expenses")) {
+      out.push({
+        label: "Expenses",
+        value: shortMoney(current.expenses, ccy),
+        trend: expDelta == null ? undefined : expDelta > 0.02 ? "up" : expDelta < -0.02 ? "down" : "flat",
+        tone: "neutral",
+      });
+    }
+  }
+  return out;
+}
+
+function pctDeltaSafe(curr: number, prior: number): number | null {
+  if (prior === 0) return null;
+  return (curr - prior) / Math.abs(prior);
+}
+
+// Compact money formatting for bulletins: $2.05M, $187K, $920.
+function shortMoney(value: number, ccy: string): string {
+  const sign = value < 0 ? "-" : "";
+  const abs = Math.abs(value);
+  const symbol = currencySymbol(ccy);
+  if (abs >= 1_000_000) return `${sign}${symbol}${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 10_000)    return `${sign}${symbol}${Math.round(abs / 1000)}K`;
+  if (abs >= 1_000)     return `${sign}${symbol}${(abs / 1000).toFixed(1)}K`;
+  return `${sign}${symbol}${abs.toFixed(0)}`;
+}
+
+function currencySymbol(ccy: string): string {
+  if (ccy === "USD") return "$";
+  if (ccy === "EUR") return "€";
+  if (ccy === "GBP") return "£";
+  if (ccy === "ILS") return "₪";
+  if (ccy === "JPY") return "¥";
+  return `${ccy} `;
 }
 
 // Map a DashboardRange to the timeframe used by the narrative engine.

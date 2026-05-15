@@ -1,23 +1,32 @@
 // The "Summary" hero at the top of the Executive Summary dashboard.
-// Renders a calm, premium block with an AI-generated business
-// narrative followed by a row of supporting insight chips.
+// Two columns: narrative on the left, "Business Bulletins" anchor list
+// on the right. The bulletins are an AI-curated digest — never more
+// than 5 — surfacing the most material business anchors so the user
+// can read the period in 3–5 seconds.
 //
-// Design notes:
-//   - This is a strategic overview layer, NOT an alert card. No loud
-//     borders, no harsh colors, no notification styling.
-//   - The narrative is the main affordance — chips are secondary.
-//   - The card uses the same gradient family as the consultation
-//     intro and the Business Signals footer so it reads as part of
-//     the same "intelligence" surface.
+// Design rules — important:
+//   - Bulletins are NOT KPI cards. No heavy borders, no boxed widgets.
+//     The right column is a lightweight vertical list with subtle row
+//     dividers, premium and quiet.
+//   - The narrative is the primary affordance. The bulletins support
+//     scanning, not compete for attention.
+//   - Mobile: bulletins stack below the narrative.
 
-import type { ExecutiveSummary, SummaryChip } from "@/lib/executiveSummary";
+import type { Bulletin, ExecutiveSummary } from "@/lib/executiveSummary";
 
-const CHIP_CLASS: Record<SummaryChip["tone"], string> = {
-  good:    "pill-good",
-  warn:    "pill-warn",
-  bad:     "pill-bad",
-  neutral: "pill-accent",
+const TONE_CLASS: Record<NonNullable<Bulletin["tone"]>, string> = {
+  good:    "text-good",
+  warn:    "text-warn",
+  bad:     "text-bad",
+  neutral: "text-slate-100",
 };
+
+function trendGlyph(t: Bulletin["trend"]): string {
+  if (t === "up")   return "↑";
+  if (t === "down") return "↓";
+  if (t === "flat") return "→";
+  return "";
+}
 
 export default function ExecutiveSummaryHero({
   summary,
@@ -41,9 +50,6 @@ export default function ExecutiveSummaryHero({
             AI-generated business overview · {summary.periodLabel}
           </div>
         </div>
-        {/* Source attribution — pill-styled so the user can clearly see
-            that the narrative is grounded in their own data, not stock
-            copy. Sized larger than typical microcopy. */}
         <span
           className="pill-accent text-xs px-3 py-1 font-semibold"
           title="The summary above is generated from your business's own data."
@@ -52,19 +58,41 @@ export default function ExecutiveSummaryHero({
         </span>
       </div>
 
-      <p className="text-sm md:text-base text-slate-200 leading-relaxed max-w-4xl whitespace-pre-line">
-        {summary.narrative}
-      </p>
+      {/* Two-column layout: narrative on the left, bulletins on the right.
+          On mobile they stack with the narrative first. */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+        <p className="md:col-span-8 text-sm md:text-base text-slate-200 leading-relaxed whitespace-pre-line">
+          {summary.narrative}
+        </p>
 
-      {summary.chips.length > 0 ? (
-        <div className="mt-5 flex items-center gap-2 flex-wrap">
-          {summary.chips.map((c, i) => (
-            <span key={i} className={`${CHIP_CLASS[c.tone]} text-[11px]`}>
-              {c.label}
-            </span>
-          ))}
-        </div>
-      ) : null}
+        {summary.bulletins.length > 0 ? (
+          <aside className="md:col-span-4">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+              Business Bulletins
+            </div>
+            <ul className="divide-y divide-line/60 border-t border-line/60">
+              {summary.bulletins.map((b, i) => (
+                <li
+                  key={i}
+                  className="flex items-baseline justify-between gap-3 py-2.5"
+                >
+                  <span className="text-xs text-slate-400">{b.label}</span>
+                  <span
+                    className={`text-sm font-medium tracking-tight ${TONE_CLASS[b.tone ?? "neutral"]}`}
+                  >
+                    {b.trend ? (
+                      <span className="text-xs mr-1 align-middle" aria-hidden="true">
+                        {trendGlyph(b.trend)}
+                      </span>
+                    ) : null}
+                    {b.value}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </aside>
+        ) : null}
+      </div>
     </section>
   );
 }
