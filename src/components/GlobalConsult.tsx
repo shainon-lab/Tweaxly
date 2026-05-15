@@ -36,6 +36,10 @@ const SS_LAST_SHOWN_AT    = "consult.session.lastShownAt";
 const SS_DISMISS_COUNT    = "consult.session.dismissCount";
 const SS_PERMA_DISMISSED  = "consult.session.permadismissed";
 const SS_DISMISSED_PREFIX = "consult.session.dismissed:";
+// localStorage flag — survives across sessions. Set when the user
+// picks "Hide forever" from the dismiss menu; the nudge is then
+// silenced permanently until the user clears site data.
+const LS_FOREVER_DISMISSED = "consult.forever.dismissed";
 
 function ssGetNum(key: string): number {
   if (typeof window === "undefined") return 0;
@@ -53,6 +57,8 @@ function ssGet(key: string): string | null {
 // Decide whether the nudge is even eligible to schedule on this path.
 function isNudgeEligible(pathname: string): boolean {
   if (typeof window === "undefined") return false;
+  // Forever dismissal trumps everything.
+  if (window.localStorage.getItem(LS_FOREVER_DISMISSED) === "1") return false;
   if (ssGet(SS_PERMA_DISMISSED) === "1") return false;
   if (ssGetNum(SS_SHOWN_COUNT) >= NUDGE_MAX_PER_SESSION) return false;
   const last = ssGetNum(SS_LAST_SHOWN_AT);
@@ -223,6 +229,10 @@ export default function GlobalConsult() {
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
   const [showNudge, setShowNudge] = useState(false);
+  // When the user taps dismiss, we don't act immediately — we swap
+  // the nudge body to a small picker that lets them choose the
+  // scope of the dismissal (this session vs forever).
+  const [dismissPicker, setDismissPicker] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
 
@@ -235,6 +245,7 @@ export default function GlobalConsult() {
     setResponse(null);
     setDraft("");
     setShowNudge(false);
+    setDismissPicker(false);
   }, [pathname]);
 
   // Pull focus when the panel opens so the user can start typing.
@@ -302,18 +313,39 @@ export default function GlobalConsult() {
     };
   }, [pathname, open]);
 
-  function dismissNudge() {
+  // First tap on the close affordance flips the nudge body into a
+  // scope-picker. Nothing is suppressed yet — the user chooses
+  // explicitly between "this session" or "forever".
+  function startDismiss() {
+    setDismissPicker(true);
+  }
+
+  // "For this session" — kill nudges for the rest of the current
+  // session only. Next time the user signs in we're back to normal.
+  function dismissForSession() {
     setShowNudge(false);
+    setDismissPicker(false);
     if (pathname) ssSet(SS_DISMISSED_PREFIX + pathname, "1");
-    const next = ssGetNum(SS_DISMISS_COUNT) + 1;
-    ssSet(SS_DISMISS_COUNT, String(next));
-    // Two dismissals is enough signal that the user doesn't want
-    // these — go silent for the rest of the session.
-    if (next >= 2) ssSet(SS_PERMA_DISMISSED, "1");
+    // Pick this scope == one definitive "no" from the user. Take the
+    // hint and silence all nudges for the rest of the session.
+    ssSet(SS_PERMA_DISMISSED, "1");
+  }
+
+  // "Forever" — write a localStorage flag so subsequent sessions
+  // never schedule the nudge. The user can re-enable by clearing
+  // site data; we don't surface an in-UI re-enable yet.
+  function dismissForever() {
+    setShowNudge(false);
+    setDismissPicker(false);
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(LS_FOREVER_DISMISSED, "1");
+    }
+    ssSet(SS_PERMA_DISMISSED, "1");
   }
 
   function openFromNudge() {
     setShowNudge(false);
+    setDismissPicker(false);
     setOpen(true);
   }
 
@@ -365,46 +397,80 @@ export default function GlobalConsult() {
           page, never on top of the open panel, never repeatedly. */}
       {showNudge && !open ? (
         <div
-          className="fixed bottom-[68px] right-5 z-40 max-w-[280px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]"
+          className="fixed bottom-[68px] right-5 z-40 max-w-[300px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]"
           role="status"
           aria-live="polite"
         >
-          <div className="flex items-start gap-2.5">
-            <Sparkles
-              size={14}
-              strokeWidth={1.75}
-              className="text-accent shrink-0 mt-0.5"
-              aria-hidden="true"
-            />
-            <div className="min-w-0 flex-1">
-              <div className="text-sm text-slate-100 leading-snug">{nudgeText}</div>
-              <div className="mt-2 flex items-center gap-2">
+          {dismissPicker ? (
+            // Scope picker — shown after the user taps dismiss/X.
+            // Explicit choice between session-only and forever
+            // suppression, plus a way to back out of the choice.
+            <div>
+              <div className="text-xs text-slate-300 mb-2 leading-snug">
+                Hide this suggestion…
+              </div>
+              <div className="flex flex-wrap items-center gap-1.5">
                 <button
                   type="button"
-                  onClick={openFromNudge}
-                  className="text-xs px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200"
+                  onClick={dismissForSession}
+                  className="text-xs px-2.5 py-1 rounded-md border border-line text-slate-300 hover:text-slate-100 hover:border-accent/40 transition duration-200"
                 >
-                  Consult
+                  For this session
                 </button>
                 <button
                   type="button"
-                  onClick={dismissNudge}
-                  className="text-xs text-slate-400 hover:text-slate-200 transition duration-200"
-                  aria-label="Dismiss suggestion"
+                  onClick={dismissForever}
+                  className="text-xs px-2.5 py-1 rounded-md border border-line text-slate-300 hover:text-slate-100 hover:border-accent/40 transition duration-200"
                 >
-                  Not now
+                  Forever
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDismissPicker(false)}
+                  className="text-xs text-slate-500 hover:text-slate-200 transition duration-200 ml-1"
+                >
+                  Cancel
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              onClick={dismissNudge}
-              className="shrink-0 text-slate-500 hover:text-slate-200 transition duration-200"
-              aria-label="Dismiss suggestion"
-            >
-              <X size={14} strokeWidth={1.5} />
-            </button>
-          </div>
+          ) : (
+            <div className="flex items-start gap-2.5">
+              <Sparkles
+                size={14}
+                strokeWidth={1.75}
+                className="text-accent shrink-0 mt-0.5"
+                aria-hidden="true"
+              />
+              <div className="min-w-0 flex-1">
+                <div className="text-sm text-slate-100 leading-snug">{nudgeText}</div>
+                <div className="mt-2 flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={openFromNudge}
+                    className="text-xs px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200"
+                  >
+                    Consult
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startDismiss}
+                    className="text-xs text-slate-400 hover:text-slate-200 transition duration-200"
+                    aria-label="Dismiss suggestion"
+                  >
+                    Not now
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={startDismiss}
+                className="shrink-0 text-slate-500 hover:text-slate-200 transition duration-200"
+                aria-label="Dismiss suggestion"
+              >
+                <X size={14} strokeWidth={1.5} />
+              </button>
+            </div>
+          )}
         </div>
       ) : null}
 
