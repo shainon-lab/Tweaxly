@@ -1,5 +1,4 @@
 import PageHeader from "@/components/PageHeader";
-import ReportsTabs from "@/components/ReportsTabs";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { requireBusiness } from "@/lib/auth";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -74,7 +73,6 @@ export default async function DataFlowPage({
           />
         }
       />
-      <ReportsTabs />
       <ReportsInnerTabs />
 
       {view === "summary" ? (

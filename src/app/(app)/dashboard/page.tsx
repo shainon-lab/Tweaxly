@@ -3,7 +3,7 @@ import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
 import { requireBusiness } from "@/lib/auth";
-import { activeEmployeeCost } from "@/lib/metrics";
+import { activeEmployeeCost, trailingMonthsSummary } from "@/lib/metrics";
 import {
   resolveDashboardRange,
   resolveCompareRange,
@@ -90,10 +90,14 @@ export default async function DashboardPage({
   const compareToYM   = compareRange ? compareRange.toYM   : resolved.prevToYM;
   const compareLabel  = compareRange ? compareRange.label  : resolved.prevLabel;
 
-  const [current, prev, employeeCost] = await Promise.all([
+  const [current, prev, employeeCost, trailing] = await Promise.all([
     buildPeriodAggregate(business.id, resolved.fromYM, resolved.toYM),
     buildPeriodAggregate(business.id, compareFromYM, compareToYM),
     activeEmployeeCost(business.id, resolved.toYM),
+    // Pull six trailing months so the Executive Summary can talk about
+    // when a trend began (e.g. "weakening since March") instead of
+    // reading like a single-period snapshot.
+    trailingMonthsSummary(business.id, 6, resolved.toYM),
   ]);
 
   const ccy = business.currency;
@@ -127,6 +131,7 @@ export default async function DashboardPage({
         timeframe: timeframeForRange(range),
         current,
         prev,
+        trailing,
         employeeCostMonthly: employeeCost.total,
       });
 

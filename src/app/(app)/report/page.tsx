@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import PageHeader from "@/components/PageHeader";
 import ReportPeriodPicker from "@/components/ReportPeriodPicker";
-import ReportsTabs from "@/components/ReportsTabs";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { Stat } from "@/components/Stat";
 import { requireBusiness } from "@/lib/auth";
@@ -141,7 +140,6 @@ export default async function ReportPage({
           />
         }
       />
-      <ReportsTabs />
       <ReportsInnerTabs />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">

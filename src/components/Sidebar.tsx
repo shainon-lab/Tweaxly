@@ -2,31 +2,38 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  LayoutDashboard,
+  Activity,
+  MessageSquare,
+  TrendingUp,
+  FileText,
+  Users,
+  SlidersHorizontal,
+  CircleUser,
+  type LucideIcon,
+} from "lucide-react";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 
 type AlertKey = "transactions" | "insights" | "businessSignals";
 
-const NAV: { href: string; label: string; icon: string; alertKey?: AlertKey }[] = [
-  { href: "/dashboard", label: "Executive Summary", icon: "🏠" },
-  { href: "/business-signals", label: "Business Signals", icon: "📡", alertKey: "businessSignals" },
-  { href: "/consultation", label: "Consultation", icon: "💬" },
-  { href: "/forecast", label: "Forecast", icon: "📈" },
-  // Reports umbrella now wraps Monthly Reports / Data Flow / Insights —
-  // the standalone Insights entry is gone from the sidebar; its sub-tab
-  // sits inside this group instead.
-  { href: "/report", label: "Reports", icon: "📑", alertKey: "insights" },
-  { href: "/workforce", label: "Workforce Overview", icon: "👥" },
-  // "Set notifications" lives inline inside Business Signals → Monitor
-  // → Set Monitor Events now, so no standalone sidebar entry. The
-  // /notifications route still exists as a fallback destination.
-  // Data (Import / Transactions / Data log) lives inside Business
-  // Settings as sub-tabs now — no standalone sidebar entry. The
-  // transactions alert badge (open duplicate groups) moves onto the
-  // Business Settings entry so it still surfaces in the sidebar.
-  // Integration also lives inside Business Settings as a sub-tab.
-  { href: "/settings", label: "Business Settings", icon: "⚙️", alertKey: "transactions" },
-  { href: "/account", label: "Account", icon: "👤" },
+// Sidebar nav is intentionally calm — thin outline icons (lucide), no
+// emoji, no filled glyphs, no decorative color. The icons act as quiet
+// orientation anchors and never compete with the AI-driven sections
+// inside the pages. All icons share the same stroke weight and size.
+const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey }[] = [
+  { href: "/dashboard",        label: "Executive Summary", Icon: LayoutDashboard },
+  { href: "/business-signals", label: "Business Signals",  Icon: Activity,         alertKey: "businessSignals" },
+  { href: "/consultation",     label: "Consultation",      Icon: MessageSquare },
+  { href: "/forecast",         label: "Forecast",          Icon: TrendingUp },
+  { href: "/report",           label: "Reports",           Icon: FileText,         alertKey: "insights" },
+  { href: "/workforce",        label: "Workforce Overview", Icon: Users },
+  // Data, Integration, and Notifications all live inside Business
+  // Settings as sub-tabs. The transactions alert badge surfaces here
+  // so duplicate-review counts stay visible in the sidebar.
+  { href: "/settings",         label: "Business Settings", Icon: SlidersHorizontal, alertKey: "transactions" },
+  { href: "/account",          label: "Account",           Icon: CircleUser },
 ];
 
 export type SidebarAlerts = { transactions?: number; insights?: number; businessSignals?: number };
@@ -132,18 +139,24 @@ export default function Sidebar({
               n.href === "/report"   ? inReportsGroup :
               path === n.href || path.startsWith(n.href + "/");
             const alertCount = n.alertKey ? alerts?.[n.alertKey] ?? 0 : 0;
+            const Icon = n.Icon;
             return (
               <Link
                 key={n.href}
                 href={n.href}
                 onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-2 rounded-md px-3 py-2 text-sm transition ${
+                className={`flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition ${
                   active
                     ? "bg-accent-soft text-accent"
                     : "text-slate-300 hover:bg-ink-700 hover:text-slate-100"
                 }`}
               >
-                <span className="w-4 text-center text-slate-400">{n.icon}</span>
+                <Icon
+                  size={16}
+                  strokeWidth={1.5}
+                  className={`shrink-0 ${active ? "text-accent" : "text-slate-400"}`}
+                  aria-hidden="true"
+                />
                 <span className="flex-1">{n.label}</span>
                 {alertCount > 0 ? (
                   <span

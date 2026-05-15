@@ -12,6 +12,7 @@
 //     scanning, not compete for attention.
 //   - Mobile: bulletins stack below the narrative.
 
+import type { ReactNode } from "react";
 import type { Bulletin, ExecutiveSummary } from "@/lib/executiveSummary";
 
 const TONE_CLASS: Record<NonNullable<Bulletin["tone"]>, string> = {
@@ -20,6 +21,35 @@ const TONE_CLASS: Record<NonNullable<Bulletin["tone"]>, string> = {
   bad:     "text-bad",
   neutral: "text-slate-100",
 };
+
+// Parse a narrative paragraph for **emphasis** markers and render the
+// emphasized fragments with subtle bold + slightly brighter text. Plain
+// text passes through unchanged. This is intentionally not a full
+// markdown renderer — we only want soft semantic emphasis inside the
+// summary, nothing else.
+function renderNarrative(text: string): ReactNode[] {
+  if (!text) return [];
+  const out: ReactNode[] = [];
+  // Match **phrase** non-greedy so adjacent markers don't merge.
+  const re = /\*\*(.+?)\*\*/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let key = 0;
+  while ((m = re.exec(text)) !== null) {
+    if (m.index > last) out.push(text.slice(last, m.index));
+    out.push(
+      <strong
+        key={`em-${key++}`}
+        className="font-semibold text-slate-50"
+      >
+        {m[1]}
+      </strong>,
+    );
+    last = re.lastIndex;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}
 
 function trendGlyph(t: Bulletin["trend"]): string {
   if (t === "up")   return "↑";
@@ -62,7 +92,7 @@ export default function ExecutiveSummaryHero({
           On mobile they stack with the narrative first. */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
         <p className="md:col-span-8 text-sm md:text-base text-slate-200 leading-relaxed whitespace-pre-line">
-          {summary.narrative}
+          {renderNarrative(summary.narrative)}
         </p>
 
         {summary.bulletins.length > 0 ? (

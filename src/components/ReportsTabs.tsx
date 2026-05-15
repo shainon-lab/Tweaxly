@@ -1,31 +1,21 @@
 "use client";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 
-// Umbrella row for the Reports section. The page header already
-// communicates "Reports", so the umbrella no longer renders a
-// redundant Reports pill — only the side affordance for Charts. The
-// inner report sub-pages (P&L Statement, Category Trends, Yearly
-// Summary) are switched via ReportsInnerTabs below this row.
+// Standalone back-affordance shown on the Charts page (/insights) only.
+// The report pages use the same tab strip as ReportsInnerTabs and host
+// their own "View Charts" button on the right; this component exists
+// just so the Charts view has a one-click way back into Reports.
 export default function ReportsTabs() {
-  const path = usePathname();
-  const onCharts  = path === "/insights" || path.startsWith("/insights/")
-    ? !path.startsWith("/insights/yearly")
-    : false;
   return (
-    <div className="mb-3 -mt-2 flex items-center justify-end gap-2 flex-wrap">
+    <div className="mb-6 flex items-center justify-between gap-2 flex-wrap">
       <Link
-        href="/insights"
-        className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border transition ${
-          onCharts
-            ? "border-accent/50 bg-accent-soft/40 text-accent"
-            : "border-line text-slate-400 hover:text-slate-100 hover:border-accent/40"
-        }`}
-        title="View the charts grid for this period"
+        href="/report"
+        className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-md border border-line text-slate-300 hover:text-white hover:border-accent/40 transition"
       >
-        <span>📈</span>
-        <span>{onCharts ? "Viewing Charts" : "View Charts"}</span>
+        <span>←</span>
+        <span>Back to Reports</span>
       </Link>
+      <span className="text-xs text-slate-500">Charts view</span>
     </div>
   );
 }
