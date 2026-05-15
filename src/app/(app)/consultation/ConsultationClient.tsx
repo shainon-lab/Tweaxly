@@ -538,7 +538,7 @@ function RecommendedConsultationCard({
               onClick={onConsult}
               disabled={disabled}
             >
-              Consult →
+              Consult AI →
             </button>
           </div>
         </div>
@@ -590,9 +590,9 @@ function RelatedDirections({
               type="button"
               disabled={disabled}
               onClick={() => onPick(s.question)}
-              className="shrink-0 mt-0.5 text-[11px] px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="shrink-0 mt-0.5 text-[11px] px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
             >
-              Consult
+              Consult AI
             </button>
           </li>
         ))}

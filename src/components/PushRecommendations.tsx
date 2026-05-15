@@ -342,7 +342,7 @@ function SignalCard({
           className="btn-primary text-xs px-3 py-1.5 rounded-md inline-flex items-center gap-1.5"
           title="Open this signal in the AI advisor for deeper analysis"
         >
-          <span>Consult with AI</span>
+          <span>Consult AI</span>
           <span className="text-[10px]">→</span>
         </Link>
       </div>
