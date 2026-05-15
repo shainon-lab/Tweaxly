@@ -625,18 +625,15 @@ function FreeformConsultation({
     ? "Continue this consultation"
     : "Ask the AI advisor";
   return (
-    // Same card chrome (border + gradient + padding) as the hero so
-    // the two blocks read as visual peers.
-    <section
-      className="rounded-2xl border border-line p-6 md:p-8 shadow-sm"
-      style={{
-        backgroundImage:
-          "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
-      }}
-    >
-      <h3 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-3">
+    // Quieter chrome than the hero — neutral background, no gradient,
+    // smaller section heading. The hero is the AI's lead recommendation
+    // (proactive); this is the user-input tool (reactive). Visual
+    // hierarchy makes that distinction obvious instead of presenting
+    // them as competing peer recommendations.
+    <section className="rounded-2xl border border-line bg-ink-900/30 p-5 md:p-6 shadow-sm">
+      <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-3">
         {heading}
-      </h3>
+      </div>
 
       <textarea
         ref={textareaRef}
