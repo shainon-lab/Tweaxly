@@ -242,7 +242,12 @@ function SignalGroups({
               </h3>
               <span className="text-xs text-slate-500">· {g.subtitle}</span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+            {/* When a severity row has a single signal, let it span
+                the full width so it doesn't leave 2/3 of the row
+                empty. With 2 or 3 cards, keep the standard 3-col grid
+                — the third slot just stays empty when there are 2,
+                so cards retain their regular size. */}
+            <div className={`grid gap-3 ${g.items.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3"}`}>
               {g.items.map((r) => (
                 <SignalCard
                   key={r.id}
