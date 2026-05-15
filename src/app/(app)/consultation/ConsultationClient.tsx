@@ -508,7 +508,7 @@ function RecommendedConsultationCard({
             : "block"
         }
       >
-        <div className={hasSuggestions ? "lg:col-span-8" : ""}>
+        <div className={`flex flex-col h-full ${hasSuggestions ? "lg:col-span-8" : ""}`}>
           {/* Section anchor — quiet pre-heading that names the block
               instead of describing what's inside it. */}
           <div className="text-xs uppercase tracking-wide text-accent font-semibold mb-2">
@@ -523,12 +523,11 @@ function RecommendedConsultationCard({
             {rec.observation}
           </p>
 
-          {/* Interpretation paragraph and the Consult button sit on
-              the same row — the button is anchored at the bottom-right
-              of the row so the eye lands on it as the explanation
-              ends. On narrow screens (mobile) the row collapses and
-              the button drops below naturally. */}
-          <div className="flex items-end justify-between gap-4 flex-wrap">
+          {/* Interpretation paragraph + Consult button live in the
+              bottom region of the column. mt-auto pushes this whole
+              row down so its bottom edge aligns with the bottom of
+              the three trends on the right rail. */}
+          <div className="mt-auto flex items-end justify-between gap-4 flex-wrap">
             <p className="text-sm text-slate-400 leading-relaxed max-w-3xl flex-1 min-w-[260px]">
               {rec.interpretation}
             </p>
@@ -555,9 +554,9 @@ function RecommendedConsultationCard({
   );
 }
 
-// RelatedDirections — the right rail of the hero. Lightweight stacked
-// list of optional AI follow-ups. Intentionally not styled as cards,
-// not bordered, no equal weight to the main recommendation.
+// RelatedDirections — the right rail of the hero. Fixed at three
+// rows so the section feels curated and predictable; any additional
+// candidates are dropped at the page level.
 function RelatedDirections({
   items,
   onPick,
@@ -567,9 +566,7 @@ function RelatedDirections({
   onPick: (question: string) => void;
   disabled: boolean;
 }) {
-  const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? items : items.slice(0, 3);
-  const hidden = Math.max(0, items.length - 3);
+  const visible = items.slice(0, 3);
   return (
     <aside className="lg:col-span-4 lg:border-l lg:border-line/60 lg:pl-6">
       <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-2">
@@ -597,15 +594,6 @@ function RelatedDirections({
           </li>
         ))}
       </ul>
-      {hidden > 0 ? (
-        <button
-          type="button"
-          className="mt-3 text-xs text-slate-500 hover:text-accent transition"
-          onClick={() => setShowAll((v) => !v)}
-        >
-          {showAll ? "Show fewer" : `Show ${hidden} more →`}
-        </button>
-      ) : null}
     </aside>
   );
 }
