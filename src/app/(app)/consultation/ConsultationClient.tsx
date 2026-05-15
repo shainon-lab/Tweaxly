@@ -451,7 +451,7 @@ function RelatedDirections({
   return (
     <aside className="lg:col-span-4 lg:border-l lg:border-line/60 lg:pl-6">
       <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
-        Related Directions
+        More to Consult
       </div>
       <ul className="divide-y divide-line/60 border-y border-line/60">
         {visible.map((s) => (
