@@ -631,7 +631,7 @@ function FreeformConsultation({
     // hierarchy makes that distinction obvious instead of presenting
     // them as competing peer recommendations.
     <section className="rounded-2xl border border-line bg-ink-900/30 p-5 md:p-6 shadow-sm">
-      <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-3">
+      <div className="text-xs uppercase tracking-wide text-good font-semibold mb-3">
         {heading}
       </div>
 
