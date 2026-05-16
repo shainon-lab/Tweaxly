@@ -149,7 +149,7 @@ export default async function DashboardPage({
   return (
     <>
       <PageHeader
-        title="Executive Summary"
+        title="Overview"
         subtitle={`${DASHBOARD_RANGE_LABEL[range]}: ${resolved.label} (${current.monthCount} month${current.monthCount === 1 ? "" : "s"}) — ${business.name}`}
         right={
           <DashboardPeriodPicker

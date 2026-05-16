@@ -22,7 +22,7 @@ type AlertKey = "transactions" | "insights" | "businessSignals";
 // orientation anchors and never compete with the AI-driven sections
 // inside the pages. All icons share the same stroke weight and size.
 const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey }[] = [
-  { href: "/dashboard",        label: "Executive Summary", Icon: LayoutDashboard },
+  { href: "/dashboard",        label: "Overview",          Icon: LayoutDashboard },
   { href: "/business-signals", label: "Signals",            Icon: Activity,         alertKey: "businessSignals" },
   { href: "/consultation",     label: "Advisory",          Icon: MessageSquare },
   { href: "/forecast",         label: "Forecast",          Icon: TrendingUp },

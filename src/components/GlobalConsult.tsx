@@ -115,7 +115,7 @@ export const CONSULT_OPEN_EVENT = "tweaxly:consult";
 function deriveViewMeta(pathname: string): ViewMeta {
   if (pathname === "/" || pathname.startsWith("/dashboard")) {
     return {
-      title: "Executive Summary",
+      title: "Overview",
       subtitle: "Current period view",
       prompts: [
         "What's the single most important thing on this page?",
