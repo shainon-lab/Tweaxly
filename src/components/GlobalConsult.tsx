@@ -207,13 +207,13 @@ function deriveViewMeta(pathname: string): ViewMeta {
   }
   if (pathname.startsWith("/workforce")) {
     return {
-      title: "Workforce",
-      subtitle: "Payroll and team composition",
+      title: "Forecast",
+      subtitle: "Workforce Planning — payroll impact on profitability",
       prompts: [
         "Is my payroll heavy relative to revenue?",
         "Can I afford to hire another employee?",
         "Which role would deliver the most leverage?",
-        "Where is payroll trending and why?",
+        "What's the cashflow impact of adding one hire?",
       ],
     };
   }

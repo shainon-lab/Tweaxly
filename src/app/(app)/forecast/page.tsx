@@ -10,6 +10,7 @@
 // summary cards, and insights panel all redraw against both layers.
 
 import PageHeader from "@/components/PageHeader";
+import ForecastTabs from "@/components/ForecastTabs";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -119,6 +120,7 @@ export default async function ForecastPage({
         title="Forecast"
         subtitle={`Forecasting based on ${range.label.toLowerCase()} (${baseline.monthCount} mo of history) over the ${horizon.label.toLowerCase()}.`}
       />
+      <ForecastTabs />
 
       <ForecastSetup
         historical={historical}

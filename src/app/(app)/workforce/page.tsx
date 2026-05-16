@@ -1,11 +1,12 @@
-// Workforce Overview — financial intelligence about the team. Lives under
-// Reports. NOT an HR tool — no attendance, PTO, performance, recruitment.
-// It answers: how much does the team cost, how fast is payroll growing,
-// can the business afford additional hires, and what's the impact of
-// workforce changes on profit / cashflow.
+// Workforce Planning — financial intelligence about the team. Lives
+// under Forecast as a planning lever, NOT as a standalone HR product.
+// It answers: how much does the team cost, how fast is payroll
+// growing, can the business afford additional hires, and what's the
+// impact of workforce changes on profit / cashflow.
 
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import ForecastTabs from "@/components/ForecastTabs";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -140,8 +141,8 @@ export default async function WorkforcePage() {
   return (
     <>
       <PageHeader
-        title="Workforce Overview"
-        subtitle="Financial picture of the team — real costs, growth pace, and the impact of hires on profit and cashflow."
+        title="Forecast"
+        subtitle="Workforce Planning — real team costs, payroll growth pace, and the impact of hires on profit and cashflow."
         right={
           <div className="flex items-center gap-2">
             <Link href="/employees" className="btn-ghost">Edit roster</Link>
@@ -149,6 +150,7 @@ export default async function WorkforcePage() {
           </div>
         }
       />
+      <ForecastTabs />
 
       {rows.length === 0 ? (
         <div className="card text-center py-12">

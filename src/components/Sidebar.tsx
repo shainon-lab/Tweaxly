@@ -8,7 +8,6 @@ import {
   MessageSquare,
   TrendingUp,
   FileText,
-  Users,
   SlidersHorizontal,
   CircleUser,
   type LucideIcon,
@@ -28,9 +27,11 @@ const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey 
   { href: "/consultation",     label: "Advisory",          Icon: MessageSquare },
   { href: "/forecast",         label: "Forecast",          Icon: TrendingUp },
   { href: "/report",           label: "Reports",           Icon: FileText,         alertKey: "insights" },
-  { href: "/workforce",        label: "Workforce Overview", Icon: Users },
-  // Data, Integration, and Notifications all live inside Business
-  // Settings as sub-tabs. The transactions alert badge surfaces here
+  // Workforce Planning lives inside Forecast as a sub-tab now — the
+  // platform is business-intelligence, not HR, so workforce is a
+  // financial-planning lever rather than a standalone destination.
+  // Data, Integration, and Notifications all live inside Settings
+  // as sub-tabs. The transactions alert badge surfaces on Settings
   // so duplicate-review counts stay visible in the sidebar.
   { href: "/settings",         label: "Settings",          Icon: SlidersHorizontal, alertKey: "transactions" },
   { href: "/account",          label: "Account",           Icon: CircleUser },
@@ -132,11 +133,16 @@ export default function Sidebar({
               "/settings", "/manual-data", "/transactions", "/data-log", "/integration",
             ];
             const reportsRoutes = ["/report", "/data-flow", "/insights"];
+            // Forecast owns /forecast plus /workforce (Workforce
+            // Planning is now a Forecast sub-tab).
+            const forecastRoutes = ["/forecast", "/workforce"];
             const inSettingsGroup = settingsRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const inReportsGroup = reportsRoutes.some((r) => path === r || path.startsWith(r + "/"));
+            const inForecastGroup = forecastRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const active =
               n.href === "/settings" ? inSettingsGroup :
               n.href === "/report"   ? inReportsGroup :
+              n.href === "/forecast" ? inForecastGroup :
               path === n.href || path.startsWith(n.href + "/");
             const alertCount = n.alertKey ? alerts?.[n.alertKey] ?? 0 : 0;
             const Icon = n.Icon;
