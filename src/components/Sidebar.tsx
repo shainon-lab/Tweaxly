@@ -25,7 +25,7 @@ type AlertKey = "transactions" | "insights" | "businessSignals";
 const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey }[] = [
   { href: "/dashboard",        label: "Executive Summary", Icon: LayoutDashboard },
   { href: "/business-signals", label: "Business Signals",  Icon: Activity,         alertKey: "businessSignals" },
-  { href: "/consultation",     label: "Consultation",      Icon: MessageSquare },
+  { href: "/consultation",     label: "Advisory",          Icon: MessageSquare },
   { href: "/forecast",         label: "Forecast",          Icon: TrendingUp },
   { href: "/report",           label: "Reports",           Icon: FileText,         alertKey: "insights" },
   { href: "/workforce",        label: "Workforce Overview", Icon: Users },

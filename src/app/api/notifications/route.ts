@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -57,6 +58,9 @@ export async function POST(req: NextRequest) {
       enabled: body.enabled !== false,
     },
   });
+  // New rule can immediately fire and flip the sidebar badge —
+  // revalidate the layout so the count updates everywhere.
+  revalidatePath("/", "layout");
   return NextResponse.json(rule);
 }
 
@@ -78,6 +82,13 @@ export async function PATCH(req: NextRequest) {
     where: { id: body.id, businessId: business.id },
     data,
   });
+  // The sidebar's unread-alert badge is computed in the root layout
+  // via getSidebarAlerts. Next caches layout RSC payloads across
+  // soft navigations, so without an explicit revalidate the badge
+  // can keep showing the old count after a 'Mark as read'. Invalidate
+  // the layout tree so the next render anywhere in the app rebuilds
+  // the sidebar with the fresh unread count.
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true });
 }
 
@@ -88,5 +99,8 @@ export async function DELETE(req: NextRequest) {
   await prisma.notificationRule.deleteMany({
     where: { id, businessId: business.id },
   });
+  // Deleted rule no longer contributes to the unread count —
+  // revalidate the layout so the badge updates everywhere.
+  revalidatePath("/", "layout");
   return NextResponse.json({ ok: true });
 }

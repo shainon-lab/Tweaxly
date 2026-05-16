@@ -58,7 +58,7 @@ export default async function ConsultationPage({
   return (
     <>
       <PageHeader
-        title="Consultation"
+        title="Advisory"
         subtitle="Strategic AI recommendations based on your business data."
       />
       <ConsultationTabs historyCount={totalQuestions} />

@@ -92,13 +92,13 @@ export default function HistoryClient({
           onClick={newConversation}
           disabled={pending}
         >
-          + New Consultation
+          + New Advisory
         </button>
       </div>
 
       {list.length === 0 ? (
         <div className="card text-center py-16">
-          <div className="text-lg font-medium">No consultations yet</div>
+          <div className="text-lg font-medium">No advisory sessions yet</div>
           <div className="text-sm text-slate-400 mt-1">
             Start a new consultation to begin building your history.
           </div>

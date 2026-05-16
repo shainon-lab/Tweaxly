@@ -73,7 +73,7 @@ export default async function ConsultationHistoryPage({
   return (
     <>
       <PageHeader
-        title="Consultation History"
+        title="Advisory History"
         subtitle="Review previous consultations and business recommendations."
       />
       <ConsultationTabs historyCount={list.length} />
