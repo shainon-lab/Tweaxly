@@ -140,16 +140,16 @@ export default async function ForecastPage({
             ? `Scenarios — model 'what if' decisions against ${range.label.toLowerCase()} of history over the ${horizon.label.toLowerCase()}.`
             : `Overview — AI projection based on ${range.label.toLowerCase()} (${baseline.monthCount} mo of history) over the ${horizon.label.toLowerCase()}.`
         }
+        right={
+          <ForecastSetup
+            historical={historical}
+            horizon={horizon.value}
+            histFrom={sp.hist_from}
+            histTo={sp.hist_to}
+          />
+        }
       />
       <ForecastTabs />
-
-      <ForecastSetup
-        historical={historical}
-        horizon={horizon.value}
-        histFrom={sp.hist_from}
-        histTo={sp.hist_to}
-        showBuilderTrigger={view === "scenarios"}
-      />
 
       {/* Active assumptions chip-bar + the Build Scenario CTA only
           matter when the user is modelling scenarios. On Overview

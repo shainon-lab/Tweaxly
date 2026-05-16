@@ -35,16 +35,11 @@ export default function ForecastSetup({
   horizon,
   histFrom,
   histTo,
-  showBuilderTrigger = false,
 }: {
   historical: string;
   horizon: string;
   histFrom?: string;
   histTo?: string;
-  // The "+ Scenario Builder" CTA only belongs on the Scenarios view.
-  // On Overview the projection is passive — surfacing the builder
-  // would muddy the AI-led / user-led split.
-  showBuilderTrigger?: boolean;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -69,108 +64,87 @@ export default function ForecastSetup({
     update({ historical: "custom", hist_from: a, hist_to: b });
   }
 
-  function openBuilder() {
-    // Builder lives in a side panel now. Fire the shared open event;
-    // ScenarioBuilderPanel listens for it on this page.
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("tweaxly:open-scenario-builder"));
-    }
-  }
-
   return (
-    <div className="card mb-6">
-      <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
-        <div className="font-medium">Forecast setup</div>
-        {showBuilderTrigger ? (
-          <button
-            type="button"
-            className="btn-primary"
-            onClick={openBuilder}
-          >
-            + Scenario Builder
-          </button>
-        ) : null}
+    // Compact inline filter cluster — designed to live in the
+    // PageHeader's `right` slot. Used to be a full-width card; now
+    // it's a quiet row of selects that sit at the same visual
+    // height as the action buttons on /workforce.
+    <div className="flex flex-wrap items-end justify-end gap-3">
+      <div>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+          Historical period
+        </label>
+        <select
+          className="input"
+          value={historical}
+          onChange={(e) => {
+            const v = e.target.value;
+            if (v === "custom") {
+              update({ historical: "custom", hist_from: draftFrom, hist_to: draftTo });
+            } else {
+              update({ historical: v, hist_from: undefined, hist_to: undefined });
+            }
+          }}
+          disabled={pending}
+        >
+          {HISTORICAL_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </div>
-      <div className="flex flex-wrap items-end gap-3">
-        <div>
-          <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-            Historical period
-          </label>
-          <select
-            className="input"
-            value={historical}
-            onChange={(e) => {
-              const v = e.target.value;
-              if (v === "custom") {
-                update({ historical: "custom", hist_from: draftFrom, hist_to: draftTo });
-              } else {
-                update({ historical: v, hist_from: undefined, hist_to: undefined });
-              }
-            }}
-            disabled={pending}
-          >
-            {HISTORICAL_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
 
-        {historical === "custom" ? (
-          <>
-            <div>
-              <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From (YYYY-MM)</label>
-              <input
-                type="month"
-                className="input"
-                value={draftFrom}
-                max={draftTo || undefined}
-                onChange={(e) => setDraftFrom(e.target.value)}
-                disabled={pending}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">To (YYYY-MM)</label>
-              <input
-                type="month"
-                className="input"
-                value={draftTo}
-                min={draftFrom || undefined}
-                onChange={(e) => setDraftTo(e.target.value)}
-                disabled={pending}
-              />
-            </div>
-            <div>
-              <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1 opacity-0">Apply</label>
-              <button
-                type="button"
-                className="btn-primary"
-                onClick={applyCustom}
-                disabled={pending || !draftFrom || !draftTo}
-              >
-                Apply
-              </button>
-            </div>
-          </>
-        ) : null}
+      {historical === "custom" ? (
+        <>
+          <div>
+            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
+            <input
+              type="month"
+              className="input"
+              value={draftFrom}
+              max={draftTo || undefined}
+              onChange={(e) => setDraftFrom(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">To</label>
+            <input
+              type="month"
+              className="input"
+              value={draftTo}
+              min={draftFrom || undefined}
+              onChange={(e) => setDraftTo(e.target.value)}
+              disabled={pending}
+            />
+          </div>
+          <div>
+            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1 opacity-0">Apply</label>
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={applyCustom}
+              disabled={pending || !draftFrom || !draftTo}
+            >
+              Apply
+            </button>
+          </div>
+        </>
+      ) : null}
 
-        <div>
-          <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-            Forecast period
-          </label>
-          <select
-            className="input"
-            value={horizon}
-            onChange={(e) => update({ horizon: e.target.value })}
-            disabled={pending}
-          >
-            {HORIZON_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-        </div>
-      </div>
-      <div className="text-xs text-slate-500 mt-3">
-        Baseline projects the business "as-is" by averaging the chosen historical window and extrapolating its trend. Layer scenario assumptions below to model decisions.
+      <div>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+          Forecast period
+        </label>
+        <select
+          className="input"
+          value={horizon}
+          onChange={(e) => update({ horizon: e.target.value })}
+          disabled={pending}
+        >
+          {HORIZON_OPTIONS.map((o) => (
+            <option key={o.value} value={o.value}>{o.label}</option>
+          ))}
+        </select>
       </div>
     </div>
   );
