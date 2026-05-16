@@ -1,7 +1,15 @@
 "use client";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { CONSULT_OPEN_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
+
+// Open the floating Consult panel pre-loaded with a question and a
+// per-signal title/subtitle. Keeps the user on /business-signals so
+// they can keep seeing the signal while consulting about it.
+function openConsult(detail: ConsultOpenDetail) {
+  if (typeof window === "undefined") return;
+  window.dispatchEvent(new CustomEvent(CONSULT_OPEN_EVENT, { detail }));
+}
 
 export type PushRec = {
   id: string;
@@ -157,12 +165,16 @@ export default function PushRecommendations({
         <div className="text-sm md:text-base font-semibold text-slate-100 leading-snug max-w-xl">
           Or consult about anything else going on in your business.
         </div>
-        <Link
-          href="/consultation"
+        <button
+          type="button"
           className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
+          onClick={() => openConsult({
+            contextTitle: "Business Signals",
+            contextSubtitle: "Open consultation",
+          })}
         >
           Consult on any topic
-        </Link>
+        </button>
       </div>
     </div>
   );
@@ -337,14 +349,22 @@ function SignalCard({
           system's primary actions. Pinned to the bottom so cards in a
           row line up. */}
       <div className="mt-auto pt-3">
-        <Link
-          href={`/consultation?q=${encodeURIComponent(consultQuestion)}`}
+        <button
+          type="button"
           className="btn-primary text-xs px-3 py-1.5 rounded-md inline-flex items-center gap-1.5"
-          title="Open this signal in the AI advisor for deeper analysis"
+          title="Consult the AI advisor about this signal — without leaving this page"
+          onClick={() => openConsult({
+            prompt: consultQuestion,
+            // Title surfaces the category so the panel header reads
+            // 'Signal · Vendor cost spike' instead of the default
+            // 'Business Signals · Active alerts and observations'.
+            contextTitle: `Signal · ${CATEGORY_LABEL[r.category] ?? r.category}`,
+            contextSubtitle: r.observation,
+          })}
         >
           <span>Consult AI</span>
           <span className="text-[10px]">→</span>
-        </Link>
+        </button>
       </div>
     </div>
   );

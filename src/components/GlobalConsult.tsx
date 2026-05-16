@@ -89,6 +89,25 @@ type ViewMeta = {
   prompts: string[];   // 3–5 contextual suggested questions.
 };
 
+// Detail accepted by the global `tweaxly:consult` window event.
+// Any client component can dispatch this to open the floating panel
+// preloaded with a question and a contextual title/subtitle override.
+//
+//   window.dispatchEvent(
+//     new CustomEvent("tweaxly:consult", { detail: { prompt, contextTitle, contextSubtitle } })
+//   );
+//
+// The architecture is intentionally event-based rather than provider-
+// based so any element on any page can trigger a contextual
+// consultation without threading props or context through the layout.
+export type ConsultOpenDetail = {
+  prompt?: string;          // pre-filled textarea content
+  contextTitle?: string;    // overrides the path-derived view title
+  contextSubtitle?: string; // overrides the path-derived view subtitle
+};
+
+export const CONSULT_OPEN_EVENT = "tweaxly:consult";
+
 // Derive a sensible default ViewMeta from the route. Pages can deepen
 // this in future iterations by registering richer context via a
 // dedicated provider; for now the pathname carries enough signal to
@@ -229,14 +248,23 @@ export default function GlobalConsult() {
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
   const [showNudge, setShowNudge] = useState(false);
-  // When the user taps dismiss, we don't act immediately — we swap
-  // the nudge body to a small picker that lets them choose the
-  // scope of the dismissal (this session vs forever).
   const [dismissPicker, setDismissPicker] = useState(false);
+  // Override values dispatched via the CONSULT_OPEN_EVENT — when set,
+  // they replace the path-derived title/subtitle so the panel reads
+  // exactly the way the triggering element intended.
+  const [overrideMeta, setOverrideMeta] = useState<{ title?: string; subtitle?: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
 
-  const meta = useMemo(() => deriveViewMeta(pathname ?? ""), [pathname]);
+  const baseMeta = useMemo(() => deriveViewMeta(pathname ?? ""), [pathname]);
+  // Effective meta merges the path default with any per-trigger
+  // override. When no override is active the panel reads exactly as
+  // before (path-driven).
+  const meta: ViewMeta = useMemo(() => ({
+    ...baseMeta,
+    title:    overrideMeta?.title    ?? baseMeta.title,
+    subtitle: overrideMeta?.subtitle ?? baseMeta.subtitle,
+  }), [baseMeta, overrideMeta]);
   const nudgeText = useMemo(() => deriveNudgeText(pathname ?? ""), [pathname]);
 
   // Reset state on path change so the panel doesn't carry stale
@@ -246,7 +274,33 @@ export default function GlobalConsult() {
     setDraft("");
     setShowNudge(false);
     setDismissPicker(false);
+    setOverrideMeta(null);
   }, [pathname]);
+
+  // Listen for app-wide consult-open requests. Any client component
+  // can dispatch CONSULT_OPEN_EVENT with a pre-filled prompt and a
+  // contextual title/subtitle, and the panel opens with that state.
+  // Used by Business Signals so the user can "Consult AI" on a
+  // specific signal without leaving the page.
+  useEffect(() => {
+    function onConsultOpen(e: Event) {
+      const detail = (e as CustomEvent<ConsultOpenDetail>).detail ?? {};
+      // Reset any prior response so the panel starts clean.
+      setResponse(null);
+      setDraft(detail.prompt ?? "");
+      if (detail.contextTitle || detail.contextSubtitle) {
+        setOverrideMeta({
+          title:    detail.contextTitle,
+          subtitle: detail.contextSubtitle,
+        });
+      } else {
+        setOverrideMeta(null);
+      }
+      setOpen(true);
+    }
+    window.addEventListener(CONSULT_OPEN_EVENT, onConsultOpen as EventListener);
+    return () => window.removeEventListener(CONSULT_OPEN_EVENT, onConsultOpen as EventListener);
+  }, []);
 
   // Pull focus when the panel opens so the user can start typing.
   useEffect(() => {
