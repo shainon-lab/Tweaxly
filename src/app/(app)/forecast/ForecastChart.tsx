@@ -78,7 +78,9 @@ export default function ForecastChart({
   return (
     <div className="card mb-6">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
-        <div className="font-medium">Baseline vs scenario</div>
+        <div className="font-medium">
+          {showScenario ? "Baseline vs scenario" : "Forecast trajectory"}
+        </div>
         <div className="flex items-center gap-1">
           {(Object.keys(METRIC_LABEL) as Metric[]).map((m) => (
             <button
