@@ -18,8 +18,15 @@
 //   - ESC closes; background click closes; dedicated close ✕ closes.
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { X } from "lucide-react";
 import ScenarioBuilder, { type RosterMember } from "./ScenarioBuilder";
+
+// Any client component can dispatch this event to open the Scenario
+// Builder panel from anywhere on the Forecast page (the +Scenario
+// Builder button in ForecastSetup, the Open builder button in
+// ActiveScenarioAssumptions, etc.).
+export const SCENARIO_BUILDER_OPEN_EVENT = "tweaxly:open-scenario-builder";
 
 export default function ScenarioBuilderPanel({
   roster,
@@ -34,6 +41,7 @@ export default function ScenarioBuilderPanel({
   currency: string;
   activeAssumptionCount: number;
 }) {
+  const sp = useSearchParams();
   const [open, setOpen] = useState(false);
 
   // ESC closes the panel.
@@ -45,6 +53,21 @@ export default function ScenarioBuilderPanel({
     document.addEventListener("keydown", onKey);
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
+
+  // Listen for app-wide requests to open the builder. Anywhere on the
+  // forecast page (or a cross-page link landing here) can trigger it.
+  useEffect(() => {
+    const onOpen = () => setOpen(true);
+    window.addEventListener(SCENARIO_BUILDER_OPEN_EVENT, onOpen);
+    return () => window.removeEventListener(SCENARIO_BUILDER_OPEN_EVENT, onOpen);
+  }, []);
+
+  // Cross-page links can land with ?openBuilder=1 to pop the panel
+  // on arrival (used by the Workforce Planning 'Model hiring impact'
+  // buttons).
+  useEffect(() => {
+    if (sp.get("openBuilder") === "1") setOpen(true);
+  }, [sp]);
 
   const buttonLabel =
     activeAssumptionCount > 0

@@ -59,10 +59,9 @@ export default function ActiveScenarioAssumptions({
     startTransition(() => router.refresh());
   }
 
-  function jumpToBuilder() {
+  function openBuilder() {
     if (typeof window !== "undefined") {
-      const el = document.getElementById("scenario-builder");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.dispatchEvent(new CustomEvent("tweaxly:open-scenario-builder"));
     }
   }
 
@@ -76,7 +75,7 @@ export default function ActiveScenarioAssumptions({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="btn-ghost text-xs" onClick={jumpToBuilder} disabled={pending}>
+          <button type="button" className="btn-ghost text-xs" onClick={openBuilder} disabled={pending}>
             ↓ Add another
           </button>
           <button type="button" className="btn-ghost text-xs" onClick={clearAll} disabled={pending}>

@@ -146,7 +146,7 @@ export default async function WorkforcePage() {
         right={
           <div className="flex items-center gap-2">
             <Link href="/employees" className="btn-ghost">Edit roster</Link>
-            <Link href="/forecast#scenario-builder" className="btn-primary">Model hiring impact</Link>
+            <Link href="/forecast?view=scenarios&openBuilder=1" className="btn-primary">Model hiring impact</Link>
           </div>
         }
       />
@@ -255,7 +255,7 @@ export default async function WorkforcePage() {
               Hiring, terminations, salary increases, contractor conversions — every workforce decision flows through to projected payroll, profit, and cashflow on the Forecast tab. Add scenario assumptions there to see the dollar impact.
             </div>
             <div className="flex flex-wrap gap-2">
-              <Link href="/forecast#scenario-builder" className="btn-primary">Open Forecast</Link>
+              <Link href="/forecast?view=scenarios&openBuilder=1" className="btn-primary">Open Forecast</Link>
               <Link href="/employees" className="btn-ghost">Edit roster</Link>
             </div>
           </div>

@@ -116,7 +116,17 @@ export default async function ForecastPage({
 
   const points = runScenario(baseline, horizon.months, assumptions);
   const summary = summarizeForecast(points);
-  const insights = generateForecastInsights(baseline, points, assumptions, business.currency);
+  // Two distinct intelligence streams:
+  //   - Forecast Insights (Overview): baseline-only, what the system
+  //     currently expects regardless of any user-applied assumptions.
+  //     Pass an empty assumption set so the engine doesn't bake in
+  //     scenario context.
+  //   - Scenario Impact Analysis (Scenarios): includes the user's
+  //     assumptions so the engine can talk about deltas vs baseline.
+  const baselinePoints = runScenario(baseline, horizon.months, []);
+  const baselineInsights = generateForecastInsights(baseline, baselinePoints, [], business.currency);
+  const scenarioInsights = generateForecastInsights(baseline, points, assumptions, business.currency);
+  const insights = view === "scenarios" ? scenarioInsights : baselineInsights;
 
   const ccy = business.currency;
   const baselineNetDelta = summary.scenarioNetTotal - summary.baselineNetTotal;
@@ -138,6 +148,7 @@ export default async function ForecastPage({
         horizon={horizon.value}
         histFrom={sp.hist_from}
         histTo={sp.hist_to}
+        showBuilderTrigger={view === "scenarios"}
       />
 
       {/* Active assumptions chip-bar + the Build Scenario CTA only
@@ -211,24 +222,40 @@ export default async function ForecastPage({
         </div>
       </div>
 
-      <div className="card mb-6">
-        <div className="font-medium mb-2">Insights</div>
+      {/* Insights card differentiates per view:
+           Overview  → 'Forecast Insights' (baseline, passive,
+                       no scenario assumptions baked in)
+           Scenarios → 'Scenario Impact Analysis' (assumption-aware,
+                       comparative tone, accent border)        */}
+      <div className={`card mb-6 ${view === "scenarios" ? "border-accent/40" : ""}`}>
+        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+          <div className="font-medium text-slate-100">
+            {view === "scenarios" ? "Scenario Impact Analysis" : "Forecast Insights"}
+          </div>
+          <div className="text-[10px] uppercase tracking-wide text-slate-500">
+            {view === "scenarios" ? "Compared to current forecast" : "AI baseline outlook"}
+          </div>
+        </div>
         {insights.length === 0 ? (
           <div className="text-sm text-slate-400 py-4 text-center">
-            Add scenario assumptions to see how each decision moves projected profit.
+            {view === "scenarios"
+              ? "Add scenario assumptions to see how each decision moves projected profit."
+              : "Not enough data yet — once a few months of history exist, the baseline outlook will populate here."}
           </div>
         ) : (
           <ul className="space-y-2 text-sm text-slate-200">
             {insights.map((i, idx) => (
               <li key={idx} className="flex items-start gap-2">
-                <span className="text-slate-500 mt-0.5">•</span>
+                <span className={`mt-0.5 ${view === "scenarios" ? "text-accent" : "text-slate-500"}`}>•</span>
                 <span>{i}</span>
               </li>
             ))}
           </ul>
         )}
         <div className="text-xs text-slate-500 mt-4">
-          These projections are estimates based on the selected historical period and your scenario assumptions. They are not guarantees — actual results depend on execution and market conditions.
+          {view === "scenarios"
+            ? "Impact is calculated against the AI baseline outlook. Estimates depend on execution and market conditions."
+            : "Projections are estimates based on your historical activity. They are not guarantees — actual results depend on execution and market conditions."}
         </div>
       </div>
 

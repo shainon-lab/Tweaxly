@@ -35,11 +35,16 @@ export default function ForecastSetup({
   horizon,
   histFrom,
   histTo,
+  showBuilderTrigger = false,
 }: {
   historical: string;
   horizon: string;
   histFrom?: string;
   histTo?: string;
+  // The "+ Scenario Builder" CTA only belongs on the Scenarios view.
+  // On Overview the projection is passive — surfacing the builder
+  // would muddy the AI-led / user-led split.
+  showBuilderTrigger?: boolean;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -64,12 +69,11 @@ export default function ForecastSetup({
     update({ historical: "custom", hist_from: a, hist_to: b });
   }
 
-  function jumpToBuilder() {
-    // Smooth-scroll to the Scenario Builder card at the bottom of the page.
-    // The anchor is set on that card so the jump lands on the right spot.
+  function openBuilder() {
+    // Builder lives in a side panel now. Fire the shared open event;
+    // ScenarioBuilderPanel listens for it on this page.
     if (typeof window !== "undefined") {
-      const el = document.getElementById("scenario-builder");
-      if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+      window.dispatchEvent(new CustomEvent("tweaxly:open-scenario-builder"));
     }
   }
 
@@ -77,13 +81,15 @@ export default function ForecastSetup({
     <div className="card mb-6">
       <div className="flex items-center justify-between mb-3 gap-2 flex-wrap">
         <div className="font-medium">Forecast setup</div>
-        <button
-          type="button"
-          className="btn-primary"
-          onClick={jumpToBuilder}
-        >
-          + Scenario Builder
-        </button>
+        {showBuilderTrigger ? (
+          <button
+            type="button"
+            className="btn-primary"
+            onClick={openBuilder}
+          >
+            + Scenario Builder
+          </button>
+        ) : null}
       </div>
       <div className="flex flex-wrap items-end gap-3">
         <div>
