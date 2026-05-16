@@ -33,13 +33,11 @@ export default function ScenarioBuilderPanel({
   activePayrollSum,
   maxMonthsAhead,
   currency,
-  activeAssumptionCount,
 }: {
   roster: RosterMember[];
   activePayrollSum: number;
   maxMonthsAhead: number;
   currency: string;
-  activeAssumptionCount: number;
 }) {
   const sp = useSearchParams();
   const [open, setOpen] = useState(false);
@@ -69,23 +67,8 @@ export default function ScenarioBuilderPanel({
     if (sp.get("openBuilder") === "1") setOpen(true);
   }, [sp]);
 
-  const buttonLabel =
-    activeAssumptionCount > 0
-      ? `Modify Scenario (${activeAssumptionCount})`
-      : "Build Scenario";
-
   return (
     <>
-      <div className="mb-4 flex justify-end">
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform duration-200 active:scale-[0.98]"
-        >
-          {buttonLabel}
-        </button>
-      </div>
-
       {open ? (
         <>
           {/* Dimmed overlay — keeps the forecast results visible

@@ -59,12 +59,6 @@ export default function ActiveScenarioAssumptions({
     startTransition(() => router.refresh());
   }
 
-  function openBuilder() {
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("tweaxly:open-scenario-builder"));
-    }
-  }
-
   return (
     <div className="card mb-6">
       <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
@@ -75,9 +69,6 @@ export default function ActiveScenarioAssumptions({
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <button type="button" className="btn-ghost text-xs" onClick={openBuilder} disabled={pending}>
-            ↓ Add another
-          </button>
           <button type="button" className="btn-ghost text-xs" onClick={clearAll} disabled={pending}>
             Clear all
           </button>

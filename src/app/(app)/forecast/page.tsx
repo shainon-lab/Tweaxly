@@ -29,6 +29,8 @@ import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
 import { type RosterMember } from "./ScenarioBuilder";
 import ScenarioBuilderPanel from "./ScenarioBuilderPanel";
+import ScenarioBuilderTrigger from "./ScenarioBuilderTrigger";
+import ScenariosOnboarding from "./ScenariosOnboarding";
 import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
@@ -141,20 +143,42 @@ export default async function ForecastPage({
             : `Overview — AI projection based on ${range.label.toLowerCase()} (${baseline.monthCount} mo of history) over the ${horizon.label.toLowerCase()}.`
         }
         right={
-          <ForecastSetup
-            historical={historical}
-            horizon={horizon.value}
-            histFrom={sp.hist_from}
-            histTo={sp.hist_to}
-          />
+          <div className="flex items-end gap-3 flex-wrap justify-end">
+            <ForecastSetup
+              historical={historical}
+              horizon={horizon.value}
+              histFrom={sp.hist_from}
+              histTo={sp.hist_to}
+            />
+            {/* Persistent Scenario Builder entry point — only appears
+                on the Scenarios view AFTER the user has at least one
+                assumption in play. Before that, the onboarding empty
+                state provides the inline entry instead. */}
+            {view === "scenarios" && assumptions.length > 0 ? (
+              <ScenarioBuilderTrigger />
+            ) : null}
+          </div>
         }
       />
       <ForecastTabs />
 
-      {/* Active assumptions chip-bar + the Build Scenario CTA only
-          matter when the user is modelling scenarios. On Overview
-          the projection is passive. */}
-      {view === "scenarios" ? (
+      {/* Scenarios view, empty state. Hide everything else (KPIs,
+          chart, insights, table) until the user has at least one
+          assumption — the empty state owns the screen and provides
+          its own inline builder entry. */}
+      {view === "scenarios" && assumptions.length === 0 ? (
+        <ScenariosOnboarding
+          roster={roster}
+          activePayrollSum={activePayrollSum}
+          maxMonthsAhead={horizon.months}
+          currency={ccy}
+        />
+      ) : null}
+
+      {/* Scenarios view, populated. Show active-assumption chips and
+          mount the side panel (the panel listens for the open event
+          dispatched by ScenarioBuilderTrigger in the header). */}
+      {view === "scenarios" && assumptions.length > 0 ? (
         <>
           <ActiveScenarioAssumptions
             assumptions={assumptions.map((a) => ({
@@ -170,19 +194,19 @@ export default async function ForecastPage({
             }))}
             currency={ccy}
           />
-          {/* Builder lives in a slide-in side panel anchored by this
-              button — the forecast results behind never scroll-jump
-              when assumptions apply. */}
           <ScenarioBuilderPanel
             roster={roster}
             activePayrollSum={activePayrollSum}
             maxMonthsAhead={horizon.months}
             currency={ccy}
-            activeAssumptionCount={assumptions.length}
           />
         </>
       ) : null}
 
+      {/* Forecast body — KPI cards, insights, chart, table. Hidden
+          when the user is in the Scenarios empty state. */}
+      {!(view === "scenarios" && assumptions.length === 0) ? (
+        <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
@@ -270,6 +294,7 @@ export default async function ForecastPage({
           scenarioExpenses: p.scenarioExpenses,
           scenarioNet: p.scenarioNet,
         }))}
+        showScenario={view === "scenarios"}
       />
 
       {/* Detailed month-by-month table — collapsed by default on
@@ -315,6 +340,8 @@ export default async function ForecastPage({
           </tbody>
         </table>
       </details>
+        </>
+      ) : null}
 
     </>
   );

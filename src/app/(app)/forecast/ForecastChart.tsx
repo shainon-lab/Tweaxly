@@ -40,7 +40,16 @@ function fmtCompact(v: number): string {
   return `${sign}$${abs.toFixed(0)}`;
 }
 
-export default function ForecastChart({ points }: { points: Point[] }) {
+export default function ForecastChart({
+  points,
+  showScenario = true,
+}: {
+  points: Point[];
+  // When false, render only the baseline line — used on Forecast →
+  // Overview where the projection is intentionally passive and
+  // shouldn't display a scenario comparison.
+  showScenario?: boolean;
+}) {
   const [metric, setMetric] = useState<Metric>("net");
 
   const data = useMemo(() => {
@@ -95,13 +104,24 @@ export default function ForecastChart({ points }: { points: Point[] }) {
             <YAxis stroke="#94a3b8" fontSize={12} tickFormatter={(v) => fmtCompact(v)} />
             <Tooltip formatter={(v: number) => fmtMoney(v)} />
             <Legend wrapperStyle={{ color: "#cbd5e1", fontSize: 12 }} />
-            <Line type="monotone" dataKey="baseline" name="Baseline" stroke="#94a3b8" strokeWidth={2} dot={{ r: 2 }} />
-            <Line type="monotone" dataKey="scenario" name="Scenario" stroke="#5b8def" strokeWidth={2.5} dot={{ r: 3 }} />
+            <Line
+              type="monotone"
+              dataKey="baseline"
+              name={showScenario ? "Baseline" : "Projection"}
+              stroke={showScenario ? "#94a3b8" : "#5b8def"}
+              strokeWidth={showScenario ? 2 : 2.5}
+              dot={{ r: showScenario ? 2 : 3 }}
+            />
+            {showScenario ? (
+              <Line type="monotone" dataKey="scenario" name="Scenario" stroke="#5b8def" strokeWidth={2.5} dot={{ r: 3 }} />
+            ) : null}
           </LineChart>
         </ResponsiveContainer>
       </div>
       <div className="text-xs text-slate-500 mt-2">
-        Baseline = trend-extrapolated from history. Scenario = baseline + the assumptions you've added below.
+        {showScenario
+          ? "Baseline = trend-extrapolated from history. Scenario = baseline + the active assumptions."
+          : "Projection = trend-extrapolated from your historical activity, with no scenario assumptions applied."}
       </div>
     </div>
   );
