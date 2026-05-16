@@ -42,10 +42,16 @@ export default async function ForecastPage({
     horizon?: string;
     hist_from?: string;
     hist_to?: string;
+    view?: string;
   }>;
 }) {
   const { business } = await requireBusiness();
   const sp = await searchParams;
+  // Forecast workspace splits into three internal views:
+  //   "overview"  — passive AI outlook (default)
+  //   "scenarios" — interactive scenario builder
+  //   Workforce Planning lives on /workforce as its own route
+  const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
 
   const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "12m";
   const horizon = horizonByForecastValue(sp.horizon ?? "12m");
@@ -118,7 +124,11 @@ export default async function ForecastPage({
     <>
       <PageHeader
         title="Forecast"
-        subtitle={`Forecasting based on ${range.label.toLowerCase()} (${baseline.monthCount} mo of history) over the ${horizon.label.toLowerCase()}.`}
+        subtitle={
+          view === "scenarios"
+            ? `Scenarios — model 'what if' decisions against ${range.label.toLowerCase()} of history over the ${horizon.label.toLowerCase()}.`
+            : `Overview — AI projection based on ${range.label.toLowerCase()} (${baseline.monthCount} mo of history) over the ${horizon.label.toLowerCase()}.`
+        }
       />
       <ForecastTabs />
 
@@ -129,20 +139,24 @@ export default async function ForecastPage({
         histTo={sp.hist_to}
       />
 
-      <ActiveScenarioAssumptions
-        assumptions={assumptions.map((a) => ({
-          id: a.id,
-          family: a.family,
-          type: a.type,
-          label: a.label,
-          amount: a.amount,
-          percentage: a.percentage,
-          startMonth: a.startMonth,
-          endMonth: a.endMonth,
-          isRecurring: a.isRecurring,
-        }))}
-        currency={ccy}
-      />
+      {/* Active assumptions chip-bar only matters when the user is
+          modelling scenarios. On Overview the projection is passive. */}
+      {view === "scenarios" ? (
+        <ActiveScenarioAssumptions
+          assumptions={assumptions.map((a) => ({
+            id: a.id,
+            family: a.family,
+            type: a.type,
+            label: a.label,
+            amount: a.amount,
+            percentage: a.percentage,
+            startMonth: a.startMonth,
+            endMonth: a.endMonth,
+            isRecurring: a.isRecurring,
+          }))}
+          currency={ccy}
+        />
+      ) : null}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
@@ -217,8 +231,14 @@ export default async function ForecastPage({
         }))}
       />
 
-      <div className="card mb-6 overflow-x-auto">
-        <div className="font-medium mb-3">Month-by-month projection</div>
+      {/* Detailed month-by-month table — collapsed by default on
+          Overview so the page reads as insights-first, not a data
+          dump. On Scenarios the table is open by default since the
+          user is actively investigating the projection. */}
+      <details className="card mb-6 overflow-x-auto" open={view === "scenarios"}>
+        <summary className="cursor-pointer font-medium mb-3 select-none">
+          Month-by-month projection
+        </summary>
         <table className="table-base">
           <thead>
             <tr>
@@ -253,14 +273,19 @@ export default async function ForecastPage({
             ))}
           </tbody>
         </table>
-      </div>
+      </details>
 
-      <ScenarioBuilder
-        roster={roster}
-        activePayrollSum={activePayrollSum}
-        maxMonthsAhead={horizon.months}
-        currency={ccy}
-      />
+      {/* ScenarioBuilder is the workspace for 'what if' modelling —
+          only visible on Scenarios. Overview is intentionally passive
+          so users land on insights, not on a builder. */}
+      {view === "scenarios" ? (
+        <ScenarioBuilder
+          roster={roster}
+          activePayrollSum={activePayrollSum}
+          maxMonthsAhead={horizon.months}
+          currency={ccy}
+        />
+      ) : null}
     </>
   );
 }

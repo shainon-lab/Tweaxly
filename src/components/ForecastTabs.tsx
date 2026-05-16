@@ -1,41 +1,74 @@
 "use client";
 
-// Sub-tab nav for the Forecast section. Two top-level views:
-//   Forecast            — the baseline + scenario forecast view at /forecast
-//   Workforce Planning  — the workforce financial-impact view at /workforce
+// Sub-tab nav for the Forecast section. Three views:
+//   Overview            — passive AI-generated outlook (default landing)
+//   Scenarios           — interactive scenario builder ('what if…')
+//   Workforce Planning  — workforce financial-impact view at /workforce
 //
-// Workforce used to be a top-level sidebar entry. The product is not
-// an HR system, so it now lives under Forecast as a financial-planning
-// lever rather than a standalone destination.
+// Overview and Scenarios share the same /forecast route — they're
+// differentiated by a ?view= query. Switching between them preserves
+// the historical-period and assumption state in the URL so a user
+// can build a scenario and flip back to Overview without losing it.
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-
-const TABS = [
-  { href: "/forecast",  label: "Forecast"           },
-  { href: "/workforce", label: "Workforce Planning" },
-];
+import { usePathname, useSearchParams } from "next/navigation";
 
 export default function ForecastTabs() {
   const path = usePathname();
+  const sp = useSearchParams();
+  const currentView = sp.get("view");
+
+  // Preserve every other query param when generating tab links —
+  // hist_from/hist_to/horizon/assumptions all live in the URL.
+  const preserve = (override: Record<string, string | null>) => {
+    const params = new URLSearchParams(sp.toString());
+    for (const [k, v] of Object.entries(override)) {
+      if (v === null) params.delete(k);
+      else params.set(k, v);
+    }
+    const qs = params.toString();
+    return qs ? `?${qs}` : "";
+  };
+
+  const onForecast = path === "/forecast" || path.startsWith("/forecast/");
+  const onWorkforce = path === "/workforce" || path.startsWith("/workforce/");
+  const overviewActive  = onForecast && (!currentView || currentView === "overview");
+  const scenariosActive = onForecast && currentView === "scenarios";
+  const workforceActive = onWorkforce;
+
+  const TABS = [
+    {
+      label: "Overview",
+      href: `/forecast${preserve({ view: null })}`,
+      active: overviewActive,
+    },
+    {
+      label: "Scenarios",
+      href: `/forecast${preserve({ view: "scenarios" })}`,
+      active: scenariosActive,
+    },
+    {
+      label: "Workforce Planning",
+      href: "/workforce",
+      active: workforceActive,
+    },
+  ];
+
   return (
     <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
-      {TABS.map((t) => {
-        const active = path === t.href || path.startsWith(t.href + "/");
-        return (
-          <Link
-            key={t.href}
-            href={t.href}
-            className={`px-4 py-1.5 rounded transition ${
-              active
-                ? "bg-accent-soft text-accent"
-                : "text-slate-300 hover:text-white"
-            }`}
-          >
-            {t.label}
-          </Link>
-        );
-      })}
+      {TABS.map((t) => (
+        <Link
+          key={t.label}
+          href={t.href}
+          className={`px-4 py-1.5 rounded transition ${
+            t.active
+              ? "bg-accent-soft text-accent"
+              : "text-slate-300 hover:text-white"
+          }`}
+        >
+          {t.label}
+        </Link>
+      ))}
     </div>
   );
 }
