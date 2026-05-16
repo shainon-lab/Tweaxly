@@ -72,7 +72,7 @@ export default async function DataLogPage() {
   return (
     <>
       <PageHeader
-        title="Business Settings"
+        title="Settings"
         subtitle="Data log — every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
       />
       <BusinessSettingsTabs />

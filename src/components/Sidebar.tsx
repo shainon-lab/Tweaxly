@@ -24,7 +24,7 @@ type AlertKey = "transactions" | "insights" | "businessSignals";
 // inside the pages. All icons share the same stroke weight and size.
 const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey }[] = [
   { href: "/dashboard",        label: "Executive Summary", Icon: LayoutDashboard },
-  { href: "/business-signals", label: "Business Signals",  Icon: Activity,         alertKey: "businessSignals" },
+  { href: "/business-signals", label: "Signals",            Icon: Activity,         alertKey: "businessSignals" },
   { href: "/consultation",     label: "Advisory",          Icon: MessageSquare },
   { href: "/forecast",         label: "Forecast",          Icon: TrendingUp },
   { href: "/report",           label: "Reports",           Icon: FileText,         alertKey: "insights" },
@@ -32,7 +32,7 @@ const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey 
   // Data, Integration, and Notifications all live inside Business
   // Settings as sub-tabs. The transactions alert badge surfaces here
   // so duplicate-review counts stay visible in the sidebar.
-  { href: "/settings",         label: "Business Settings", Icon: SlidersHorizontal, alertKey: "transactions" },
+  { href: "/settings",         label: "Settings",          Icon: SlidersHorizontal, alertKey: "transactions" },
   { href: "/account",          label: "Account",           Icon: CircleUser },
 ];
 

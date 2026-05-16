@@ -26,7 +26,7 @@ export default async function ManualDataPage() {
   return (
     <>
       <PageHeader
-        title="Business Settings"
+        title="Settings"
         subtitle="Import data — add income or outcome entries manually, or bulk-upload a file."
       />
       <BusinessSettingsTabs />

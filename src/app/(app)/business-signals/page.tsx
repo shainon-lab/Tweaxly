@@ -64,7 +64,7 @@ export default async function BusinessSignalsPage() {
   return (
     <>
       <PageHeader
-        title="Business Signals"
+        title="Signals"
         subtitle="The AI advisor's rotating observations — refresh the page to roll a new random set."
       />
       <BusinessSignalsTabs

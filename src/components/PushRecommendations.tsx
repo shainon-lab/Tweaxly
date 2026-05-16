@@ -119,7 +119,7 @@ export default function PushRecommendations({
     <div className="card mb-0 flex flex-col min-h-[280px]">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <div className="flex items-center gap-2">
-          <span className="text-base font-medium">Business Signals</span>
+          <span className="text-base font-medium">Signals</span>
           <span className="pill-accent">AI advisor</span>
           {newest ? (
             <span
@@ -169,7 +169,7 @@ export default function PushRecommendations({
           type="button"
           className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
           onClick={() => openConsult({
-            contextTitle: "Business Signals",
+            contextTitle: "Signals",
             contextSubtitle: "Open consultation",
           })}
         >

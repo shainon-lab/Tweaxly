@@ -127,7 +127,7 @@ function deriveViewMeta(pathname: string): ViewMeta {
   }
   if (pathname.startsWith("/business-signals")) {
     return {
-      title: "Business Signals",
+      title: "Signals",
       subtitle: "Active alerts and observations",
       prompts: [
         "Which signal should I prioritize?",

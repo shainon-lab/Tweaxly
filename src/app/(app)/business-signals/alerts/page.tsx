@@ -34,7 +34,7 @@ export default async function BusinessSignalsMonitorPage() {
   return (
     <>
       <PageHeader
-        title="Business Signals"
+        title="Signals"
         subtitle="Monitor — threshold rules that have crossed their limits, plus the rule editor inline below."
       />
       <BusinessSignalsTabs

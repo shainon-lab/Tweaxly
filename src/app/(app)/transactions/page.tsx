@@ -47,7 +47,7 @@ export default async function TransactionsPage({
   return (
     <>
       <PageHeader
-        title="Business Settings"
+        title="Settings"
         subtitle={`Transactions — ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
       />
       <BusinessSettingsTabs />
