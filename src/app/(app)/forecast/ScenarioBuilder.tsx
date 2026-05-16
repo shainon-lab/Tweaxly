@@ -264,11 +264,10 @@ export default function ScenarioBuilder({
       });
       setOpenKey(null);
       startTransition(() => router.refresh());
-      // Bring the user back to the top so they see the new entry land in
-      // the Active scenario assumptions card right below the setup row.
-      if (typeof window !== "undefined") {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      }
+      // The builder now lives in a side panel — the user keeps
+      // seeing the forecast chart behind it, so we no longer
+      // scroll the page on save (that used to disorient when the
+      // builder was inline at the bottom of the page).
     } catch (e) {
       alert(`Failed to save: ${(e as Error).message}`);
     }

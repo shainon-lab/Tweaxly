@@ -27,7 +27,8 @@ import { fmtMoney } from "@/lib/format";
 import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/workforce";
 import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
-import ScenarioBuilder, { type RosterMember } from "./ScenarioBuilder";
+import { type RosterMember } from "./ScenarioBuilder";
+import ScenarioBuilderPanel from "./ScenarioBuilderPanel";
 import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
@@ -139,23 +140,36 @@ export default async function ForecastPage({
         histTo={sp.hist_to}
       />
 
-      {/* Active assumptions chip-bar only matters when the user is
-          modelling scenarios. On Overview the projection is passive. */}
+      {/* Active assumptions chip-bar + the Build Scenario CTA only
+          matter when the user is modelling scenarios. On Overview
+          the projection is passive. */}
       {view === "scenarios" ? (
-        <ActiveScenarioAssumptions
-          assumptions={assumptions.map((a) => ({
-            id: a.id,
-            family: a.family,
-            type: a.type,
-            label: a.label,
-            amount: a.amount,
-            percentage: a.percentage,
-            startMonth: a.startMonth,
-            endMonth: a.endMonth,
-            isRecurring: a.isRecurring,
-          }))}
-          currency={ccy}
-        />
+        <>
+          <ActiveScenarioAssumptions
+            assumptions={assumptions.map((a) => ({
+              id: a.id,
+              family: a.family,
+              type: a.type,
+              label: a.label,
+              amount: a.amount,
+              percentage: a.percentage,
+              startMonth: a.startMonth,
+              endMonth: a.endMonth,
+              isRecurring: a.isRecurring,
+            }))}
+            currency={ccy}
+          />
+          {/* Builder lives in a slide-in side panel anchored by this
+              button — the forecast results behind never scroll-jump
+              when assumptions apply. */}
+          <ScenarioBuilderPanel
+            roster={roster}
+            activePayrollSum={activePayrollSum}
+            maxMonthsAhead={horizon.months}
+            currency={ccy}
+            activeAssumptionCount={assumptions.length}
+          />
+        </>
       ) : null}
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
@@ -275,17 +289,6 @@ export default async function ForecastPage({
         </table>
       </details>
 
-      {/* ScenarioBuilder is the workspace for 'what if' modelling —
-          only visible on Scenarios. Overview is intentionally passive
-          so users land on insights, not on a builder. */}
-      {view === "scenarios" ? (
-        <ScenarioBuilder
-          roster={roster}
-          activePayrollSum={activePayrollSum}
-          maxMonthsAhead={horizon.months}
-          currency={ccy}
-        />
-      ) : null}
     </>
   );
 }
