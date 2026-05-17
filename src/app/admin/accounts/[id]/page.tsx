@@ -13,6 +13,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/db";
+import { computeHealthScore, HEALTH_BAND_COLOR, HEALTH_BAND_LABEL } from "@/lib/healthScore";
 import { AccountActions } from "./AccountActions";
 import { PlanEditor } from "./PlanEditor";
 import { AdminNotes } from "./AdminNotes";
@@ -156,8 +157,30 @@ export default async function Customer360({ params }: { params: { id: string } }
     }),
   ]);
 
+  // Other businesses owned by the same user — used to support consultant /
+  // accountant / portfolio workflows where one human owns several
+  // workspaces. Excludes the current one.
+  const siblingBusinesses = await prisma.business.findMany({
+    where: { ownerId: business.owner.id, id: { not: business.id } },
+    orderBy: { createdAt: "asc" },
+    select: { id: true, name: true, status: true, plan: true, lastActivityAt: true },
+  });
+
   const totalTx = business._count.transactions;
   const categorizationPct = totalTx > 0 ? Math.round((categorizedCount / totalTx) * 100) : 0;
+  const ageDays = Math.floor((Date.now() - business.createdAt.getTime()) / 86_400_000);
+  const health = computeHealthScore({
+    lastActivityAt: business.lastActivityAt,
+    lastLoginAt:    business.owner.lastLoginAt,
+    hasUploadedData: totalTx > 0 || business._count.uploads > 0,
+    transactionCount: totalTx,
+    categorizationPct,
+    consultationsCount: business._count.consultations,
+    forecastAssumptionsCount: business._count.forecastAssumptions,
+    notificationRulesCount: business._count.notificationRules,
+    ageDays,
+    isSuspended: business.status === "suspended",
+  });
   const onboardingSteps = [
     { label: "Account created",        done: true },
     { label: "First data uploaded",    done: totalTx > 0 || business._count.uploads > 0 },
@@ -202,11 +225,25 @@ export default async function Customer360({ params }: { params: { id: string } }
               <span className="pill-accent text-[10px]">trial ends {fmtDay(business.trialEndsAt)}</span>
             ) : null}
             <span className="pill text-[10px]">{business.plan}</span>
+            <span
+              title={health.reasons.join(" · ")}
+              className={`inline-flex items-baseline gap-1.5 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-line bg-ink-900/40 ${HEALTH_BAND_COLOR[health.band]}`}
+            >
+              <span className="font-bold text-sm tabular-nums">{health.score}</span>
+              <span>{HEALTH_BAND_LABEL[health.band]}</span>
+            </span>
           </div>
           <div className="text-sm text-slate-400">
             Owned by {business.owner.email} · created {fmtDate(business.createdAt)}
             <span className="ml-2 font-mono text-[10px] text-slate-600">{business.id}</span>
           </div>
+          {health.reasons.length > 0 ? (
+            <ul className="text-[11px] text-slate-500 mt-1.5 flex flex-wrap gap-x-3 gap-y-0.5">
+              {health.reasons.map((r) => (
+                <li key={r} className="before:content-['·'] before:mr-1 before:text-slate-700">{r}</li>
+              ))}
+            </ul>
+          ) : null}
         </div>
         <AccountActions
           businessId={business.id}
@@ -214,6 +251,32 @@ export default async function Customer360({ params }: { params: { id: string } }
           status={business.status}
         />
       </div>
+
+      {/* Owner's other businesses — surfaces consultant / multi-workspace
+          context inline so the operator can pivot between sibling accounts. */}
+      {siblingBusinesses.length > 0 ? (
+        <div className="rounded-lg border border-accent/30 bg-accent-soft/10 p-3">
+          <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+            <div className="text-[11px] uppercase tracking-wider text-accent font-semibold">
+              Same owner manages {siblingBusinesses.length + 1} workspaces
+            </div>
+            <span className="text-[10px] text-slate-500">{business.owner.email}</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {siblingBusinesses.map((s) => (
+              <Link
+                key={s.id}
+                href={`/admin/accounts/${s.id}`}
+                className="inline-flex items-center gap-2 rounded-md border border-line bg-ink-900/40 px-2.5 py-1 text-xs text-slate-200 hover:text-white hover:border-slate-500 transition"
+              >
+                <span>{s.name}</span>
+                <span className={`text-[9px] ${STATUS_PILL[s.status] ?? "pill"}`}>{s.status}</span>
+                <span className="text-[10px] text-slate-500">{s.plan}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* A. Overview */}
       <Section id="overview" title="A. Account overview">
