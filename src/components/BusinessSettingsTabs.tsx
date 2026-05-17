@@ -45,6 +45,11 @@ const TABS: { href: string; label: string; activeWhen: (path: string, tab: strin
     label: "Data Log",
     activeWhen: (path) => path === "/data-log" || path.startsWith("/data-log/"),
   },
+  {
+    href: "/settings/workspaces",
+    label: "Workspaces",
+    activeWhen: (path) => path === "/settings/workspaces" || path.startsWith("/settings/workspaces/"),
+  },
 ];
 
 export default function BusinessSettingsTabs() {

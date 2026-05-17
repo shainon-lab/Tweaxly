@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import BusinessSwitcher, { type SwitcherWorkspace } from "./BusinessSwitcher";
 
 type AlertKey = "transactions" | "insights" | "businessSignals";
 
@@ -42,10 +43,19 @@ export type SidebarAlerts = { transactions?: number; insights?: number; business
 
 export default function Sidebar({
   businessName,
+  businessId,
   logoData,
   alerts,
   systemRole,
-}: { businessName: string; logoData?: string | null; alerts?: SidebarAlerts; systemRole?: string }) {
+  workspaces,
+}: {
+  businessName: string;
+  businessId?: string;
+  logoData?: string | null;
+  alerts?: SidebarAlerts;
+  systemRole?: string;
+  workspaces?: SwitcherWorkspace[];
+}) {
   const isSuperAdmin = systemRole === "super_admin";
   const path = usePathname();
   const hasCustomLogo = !!logoData;
@@ -108,6 +118,17 @@ export default function Sidebar({
                 src={logoData!}
                 alt={businessName}
                 className="max-h-10 max-w-full object-contain"
+              />
+            </div>
+          ) : null}
+          {/* Workspace switcher — replaces the static business-name label.
+              Always visible so users with multiple workspaces have a
+              one-click switch + 'Create new workspace' affordance. */}
+          {workspaces && workspaces.length > 0 ? (
+            <div className="mt-3">
+              <BusinessSwitcher
+                current={businessId ? { id: businessId, name: businessName } : null}
+                workspaces={workspaces}
               />
             </div>
           ) : (

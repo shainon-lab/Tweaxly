@@ -4,6 +4,7 @@ import GlobalConsult from "@/components/GlobalConsult";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import { requireBusiness } from "@/lib/auth";
 import { getSidebarAlerts } from "@/lib/alerts";
+import { prisma } from "@/lib/db";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { business } = await requireBusiness();
@@ -16,6 +17,27 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const { user, business, isImpersonating, impersonationAllowWrites } = await requireBusiness();
   const alerts = await getSidebarAlerts(business.id);
+  // Workspaces the user can switch into. Excludes disabled memberships.
+  // Skipped while impersonating — the switcher is for the actual user's
+  // workspaces, not the customer's.
+  const memberships = isImpersonating
+    ? []
+    : await prisma.businessMembership.findMany({
+        where: { userId: user.id, status: "active" },
+        select: {
+          role: true,
+          business: { select: { id: true, name: true, status: true } },
+        },
+        orderBy: { createdAt: "asc" },
+      });
+  const workspaces = memberships
+    .filter((m) => m.business.status !== "suspended")
+    .map((m) => ({
+      id: m.business.id,
+      name: m.business.name,
+      role: m.role,
+      isCurrent: m.business.id === business.id,
+    }));
   return (
     // Lock the outer container to the viewport height and make only the main
     // area scroll — the sidebar stays put no matter how long the page is.
@@ -33,9 +55,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       <div className="flex-1 flex overflow-hidden">
         <Sidebar
           businessName={business.name}
+          businessId={business.id}
           logoData={business.logoData ?? null}
           alerts={alerts}
           systemRole={user.systemRole}
+          workspaces={workspaces}
         />
         <main className="flex-1 min-w-0 overflow-y-auto">
           {/* pt-16 on mobile leaves room for the floating hamburger button

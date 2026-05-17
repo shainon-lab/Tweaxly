@@ -74,16 +74,23 @@ export async function requireBusiness() {
     await trySaveSession(session);
   }
 
-  // 2. + 3. Normal user resolution.
+  // 2. + 3. Normal user resolution — scoped by membership, not
+  // ownership, so invited collaborators and accountants see every
+  // workspace they were added to. Disabled memberships are excluded.
   const businessId = session.currentBusinessId;
   let business = businessId
     ? await prisma.business.findFirst({
-        where: { id: businessId, ownerId: user.id },
+        where: {
+          id: businessId,
+          memberships: { some: { userId: user.id, status: "active" } },
+        },
       })
     : null;
   if (!business) {
     business = await prisma.business.findFirst({
-      where: { ownerId: user.id },
+      where: {
+        memberships: { some: { userId: user.id, status: "active" } },
+      },
       orderBy: { createdAt: "asc" },
     });
     if (!business) redirect("/setup");
@@ -124,7 +131,10 @@ export async function getOptionalContext() {
   if (!user) return null;
   const business = session.currentBusinessId
     ? await prisma.business.findFirst({
-        where: { id: session.currentBusinessId, ownerId: user.id },
+        where: {
+          id: session.currentBusinessId,
+          memberships: { some: { userId: user.id, status: "active" } },
+        },
       })
     : null;
   return { user, business };
