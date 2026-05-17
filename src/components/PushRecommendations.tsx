@@ -270,9 +270,8 @@ export default function PushRecommendations({
   const [refreshing, setRefreshing] = useState(false);
   const [lifecycles, setLifecycles] = useState<Record<string, Lifecycle>>({});
   const [resolved, setResolvedState] = useState<Set<string>>(new Set());
-  // Signal Deck — only one card flipped at a time so the table reads
-  // as 'one card open, everything else compact'.
-  const [flippedId, setFlippedId] = useState<string | null>(null);
+  // Selected signal — drives the slide-in detail panel. Null = closed.
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const prevInitialRef = useRef(initial);
 
   if (initial !== prevInitialRef.current) {
@@ -335,12 +334,28 @@ export default function PushRecommendations({
     next.add(key);
     setResolvedState(next);
     writeResolved(next);
-    setFlippedId(null);
+    setSelectedId(null);
   }
 
-  function toggleFlip(id: string) {
-    setFlippedId((cur) => (cur === id ? null : id));
+  function selectSignal(id: string) {
+    setSelectedId((cur) => (cur === id ? null : id));
   }
+
+  function closePanel() {
+    setSelectedId(null);
+  }
+
+  // ESC closes the panel — standard SaaS panel behavior.
+  useEffect(() => {
+    if (selectedId == null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setSelectedId(null);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId]);
+
+  const selectedRec = selectedId ? recs.find((r) => r.id === selectedId) ?? null : null;
 
   function clearResolved() {
     setResolvedState(new Set());
@@ -408,11 +423,18 @@ export default function PushRecommendations({
           recs={visibleRecs}
           currency={currency}
           lifecycles={lifecycles}
-          flippedId={flippedId}
-          onToggleFlip={toggleFlip}
-          onResolve={resolveSignal}
+          selectedId={selectedId}
+          onSelect={selectSignal}
         />
       )}
+
+      <SignalDetailPanel
+        rec={selectedRec}
+        lifecycle={selectedRec ? lifecycles[selectedRec.id] : undefined}
+        currency={currency}
+        onClose={closePanel}
+        onResolve={selectedRec ? () => resolveSignal(selectedRec) : () => {}}
+      />
     </div>
   );
 }
@@ -428,17 +450,16 @@ function SignalDeck({
   recs,
   currency,
   lifecycles,
-  flippedId,
-  onToggleFlip,
-  onResolve,
+  selectedId,
+  onSelect,
 }: {
   recs: PushRec[];
   currency: string;
   lifecycles: Record<string, Lifecycle>;
-  flippedId: string | null;
-  onToggleFlip: (id: string) => void;
-  onResolve: (r: PushRec) => void;
+  selectedId: string | null;
+  onSelect: (id: string) => void;
 }) {
+  void currency;
   const severityRank: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
   const lifecycleRank: Record<Lifecycle, number> = {
     escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
@@ -461,11 +482,9 @@ function SignalDeck({
         <SignalCard
           key={r.id}
           rec={r}
-          currency={currency}
           lifecycle={lifecycles[r.id]}
-          flipped={flippedId === r.id}
-          onToggleFlip={() => onToggleFlip(r.id)}
-          onResolve={() => onResolve(r)}
+          selected={selectedId === r.id}
+          onSelect={() => onSelect(r.id)}
         />
       ))}
     </div>
@@ -473,34 +492,27 @@ function SignalDeck({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Signal Deck card — a flip card. Front is compact (title · metric ·
-// subtitle), back carries the structured detail. Critical cards span
-// 2 columns at lg+ so they dominate the deck. Fixed height keeps the
-// grid uniform regardless of which side is showing.
+// Signal Deck card — compact, scannable, click-to-open. Renders only
+// the hero (meta · title · metric · subtitle). Detail lives in the
+// slide-in panel. Critical cards span 2 columns at lg+ so they
+// dominate the deck.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SignalCard({
   rec,
-  currency,
   lifecycle,
-  flipped,
-  onToggleFlip,
-  onResolve,
+  selected,
+  onSelect,
 }: {
   rec: PushRec;
-  currency: string;
   lifecycle?: Lifecycle;
-  flipped: boolean;
-  onToggleFlip: () => void;
-  onResolve: () => void;
+  selected: boolean;
+  onSelect: () => void;
 }) {
   const display = compactDisplay(rec);
   const badge = badgeFor(rec);
-
-  // Severity-driven styling. Critical gets a soft red glow ring +
-  // wider footprint; Action Needed / Opportunity get colored borders
-  // without glow; FYI / Watch sit quiet.
   const isCritical = rec.level === "bad";
+
   const dotColor =
     rec.level === "bad"  ? "bg-bad"    :
     rec.level === "warn" ? "bg-warn"   :
@@ -515,6 +527,7 @@ function SignalCard({
     ? "shadow-[0_0_24px_-6px_rgba(239,91,91,0.35)]"
     : "";
   const colSpan = isCritical ? "lg:col-span-2" : "";
+  const selectedRing = selected ? "ring-2 ring-accent/60 ring-offset-2 ring-offset-ink-900" : "";
 
   const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
   const arrowTone =
@@ -525,29 +538,129 @@ function SignalCard({
       : "";
 
   return (
-    <div
-      className={`${colSpan} h-56 [perspective:1200px]`}
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-pressed={selected}
+      aria-label={`Open details for ${display.title}`}
+      className={`${colSpan} h-48 rounded-2xl border ${borderColor} bg-ink-900/50 ${glowShadow} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
     >
-      <div
-        className={`relative w-full h-full transition-transform duration-500 ease-out [transform-style:preserve-3d] ${flipped ? "[transform:rotateY(180deg)]" : ""}`}
-      >
-        {/* FRONT — compact hero */}
-        <button
-          type="button"
-          onClick={onToggleFlip}
-          aria-pressed={flipped}
-          aria-label={`Show details for ${display.title}`}
-          className={`absolute inset-0 [backface-visibility:hidden] rounded-2xl border ${borderColor} bg-ink-900/50 ${glowShadow} p-5 text-left flex flex-col gap-3 transition-shadow duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 group ${flipped ? "pointer-events-none" : ""}`}
-        >
-          {/* Meta line — severity dot + badge + category + lifecycle */}
+      {/* Meta line — severity dot + badge + category + lifecycle */}
+      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+        <span
+          className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? "animate-pulse" : ""}`}
+          aria-hidden="true"
+        />
+        <span className="font-medium tracking-wide text-slate-300">{badge}</span>
+        <span className="text-slate-600">·</span>
+        <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+        {lifecycle && lifecycle !== "ongoing" ? (
+          <>
+            <span className="text-slate-600">·</span>
+            <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
+          </>
+        ) : null}
+      </div>
+
+      {/* Title */}
+      <div className={`${isCritical ? "text-xl" : "text-lg"} font-semibold text-slate-50 leading-tight tracking-tight`}>
+        {display.title}
+      </div>
+
+      {/* Hero metric */}
+      {display.metric ? (
+        <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-white leading-none tabular-nums tracking-tight`}>
+          {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
+          {display.metric}
+        </div>
+      ) : null}
+
+      {/* Optional framing sentence */}
+      {display.subtitle ? (
+        <div className="text-sm text-slate-400 leading-snug line-clamp-2">
+          {display.subtitle}
+        </div>
+      ) : null}
+
+      {/* Subtle affordance — quiet by default, lifts on hover. No
+          Consult button here; that lives inside the detail panel. */}
+      <div className="mt-auto flex items-center justify-end text-[11px] text-slate-500">
+        <ChevronRight
+          size={14}
+          strokeWidth={1.75}
+          className="text-slate-500 group-hover:text-accent group-hover:translate-x-0.5 transition"
+          aria-hidden="true"
+        />
+      </div>
+    </button>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Slide-in detail panel — non-blocking, ~38% desktop width. The deck
+// stays visible behind it so users can pivot between signals without
+// closing the panel. Consult action lives here, contextual to the
+// selected signal.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function SignalDetailPanel({
+  rec,
+  lifecycle,
+  currency,
+  onClose,
+  onResolve,
+}: {
+  rec: PushRec | null;
+  lifecycle?: Lifecycle;
+  currency: string;
+  onClose: () => void;
+  onResolve: () => void;
+}) {
+  // Keep the last selected rec while the panel is closing so the
+  // exit animation has content to render against.
+  const [snapshot, setSnapshot] = useState<PushRec | null>(rec);
+  useEffect(() => {
+    if (rec) setSnapshot(rec);
+  }, [rec]);
+
+  const open = rec != null;
+  const r = rec ?? snapshot;
+  if (!r) {
+    // No signal ever selected — render nothing.
+    return null;
+  }
+
+  const display = compactDisplay(r);
+  const badge = badgeFor(r);
+  const dotColor =
+    r.level === "bad"  ? "bg-bad"    :
+    r.level === "warn" ? "bg-warn"   :
+    r.level === "good" ? (r.category === "growth" ? "bg-accent" : "bg-good") :
+                         "bg-slate-500";
+  const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
+  const arrowTone =
+    display.direction === "up"
+      ? (r.level === "bad" || r.level === "warn" ? "text-bad" : "text-good")
+      : display.direction === "down"
+      ? "text-bad"
+      : "";
+  const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+
+  return (
+    <aside
+      role="dialog"
+      aria-label={`Signal details — ${display.title}`}
+      aria-hidden={!open}
+      className={`fixed top-0 right-0 h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-line shadow-2xl shadow-black/40 z-40 transform transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full pointer-events-none"} flex flex-col`}
+    >
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 p-5 border-b border-line">
+        <div className="min-w-0 flex-1 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-[11px] text-slate-400">
-            <span
-              className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? "animate-pulse" : ""}`}
-              aria-hidden="true"
-            />
+            <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} aria-hidden="true" />
             <span className="font-medium tracking-wide text-slate-300">{badge}</span>
             <span className="text-slate-600">·</span>
-            <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+            <span>{CATEGORY_LABEL[r.category] ?? r.category}</span>
             {lifecycle && lifecycle !== "ongoing" ? (
               <>
                 <span className="text-slate-600">·</span>
@@ -555,113 +668,74 @@ function SignalCard({
               </>
             ) : null}
           </div>
-
-          {/* Title + metric — the two things the user reads while scanning */}
-          <div className={`${isCritical ? "text-xl" : "text-lg"} font-semibold text-slate-50 leading-tight tracking-tight`}>
+          <div className="text-xl font-semibold text-slate-50 leading-tight tracking-tight">
             {display.title}
           </div>
           {display.metric ? (
-            <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-white leading-none tabular-nums tracking-tight`}>
+            <div className="text-4xl font-bold text-white leading-none tabular-nums tracking-tight">
               {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
               {display.metric}
             </div>
           ) : null}
-
-          {/* Optional single-sentence framing */}
-          {display.subtitle ? (
-            <div className="text-sm text-slate-400 leading-snug line-clamp-2">
-              {display.subtitle}
-            </div>
-          ) : null}
-
-          {/* Flip affordance pinned bottom — quiet by default, lifts on hover */}
-          <div className="mt-auto flex items-center justify-between text-[11px] text-slate-500">
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-              Click for details
-            </span>
-            <ChevronRight
-              size={14}
-              strokeWidth={1.75}
-              className="text-slate-500 group-hover:text-slate-200 transition"
-              aria-hidden="true"
-            />
-          </div>
-        </button>
-
-        {/* BACK — structured detail + actions */}
-        <div
-          className={`absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-2xl border ${borderColor} bg-ink-900/70 ${glowShadow} p-5 flex flex-col gap-3 ${flipped ? "" : "pointer-events-none"}`}
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-1">
-                <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} aria-hidden="true" />
-                <span className="font-medium tracking-wide text-slate-300">{badge}</span>
-                <span className="text-slate-600">·</span>
-                <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
-              </div>
-              <div className="text-base font-semibold text-slate-50 leading-tight tracking-tight truncate">
-                {display.title}
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={onToggleFlip}
-              className="shrink-0 w-7 h-7 inline-flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-ink-700 rounded-md transition"
-              aria-label="Flip back"
-              title="Flip back"
-            >
-              <XIcon size={14} strokeWidth={1.75} />
-            </button>
-          </div>
-
-          {/* Compact 3-line detail. Each line: short label + body. */}
-          <div className="flex-1 min-h-0 overflow-auto flex flex-col gap-2 text-xs">
-            <DetailLine label="What happened"  body={rec.observation} />
-            <DetailLine label="Why it matters" body={rec.interpretation} />
-            <DetailLine label="Do this"        body={rec.recommendation} accent />
-            {rec.impact > 0 ? (
-              <div className="flex items-center justify-between pt-1">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-                  Est. impact
-                </span>
-                <span className="text-xs font-semibold text-slate-100 tabular-nums">
-                  ≈ {fmtMoney(rec.impact, currency)} / mo
-                </span>
-              </div>
-            ) : null}
-          </div>
-
-          <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-line">
-            <button
-              type="button"
-              onClick={onResolve}
-              className="text-[11px] px-2.5 py-1 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
-              title="Hide — restore from the header to bring back"
-            >
-              Resolved
-            </button>
-            <button
-              type="button"
-              className="text-[11px] px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
-              title="Open consultation with this context"
-              onClick={() => openConsult({
-                prompt: `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`,
-                contextTitle: `Signal · ${CATEGORY_LABEL[rec.category] ?? rec.category}`,
-                contextSubtitle: display.title,
-              })}
-            >
-              <MessageSquareText size={12} strokeWidth={1.75} aria-hidden="true" />
-              <span>Consult on this</span>
-            </button>
-          </div>
         </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className="shrink-0 w-8 h-8 inline-flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-ink-700 rounded-md transition"
+          aria-label="Close panel"
+          title="Close (Esc)"
+        >
+          <XIcon size={16} strokeWidth={1.75} />
+        </button>
       </div>
-    </div>
+
+      {/* Body — scrolls if content overflows. Each section is short. */}
+      <div className="flex-1 overflow-y-auto p-5 flex flex-col gap-5">
+        <PanelSection label="What happened"      body={r.observation} />
+        <PanelSection label="Why it matters"     body={r.interpretation} />
+        <PanelSection label="Recommended action" body={r.recommendation} accent />
+
+        {r.impact > 0 ? (
+          <div className="rounded-xl border border-line bg-ink-900/40 px-4 py-3 flex items-center justify-between">
+            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+              Estimated impact
+            </span>
+            <span className="text-base font-semibold text-slate-100 tabular-nums">
+              ≈ {fmtMoney(r.impact, currency)} / month
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Footer — Consult sits here, contextual to the selected signal */}
+      <div className="border-t border-line p-4 flex items-center justify-between gap-2 bg-ink-900">
+        <button
+          type="button"
+          onClick={onResolve}
+          className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
+          title="Hide from this view — restore from the header to bring back"
+        >
+          Mark resolved
+        </button>
+        <button
+          type="button"
+          onClick={() => openConsult({
+            prompt: consultQuestion,
+            contextTitle: `Signal · ${CATEGORY_LABEL[r.category] ?? r.category}`,
+            contextSubtitle: display.title,
+          })}
+          className="text-sm px-4 py-2 rounded-full inline-flex items-center gap-2 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
+          title="Open consultation with this context"
+        >
+          <MessageSquareText size={14} strokeWidth={1.75} aria-hidden="true" />
+          <span>Consult about this signal</span>
+        </button>
+      </div>
+    </aside>
   );
 }
 
-function DetailLine({
+function PanelSection({
   label,
   body,
   accent,
@@ -672,10 +746,10 @@ function DetailLine({
 }) {
   return (
     <div>
-      <div className={`text-[9px] uppercase tracking-wider ${accent ? "text-accent" : "text-slate-500"} font-medium`}>
+      <div className={`text-[10px] uppercase tracking-wider mb-1.5 font-medium ${accent ? "text-accent" : "text-slate-500"}`}>
         {label}
       </div>
-      <div className={`text-xs leading-snug ${accent ? "text-slate-100" : "text-slate-300"} line-clamp-3`}>
+      <div className={`text-sm leading-relaxed ${accent ? "text-slate-100" : "text-slate-300"}`}>
         {body}
       </div>
     </div>
