@@ -430,131 +430,42 @@ function SignalGroups({
   lifecycles: Record<string, Lifecycle>;
   onResolve: (r: PushRec) => void;
 }) {
-  const critical  = recs.filter((r) => r.level === "bad");
-  const attention = recs.filter((r) => r.level === "warn");
-  const positive  = recs.filter((r) => r.level === "good");
-
-  // Priority — bad first, then warn, ranked by impact. Capped at 4.
-  const priority = [...critical, ...attention].slice(0, 4);
-  const priorityIds = new Set(priority.map((r) => r.id));
-
-  // Dynamic Changes — everything not in priority and not positive.
-  const dynamic = recs.filter(
-    (r) => !priorityIds.has(r.id) && r.level !== "good"
-  );
+  // Single continuous grid — no section breaks, so cards always
+  // pack tight without blank slots at the end of a Priority row.
+  // Hierarchy is carried at the card level instead: the colored dot
+  // + badge label (Critical / Watch / Opportunity / Info / Good) and
+  // the lifecycle word (New / Escalating / Improving) tell the user
+  // what kind of signal they're looking at.
+  //
+  // Sort:
+  //   1. Severity     (bad → warn → info → good)
+  //   2. Lifecycle    (escalating → new → improving → ongoing)
+  //   3. Impact       (desc, falls out of the input order)
+  const severityRank: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
+  const lifecycleRank: Record<Lifecycle, number> = {
+    escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
+  };
+  const sorted = [...recs].sort((a, b) => {
+    const sa = severityRank[a.level] ?? 4;
+    const sb = severityRank[b.level] ?? 4;
+    if (sa !== sb) return sa - sb;
+    const la = lifecycleRank[lifecycles[a.id] ?? "ongoing"];
+    const lb = lifecycleRank[lifecycles[b.id] ?? "ongoing"];
+    return la - lb;
+  });
 
   return (
-    <div className="space-y-8">
-      {priority.length > 0 ? (
-        <SignalSection
-          label="Priority Signals"
-          hint="Requires your attention right now."
-          tone="bad"
-          items={priority}
+    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+      {sorted.map((r) => (
+        <SignalCard
+          key={r.id}
+          rec={r}
           currency={currency}
-          lifecycles={lifecycles}
-          onResolve={onResolve}
+          lifecycle={lifecycles[r.id]}
+          onResolve={() => onResolve(r)}
         />
-      ) : null}
-
-      {dynamic.length > 0 ? (
-        <SignalSection
-          label="Dynamic Changes"
-          hint="What's shifted since you last looked."
-          tone="accent"
-          items={dynamic}
-          currency={currency}
-          lifecycles={lifecycles}
-          onResolve={onResolve}
-          sortByLifecycle
-        />
-      ) : null}
-
-      {positive.length > 0 ? (
-        <SignalSection
-          label="Positive Signals"
-          hint="What's working — lean into these."
-          tone="good"
-          items={positive}
-          currency={currency}
-          lifecycles={lifecycles}
-          onResolve={onResolve}
-        />
-      ) : null}
+      ))}
     </div>
-  );
-}
-
-function SectionHeader({
-  label,
-  hint,
-  tone,
-}: {
-  label: string;
-  hint: string;
-  tone: "bad" | "accent" | "good" | "slate";
-}) {
-  const toneClass =
-    tone === "bad"    ? "text-bad" :
-    tone === "accent" ? "text-accent" :
-    tone === "good"   ? "text-good" :
-                        "text-slate-200";
-  return (
-    <div className="flex items-baseline gap-2 flex-wrap mb-3">
-      <h3 className={`text-sm md:text-base font-semibold ${toneClass}`}>{label}</h3>
-      <span className="text-xs text-slate-500">· {hint}</span>
-    </div>
-  );
-}
-
-// One reusable section for Priority / Dynamic / Positive. Uses the
-// same uniform grid + card style across all three so cards are
-// visually identical regardless of their bucket.
-function SignalSection({
-  label,
-  hint,
-  tone,
-  items,
-  currency,
-  lifecycles,
-  onResolve,
-  sortByLifecycle,
-}: {
-  label: string;
-  hint: string;
-  tone: "bad" | "accent" | "good" | "slate";
-  items: PushRec[];
-  currency: string;
-  lifecycles: Record<string, Lifecycle>;
-  onResolve: (r: PushRec) => void;
-  sortByLifecycle?: boolean;
-}) {
-  let rendered = items;
-  if (sortByLifecycle) {
-    const order: Record<Lifecycle, number> = {
-      escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
-    };
-    rendered = [...items].sort((a, b) => {
-      const la = lifecycles[a.id] ?? "ongoing";
-      const lb = lifecycles[b.id] ?? "ongoing";
-      return order[la] - order[lb];
-    });
-  }
-  return (
-    <section>
-      <SectionHeader label={label} hint={hint} tone={tone} />
-      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-        {rendered.map((r) => (
-          <SignalCard
-            key={r.id}
-            rec={r}
-            currency={currency}
-            lifecycle={lifecycles[r.id]}
-            onResolve={() => onResolve(r)}
-          />
-        ))}
-      </div>
-    </section>
   );
 }
 
