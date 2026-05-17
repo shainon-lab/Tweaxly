@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
+import { MessageSquareText } from "lucide-react";
 import { CONSULT_OPEN_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 
 // Open the floating Consult panel pre-loaded with a question and a
@@ -277,7 +277,6 @@ export default function PushRecommendations({
   const [pending, startTransition] = useTransition();
   const [refreshing, setRefreshing] = useState(false);
   const [lifecycles, setLifecycles] = useState<Record<string, Lifecycle>>({});
-  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [resolved, setResolvedState] = useState<Set<string>>(new Set());
   const prevInitialRef = useRef(initial);
 
@@ -341,16 +340,11 @@ export default function PushRecommendations({
     next.add(key);
     setResolvedState(next);
     writeResolved(next);
-    setExpandedId(null);
   }
 
   function clearResolved() {
     setResolvedState(new Set());
     writeResolved(new Set());
-  }
-
-  function toggleExpand(id: string) {
-    setExpandedId((cur) => (cur === id ? null : id));
   }
 
   // Visible pool = everything not user-resolved.
@@ -414,8 +408,6 @@ export default function PushRecommendations({
           recs={visibleRecs}
           currency={currency}
           lifecycles={lifecycles}
-          expandedId={expandedId}
-          onToggleExpand={toggleExpand}
           onResolve={resolveSignal}
         />
       )}
@@ -431,15 +423,11 @@ function SignalGroups({
   recs,
   currency,
   lifecycles,
-  expandedId,
-  onToggleExpand,
   onResolve,
 }: {
   recs: PushRec[];
   currency: string;
   lifecycles: Record<string, Lifecycle>;
-  expandedId: string | null;
-  onToggleExpand: (id: string) => void;
   onResolve: (r: PushRec) => void;
 }) {
   const critical  = recs.filter((r) => r.level === "bad");
@@ -451,9 +439,6 @@ function SignalGroups({
   const priorityIds = new Set(priority.map((r) => r.id));
 
   // Dynamic Changes — everything not in priority and not positive.
-  // The lifecycle pill carries the "what changed" signal; the card
-  // itself stays visible so users still have steady context for
-  // ongoing-but-not-priority observations.
   const dynamic = recs.filter(
     (r) => !priorityIds.has(r.id) && r.level !== "good"
   );
@@ -461,29 +446,40 @@ function SignalGroups({
   return (
     <div className="space-y-8">
       {priority.length > 0 ? (
-        <PrioritySection
+        <SignalSection
+          label="Priority Signals"
+          hint="Requires your attention right now."
+          tone="bad"
           items={priority}
           currency={currency}
           lifecycles={lifecycles}
-          expandedId={expandedId}
-          onToggleExpand={onToggleExpand}
           onResolve={onResolve}
         />
       ) : null}
 
       {dynamic.length > 0 ? (
-        <DynamicSection
+        <SignalSection
+          label="Dynamic Changes"
+          hint="What's shifted since you last looked."
+          tone="accent"
           items={dynamic}
           currency={currency}
           lifecycles={lifecycles}
-          expandedId={expandedId}
-          onToggleExpand={onToggleExpand}
           onResolve={onResolve}
+          sortByLifecycle
         />
       ) : null}
 
       {positive.length > 0 ? (
-        <PositiveSummary items={positive} />
+        <SignalSection
+          label="Positive Signals"
+          hint="What's working — lean into these."
+          tone="good"
+          items={positive}
+          currency={currency}
+          lifecycles={lifecycles}
+          onResolve={onResolve}
+        />
       ) : null}
     </div>
   );
@@ -511,40 +507,50 @@ function SectionHeader({
   );
 }
 
-function PrioritySection({
+// One reusable section for Priority / Dynamic / Positive. Uses the
+// same uniform grid + card style across all three so cards are
+// visually identical regardless of their bucket.
+function SignalSection({
+  label,
+  hint,
+  tone,
   items,
   currency,
   lifecycles,
-  expandedId,
-  onToggleExpand,
   onResolve,
+  sortByLifecycle,
 }: {
+  label: string;
+  hint: string;
+  tone: "bad" | "accent" | "good" | "slate";
   items: PushRec[];
   currency: string;
   lifecycles: Record<string, Lifecycle>;
-  expandedId: string | null;
-  onToggleExpand: (id: string) => void;
   onResolve: (r: PushRec) => void;
+  sortByLifecycle?: boolean;
 }) {
-  const cols = items.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
+  let rendered = items;
+  if (sortByLifecycle) {
+    const order: Record<Lifecycle, number> = {
+      escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
+    };
+    rendered = [...items].sort((a, b) => {
+      const la = lifecycles[a.id] ?? "ongoing";
+      const lb = lifecycles[b.id] ?? "ongoing";
+      return order[la] - order[lb];
+    });
+  }
   return (
     <section>
-      <SectionHeader
-        label="Priority Signals"
-        hint="Requires your attention right now."
-        tone="bad"
-      />
-      <div className={`grid gap-3 ${cols}`}>
-        {items.map((r) => (
-          <CompactCard
+      <SectionHeader label={label} hint={hint} tone={tone} />
+      <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+        {rendered.map((r) => (
+          <SignalCard
             key={r.id}
             rec={r}
             currency={currency}
             lifecycle={lifecycles[r.id]}
-            expanded={expandedId === r.id}
-            onToggleExpand={() => onToggleExpand(r.id)}
             onResolve={() => onResolve(r)}
-            size="lg"
           />
         ))}
       </div>
@@ -552,316 +558,94 @@ function PrioritySection({
   );
 }
 
-function DynamicSection({
-  items,
-  currency,
-  lifecycles,
-  expandedId,
-  onToggleExpand,
-  onResolve,
-}: {
-  items: PushRec[];
-  currency: string;
-  lifecycles: Record<string, Lifecycle>;
-  expandedId: string | null;
-  onToggleExpand: (id: string) => void;
-  onResolve: (r: PushRec) => void;
-}) {
-  // Order: escalating → new → improving → ongoing. Inside each
-  // bucket, original (impact) order is preserved.
-  const order: Record<Lifecycle, number> = {
-    escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
-  };
-  const sorted = [...items].sort((a, b) => {
-    const la = lifecycles[a.id] ?? "ongoing";
-    const lb = lifecycles[b.id] ?? "ongoing";
-    return order[la] - order[lb];
-  });
-  return (
-    <section>
-      <SectionHeader
-        label="Dynamic Changes"
-        hint="What's shifted since you last looked."
-        tone="accent"
-      />
-      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
-        {sorted.map((r) => (
-          <CompactCard
-            key={r.id}
-            rec={r}
-            currency={currency}
-            lifecycle={lifecycles[r.id]}
-            expanded={expandedId === r.id}
-            onToggleExpand={() => onToggleExpand(r.id)}
-            onResolve={() => onResolve(r)}
-            size="sm"
-          />
-        ))}
-      </div>
-    </section>
-  );
-}
-
-// Compressed by default. Single row with the count; opens into a
-// 2-column list of titles + metrics on demand. Stays out of the way.
-function PositiveSummary({ items }: { items: PushRec[] }) {
-  const [open, setOpen] = useState(false);
-  return (
-    <section>
-      <div className="rounded-xl border border-good/30 bg-good/5">
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
-          aria-expanded={open}
-        >
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-good text-xs" aria-hidden="true">✓</span>
-            <span className="text-sm font-semibold text-good">
-              {items.length} positive signal{items.length === 1 ? "" : "s"}
-            </span>
-            <span className="text-xs text-slate-500">— What&apos;s working.</span>
-          </div>
-          <ChevronRight
-            size={14}
-            strokeWidth={1.75}
-            className={`text-slate-500 transition-transform ${open ? "rotate-90" : ""}`}
-            aria-hidden="true"
-          />
-        </button>
-        {open ? (
-          <ul className="px-4 pb-3 grid gap-1.5 sm:grid-cols-2">
-            {items.map((r) => {
-              const d = compactDisplay(r);
-              return (
-                <li key={r.id} className="flex items-start gap-2 text-sm">
-                  <span className="text-good text-xs mt-1 shrink-0" aria-hidden="true">✓</span>
-                  <span className="text-slate-200">
-                    <span className="text-[10px] uppercase tracking-wide text-slate-500 mr-1.5">
-                      {CATEGORY_LABEL[r.category] ?? r.category}
-                    </span>
-                    {d.title}
-                    {d.metric ? <span className="text-slate-400"> — {d.metric}</span> : null}
-                  </span>
-                </li>
-              );
-            })}
-          </ul>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
 // ─────────────────────────────────────────────────────────────────────────────
-// Compact card — collapses to badge + title + metric; expands inline
-// (col-span-full in its parent grid) into structured detail sections.
+// Always-open signal card — uniform size across every section. Shows
+// hero (meta · title · metric · subtitle) plus the structured detail
+// stack (What happened · Why it matters · Recommended action) plus
+// the footer actions. No collapse, no click-to-expand.
 // ─────────────────────────────────────────────────────────────────────────────
 
-function CompactCard({
+function SignalCard({
   rec,
   currency,
   lifecycle,
-  expanded,
-  onToggleExpand,
   onResolve,
-  size,
 }: {
   rec: PushRec;
   currency: string;
   lifecycle?: Lifecycle;
-  expanded: boolean;
-  onToggleExpand: () => void;
   onResolve: () => void;
-  size: "lg" | "sm";
 }) {
   const display = compactDisplay(rec);
   const badge = badgeFor(rec);
-
-  // Severity tone — quiet by default. Priority cards add a small
-  // colored dot indicator and the badge does the heavy lifting on
-  // color. We deliberately drop the heavy left-stripe + bg tint so
-  // cards read as 'premium SaaS surface' rather than 'colored alert'.
-  const tone =
-    rec.level === "bad"  ? { dot: "bg-bad",    hoverBorder: "hover:border-bad/50"  } :
-    rec.level === "warn" ? { dot: "bg-warn",   hoverBorder: "hover:border-warn/50" } :
-    rec.level === "good" ? { dot: "bg-good",   hoverBorder: "hover:border-good/40" } :
-                           { dot: "bg-accent", hoverBorder: "hover:border-accent/40" };
-
-  const colSpan = expanded ? "col-span-full" : "";
-  const padding = size === "lg" ? "p-5" : "p-4";
-  const titleSize = size === "lg" ? "text-lg" : "text-base";
-  const metricSize = size === "lg" ? "text-4xl" : "text-3xl";
-
-  // Direction arrow with sentiment-aware colour. An "up" arrow is bad
-  // for expense/spike signals (red) and good for revenue/margin/growth.
-  const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
-  const arrowTone =
-    display.direction === "up"
-      ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
-      : display.direction === "down"
-      ? "text-bad"
-      : "";
-
-  return (
-    <div
-      className={`group relative rounded-2xl border border-line bg-ink-900/40 ${tone.hoverBorder} ${padding} ${colSpan} transition-all duration-200 ${expanded ? "shadow-lg shadow-black/20" : "hover:shadow-md hover:shadow-black/20 hover:bg-ink-900/60"}`}
-    >
-      {!expanded ? (
-        <button
-          type="button"
-          onClick={onToggleExpand}
-          className="w-full text-left flex flex-col gap-3"
-          aria-expanded="false"
-        >
-          {/* Meta row — single line, very small, low contrast. Dot
-              carries severity color so the badge text can be neutral. */}
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
-            <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
-            <span className="font-medium tracking-wide">{badge}</span>
-            <span className="text-slate-600">·</span>
-            <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
-            {lifecycle && lifecycle !== "ongoing" ? (
-              <>
-                <span className="text-slate-600">·</span>
-                <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
-              </>
-            ) : null}
-          </div>
-
-          {/* Title — large, premium, single short phrase. */}
-          <div className={`${titleSize} font-semibold text-slate-50 leading-tight tracking-tight`}>
-            {display.title}
-          </div>
-
-          {/* Metric — the hero number. Big, tabular, with sentiment-
-              colored arrow when there's direction. */}
-          {display.metric ? (
-            <div className={`${metricSize} font-bold text-white leading-none tabular-nums tracking-tight`}>
-              {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
-              {display.metric}
-            </div>
-          ) : null}
-
-          {/* Subtitle — one short sentence. Optional, soft. */}
-          {display.subtitle ? (
-            <div className="text-sm text-slate-400 leading-snug line-clamp-2">
-              {display.subtitle}
-            </div>
-          ) : null}
-        </button>
-      ) : (
-        <ExpandedDetails
-          rec={rec}
-          currency={currency}
-          display={display}
-          badge={badge}
-          lifecycle={lifecycle}
-          onCollapse={onToggleExpand}
-          onResolve={onResolve}
-        />
-      )}
-
-      {/* Subtle 'Learn more' affordance — only on collapsed cards. */}
-      {!expanded ? (
-        <div className="absolute top-4 right-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-          <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function ExpandedDetails({
-  rec,
-  currency,
-  display,
-  badge,
-  lifecycle,
-  onCollapse,
-  onResolve,
-}: {
-  rec: PushRec;
-  currency: string;
-  display: CompactDisplay;
-  badge: Badge;
-  lifecycle?: Lifecycle;
-  onCollapse: () => void;
-  onResolve: () => void;
-}) {
-  const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
-  const arrowTone =
-    display.direction === "up"
-      ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
-      : display.direction === "down"
-      ? "text-bad"
-      : "";
-  const consultQuestion = `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
   const dot =
     rec.level === "bad"  ? "bg-bad"    :
     rec.level === "warn" ? "bg-warn"   :
     rec.level === "good" ? "bg-good"   :
                            "bg-accent";
+
+  const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
+  const arrowTone =
+    display.direction === "up"
+      ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
+      : display.direction === "down"
+      ? "text-bad"
+      : "";
+
+  const consultQuestion = `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+
   return (
-    <div>
-      {/* Hero — same visual rhythm as the collapsed card, with a
-          close affordance instead of the chevron. */}
-      <div className="flex items-start justify-between gap-4 mb-6">
-        <div className="min-w-0 flex-1 flex flex-col gap-3">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
-            <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true" />
-            <span className="font-medium tracking-wide">{badge}</span>
-            <span className="text-slate-600">·</span>
-            <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
-            {lifecycle && lifecycle !== "ongoing" ? (
-              <>
-                <span className="text-slate-600">·</span>
-                <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
-              </>
-            ) : null}
-          </div>
-          <div className="text-xl font-semibold text-slate-50 leading-tight tracking-tight">
-            {display.title}
-          </div>
-          {display.metric ? (
-            <div className="text-4xl font-bold text-white leading-none tabular-nums tracking-tight">
-              {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
-              {display.metric}
-            </div>
-          ) : null}
-          {display.subtitle ? (
-            <div className="text-sm text-slate-400 leading-snug">{display.subtitle}</div>
+    <div className="rounded-2xl border border-line bg-ink-900/40 p-5 flex flex-col gap-4 transition-shadow duration-200 hover:shadow-md hover:shadow-black/20">
+      {/* Hero — meta row + title + metric + subtitle */}
+      <div className="flex flex-col gap-3">
+        <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true" />
+          <span className="font-medium tracking-wide">{badge}</span>
+          <span className="text-slate-600">·</span>
+          <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+          {lifecycle && lifecycle !== "ongoing" ? (
+            <>
+              <span className="text-slate-600">·</span>
+              <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
+            </>
           ) : null}
         </div>
-        <button
-          type="button"
-          onClick={onCollapse}
-          className="shrink-0 w-8 h-8 inline-flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-ink-700 rounded-md transition"
-          aria-label="Close"
-          title="Collapse"
-        >
-          <XIcon size={16} strokeWidth={1.75} />
-        </button>
-      </div>
-
-      {/* Structured sections — three columns at lg, stacking on
-          smaller widths. Each section is short prose, not paragraphs. */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
-        <DetailSection label="What happened" body={rec.observation} />
-        <DetailSection label="Why it matters" body={rec.interpretation} />
-        <DetailSection label="Recommended action" body={rec.recommendation} accent />
-      </div>
-
-      {rec.impact > 0 ? (
-        <div className="mb-6 flex items-center gap-3 text-sm text-slate-300">
-          <span className="text-[10px] uppercase tracking-wide text-slate-500">Estimated impact</span>
-          <span className="text-base font-semibold text-slate-100 tabular-nums">
-            ≈ {fmtMoney(rec.impact, currency)} / month
-          </span>
+        <div className="text-lg font-semibold text-slate-50 leading-tight tracking-tight">
+          {display.title}
         </div>
-      ) : null}
+        {display.metric ? (
+          <div className="text-3xl font-bold text-white leading-none tabular-nums tracking-tight">
+            {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
+            {display.metric}
+          </div>
+        ) : null}
+        {display.subtitle ? (
+          <div className="text-sm text-slate-400 leading-snug">{display.subtitle}</div>
+        ) : null}
+      </div>
 
-      <div className="flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-line">
+      {/* Structured detail — stacked label/body sections inside the
+          card. Short prose, no card-in-card chrome. */}
+      <div className="border-t border-line pt-4 flex flex-col gap-3">
+        <DetailRow label="What happened" body={rec.observation} />
+        <DetailRow label="Why it matters" body={rec.interpretation} />
+        <DetailRow label="Recommended action" body={rec.recommendation} accent />
+        {rec.impact > 0 ? (
+          <div className="flex items-center justify-between gap-3 text-sm pt-1">
+            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+              Estimated impact
+            </span>
+            <span className="text-sm font-semibold text-slate-100 tabular-nums">
+              ≈ {fmtMoney(rec.impact, currency)} / mo
+            </span>
+          </div>
+        ) : null}
+      </div>
+
+      {/* Footer — actions stay at the bottom of every card so footers
+          line up across the grid. mt-auto pins them when card content
+          varies in length. */}
+      <div className="mt-auto flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-line">
         <button
           type="button"
           onClick={onResolve}
@@ -888,7 +672,7 @@ function ExpandedDetails({
   );
 }
 
-function DetailSection({
+function DetailRow({
   label,
   body,
   accent,
@@ -898,8 +682,8 @@ function DetailSection({
   accent?: boolean;
 }) {
   return (
-    <div className={`rounded-xl border ${accent ? "border-accent/30 bg-accent-soft/10" : "border-line bg-ink-900/40"} p-4`}>
-      <div className={`text-[10px] uppercase tracking-wider ${accent ? "text-accent" : "text-slate-500"} mb-1.5 font-medium`}>
+    <div>
+      <div className={`text-[10px] uppercase tracking-wider ${accent ? "text-accent" : "text-slate-500"} mb-1 font-medium`}>
         {label}
       </div>
       <div className={`text-sm leading-relaxed ${accent ? "text-slate-100" : "text-slate-300"}`}>
