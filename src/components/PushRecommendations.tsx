@@ -155,28 +155,6 @@ export default function PushRecommendations({
       ) : (
         <SignalGroups recs={recs} currency={currency} onClose={close} />
       )}
-
-      <div
-        className="mt-4 rounded-xl border border-line p-4 md:p-5 flex items-center justify-between gap-3 flex-wrap"
-        style={{
-          backgroundImage:
-            "linear-gradient(135deg, rgba(124,92,250,0.14) 0%, rgba(79,125,255,0.10) 50%, rgba(34,211,238,0.10) 100%)",
-        }}
-      >
-        <div className="text-sm md:text-base font-semibold text-slate-100 leading-snug max-w-xl">
-          Or consult about anything else going on in your business.
-        </div>
-        <button
-          type="button"
-          className="btn-primary text-sm px-5 py-2.5 rounded-lg shadow-md hover:shadow-lg transition-transform active:scale-[0.98]"
-          onClick={() => openConsult({
-            contextTitle: "Signals",
-            contextSubtitle: "Open consultation",
-          })}
-        >
-          Consult on any topic
-        </button>
-      </div>
     </div>
   );
 }
