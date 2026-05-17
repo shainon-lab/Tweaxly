@@ -205,7 +205,7 @@ function deriveViewMeta(pathname: string): ViewMeta {
       ],
     };
   }
-  if (pathname.startsWith("/workforce")) {
+  if (pathname.startsWith("/workforce") || pathname.startsWith("/employees")) {
     return {
       title: "Forecast",
       subtitle: "Workforce Planning — payroll impact on profitability",

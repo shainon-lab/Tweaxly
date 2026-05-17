@@ -134,8 +134,9 @@ export default function Sidebar({
             ];
             const reportsRoutes = ["/report", "/data-flow", "/insights"];
             // Forecast owns /forecast plus /workforce (Workforce
-            // Planning is now a Forecast sub-tab).
-            const forecastRoutes = ["/forecast", "/workforce"];
+            // Planning sub-tab) plus /employees (Edit Roster drill-
+            // down kept inside the Forecast nav group).
+            const forecastRoutes = ["/forecast", "/workforce", "/employees"];
             const inSettingsGroup = settingsRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const inReportsGroup = reportsRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const inForecastGroup = forecastRoutes.some((r) => path === r || path.startsWith(r + "/"));

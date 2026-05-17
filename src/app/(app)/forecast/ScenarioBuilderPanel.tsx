@@ -28,6 +28,19 @@ import ScenarioBuilder, { type RosterMember } from "./ScenarioBuilder";
 // ActiveScenarioAssumptions, etc.).
 export const SCENARIO_BUILDER_OPEN_EVENT = "tweaxly:open-scenario-builder";
 
+// Detail accepted by the open event. When `filter` is set, the
+// panel opens with the matching scope restriction (e.g. workforce
+// shows only payroll events). When absent, the panel opens with
+// every category visible.
+export type ScenarioBuilderOpenDetail = {
+  filter?: ("revenue" | "expense" | "payroll")[];
+  // Header text overrides — used when the panel opens from a
+  // scoped context (Workforce Planning) so the user sees the
+  // intent in the header.
+  title?: string;
+  subtitle?: string;
+};
+
 export default function ScenarioBuilderPanel({
   roster,
   activePayrollSum,
@@ -41,6 +54,8 @@ export default function ScenarioBuilderPanel({
 }) {
   const sp = useSearchParams();
   const [open, setOpen] = useState(false);
+  const [filter, setFilter] = useState<ScenarioBuilderOpenDetail["filter"]>(undefined);
+  const [headerOverride, setHeaderOverride] = useState<{ title?: string; subtitle?: string }>({});
 
   // ESC closes the panel.
   useEffect(() => {
@@ -55,17 +70,40 @@ export default function ScenarioBuilderPanel({
   // Listen for app-wide requests to open the builder. Anywhere on the
   // forecast page (or a cross-page link landing here) can trigger it.
   useEffect(() => {
-    const onOpen = () => setOpen(true);
-    window.addEventListener(SCENARIO_BUILDER_OPEN_EVENT, onOpen);
-    return () => window.removeEventListener(SCENARIO_BUILDER_OPEN_EVENT, onOpen);
+    const onOpen = (e: Event) => {
+      const detail = (e as CustomEvent<ScenarioBuilderOpenDetail>).detail ?? {};
+      setFilter(detail.filter);
+      setHeaderOverride({ title: detail.title, subtitle: detail.subtitle });
+      setOpen(true);
+    };
+    window.addEventListener(SCENARIO_BUILDER_OPEN_EVENT, onOpen as EventListener);
+    return () => window.removeEventListener(SCENARIO_BUILDER_OPEN_EVENT, onOpen as EventListener);
   }, []);
 
   // Cross-page links can land with ?openBuilder=1 to pop the panel
-  // on arrival (used by the Workforce Planning 'Model hiring impact'
-  // buttons).
+  // on arrival. ?builderFilter=workforce scopes the panel to payroll
+  // events only.
   useEffect(() => {
-    if (sp.get("openBuilder") === "1") setOpen(true);
+    if (sp.get("openBuilder") === "1") {
+      if (sp.get("builderFilter") === "workforce") {
+        setFilter(["payroll"]);
+        setHeaderOverride({
+          title: "Workforce Scenario Builder",
+          subtitle: "Model hires, terminations, and salary changes.",
+        });
+      }
+      setOpen(true);
+    }
   }, [sp]);
+
+  // Reset overrides when the panel closes so the next open starts
+  // with whatever the trigger supplies (or none).
+  useEffect(() => {
+    if (!open) {
+      setFilter(undefined);
+      setHeaderOverride({});
+    }
+  }, [open]);
 
   return (
     <>
@@ -95,10 +133,10 @@ export default function ScenarioBuilderPanel({
                   Scenario Builder
                 </div>
                 <div className="text-base font-semibold text-slate-100">
-                  Model a 'what-if' decision
+                  {headerOverride.title ?? "Model a 'what-if' decision"}
                 </div>
                 <div className="text-xs text-slate-400 mt-0.5">
-                  Pick an event below. The forecast updates as soon as you save.
+                  {headerOverride.subtitle ?? "Pick an event below. The forecast updates as soon as you save."}
                 </div>
               </div>
               <button
@@ -117,6 +155,7 @@ export default function ScenarioBuilderPanel({
                 activePayrollSum={activePayrollSum}
                 maxMonthsAhead={maxMonthsAhead}
                 currency={currency}
+                familyFilter={filter}
               />
             </div>
           </aside>

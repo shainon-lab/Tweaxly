@@ -31,7 +31,13 @@ export default function ForecastTabs() {
   };
 
   const onForecast = path === "/forecast" || path.startsWith("/forecast/");
-  const onWorkforce = path === "/workforce" || path.startsWith("/workforce/");
+  // /employees is a drill-down inside Workforce Planning (Edit
+  // Roster), so it keeps the Workforce Planning tab highlighted.
+  const onWorkforce =
+    path === "/workforce" ||
+    path.startsWith("/workforce/") ||
+    path === "/employees" ||
+    path.startsWith("/employees/");
   const overviewActive  = onForecast && (!currentView || currentView === "overview");
   const scenariosActive = onForecast && currentView === "scenarios";
   const workforceActive = onWorkforce;

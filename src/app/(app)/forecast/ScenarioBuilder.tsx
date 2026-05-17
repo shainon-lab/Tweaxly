@@ -99,11 +99,17 @@ export default function ScenarioBuilder({
   activePayrollSum,
   maxMonthsAhead,
   currency,
+  familyFilter,
 }: {
   roster: RosterMember[];
   activePayrollSum: number;
   maxMonthsAhead: number;
   currency: string;
+  // When set, the event grid only shows event cards whose family is
+  // in this list. Used by the Workforce Scenario Builder so the
+  // panel surfaces only payroll/workforce events, not revenue or
+  // expense assumptions that aren't relevant from /workforce.
+  familyFilter?: ("revenue" | "expense" | "payroll")[];
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -283,11 +289,22 @@ export default function ScenarioBuilder({
           <div className="font-medium">Scenario Builder</div>
           <div className="text-xs text-slate-400">Click an event to model a business decision</div>
         </div>
-        {EVENT_GROUPS.map((g) => (
+        {EVENT_GROUPS.map((g) => {
+          // Filter the group's keys to only events whose family is
+          // allowed by familyFilter (when supplied). Hide the whole
+          // group if no eligible events remain.
+          const keys = familyFilter
+            ? g.keys.filter((k) => {
+                const e = EVENTS.find((x) => x.key === k);
+                return e ? familyFilter.includes(e.family) : false;
+              })
+            : g.keys;
+          if (keys.length === 0) return null;
+          return (
           <div key={g.title} className="mb-4 last:mb-0">
             <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-2">{g.title}</div>
             <div className="flex flex-wrap gap-2">
-              {g.keys.map((k) => {
+              {keys.map((k) => {
                 const e = EVENTS.find((x) => x.key === k);
                 if (!e) return null;
                 return (
@@ -304,7 +321,8 @@ export default function ScenarioBuilder({
               })}
             </div>
           </div>
-        ))}
+          );
+        })}
 
         {def ? (
           <div className="mt-4 pt-4 border-t border-line">

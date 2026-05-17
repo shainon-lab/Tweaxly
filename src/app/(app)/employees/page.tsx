@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import ForecastTabs from "@/components/ForecastTabs";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import EmployeesClient from "./EmployeesClient";
@@ -20,9 +21,10 @@ export default async function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Employees"
-        subtitle="Roster + events drive payroll cost in dashboards and forecasts."
+        title="Forecast"
+        subtitle="Workforce Planning · Edit Roster — manage employees, salaries, and lifecycle events."
       />
+      <ForecastTabs />
       <EmployeesClient
         employees={employees.map((e) => ({
           id: e.id, name: e.name, role: e.role,

@@ -21,6 +21,9 @@ import { buildMonthSnapshot } from "@/lib/metrics";
 import { shiftYM, todayYM, fmtMoney, fmtPct } from "@/lib/format";
 import EmployeeTable, { type WorkforceEmployeeRow } from "./EmployeeTable";
 import WorkforcePayrollChart from "./WorkforcePayrollChart";
+import ScenarioBuilderPanel from "../forecast/ScenarioBuilderPanel";
+import WorkforceBuilderTrigger from "./WorkforceBuilderTrigger";
+import { type RosterMember } from "../forecast/ScenarioBuilder";
 
 const LEVEL_BAR: Record<string, string> = {
   good: "border-good/40",
@@ -57,6 +60,28 @@ export default async function WorkforcePage() {
   }));
 
   const summary = summarizeWorkforce(rows);
+
+  // Build the roster the Scenario Builder needs. Workforce Planning
+  // surfaces the same payroll/team scenario events as Forecast, so
+  // it can reuse the same Builder component — just scoped to
+  // payroll-family events via the filter on the open trigger.
+  const roster: RosterMember[] = rows.map((r) => ({
+    id: r.id,
+    name: r.name,
+    role: r.role ?? null,
+    employmentType: (r.employmentType ?? "employee").toLowerCase(),
+    status: effectiveStatus(r),
+    monthlyCost: computeEmployeeCost(r).total,
+    grossSalary: r.grossMonthlySalary,
+  }));
+  const activePayrollSum = roster
+    .filter((r) => r.status === "active" && r.employmentType === "employee")
+    .reduce((s, r) => s + r.monthlyCost, 0);
+  // Workforce Planning doesn't have its own horizon picker yet;
+  // default to a 12-month modelling window which matches Forecast's
+  // default. The number only controls how far out the assumption's
+  // end-month picker goes, not what's shown in the chart.
+  const builderMaxMonthsAhead = 12;
 
   // Payroll vs revenue (last 6 months). Use last complete month as anchor so
   // an in-progress month doesn't drag the trend down.
@@ -146,7 +171,7 @@ export default async function WorkforcePage() {
         right={
           <div className="flex items-center gap-2">
             <Link href="/employees" className="btn-ghost">Edit roster</Link>
-            <Link href="/forecast?view=scenarios&openBuilder=1" className="btn-primary">Model hiring impact</Link>
+            <WorkforceBuilderTrigger />
           </div>
         }
       />
@@ -248,19 +273,19 @@ export default async function WorkforcePage() {
           </div>
 
           <EmployeeTable rows={tableRows} currency={ccy} />
-
-          <div className="card mb-6">
-            <div className="font-medium mb-1">Model workforce changes</div>
-            <div className="text-sm text-slate-400 mb-3">
-              Hiring, terminations, salary increases, contractor conversions — every workforce decision flows through to projected payroll, profit, and cashflow on the Forecast tab. Add scenario assumptions there to see the dollar impact.
-            </div>
-            <div className="flex flex-wrap gap-2">
-              <Link href="/forecast?view=scenarios&openBuilder=1" className="btn-primary">Open Forecast</Link>
-              <Link href="/employees" className="btn-ghost">Edit roster</Link>
-            </div>
-          </div>
         </>
       )}
+
+      {/* Panel mounted at the page level — listens for the workforce-
+          scoped open event dispatched by WorkforceBuilderTrigger in
+          the header. Stays mounted even on the empty-roster state so
+          the trigger keeps working. */}
+      <ScenarioBuilderPanel
+        roster={roster}
+        activePayrollSum={activePayrollSum}
+        maxMonthsAhead={builderMaxMonthsAhead}
+        currency={ccy}
+      />
     </>
   );
 }
