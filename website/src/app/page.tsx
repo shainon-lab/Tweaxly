@@ -4,7 +4,7 @@ import { ForecastChart } from "@/components/mocks/ForecastChart";
 import { ConsultationMock } from "@/components/mocks/Consultation";
 import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
 
-const PRODUCT_URL = "https://tweaxly.vercel.app";
+const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
