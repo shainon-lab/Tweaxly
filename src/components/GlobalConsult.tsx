@@ -217,15 +217,27 @@ function deriveViewMeta(pathname: string): ViewMeta {
       ],
     };
   }
-  if (pathname.startsWith("/settings") || pathname.startsWith("/account") || pathname.startsWith("/integration") || pathname.startsWith("/notifications")) {
+  if (pathname.startsWith("/settings") || pathname.startsWith("/integration") || pathname.startsWith("/notifications")) {
     return {
-      title: "Your business",
-      subtitle: "Settings, integrations, and account",
+      title: "Settings",
+      subtitle: "Business profile, categories, integrations, and monitoring rules",
       prompts: [
-        "What should I focus on right now?",
-        "Where am I overspending?",
-        "What's working well?",
-        "What deserves immediate attention?",
+        "Is my data setup clean enough for accurate insights?",
+        "Which categories should I rationalize for better reporting?",
+        "What integrations would unlock the most value for me?",
+        "What monitoring rules should I have running for my business?",
+      ],
+    };
+  }
+  if (pathname.startsWith("/account")) {
+    return {
+      title: "Account",
+      subtitle: "Billing, password, security, and account closure",
+      prompts: [
+        "What can I do with the Tweaxly preview plan today?",
+        "How should I think about security best practices for my account?",
+        "What's the right cadence for reviewing my account settings?",
+        "What should I prepare before paid plans launch?",
       ],
     };
   }
