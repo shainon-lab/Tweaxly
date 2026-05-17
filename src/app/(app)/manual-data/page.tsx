@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -7,6 +8,7 @@ import ManualDataClient from "./ManualDataClient";
 
 export default async function ManualDataPage() {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const [entries, categoriesRaw] = await Promise.all([
     prisma.manualEntry.findMany({
       where: { businessId: business.id },
@@ -26,7 +28,7 @@ export default async function ManualDataPage() {
   return (
     <>
       <PageHeader
-        title="Settings"
+        title={t("page.manualData.title")}
         subtitle="Import data — add income or outcome entries manually, or bulk-upload a file."
       />
       <BusinessSettingsTabs />

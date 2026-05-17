@@ -7,6 +7,7 @@
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import ForecastTabs from "@/components/ForecastTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -34,6 +35,7 @@ const LEVEL_BAR: Record<string, string> = {
 
 export default async function WorkforcePage() {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const ccy = business.currency;
 
   const employees = await prisma.employee.findMany({
@@ -166,8 +168,8 @@ export default async function WorkforcePage() {
   return (
     <>
       <PageHeader
-        title="Forecast"
-        subtitle="Workforce Planning — real team costs, payroll growth pace, and the impact of hires on profit and cashflow."
+        title={t("page.workforce.title")}
+        subtitle={t("page.workforce.subtitle")}
         right={
           <div className="flex items-center gap-2">
             <Link href="/employees" className="btn-ghost">Edit roster</Link>

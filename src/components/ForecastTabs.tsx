@@ -12,8 +12,10 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 
 export default function ForecastTabs() {
+  const t = useT();
   const path = usePathname();
   const sp = useSearchParams();
   const currentView = sp.get("view");
@@ -44,17 +46,17 @@ export default function ForecastTabs() {
 
   const TABS = [
     {
-      label: "Overview",
+      label: t("tabs.forecast.overview"),
       href: `/forecast${preserve({ view: null })}`,
       active: overviewActive,
     },
     {
-      label: "Scenarios",
+      label: t("tabs.forecast.scenarios"),
       href: `/forecast${preserve({ view: "scenarios" })}`,
       active: scenariosActive,
     },
     {
-      label: "Workforce Planning",
+      label: t("tabs.forecast.workforce"),
       href: "/workforce",
       active: workforceActive,
     },

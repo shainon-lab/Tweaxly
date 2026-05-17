@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import ForecastTabs from "@/components/ForecastTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import EmployeesClient from "./EmployeesClient";
@@ -8,6 +9,7 @@ import { todayYM, shiftYM } from "@/lib/format";
 
 export default async function EmployeesPage() {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const [employees, events] = await Promise.all([
     prisma.employee.findMany({ where: { businessId: business.id }, orderBy: { startDate: "desc" } }),
     prisma.employeeEvent.findMany({ where: { businessId: business.id }, orderBy: { effectiveDate: "desc" } }),
@@ -21,8 +23,8 @@ export default async function EmployeesPage() {
   return (
     <>
       <PageHeader
-        title="Forecast"
-        subtitle="Workforce Planning · Edit Roster — manage employees, salaries, and lifecycle events."
+        title={t("page.employees.title")}
+        subtitle={t("page.employees.subtitle")}
       />
       <ForecastTabs />
       <EmployeesClient

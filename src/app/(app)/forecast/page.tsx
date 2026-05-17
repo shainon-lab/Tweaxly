@@ -11,6 +11,7 @@
 
 import PageHeader from "@/components/PageHeader";
 import ForecastTabs from "@/components/ForecastTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
@@ -132,15 +133,16 @@ export default async function ForecastPage({
 
   const ccy = business.currency;
   const baselineNetDelta = summary.scenarioNetTotal - summary.baselineNetTotal;
+  const { t } = await getServerT();
 
   return (
     <>
       <PageHeader
-        title="Forecast"
+        title={t("page.forecast.title")}
         subtitle={
           view === "scenarios"
-            ? `Scenarios — model 'what if' decisions against ${range.label.toLowerCase()} of history over the ${horizon.label.toLowerCase()}.`
-            : `Overview — AI projection based on ${range.label.toLowerCase()} (${baseline.monthCount} mo of history) over the ${horizon.label.toLowerCase()}.`
+            ? t("page.forecast.subtitle.scenarios")
+            : t("page.forecast.subtitle.overview")
         }
         right={
           <div className="flex items-end gap-3 flex-wrap justify-end">

@@ -19,6 +19,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquareText, Sparkles, X } from "lucide-react";
 import { renderMarkdown } from "@/app/(app)/consultation/markdown";
+import { useT } from "@/lib/i18n/client";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Proactive nudge configuration. The values here are tuned to feel
@@ -254,6 +255,7 @@ function deriveViewMeta(pathname: string): ViewMeta {
 }
 
 export default function GlobalConsult() {
+  const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
@@ -550,7 +552,7 @@ export default function GlobalConsult() {
         title="Consult with your AI advisor about this view"
       >
         <MessageSquareText size={16} strokeWidth={1.75} aria-hidden="true" />
-        <span className="text-sm font-medium">Consult</span>
+        <span className="text-sm font-medium">{t("consult.button")}</span>
       </button>
 
       {open ? (

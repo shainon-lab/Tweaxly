@@ -4,6 +4,7 @@
 // refresh. See /business-signals/alerts for the threshold-rule firing list.
 
 import PageHeader from "@/components/PageHeader";
+import { getServerT } from "@/lib/i18n/server";
 import PushRecommendations from "@/components/PushRecommendations";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -63,11 +64,12 @@ export default async function BusinessSignalsPage() {
     createdAt: nowISO,
   }));
 
+  const { t } = await getServerT();
   return (
     <>
       <PageHeader
-        title="Signals"
-        subtitle="A command-center view of what's changing in your business — click any card for the full story."
+        title={t("page.signals.title")}
+        subtitle={t("page.signals.subtitle")}
       />
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}

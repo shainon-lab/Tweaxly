@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import ReportsTabs from "@/components/ReportsTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import DashboardInsights from "../dashboard/DashboardInsights";
 
@@ -19,12 +20,13 @@ export default async function ChartsPage({
   }>;
 }) {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const sp = await searchParams;
   return (
     <>
       <PageHeader
-        title="Charts"
-        subtitle="Visual breakdowns of your business — pick a period to drive every chart below."
+        title={t("page.charts.title")}
+        subtitle={t("page.charts.subtitle")}
       />
       <ReportsTabs />
       <DashboardInsights

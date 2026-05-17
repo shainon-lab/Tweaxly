@@ -2,6 +2,7 @@ import PageHeader from "@/components/PageHeader";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost, trailingMonthsSummary } from "@/lib/metrics";
 import {
@@ -69,6 +70,7 @@ export default async function DashboardPage({
   }>;
 }) {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const sp = await searchParams;
   // Default landing view: "This year" — gives the owner a year-to-date view
   // by default. They can narrow to a month/quarter via the picker.
@@ -149,7 +151,7 @@ export default async function DashboardPage({
   return (
     <>
       <PageHeader
-        title="Overview"
+        title={t("page.dashboard.title")}
         subtitle={`${DASHBOARD_RANGE_LABEL[range]}: ${resolved.label} (${current.monthCount} month${current.monthCount === 1 ? "" : "s"}) — ${business.name}`}
         right={
           <DashboardPeriodPicker

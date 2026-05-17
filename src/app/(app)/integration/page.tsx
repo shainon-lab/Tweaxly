@@ -1,14 +1,16 @@
 import PageHeader from "@/components/PageHeader";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import IntegrationClient from "./IntegrationClient";
 
 export default async function IntegrationPage() {
   await requireBusiness();
+  const { t } = await getServerT();
   return (
     <>
       <PageHeader
-        title="Integration"
-        subtitle="Pull data from your tools automatically — no more CSV exports."
+        title={t("page.integration.title")}
+        subtitle={t("page.integration.subtitle")}
       />
       <IntegrationClient />
     </>

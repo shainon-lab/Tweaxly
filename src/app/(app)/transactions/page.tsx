@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -9,6 +10,7 @@ export default async function TransactionsPage({
   searchParams,
 }: { searchParams: Promise<{ q?: string; source?: string; ym?: string; uncategorized?: string }> }) {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const sp = await searchParams;
   const where: Record<string, unknown> = { businessId: business.id };
   if (sp.q) where.OR = [
@@ -47,7 +49,7 @@ export default async function TransactionsPage({
   return (
     <>
       <PageHeader
-        title="Settings"
+        title={t("page.transactions.title")}
         subtitle={`Transactions — ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
       />
       <BusinessSettingsTabs />

@@ -1,19 +1,22 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 
 // Second-level nav inside the Reports umbrella. Picks which kind of
 // report the user is reading: a period P&L statement, the per-month
 // category-trends grid, or a closed-year retrospective. Also hosts
 // the "View Charts" affordance on the right side of the same row, so
 // the user has one tab strip for the section instead of two stacked.
-const TABS = [
-  { href: "/report",          label: "P&L Statement"   },
-  { href: "/data-flow",       label: "Category Trends" },
-  { href: "/insights/yearly", label: "Yearly Summary"  },
+const TAB_DEFS = [
+  { href: "/report",          tKey: "tabs.reports.pnl",    fallback: "P&L Statement"   },
+  { href: "/data-flow",       tKey: "tabs.reports.trends", fallback: "Category Trends" },
+  { href: "/insights/yearly", tKey: "tabs.reports.yearly", fallback: "Yearly Summary"  },
 ];
 
 export default function ReportsInnerTabs() {
+  const t = useT();
+  const TABS = TAB_DEFS.map((d) => ({ href: d.href, label: t(d.tKey) }));
   const path = usePathname();
   return (
     <div className="mb-6 flex items-center justify-between gap-2 flex-wrap">
@@ -50,7 +53,7 @@ export default function ReportsInnerTabs() {
         title="View the charts grid for this period"
       >
         <span>📈</span>
-        <span>View Charts</span>
+        <span>{t("tabs.reports.viewCharts")}</span>
       </Link>
     </div>
   );

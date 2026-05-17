@@ -29,7 +29,13 @@ export default function Logo({
 }) {
   const s = SIZE_MAP[size];
   return (
+    // The brand is a left-to-right wordmark ("TWEA · X · LY") with a
+    // tagline below. When the surrounding document is RTL (Hebrew),
+    // flex children would reverse and the mark would render as
+    // "YL · X · AEWT" — so we lock the Logo to dir="ltr" regardless
+    // of the page direction.
     <div
+      dir="ltr"
       className={`inline-flex flex-col items-center rounded-lg ${s.padX} ${s.padY} ${className}`}
       style={{ backgroundColor: NAVY }}
       aria-label="TWEAXLY"

@@ -11,16 +11,18 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 
 export default function BusinessSignalsTabs({
   firingAlerts,
 }: {
   firingAlerts: number;
 }) {
+  const t = useT();
   const path = usePathname();
   const TABS: { href: string; label: string; alert?: boolean }[] = [
-    { href: "/business-signals",        label: "Signals" },
-    { href: "/business-signals/alerts", label: "Monitor", alert: firingAlerts > 0 },
+    { href: "/business-signals",        label: t("tabs.signals.signals") },
+    { href: "/business-signals/alerts", label: t("tabs.signals.monitor"), alert: firingAlerts > 0 },
   ];
   return (
     <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">

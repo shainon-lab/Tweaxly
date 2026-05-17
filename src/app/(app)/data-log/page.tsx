@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import DataLogClient from "./DataLogClient";
@@ -13,6 +14,7 @@ const FREQUENCY_LABEL: Record<string, string> = {
 
 export default async function DataLogPage() {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
 
   // Data log is a unified activity feed: every UploadBatch (file imports)
   // AND every ManualEntry (single rows the user typed in). Manual entries
@@ -72,7 +74,7 @@ export default async function DataLogPage() {
   return (
     <>
       <PageHeader
-        title="Settings"
+        title={t("page.dataLog.title")}
         subtitle="Data log — every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
       />
       <BusinessSettingsTabs />

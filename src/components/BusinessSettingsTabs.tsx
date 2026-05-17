@@ -13,46 +13,50 @@
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
+import { useT } from "@/lib/i18n/client";
 
-const TABS: { href: string; label: string; activeWhen: (path: string, tab: string | null) => boolean }[] = [
+// Tab labels are i18n keys; the component resolves them per render.
+const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: string | null) => boolean }[] = [
   {
     href: "/settings",
-    label: "Business Profile",
+    tKey: "settings.tab.profile",
     activeWhen: (path, tab) => path === "/settings" && (!tab || tab === "profile"),
   },
   {
     href: "/manual-data",
-    label: "Import Data",
+    tKey: "settings.tab.import",
     activeWhen: (path) => path === "/manual-data" || path.startsWith("/manual-data/"),
   },
   {
     href: "/settings?tab=integration",
-    label: "Integration",
+    tKey: "settings.tab.integration",
     activeWhen: (path, tab) => path === "/settings" && tab === "integration",
   },
   {
     href: "/settings?tab=categories",
-    label: "Categories & Vendors",
+    tKey: "settings.tab.categories",
     activeWhen: (path, tab) => path === "/settings" && tab === "categories",
   },
   {
     href: "/transactions",
-    label: "Transactions",
+    tKey: "settings.tab.transactions",
     activeWhen: (path) => path === "/transactions" || path.startsWith("/transactions/"),
   },
   {
     href: "/data-log",
-    label: "Data Log",
+    tKey: "settings.tab.dataLog",
     activeWhen: (path) => path === "/data-log" || path.startsWith("/data-log/"),
   },
   {
     href: "/settings/workspaces",
-    label: "Workspaces",
+    tKey: "settings.tab.workspaces",
     activeWhen: (path) => path === "/settings/workspaces" || path.startsWith("/settings/workspaces/"),
   },
 ];
 
 export default function BusinessSettingsTabs() {
+  const t = useT();
+  const TABS = TAB_DEFS.map((d) => ({ ...d, label: t(d.tKey) }));
   const path = usePathname();
   const sp = useSearchParams();
   const tab = sp.get("tab");

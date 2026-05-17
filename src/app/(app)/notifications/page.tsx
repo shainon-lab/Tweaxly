@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -6,6 +7,7 @@ import NotificationsClient from "./NotificationsClient";
 
 export default async function NotificationsPage() {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const [rules, categoriesRaw] = await Promise.all([
     prisma.notificationRule.findMany({
       where: { businessId: business.id },
@@ -21,8 +23,8 @@ export default async function NotificationsPage() {
   return (
     <>
       <PageHeader
-        title="Set notifications"
-        subtitle="Get alerted when your revenue, expenses, net profit, or any specific category crosses a threshold compared to the prior period."
+        title={t("page.notifications.title")}
+        subtitle={t("page.notifications.subtitle")}
       />
       <NotificationsClient
         currency={business.currency}

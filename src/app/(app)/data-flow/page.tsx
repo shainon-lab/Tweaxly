@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import {
@@ -39,6 +40,7 @@ export default async function DataFlowPage({
   }>;
 }) {
   const { business } = await requireBusiness();
+  const { t } = await getServerT();
   const sp = await searchParams;
   const range = (VALID_RANGES.includes(sp.range as DataFlowRange)
     ? (sp.range as DataFlowRange)
@@ -60,7 +62,7 @@ export default async function DataFlowPage({
   return (
     <>
       <PageHeader
-        title="Category Trends"
+        title={t("page.trends.title")}
         subtitle={`${RANGE_LABEL[range]}${categoryFilter ? ` · ${categoryFilter}` : ""}. ${view === "summary" ? "P&L summary" : "Per-month detail"}.`}
         right={
           <DataFlowFilters

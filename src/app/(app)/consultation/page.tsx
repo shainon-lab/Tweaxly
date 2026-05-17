@@ -1,4 +1,5 @@
 import PageHeader from "@/components/PageHeader";
+import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
@@ -54,12 +55,13 @@ export default async function ConsultationPage({
     !/change-me|placeholder|todo|your[-_]key/i.test(apiKey);
 
   const initialDraft = typeof sp.q === "string" ? sp.q : "";
+  const { t } = await getServerT();
 
   return (
     <>
       <PageHeader
-        title="Advisory"
-        subtitle="Strategic AI recommendations based on your business data."
+        title={t("page.advisory.title")}
+        subtitle={t("page.advisory.subtitle")}
       />
       <ConsultationTabs historyCount={totalQuestions} />
       <ConsultationClient
