@@ -7,6 +7,7 @@
 
 import { useState, useTransition, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import { MessageSquareText } from "lucide-react";
 import { renderMarkdown } from "./markdown";
 import type {
   RecommendedConsultation,
@@ -533,11 +534,13 @@ function RecommendedConsultationCard({
               the recommendation it acts on, no horizontal vacuum. */}
           <button
             type="button"
-            className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200 disabled:opacity-50"
+            className="text-sm px-4 py-2 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition duration-200 disabled:opacity-50"
             onClick={onConsult}
             disabled={disabled}
+            title="Open consultation with this context"
           >
-            Consult AI →
+            <MessageSquareText size={14} strokeWidth={1.75} aria-hidden="true" />
+            <span>Consult on this</span>
           </button>
         </div>
 

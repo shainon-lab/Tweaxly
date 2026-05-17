@@ -1,6 +1,7 @@
 "use client";
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { MessageSquareText } from "lucide-react";
 import { CONSULT_OPEN_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 
 // Open the floating Consult panel pre-loaded with a question and a
@@ -348,22 +349,26 @@ function SignalCard({
       {/* CTA — purple primary button so it matches the rest of the
           system's primary actions. Pinned to the bottom so cards in a
           row line up. */}
-      <div className="mt-auto pt-3">
+      <div className="mt-auto pt-3 flex justify-end">
         <button
           type="button"
-          className="btn-primary text-xs px-3 py-1.5 rounded-md inline-flex items-center gap-1.5"
-          title="Consult the AI advisor about this signal — without leaving this page"
+          className="text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition duration-200"
+          title="Open consultation with this context"
           onClick={() => openConsult({
             prompt: consultQuestion,
             // Title surfaces the category so the panel header reads
             // 'Signal · Vendor cost spike' instead of the default
-            // 'Business Signals · Active alerts and observations'.
+            // 'Signals · Active alerts and observations'.
             contextTitle: `Signal · ${CATEGORY_LABEL[r.category] ?? r.category}`,
             contextSubtitle: r.observation,
           })}
         >
-          <span>Consult AI</span>
-          <span className="text-[10px]">→</span>
+          <MessageSquareText
+            size={13}
+            strokeWidth={1.75}
+            aria-hidden="true"
+          />
+          <span>Consult on this</span>
         </button>
       </div>
     </div>
