@@ -33,6 +33,9 @@ type Biz = {
   vatEnabled: boolean; vatRate: number;
   logoData: string | null;
   faviconData: string | null;
+  country: string | null;
+  timezone: string | null;
+  industry: string | null;
 };
 type Cat = {
   id: string; name: string; kind: string; isOneTime: boolean;
@@ -139,6 +142,9 @@ export default function SettingsClient({
           fiscalStartMonth: biz.fiscalStartMonth,
           vatEnabled: biz.vatEnabled,
           vatRate: biz.vatRate,
+          country: biz.country,
+          timezone: biz.timezone,
+          industry: biz.industry,
         }),
       });
       if (!res.ok) {
@@ -158,6 +164,9 @@ export default function SettingsClient({
         fiscalStartMonth: updated.fiscalStartMonth ?? b.fiscalStartMonth,
         vatEnabled: !!updated.vatEnabled,
         vatRate: updated.vatRate ?? 0,
+        country: updated.country ?? null,
+        timezone: updated.timezone ?? null,
+        industry: updated.industry ?? null,
       }));
       setBizSaved(true);
       // Clear the success badge after a moment so it doesn't linger.
@@ -393,12 +402,20 @@ export default function SettingsClient({
       {tab === "profile" ? (
         <>
       <div className="card mb-6">
-        <div className="font-medium mb-3">Business Profile</div>
+        <div className="font-medium mb-1">Business Profile</div>
+        <div className="text-xs text-slate-400 mb-4">
+          These settings drive every financial calculation in the platform. Defaults
+          (USD, January fiscal year, no VAT) work for most US-based businesses —
+          change anything that doesn&apos;t fit yours.
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
           <div className="md:col-span-2"><label className="label">Name</label>
             <input className="input" value={biz.name} onChange={(e) => setBiz({ ...biz, name: e.target.value })} />
           </div>
-          <div><label className="label">Currency</label>
+          <div><label className="label">Industry</label>
+            <input className="input" value={biz.industry ?? ""} onChange={(e) => setBiz({ ...biz, industry: e.target.value || null })} placeholder="e.g. SaaS, Retail, Agency" />
+          </div>
+          <div><label className="label">Default currency</label>
             <CurrencyPicker
               value={biz.currency}
               onChange={(code) => setBiz({ ...biz, currency: code })}
@@ -413,13 +430,30 @@ export default function SettingsClient({
               ))}
             </select>
           </div>
+          <div><label className="label">Country</label>
+            <input className="input" value={biz.country ?? ""} onChange={(e) => setBiz({ ...biz, country: e.target.value || null })} placeholder="e.g. United States" />
+          </div>
+          <div><label className="label">Timezone</label>
+            <input className="input" value={biz.timezone ?? ""} onChange={(e) => setBiz({ ...biz, timezone: e.target.value || null })} placeholder="e.g. America/New_York" />
+          </div>
           <div className="flex items-center gap-3 pt-6">
-            <input type="checkbox" checked={biz.vatEnabled} onChange={(e) => setBiz({ ...biz, vatEnabled: e.target.checked })} />
-            <label className="text-sm">Track VAT</label>
+            <input type="checkbox" id="biz-vat" checked={biz.vatEnabled} onChange={(e) => setBiz({ ...biz, vatEnabled: e.target.checked })} />
+            <label htmlFor="biz-vat" className="text-sm">Track VAT</label>
           </div>
-          <div><label className="label">VAT rate %</label>
-            <input className="input" type="number" step="0.1" value={biz.vatRate} onChange={(e) => setBiz({ ...biz, vatRate: Number(e.target.value) })} />
-          </div>
+          {biz.vatEnabled ? (
+            <div><label className="label">VAT rate %</label>
+              <input className="input" type="number" step="0.1" value={biz.vatRate} onChange={(e) => setBiz({ ...biz, vatRate: Number(e.target.value) })} />
+            </div>
+          ) : null}
+          {biz.currency !== business.currency ? (
+            <div className="md:col-span-3">
+              <div className="rounded-md border border-warn/40 bg-warn/10 text-warn text-xs px-3 py-2">
+                <strong>Heads up:</strong> changing the currency from {business.currency} to {biz.currency} won&apos;t
+                convert existing transactions. Historical imports keep their original amounts;
+                only labels change. Review imported data after saving.
+              </div>
+            </div>
+          ) : null}
           <div className="md:col-span-3 flex items-center justify-end gap-3">
             {bizError ? <span className="text-sm text-red-300">{bizError}</span> : null}
             {bizSaved && !bizError ? <span className="text-sm text-good">Saved ✓</span> : null}

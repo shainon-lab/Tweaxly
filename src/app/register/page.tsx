@@ -36,8 +36,12 @@ export default async function RegisterPage({
         ) : null}
         <form action="/api/auth/register" method="post" className="space-y-4">
           <div>
-            <label className="label">Name (optional)</label>
-            <input className="input" name="name" />
+            <label className="label">Business name</label>
+            <input className="input" name="businessName" required autoFocus placeholder="e.g. Acme Co." />
+          </div>
+          <div>
+            <label className="label">Your name</label>
+            <input className="input" name="name" required placeholder="e.g. Sam Founder" />
           </div>
           <div>
             <label className="label">Email</label>
@@ -48,6 +52,9 @@ export default async function RegisterPage({
             <PasswordInput name="password" required minLength={6} />
           </div>
           <button className="btn-primary w-full" type="submit">Create account</button>
+          <p className="text-xs text-slate-500 text-center">
+            You can change currency, fiscal year, and VAT later in Settings.
+          </p>
         </form>
         <div className="mt-4 text-center text-sm text-slate-400">
           Already have an account?{" "}

@@ -44,6 +44,14 @@ export async function PATCH(req: NextRequest) {
   }
   if ("vatEnabled" in b) data.vatEnabled = !!b.vatEnabled;
   if ("vatRate" in b && b.vatRate != null) data.vatRate = Number(b.vatRate);
+  // Optional business profile fields. All strings; null/"" clears.
+  for (const k of ["country", "timezone", "industry"] as const) {
+    if (k in b) {
+      const v = b[k];
+      if (v == null || v === "") data[k] = null;
+      else if (typeof v === "string") data[k] = v.trim();
+    }
+  }
 
   if ("logoData" in b) {
     const v = validateDataUrl(b.logoData, "logo");

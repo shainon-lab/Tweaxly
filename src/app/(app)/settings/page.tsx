@@ -41,6 +41,9 @@ export default async function SettingsPage() {
           vatEnabled: business.vatEnabled, vatRate: business.vatRate ?? 0,
           logoData: business.logoData ?? null,
           faviconData: business.faviconData ?? null,
+          country: business.country ?? null,
+          timezone: business.timezone ?? null,
+          industry: business.industry ?? null,
         }}
         categories={categories.map((c) => ({
           id: c.id, name: c.name, kind: c.kind, isOneTime: c.isOneTime,

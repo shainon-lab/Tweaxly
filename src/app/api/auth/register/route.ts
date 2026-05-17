@@ -1,11 +1,18 @@
 // Register as a POST Route Handler. Mirrors /api/auth/login — see that
 // file for why we don't use a server action for these mutations.
+//
+// Onboarding contract: signup creates User + Business + the owner's
+// account_admin membership in one transaction, using default finance
+// settings (USD, no VAT, January fiscal year). The user lands on
+// /dashboard immediately — no /setup detour. Currency / fiscal year /
+// VAT are configurable later in Settings → Business profile.
 
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/db";
 import { getIronSession } from "iron-session";
 import { sessionOptions, type SessionData } from "@/lib/session";
+import { DEFAULT_CATEGORIES } from "@/lib/categories";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,39 +22,64 @@ export async function POST(req: NextRequest) {
   const email = String(form.get("email") ?? "").toLowerCase().trim();
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim() || null;
+  const businessName = String(form.get("businessName") ?? "").trim();
 
   const errUrl = new URL("/register?err=1", req.url);
   const dupeUrl = new URL("/register?err=exists", req.url);
 
-  if (!email || password.length < 6) {
+  if (!email || password.length < 6 || !businessName) {
     return NextResponse.redirect(errUrl, { status: 303 });
   }
-  // Case-insensitive dupe check. Email is already lowercased above,
-  // but historical rows may have mixed case; findFirst with
-  // mode:'insensitive' covers both. The DB-level @unique on User.email
-  // is the final safety net — bcrypt + create() below would still
-  // throw P2002 on a race, but checking up-front gives a nicer error.
+
+  // Case-insensitive dupe check (User.email @unique is the final safety
+  // net; this just gives a nicer pre-write error message).
   const existing = await prisma.user.findFirst({
     where: { email: { equals: email, mode: "insensitive" } },
   });
   if (existing) {
     return NextResponse.redirect(dupeUrl, { status: 303 });
   }
+
   const passwordHash = await bcrypt.hash(password, 10);
-  // Auto-promote the seeded super-admin email on first signup so the
-  // operator account can immediately reach /admin without a manual
-  // SQL update.
+  // Auto-promote the seeded super-admin email on first signup.
   const SUPER_ADMIN_EMAIL = "shainon@gmail.com";
   const systemRole = email === SUPER_ADMIN_EMAIL ? "super_admin" : "user";
+
   let user;
+  let business;
   try {
-    user = await prisma.user.create({
-      data: { email, passwordHash, name, systemRole },
+    // Single transaction: a half-created account (user without business)
+    // would route through /setup, which the new onboarding is supposed
+    // to skip. Either everything lands or nothing does.
+    const result = await prisma.$transaction(async (tx) => {
+      const u = await tx.user.create({
+        data: { email, passwordHash, name, systemRole },
+      });
+      const b = await tx.business.create({
+        data: {
+          ownerId: u.id,
+          name: businessName,
+          // Defaults per spec:
+          currency: "USD",
+          fiscalStartMonth: 1,
+          vatEnabled: false,
+          vatRate: 0,
+          categories: {
+            create: DEFAULT_CATEGORIES.map((c) => ({
+              name: c.name, kind: c.kind, isOneTime: !!c.isOneTime,
+            })),
+          },
+          memberships: {
+            create: { userId: u.id, role: "account_admin", joinedAt: new Date() },
+          },
+        },
+      });
+      return { u, b };
     });
+    user = result.u;
+    business = result.b;
   } catch (err: unknown) {
-    // P2002 = unique-constraint violation (race with a concurrent
-    // signup using the same email). Treat identically to the up-front
-    // dupe check.
+    // P2002 — race with another concurrent signup on the same email.
     if (
       typeof err === "object" && err !== null &&
       "code" in err && (err as { code?: string }).code === "P2002"
@@ -57,10 +89,12 @@ export async function POST(req: NextRequest) {
     throw err;
   }
 
-  const res = NextResponse.redirect(new URL("/setup", req.url), { status: 303 });
+  // Drop the new user straight into the product — no /setup detour.
+  const res = NextResponse.redirect(new URL("/dashboard", req.url), { status: 303 });
   const session = await getIronSession<SessionData>(req, res, sessionOptions);
   session.userId = user.id;
   session.email = user.email;
+  session.currentBusinessId = business.id;
   await session.save();
   return res;
 }
