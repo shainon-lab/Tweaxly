@@ -1,6 +1,7 @@
-// Business Signals → Signals sub-tab. Random 5 from the ~15-signal advisor
-// pool, re-rolled on every visit/refresh. See /business-signals/alerts for
-// the threshold-rule firing list.
+// Business Signals → Signals sub-tab. Deterministic top-N per severity
+// from the ~15-signal advisor pool, ranked by monthly $ impact. Signals
+// change only when the underlying data / lifecycle change, not on every
+// refresh. See /business-signals/alerts for the threshold-rule firing list.
 
 import PageHeader from "@/components/PageHeader";
 import PushRecommendations from "@/components/PushRecommendations";
@@ -66,7 +67,7 @@ export default async function BusinessSignalsPage() {
     <>
       <PageHeader
         title="Signals"
-        subtitle="The AI advisor's rotating observations — refresh the page to roll a new random set."
+        subtitle="A command-center view of what's changing in your business — click any card for the full story."
       />
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}

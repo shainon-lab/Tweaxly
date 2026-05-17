@@ -1,12 +1,11 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquareText } from "lucide-react";
+import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
 import { CONSULT_OPEN_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 
 // Open the floating Consult panel pre-loaded with a question and a
-// per-signal title/subtitle. Keeps the user on /business-signals so
-// they can keep seeing the signal while consulting about it.
+// per-signal title/subtitle.
 function openConsult(detail: ConsultOpenDetail) {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new CustomEvent(CONSULT_OPEN_EVENT, { detail }));
@@ -14,16 +13,10 @@ function openConsult(detail: ConsultOpenDetail) {
 
 export type PushRec = {
   id: string;
-  // Stable identifier for the underlying signal. Survives across
-  // refreshes / re-rolls so lifecycle state in localStorage can be
-  // keyed off of it. Optional for backward compatibility; falls
-  // back to `id` when missing.
+  // Stable identifier for the underlying signal. Used as the lifecycle
+  // key in localStorage. Optional for backward compat; falls back to id.
   signalKey?: string;
   level: string;
-  // Three-part executive signal structure:
-  //   observation     — WHAT happened (headline)
-  //   interpretation  — WHY it matters (AI analysis)
-  //   recommendation  — WHAT to do next (suggested action)
   observation: string;
   interpretation: string;
   recommendation: string;
@@ -33,36 +26,134 @@ export type PushRec = {
   createdAt: string | Date;
 };
 
-const LEVEL_PILL: Record<string, string> = {
-  bad: "pill-bad",
-  warn: "pill-warn",
-  info: "pill-accent",
-  good: "pill-good",
+// ─────────────────────────────────────────────────────────────────────────────
+// Badge mapping — the five user-facing chips on every card. Driven by
+// severity, with a category nudge for the Opportunity lane.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type Badge = "Critical" | "Watch" | "Opportunity" | "Info" | "Good";
+
+function badgeFor(r: PushRec): Badge {
+  if (r.level === "bad")  return "Critical";
+  if (r.level === "warn") return "Watch";
+  if (r.level === "good") return r.category === "growth" ? "Opportunity" : "Good";
+  return "Info";
+}
+
+const BADGE_PILL: Record<Badge, string> = {
+  Critical:    "pill-bad",
+  Watch:       "pill-warn",
+  Opportunity: "pill-accent",
+  Info:        "pill",
+  Good:        "pill-good",
 };
 
 const CATEGORY_LABEL: Record<string, string> = {
   marketing: "Marketing",
-  payroll: "Payroll",
-  vendor: "Vendor",
-  growth: "Growth",
-  accuracy: "Accuracy",
-  cashflow: "Cash flow",
-  other: "Other",
+  payroll:   "Payroll",
+  vendor:    "Vendor",
+  growth:    "Growth",
+  accuracy:  "Accuracy",
+  cashflow:  "Cash flow",
+  other:     "Other",
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Signal lifecycle — client-side change detection so the Signals page
-// stops feeling like the same dashboard cards every visit and starts
-// reading as "what changed since last time you looked".
-//
-// State is persisted in localStorage keyed by signalKey. Each entry
-// records: when the signal first appeared (firstSeenAt), when it was
-// last seen (lastSeenAt), and the severity it had then (lastLevel).
-// On every render we compute the lifecycle by comparing the current
-// snapshot to the stored one.
+// Compact display — 2-4 word title + one key metric per signal, so the
+// grid reads as a command center instead of a feed. Pattern-matches
+// signalKey prefix; the metric is pulled from the existing observation
+// string so the source of truth stays in advisor.ts.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Lifecycle = "new" | "ongoing" | "escalating" | "improved";
+type CompactDisplay = {
+  title: string;
+  metric?: string;
+  direction?: "up" | "down" | "flat";
+};
+
+function firstPct(s: string): string | undefined {
+  const m = s.match(/-?\d+(?:\.\d+)?%/);
+  return m ? m[0] : undefined;
+}
+
+function firstMoney(s: string): string | undefined {
+  const m = s.match(/[$£€]\s?-?\d[\d,]*(?:\.\d+)?[KMB]?/);
+  return m ? m[0] : undefined;
+}
+
+function compactDisplay(r: PushRec): CompactDisplay {
+  const key = (r.signalKey ?? "").split(":")[0];
+  const tail = (r.signalKey ?? "").split(":")[1];
+  const obs = r.observation;
+  switch (key) {
+    case "marketing_intensity_high":
+      return { title: "Marketing Heavy", metric: firstPct(obs), direction: "up" };
+    case "marketing_cut_held":
+      return { title: "Marketing Cut", metric: "Held", direction: "flat" };
+    case "vendor_spike":
+      return { title: tail ?? "Vendor Spike", metric: firstPct(obs), direction: "up" };
+    case "forecast_negative_next_month":
+      return { title: "Cash Risk", metric: firstMoney(obs), direction: "down" };
+    case "payroll_heavy":
+      return { title: "Payroll Heavy", metric: firstPct(obs) };
+    case "uncategorized_high": {
+      const m = obs.match(/^(\d+)/);
+      return { title: "Uncategorized", metric: m ? `${m[1]} txns` : undefined };
+    }
+    case "growth_headroom":
+      return { title: "Growth Headroom" };
+    case "vendor_concentration":
+      return { title: tail ?? "Vendor Share", metric: firstPct(obs) };
+    case "revenue_mom_swing": {
+      const pct = firstPct(obs);
+      const isDown = obs.toLowerCase().includes("down") || (pct?.startsWith("-") ?? false);
+      return {
+        title: isDown ? "Revenue Down" : "Revenue Up",
+        metric: pct,
+        direction: isDown ? "down" : "up",
+      };
+    }
+    case "net_margin_observation":
+      return { title: "Net Margin", metric: firstPct(obs) };
+    case "top_expense_category":
+      return { title: tail ?? "Top Expense", metric: firstMoney(obs) };
+    case "expense_mom_jump":
+      return { title: "Expense Jump", metric: firstPct(obs), direction: "up" };
+    case "trailing_3_net":
+      return { title: "3-mo Net", metric: firstMoney(obs) };
+    case "monthly_revenue_snapshot":
+      return { title: "Revenue", metric: firstMoney(obs) };
+    case "monthly_expense_snapshot":
+      return { title: "Expenses", metric: firstMoney(obs) };
+    case "avg_revenue_trail3":
+      return { title: "Avg Revenue", metric: firstMoney(obs) };
+    case "recurring_expense_base":
+      return { title: "Recurring Base", metric: firstMoney(obs) };
+    case "ytd_snapshot":
+      return { title: "YTD Net", metric: firstMoney(obs) };
+    case "headcount_snapshot": {
+      const m = obs.match(/^(\d+)/);
+      return { title: "Headcount", metric: m ? m[1] : undefined };
+    }
+    case "upload_freshness":
+      return { title: "Data Freshness", metric: "Stale" };
+    case "empty_fallback":
+      return { title: "All Clear" };
+    default:
+      return {
+        title: CATEGORY_LABEL[r.category] ?? "Signal",
+        metric: firstMoney(obs) ?? firstPct(obs),
+      };
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Lifecycle — 'new' / 'ongoing' / 'escalating' / 'improving' / 'resolved'.
+// Tracks every signal's first-seen + last-seen severity in localStorage so
+// the same dashboard reads as 'what changed since you last looked'.
+// ─────────────────────────────────────────────────────────────────────────────
+
+type Lifecycle = "new" | "ongoing" | "escalating" | "improving" | "resolved";
 
 type LifecycleEntry = {
   firstSeenAt: number;
@@ -73,10 +164,11 @@ type LifecycleEntry = {
 type LifecycleStore = Record<string, LifecycleEntry>;
 
 const LIFECYCLE_LS_KEY = "tweaxly.signal.lifecycle.v1";
-const NEW_WINDOW_MS = 24 * 60 * 60 * 1000; // 24h
+const RESOLVED_LS_KEY  = "tweaxly.signal.resolved.v1";
+const NEW_WINDOW_MS = 24 * 60 * 60 * 1000;
 
 function severityScore(level: string): number {
-  if (level === "bad") return 3;
+  if (level === "bad")  return 3;
   if (level === "warn") return 2;
   if (level === "info") return 1;
   if (level === "good") return 0;
@@ -99,23 +191,43 @@ function writeLifecycleStore(s: LifecycleStore) {
   try {
     window.localStorage.setItem(LIFECYCLE_LS_KEY, JSON.stringify(s));
   } catch {
-    // localStorage may be full or disabled — ignore silently.
+    /* full or disabled — ignore */
   }
 }
 
-// Lifecycle pill copy + tone. Kept short so it nests inside cards
-// and inline rows without competing with the existing severity pills.
+function readResolved(): Set<string> {
+  if (typeof window === "undefined") return new Set();
+  try {
+    const raw = window.localStorage.getItem(RESOLVED_LS_KEY);
+    if (!raw) return new Set();
+    return new Set(JSON.parse(raw) as string[]);
+  } catch {
+    return new Set();
+  }
+}
+
+function writeResolved(keys: Set<string>) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(RESOLVED_LS_KEY, JSON.stringify([...keys]));
+  } catch {
+    /* ignore */
+  }
+}
+
 const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
-  new:         "New",
-  escalating:  "Escalating",
-  improved:    "Improved",
-  ongoing:     "Ongoing",
+  new:        "New",
+  escalating: "Escalating",
+  improving:  "Improving",
+  ongoing:    "Ongoing",
+  resolved:   "Resolved",
 };
-const LIFECYCLE_PILL: Record<Lifecycle, string> = {
-  new:         "pill-accent",
-  escalating:  "pill-bad",
-  improved:    "pill-good",
-  ongoing:     "pill",
+const LIFECYCLE_TONE: Record<Lifecycle, string> = {
+  new:        "border-accent/40 text-accent",
+  escalating: "border-bad/40 text-bad",
+  improving:  "border-good/40 text-good",
+  ongoing:    "border-line text-slate-400",
+  resolved:   "border-line text-slate-500",
 };
 
 function fmtMoney(value: number, currency: string) {
@@ -143,6 +255,10 @@ function relTime(d: string | Date) {
   return `${days}d ago`;
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Main component
+// ─────────────────────────────────────────────────────────────────────────────
+
 export default function PushRecommendations({
   initial,
   currency,
@@ -150,50 +266,47 @@ export default function PushRecommendations({
   initial: PushRec[];
   currency: string;
 }) {
-  // The dashboard re-rolls the visible 5 signals on every server render,
-  // so refresh just re-runs the server transition. Each render samples a
-  // fresh random 5 from the ~15-signal pool. `initial` updates between
-  // renders because pushRecs is recomputed in the page on every visit.
   const router = useRouter();
   const [recs, setRecs] = useState<PushRec[]>(initial);
   const [pending, startTransition] = useTransition();
   const [refreshing, setRefreshing] = useState(false);
   const [lifecycles, setLifecycles] = useState<Record<string, Lifecycle>>({});
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [resolved, setResolvedState] = useState<Set<string>>(new Set());
   const prevInitialRef = useRef(initial);
 
-  // Sync to server-provided initial whenever the parent re-renders with a
-  // new sample (e.g. after router.refresh() returns).
   if (initial !== prevInitialRef.current) {
     prevInitialRef.current = initial;
     setRecs(initial);
   }
 
-  // Compute lifecycle (new / ongoing / escalating / improved) for
-  // each signal by comparing the current snapshot against the
-  // last-seen state stored in localStorage. Then persist the
-  // updated state so the next visit can compare against THIS one.
+  // Hydrate resolved set from localStorage on mount.
+  useEffect(() => {
+    setResolvedState(readResolved());
+  }, []);
+
+  // Compute lifecycle (new / ongoing / escalating / improving / resolved)
+  // for each signal by comparing the current snapshot to the last-seen
+  // state. Persist the snapshot so next visit can diff against this one.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const store = readLifecycleStore();
     const next: Record<string, Lifecycle> = {};
     const now = Date.now();
     for (const r of recs) {
-      // Use signalKey (stable across regenerations) when available,
-      // falling back to id for safety.
       const key = r.signalKey ?? r.id;
       const stored = store[key];
       let state: Lifecycle;
-      if (!stored) {
+      if (resolved.has(key)) {
+        state = "resolved";
+      } else if (!stored) {
         state = "new";
       } else if (now - stored.firstSeenAt < NEW_WINDOW_MS) {
-        // Saw it for the first time today — still "new" to the user
-        // even if we already wrote a stored entry earlier in the same
-        // session.
         state = "new";
       } else if (severityScore(r.level) > severityScore(stored.lastLevel)) {
         state = "escalating";
       } else if (severityScore(r.level) < severityScore(stored.lastLevel)) {
-        state = "improved";
+        state = "improving";
       } else {
         state = "ongoing";
       }
@@ -206,33 +319,45 @@ export default function PushRecommendations({
     }
     writeLifecycleStore(store);
     setLifecycles(next);
-  }, [recs]);
+  }, [recs, resolved]);
 
   function refresh() {
     setRefreshing(true);
     startTransition(() => {
       router.refresh();
-      // The new render will swap `initial` underneath us; clear the spinner
-      // shortly after to cover the transition.
       setTimeout(() => setRefreshing(false), 600);
     });
   }
 
-  // Close = local-only hide. The row is still active server-side, so the
-  // next page reload brings it back. Matches the user-intended behavior:
-  // "if it's close, whenever you refresh it may repeat again".
-  function close(id: string) {
-    setRecs((prev) => prev.filter((r) => r.id !== id));
+  function resolveSignal(r: PushRec) {
+    const key = r.signalKey ?? r.id;
+    const next = new Set(resolved);
+    next.add(key);
+    setResolvedState(next);
+    writeResolved(next);
+    setExpandedId(null);
   }
 
-  const newest = recs[0];
+  function clearResolved() {
+    setResolvedState(new Set());
+    writeResolved(new Set());
+  }
+
+  function toggleExpand(id: string) {
+    setExpandedId((cur) => (cur === id ? null : id));
+  }
+
+  // Visible pool = everything not user-resolved.
+  const visibleRecs = recs.filter((r) => !resolved.has(r.signalKey ?? r.id));
+
+  const newest = visibleRecs[0];
   const stale =
     newest &&
     Date.now() - new Date(newest.createdAt).getTime() > 1000 * 60 * 60 * 24;
 
   return (
     <div className="card mb-0 flex flex-col min-h-[280px]">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <span className="text-base font-medium">Signals</span>
           <span className="pill-accent">AI advisor</span>
@@ -246,115 +371,136 @@ export default function PushRecommendations({
           ) : null}
         </div>
         <div className="flex items-center gap-2">
+          {resolved.size > 0 ? (
+            <button
+              type="button"
+              className="text-xs text-slate-500 hover:text-slate-200 transition"
+              onClick={clearResolved}
+              title="Bring back signals you've marked resolved"
+            >
+              Restore {resolved.size} resolved
+            </button>
+          ) : null}
           <button
             type="button"
             className="inline-flex items-center justify-center w-9 h-9 rounded-md border border-line text-slate-300 hover:text-white hover:bg-ink-700 transition disabled:opacity-50"
             disabled={refreshing || pending}
             onClick={refresh}
-            title={recs.length ? "Refresh recommendations" : "Generate recommendations"}
-            aria-label={recs.length ? "Refresh recommendations" : "Generate recommendations"}
+            title={recs.length ? "Refresh signals" : "Generate signals"}
+            aria-label={recs.length ? "Refresh signals" : "Generate signals"}
           >
             <RefreshIcon spinning={refreshing} />
           </button>
         </div>
       </div>
 
-      {recs.length === 0 ? (
+      {visibleRecs.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-4">
           <div className="text-sm font-medium text-slate-200 mb-1">No signals to show</div>
           <div className="text-xs text-slate-400 max-w-xs">
-            Once there&apos;s a few months of data, the advisor surfaces signals about revenue, expenses, vendor spikes, and cash-flow risks here automatically.
+            {resolved.size > 0
+              ? "Everything's marked resolved. Use the Restore link above to bring them back."
+              : "Once there's a few months of data, the advisor surfaces revenue, expense, vendor, and cash-flow signals here automatically."}
           </div>
         </div>
       ) : (
-        <SignalGroups recs={recs} currency={currency} onClose={close} lifecycles={lifecycles} />
+        <SignalGroups
+          recs={visibleRecs}
+          currency={currency}
+          lifecycles={lifecycles}
+          expandedId={expandedId}
+          onToggleExpand={toggleExpand}
+          onResolve={resolveSignal}
+        />
       )}
     </div>
   );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Signal card grid
+// Three-layer signal layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Four-layer signal layout, sorted by what the user actually
-// needs to do:
-//
-//   1. PRIORITY SIGNALS — bad + warn merged. Full-size cards. Max 4
-//      visible. This is where decisions happen.
-//   2. DYNAMIC CHANGES — what's NEW or IMPROVED since you last
-//      looked. Compact rows so the page reads as 'what changed' not
-//      'same alerts again'. Excludes anything already in Priority.
-//   3. QUICK INSIGHTS — info signals. Compact stacked rows (not
-//      cards). Lower visual weight; expand-collapse for any past 3.
-//   4. POSITIVE SIGNALS — good signals, consolidated into a single
-//      bullet card titled '<N> positive business signals' so good
-//      news exists without crowding the page.
-//
-// Each card / row also carries a lifecycle pill (New / Escalating /
-// Improved / Ongoing) so the same signal evolves visually instead
-// of looking identical between visits.
 function SignalGroups({
   recs,
   currency,
-  onClose,
   lifecycles,
+  expandedId,
+  onToggleExpand,
+  onResolve,
 }: {
   recs: PushRec[];
   currency: string;
-  onClose: (id: string) => void;
   lifecycles: Record<string, Lifecycle>;
+  expandedId: string | null;
+  onToggleExpand: (id: string) => void;
+  onResolve: (r: PushRec) => void;
 }) {
   const critical  = recs.filter((r) => r.level === "bad");
   const attention = recs.filter((r) => r.level === "warn");
   const positive  = recs.filter((r) => r.level === "good");
-  const insight   = recs.filter((r) => r.level === "info");
 
-  // Priority pool — bad always first, then warn, ranked by impact
-  // within tone. Cap visible at 4 so the section reads decisive
-  // rather than overwhelming.
+  // Priority — bad first, then warn, ranked by impact. Capped at 4.
   const priority = [...critical, ...attention].slice(0, 4);
   const priorityIds = new Set(priority.map((r) => r.id));
 
-  // Dynamic Changes — anything tagged 'new', 'escalating', or
-  // 'improved' that isn't already shown in Priority. Escalating warn/
-  // bad signals not in the priority cap still surface here so users
-  // see worsening trends; new info-level signals become 'what's new
-  // since last time'. Improved signals tell the recovery story.
-  const dynamic = recs.filter((r) => {
-    if (priorityIds.has(r.id)) return false;
-    const lc = lifecycles[r.id];
-    return lc === "new" || lc === "escalating" || lc === "improved";
-  });
-  const dynamicIds = new Set(dynamic.map((r) => r.id));
-
-  // Quick Insights — info-level signals not already surfaced as a
-  // change. Ongoing/unknown lifecycle only, so the section reads as
-  // 'steady context' rather than duplicating Dynamic Changes.
-  const quickInsights = insight.filter((r) => !dynamicIds.has(r.id));
+  // Dynamic Changes — everything not in priority and not positive.
+  // The lifecycle pill carries the "what changed" signal; the card
+  // itself stays visible so users still have steady context for
+  // ongoing-but-not-priority observations.
+  const dynamic = recs.filter(
+    (r) => !priorityIds.has(r.id) && r.level !== "good"
+  );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {priority.length > 0 ? (
         <PrioritySection
           items={priority}
           currency={currency}
-          onClose={onClose}
           lifecycles={lifecycles}
+          expandedId={expandedId}
+          onToggleExpand={onToggleExpand}
+          onResolve={onResolve}
         />
       ) : null}
 
       {dynamic.length > 0 ? (
-        <DynamicChanges items={dynamic} lifecycles={lifecycles} />
-      ) : null}
-
-      {quickInsights.length > 0 ? (
-        <QuickInsights items={quickInsights} currency={currency} lifecycles={lifecycles} />
+        <DynamicSection
+          items={dynamic}
+          currency={currency}
+          lifecycles={lifecycles}
+          expandedId={expandedId}
+          onToggleExpand={onToggleExpand}
+          onResolve={onResolve}
+        />
       ) : null}
 
       {positive.length > 0 ? (
-        <PositiveSummary items={positive} currency={currency} />
+        <PositiveSummary items={positive} />
       ) : null}
+    </div>
+  );
+}
+
+function SectionHeader({
+  label,
+  hint,
+  tone,
+}: {
+  label: string;
+  hint: string;
+  tone: "bad" | "accent" | "good" | "slate";
+}) {
+  const toneClass =
+    tone === "bad"    ? "text-bad" :
+    tone === "accent" ? "text-accent" :
+    tone === "good"   ? "text-good" :
+                        "text-slate-200";
+  return (
+    <div className="flex items-baseline gap-2 flex-wrap mb-3">
+      <h3 className={`text-sm md:text-base font-semibold ${toneClass}`}>{label}</h3>
+      <span className="text-xs text-slate-500">· {hint}</span>
     </div>
   );
 }
@@ -362,32 +508,37 @@ function SignalGroups({
 function PrioritySection({
   items,
   currency,
-  onClose,
   lifecycles,
+  expandedId,
+  onToggleExpand,
+  onResolve,
 }: {
   items: PushRec[];
   currency: string;
-  onClose: (id: string) => void;
   lifecycles: Record<string, Lifecycle>;
+  expandedId: string | null;
+  onToggleExpand: (id: string) => void;
+  onResolve: (r: PushRec) => void;
 }) {
+  const cols = items.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3";
   return (
     <section>
-      <div className="flex items-baseline gap-2 flex-wrap mb-3">
-        <h3 className="text-sm md:text-base font-semibold text-bad">
-          Priority Signals
-        </h3>
-        <span className="text-xs text-slate-500">
-          · Requires your attention right now.
-        </span>
-      </div>
-      <div className={`grid gap-3 ${items.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"}`}>
+      <SectionHeader
+        label="Priority Signals"
+        hint="Requires your attention right now."
+        tone="bad"
+      />
+      <div className={`grid gap-3 ${cols}`}>
         {items.map((r) => (
-          <SignalCard
+          <CompactCard
             key={r.id}
             rec={r}
             currency={currency}
-            onClose={onClose}
             lifecycle={lifecycles[r.id]}
+            expanded={expandedId === r.id}
+            onToggleExpand={() => onToggleExpand(r.id)}
+            onResolve={() => onResolve(r)}
+            size="lg"
           />
         ))}
       </div>
@@ -395,296 +546,296 @@ function PrioritySection({
   );
 }
 
-// Dynamic Changes — surfaces lifecycle motion (new appearance,
-// escalation, recovery) for any signal not already in the Priority
-// cap. Compact one-line rows so the page reads as 'what changed
-// since last visit' rather than re-stating the same cards.
-function DynamicChanges({
-  items,
-  lifecycles,
-}: {
-  items: PushRec[];
-  lifecycles: Record<string, Lifecycle>;
-}) {
-  // Order: escalating first (negative motion), then new, then
-  // improved. Inside each bucket keep original ranking (impact desc).
-  const escalating = items.filter((r) => lifecycles[r.id] === "escalating");
-  const fresh      = items.filter((r) => lifecycles[r.id] === "new");
-  const improved   = items.filter((r) => lifecycles[r.id] === "improved");
-  const ordered = [...escalating, ...fresh, ...improved];
-  return (
-    <section>
-      <div className="flex items-baseline gap-2 flex-wrap mb-3">
-        <h3 className="text-sm md:text-base font-semibold text-accent">
-          Dynamic Changes
-        </h3>
-        <span className="text-xs text-slate-500">
-          · What&apos;s shifted since you last looked.
-        </span>
-      </div>
-      <ul className="divide-y divide-line/40 border-y border-line/40">
-        {ordered.map((r) => {
-          const lc = lifecycles[r.id];
-          const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this change — what does it mean and what should I do?`;
-          return (
-            <li key={r.id} className="py-2.5 flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap mb-0.5">
-                  {lc ? (
-                    <span className={`${LIFECYCLE_PILL[lc]} text-[10px]`}>
-                      {LIFECYCLE_LABEL[lc]}
-                    </span>
-                  ) : null}
-                  <span className="text-[10px] uppercase tracking-wide text-slate-500">
-                    {CATEGORY_LABEL[r.category] ?? r.category}
-                  </span>
-                </div>
-                <div className="text-sm font-medium text-slate-100 leading-tight">
-                  {r.observation}
-                </div>
-                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
-                  {r.interpretation}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => openConsult({
-                  prompt: consultQuestion,
-                  contextTitle: `Change · ${CATEGORY_LABEL[r.category] ?? r.category}`,
-                  contextSubtitle: r.observation,
-                })}
-                className="shrink-0 text-[11px] px-2.5 py-1 rounded-md border border-line text-slate-400 hover:text-accent hover:border-accent/40 transition duration-200"
-                title="Open consultation with this context"
-              >
-                Consult
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-    </section>
-  );
-}
-
-// Compact rows for info-level signals. Each row is single-line
-// (title + brief observation) with a small Consult AI affordance on
-// hover. Hides past the first three behind a 'Show all' toggle so
-// the section stays lightweight.
-function QuickInsights({
+function DynamicSection({
   items,
   currency,
   lifecycles,
+  expandedId,
+  onToggleExpand,
+  onResolve,
 }: {
   items: PushRec[];
   currency: string;
   lifecycles: Record<string, Lifecycle>;
+  expandedId: string | null;
+  onToggleExpand: (id: string) => void;
+  onResolve: (r: PushRec) => void;
 }) {
-  void currency;
-  const [showAll, setShowAll] = useState(false);
-  const visible = showAll ? items : items.slice(0, 3);
-  const hidden = Math.max(0, items.length - 3);
+  // Order: escalating → new → improving → ongoing. Inside each
+  // bucket, original (impact) order is preserved.
+  const order: Record<Lifecycle, number> = {
+    escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
+  };
+  const sorted = [...items].sort((a, b) => {
+    const la = lifecycles[a.id] ?? "ongoing";
+    const lb = lifecycles[b.id] ?? "ongoing";
+    return order[la] - order[lb];
+  });
   return (
     <section>
-      <div className="flex items-baseline gap-2 flex-wrap mb-3">
-        <h3 className="text-sm md:text-base font-semibold text-slate-200">
-          Quick Insights
-        </h3>
-        <span className="text-xs text-slate-500">
-          · Observations worth knowing — not urgent.
-        </span>
+      <SectionHeader
+        label="Dynamic Changes"
+        hint="What's shifted since you last looked."
+        tone="accent"
+      />
+      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {sorted.map((r) => (
+          <CompactCard
+            key={r.id}
+            rec={r}
+            currency={currency}
+            lifecycle={lifecycles[r.id]}
+            expanded={expandedId === r.id}
+            onToggleExpand={() => onToggleExpand(r.id)}
+            onResolve={() => onResolve(r)}
+            size="sm"
+          />
+        ))}
       </div>
-      <ul className="divide-y divide-line/40 border-y border-line/40">
-        {visible.map((r) => {
-          const lc = lifecycles[r.id];
-          const consultQuestion = `${r.observation} ${r.interpretation} What should I know and what should I do about it?`;
-          return (
-            <li key={r.id} className="py-2.5 flex items-start justify-between gap-3">
-              <div className="min-w-0 flex-1">
-                {lc && lc !== "ongoing" ? (
-                  <span className={`${LIFECYCLE_PILL[lc]} text-[10px] mr-2 align-middle`}>
-                    {LIFECYCLE_LABEL[lc]}
-                  </span>
-                ) : null}
-                <span className="text-sm font-medium text-slate-100 leading-tight align-middle">
-                  {r.observation}
-                </span>
-                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
-                  {r.interpretation}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  if (typeof window === "undefined") return;
-                  window.dispatchEvent(new CustomEvent(CONSULT_OPEN_EVENT, {
-                    detail: {
-                      prompt: consultQuestion,
-                      contextTitle: `Insight · ${CATEGORY_LABEL[r.category] ?? r.category}`,
-                      contextSubtitle: r.observation,
-                    },
-                  }));
-                }}
-                className="shrink-0 text-[11px] px-2.5 py-1 rounded-md border border-line text-slate-400 hover:text-accent hover:border-accent/40 transition duration-200"
-                title="Open consultation with this context"
-              >
-                Consult
-              </button>
-            </li>
-          );
-        })}
-      </ul>
-      {hidden > 0 ? (
+    </section>
+  );
+}
+
+// Compressed by default. Single row with the count; opens into a
+// 2-column list of titles + metrics on demand. Stays out of the way.
+function PositiveSummary({ items }: { items: PushRec[] }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <section>
+      <div className="rounded-xl border border-good/30 bg-good/5">
         <button
           type="button"
-          className="mt-3 text-xs text-slate-500 hover:text-accent transition duration-200"
-          onClick={() => setShowAll((v) => !v)}
+          onClick={() => setOpen((v) => !v)}
+          className="w-full flex items-center justify-between gap-3 px-4 py-3 text-left"
+          aria-expanded={open}
         >
-          {showAll ? "Show fewer" : `Show ${hidden} more →`}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-good text-xs" aria-hidden="true">✓</span>
+            <span className="text-sm font-semibold text-good">
+              {items.length} positive signal{items.length === 1 ? "" : "s"}
+            </span>
+            <span className="text-xs text-slate-500">— What&apos;s working.</span>
+          </div>
+          <ChevronRight
+            size={14}
+            strokeWidth={1.75}
+            className={`text-slate-500 transition-transform ${open ? "rotate-90" : ""}`}
+            aria-hidden="true"
+          />
         </button>
-      ) : null}
-    </section>
-  );
-}
-
-// Consolidated 'good news' card — collapses every positive signal
-// into one bullet card so the page doesn't read as overly
-// celebratory. Each bullet is the observation, slightly muted, with
-// the category as a tiny lead label.
-function PositiveSummary({
-  items,
-  currency,
-}: {
-  items: PushRec[];
-  currency: string;
-}) {
-  void currency;
-  return (
-    <section>
-      <div className="flex items-baseline gap-2 flex-wrap mb-3">
-        <h3 className="text-sm md:text-base font-semibold text-good">
-          {items.length} positive business signal{items.length === 1 ? "" : "s"}
-        </h3>
-        <span className="text-xs text-slate-500">
-          · What&apos;s working — lean into these.
-        </span>
-      </div>
-      <div className="rounded-xl border border-good/30 bg-good/5 p-4">
-        <ul className="space-y-2">
-          {items.map((r) => (
-            <li key={r.id} className="flex items-start gap-2.5">
-              <span className="text-good text-xs mt-1 shrink-0" aria-hidden="true">✓</span>
-              <div className="min-w-0">
-                <span className="text-xs uppercase tracking-wide text-slate-500 mr-1.5">
-                  {CATEGORY_LABEL[r.category] ?? r.category}
-                </span>
-                <span className="text-sm text-slate-200">{r.observation}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+        {open ? (
+          <ul className="px-4 pb-3 grid gap-1.5 sm:grid-cols-2">
+            {items.map((r) => {
+              const d = compactDisplay(r);
+              return (
+                <li key={r.id} className="flex items-start gap-2 text-sm">
+                  <span className="text-good text-xs mt-1 shrink-0" aria-hidden="true">✓</span>
+                  <span className="text-slate-200">
+                    <span className="text-[10px] uppercase tracking-wide text-slate-500 mr-1.5">
+                      {CATEGORY_LABEL[r.category] ?? r.category}
+                    </span>
+                    {d.title}
+                    {d.metric ? <span className="text-slate-400"> — {d.metric}</span> : null}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
       </div>
     </section>
   );
 }
 
-function SignalCard({
-  rec: r,
+// ─────────────────────────────────────────────────────────────────────────────
+// Compact card — collapses to badge + title + metric; expands inline
+// (col-span-full in its parent grid) into structured detail sections.
+// ─────────────────────────────────────────────────────────────────────────────
+
+function CompactCard({
+  rec,
   currency,
-  onClose,
   lifecycle,
+  expanded,
+  onToggleExpand,
+  onResolve,
+  size,
 }: {
   rec: PushRec;
   currency: string;
-  onClose: (id: string) => void;
   lifecycle?: Lifecycle;
+  expanded: boolean;
+  onToggleExpand: () => void;
+  onResolve: () => void;
+  size: "lg" | "sm";
 }) {
-  const border =
-    r.level === "bad"  ? "border-bad/40"     :
-    r.level === "warn" ? "border-warn/40"    :
-    r.level === "good" ? "border-good/40"    :
-                         "border-line";
-  const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+  const display = compactDisplay(rec);
+  const badge = badgeFor(rec);
+
+  // Visual hierarchy by severity. Priority cards get a thicker left
+  // border stripe and a stronger background tint.
+  const tone =
+    rec.level === "bad"  ? { border: "border-bad/40",  stripe: "border-l-bad",  bg: "bg-bad/5"  } :
+    rec.level === "warn" ? { border: "border-warn/40", stripe: "border-l-warn", bg: "bg-warn/5" } :
+    rec.level === "good" ? { border: "border-good/30", stripe: "border-l-good", bg: "bg-good/5" } :
+                           { border: "border-line",    stripe: "border-l-line", bg: "bg-ink-900/40" };
+  const stripeClass = size === "lg" ? `border-l-4 ${tone.stripe}` : "";
+  const colSpan = expanded ? "col-span-full" : "";
+  const padding = size === "lg" ? "p-4" : "p-3";
+
+  // Direction arrow with sentiment-aware colour. An "up" arrow is bad
+  // for expense/spike signals (red) and good for revenue/margin/growth.
+  const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
+  const arrowTone =
+    display.direction === "up"
+      ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
+      : display.direction === "down"
+      ? (rec.level === "good" ? "text-bad" : "text-bad")
+      : "";
+
   return (
-    <div
-      className={`relative rounded-xl border ${border} bg-ink-900/40 p-4 flex flex-col h-full`}
-    >
-      <button
-        className="absolute top-2 right-2 text-xs text-slate-500 hover:text-slate-200"
-        onClick={() => onClose(r.id)}
-        title="Dismiss — may reappear on refresh"
-        aria-label="Dismiss"
-      >
-        ✕
-      </button>
-
-      {/* Pill row */}
-      <div className="flex items-center gap-2 flex-wrap mb-2 pr-6">
-        <span className={LEVEL_PILL[r.level] ?? "pill"}>{r.level}</span>
-        <span className="pill text-[10px]">{CATEGORY_LABEL[r.category] ?? r.category}</span>
-        {lifecycle && lifecycle !== "ongoing" ? (
-          <span className={`${LIFECYCLE_PILL[lifecycle]} text-[10px]`}>
-            {LIFECYCLE_LABEL[lifecycle]}
-          </span>
-        ) : null}
-        {r.impact > 0 ? (
-          <span className="pill-good text-[10px]">
-            ≈ {fmtMoney(r.impact, currency)}/mo
-          </span>
-        ) : null}
-      </div>
-
-      {/* 1. What happened — the observation */}
-      <div>
-        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
-          What Happened
-        </div>
-        <div className="font-semibold text-sm text-slate-100 leading-snug">
-          {r.observation}
-        </div>
-      </div>
-
-      {/* 2. Why it matters — the interpretation */}
-      <div className="mt-3">
-        <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-0.5">
-          Why It Matters
-        </div>
-        <div className="text-xs text-slate-300 leading-relaxed">
-          {r.interpretation}
-        </div>
-      </div>
-
-      {/* 3. Recommended action — the suggested next step */}
-      <div className="mt-3">
-        <div className="text-[10px] uppercase tracking-wide text-accent mb-0.5">
-          Recommended Action
-        </div>
-        <div className="text-xs text-slate-200 leading-relaxed">
-          {r.recommendation}
-        </div>
-      </div>
-
-      {/* CTA — purple primary button so it matches the rest of the
-          system's primary actions. Pinned to the bottom so cards in a
-          row line up. */}
-      <div className="mt-auto pt-3 flex justify-end">
+    <div className={`rounded-xl border ${tone.border} ${tone.bg} ${stripeClass} ${padding} ${colSpan} transition-all`}>
+      {!expanded ? (
         <button
           type="button"
-          className="text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition duration-200"
+          onClick={onToggleExpand}
+          className="w-full text-left flex items-start justify-between gap-3 group"
+          aria-expanded="false"
+        >
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+              <span className={`${BADGE_PILL[badge]} text-[10px]`}>{badge}</span>
+              {lifecycle && lifecycle !== "ongoing" ? (
+                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${LIFECYCLE_TONE[lifecycle]}`}>
+                  {LIFECYCLE_LABEL[lifecycle]}
+                </span>
+              ) : null}
+            </div>
+            <div className={`${size === "lg" ? "text-base" : "text-sm"} font-semibold text-slate-100 leading-tight truncate`}>
+              {display.title}
+            </div>
+            {display.metric ? (
+              <div className={`${size === "lg" ? "text-2xl" : "text-lg"} font-bold text-slate-100 mt-1 leading-none tabular-nums`}>
+                {arrowChar ? <span className={`${arrowTone} mr-0.5`}>{arrowChar}</span> : null}
+                {display.metric}
+              </div>
+            ) : (
+              <div className="text-xs text-slate-400 mt-1">
+                {CATEGORY_LABEL[rec.category] ?? rec.category}
+              </div>
+            )}
+          </div>
+          <ChevronRight
+            size={16}
+            strokeWidth={1.75}
+            className="shrink-0 text-slate-500 group-hover:text-slate-200 transition mt-0.5"
+            aria-hidden="true"
+          />
+        </button>
+      ) : (
+        <ExpandedDetails
+          rec={rec}
+          currency={currency}
+          display={display}
+          badge={badge}
+          lifecycle={lifecycle}
+          onCollapse={onToggleExpand}
+          onResolve={onResolve}
+        />
+      )}
+    </div>
+  );
+}
+
+function ExpandedDetails({
+  rec,
+  currency,
+  display,
+  badge,
+  lifecycle,
+  onCollapse,
+  onResolve,
+}: {
+  rec: PushRec;
+  currency: string;
+  display: CompactDisplay;
+  badge: Badge;
+  lifecycle?: Lifecycle;
+  onCollapse: () => void;
+  onResolve: () => void;
+}) {
+  const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
+  const arrowTone =
+    display.direction === "up"
+      ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
+      : display.direction === "down"
+      ? (rec.level === "good" ? "text-bad" : "text-bad")
+      : "";
+  const consultQuestion = `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+  return (
+    <div>
+      <div className="flex items-start justify-between gap-3 mb-4">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
+            <span className={`${BADGE_PILL[badge]} text-[10px]`}>{badge}</span>
+            <span className="pill text-[10px]">{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+            {lifecycle && lifecycle !== "ongoing" ? (
+              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${LIFECYCLE_TONE[lifecycle]}`}>
+                {LIFECYCLE_LABEL[lifecycle]}
+              </span>
+            ) : null}
+          </div>
+          <div className="text-lg font-semibold text-slate-100 leading-tight">{display.title}</div>
+          {display.metric ? (
+            <div className="text-3xl font-bold text-slate-100 mt-1 leading-none tabular-nums">
+              {arrowChar ? <span className={`${arrowTone} mr-0.5`}>{arrowChar}</span> : null}
+              {display.metric}
+            </div>
+          ) : null}
+        </div>
+        <button
+          type="button"
+          onClick={onCollapse}
+          className="shrink-0 w-8 h-8 inline-flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-ink-700 rounded-md transition"
+          aria-label="Close"
+          title="Collapse"
+        >
+          <XIcon size={16} strokeWidth={1.75} />
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-4">
+        <DetailSection label="What happened" body={rec.observation} />
+        <DetailSection label="Why it matters" body={rec.interpretation} />
+        <DetailSection label="Recommended action" body={rec.recommendation} accent />
+        {rec.impact > 0 ? (
+          <DetailSection
+            label="Estimated impact"
+            body={`≈ ${fmtMoney(rec.impact, currency)} / month`}
+          />
+        ) : null}
+      </div>
+
+      <div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-line">
+        <button
+          type="button"
+          onClick={onResolve}
+          className="text-xs px-2.5 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
+          title="Hide from this view — restore from the header to bring back"
+        >
+          Mark resolved
+        </button>
+        <button
+          type="button"
+          className="text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
           title="Open consultation with this context"
           onClick={() => openConsult({
             prompt: consultQuestion,
-            // Title surfaces the category so the panel header reads
-            // 'Signal · Vendor cost spike' instead of the default
-            // 'Signals · Active alerts and observations'.
-            contextTitle: `Signal · ${CATEGORY_LABEL[r.category] ?? r.category}`,
-            contextSubtitle: r.observation,
+            contextTitle: `Signal · ${CATEGORY_LABEL[rec.category] ?? rec.category}`,
+            contextSubtitle: display.title,
           })}
         >
-          <MessageSquareText
-            size={13}
-            strokeWidth={1.75}
-            aria-hidden="true"
-          />
+          <MessageSquareText size={13} strokeWidth={1.75} aria-hidden="true" />
           <span>Consult on this</span>
         </button>
       </div>
@@ -692,7 +843,27 @@ function SignalCard({
   );
 }
 
-// Inline refresh icon. Spins while the parent reports a refresh in flight.
+function DetailSection({
+  label,
+  body,
+  accent,
+}: {
+  label: string;
+  body: string;
+  accent?: boolean;
+}) {
+  return (
+    <div>
+      <div className={`text-[10px] uppercase tracking-wide ${accent ? "text-accent" : "text-slate-500"} mb-1`}>
+        {label}
+      </div>
+      <div className={`text-sm leading-relaxed ${accent ? "text-slate-100" : "text-slate-300"}`}>
+        {body}
+      </div>
+    </div>
+  );
+}
+
 function RefreshIcon({ spinning }: { spinning?: boolean }) {
   return (
     <svg
