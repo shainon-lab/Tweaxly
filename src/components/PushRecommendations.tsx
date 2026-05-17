@@ -163,14 +163,19 @@ export default function PushRecommendations({
 // Signal card grid
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Four labeled rows of cards, grouped strictly by severity in the
-// hierarchy the product spec calls for. Rows with zero items collapse
-// out — not all four are populated at the same time:
-//   Critical   — level "bad"
-//   Attention  — level "warn"
-//   Positive   — level "good"
-//   Insight    — level "info"
-// Each row is a 3-column grid on md+.
+// Three-section signal layout, sorted by what the user actually
+// needs to do:
+//
+//   1. PRIORITY SIGNALS — bad + warn merged. Full-size cards. Max 4
+//      visible. This is where decisions happen.
+//   2. QUICK INSIGHTS — info signals. Compact stacked rows (not
+//      cards). Lower visual weight; expand-collapse for any past 3.
+//   3. POSITIVE SIGNALS — good signals, consolidated into a single
+//      bullet card titled '<N> positive business signals' so good
+//      news exists without crowding the page.
+//
+// The goal: every signal feels meaningful instead of the page
+// reading as a content feed.
 function SignalGroups({
   recs,
   currency,
@@ -185,73 +190,170 @@ function SignalGroups({
   const positive  = recs.filter((r) => r.level === "good");
   const insight   = recs.filter((r) => r.level === "info");
 
-  const groups: { key: string; title: string; subtitle: string; tone: "bad" | "warn" | "good" | "neutral"; items: PushRec[] }[] = [
-    {
-      key: "critical",
-      title: "Critical",
-      subtitle: "Act on these first — risks with material impact.",
-      tone: "bad",
-      items: critical,
-    },
-    {
-      key: "attention",
-      title: "Attention",
-      subtitle: "Watch closely — emerging issues worth a look.",
-      tone: "warn",
-      items: attention,
-    },
-    {
-      key: "positive",
-      title: "Positive",
-      subtitle: "What's working — lean into these.",
-      tone: "good",
-      items: positive,
-    },
-    {
-      key: "insight",
-      title: "Insight",
-      subtitle: "Context and baseline numbers worth knowing.",
-      tone: "neutral",
-      items: insight,
-    },
-  ];
+  // Priority pool — bad always first, then warn, ranked by impact
+  // within tone. Cap visible at 4 so the section reads decisive
+  // rather than overwhelming.
+  const priority = [...critical, ...attention].slice(0, 4);
 
   return (
-    <div className="space-y-6">
-      {groups.map((g) => {
-        if (g.items.length === 0) return null;
-        const headingClass =
-          g.tone === "bad"  ? "text-bad"     :
-          g.tone === "warn" ? "text-warn"    :
-          g.tone === "good" ? "text-good"    :
-                              "text-slate-200";
-        return (
-          <section key={g.key}>
-            <div className="flex items-baseline gap-2 flex-wrap mb-3">
-              <h3 className={`text-sm md:text-base font-semibold ${headingClass}`}>
-                {g.title}
-              </h3>
-              <span className="text-xs text-slate-500">· {g.subtitle}</span>
-            </div>
-            {/* When a severity row has a single signal, let it span
-                the full width so it doesn't leave 2/3 of the row
-                empty. With 2 or 3 cards, keep the standard 3-col grid
-                — the third slot just stays empty when there are 2,
-                so cards retain their regular size. */}
-            <div className={`grid gap-3 ${g.items.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-3"}`}>
-              {g.items.map((r) => (
-                <SignalCard
-                  key={r.id}
-                  rec={r}
-                  currency={currency}
-                  onClose={onClose}
-                />
-              ))}
-            </div>
-          </section>
-        );
-      })}
+    <div className="space-y-8">
+      {priority.length > 0 ? (
+        <PrioritySection
+          items={priority}
+          currency={currency}
+          onClose={onClose}
+        />
+      ) : null}
+
+      {insight.length > 0 ? (
+        <QuickInsights items={insight} currency={currency} />
+      ) : null}
+
+      {positive.length > 0 ? (
+        <PositiveSummary items={positive} currency={currency} />
+      ) : null}
     </div>
+  );
+}
+
+function PrioritySection({
+  items,
+  currency,
+  onClose,
+}: {
+  items: PushRec[];
+  currency: string;
+  onClose: (id: string) => void;
+}) {
+  return (
+    <section>
+      <div className="flex items-baseline gap-2 flex-wrap mb-3">
+        <h3 className="text-sm md:text-base font-semibold text-bad">
+          Priority Signals
+        </h3>
+        <span className="text-xs text-slate-500">
+          · Requires your attention right now.
+        </span>
+      </div>
+      <div className={`grid gap-3 ${items.length === 1 ? "grid-cols-1" : "grid-cols-1 md:grid-cols-2 xl:grid-cols-3"}`}>
+        {items.map((r) => (
+          <SignalCard key={r.id} rec={r} currency={currency} onClose={onClose} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// Compact rows for info-level signals. Each row is single-line
+// (title + brief observation) with a small Consult AI affordance on
+// hover. Hides past the first three behind a 'Show all' toggle so
+// the section stays lightweight.
+function QuickInsights({
+  items,
+  currency,
+}: {
+  items: PushRec[];
+  currency: string;
+}) {
+  void currency;
+  const [showAll, setShowAll] = useState(false);
+  const visible = showAll ? items : items.slice(0, 3);
+  const hidden = Math.max(0, items.length - 3);
+  return (
+    <section>
+      <div className="flex items-baseline gap-2 flex-wrap mb-3">
+        <h3 className="text-sm md:text-base font-semibold text-slate-200">
+          Quick Insights
+        </h3>
+        <span className="text-xs text-slate-500">
+          · Observations worth knowing — not urgent.
+        </span>
+      </div>
+      <ul className="divide-y divide-line/40 border-y border-line/40">
+        {visible.map((r) => {
+          const consultQuestion = `${r.observation} ${r.interpretation} What should I know and what should I do about it?`;
+          return (
+            <li key={r.id} className="py-2.5 flex items-start justify-between gap-3">
+              <div className="min-w-0 flex-1">
+                <div className="text-sm font-medium text-slate-100 leading-tight">
+                  {r.observation}
+                </div>
+                <div className="text-xs text-slate-500 leading-snug mt-0.5 line-clamp-2">
+                  {r.interpretation}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  if (typeof window === "undefined") return;
+                  window.dispatchEvent(new CustomEvent(CONSULT_OPEN_EVENT, {
+                    detail: {
+                      prompt: consultQuestion,
+                      contextTitle: `Insight · ${CATEGORY_LABEL[r.category] ?? r.category}`,
+                      contextSubtitle: r.observation,
+                    },
+                  }));
+                }}
+                className="shrink-0 text-[11px] px-2.5 py-1 rounded-md border border-line text-slate-400 hover:text-accent hover:border-accent/40 transition duration-200"
+                title="Open consultation with this context"
+              >
+                Consult
+              </button>
+            </li>
+          );
+        })}
+      </ul>
+      {hidden > 0 ? (
+        <button
+          type="button"
+          className="mt-3 text-xs text-slate-500 hover:text-accent transition duration-200"
+          onClick={() => setShowAll((v) => !v)}
+        >
+          {showAll ? "Show fewer" : `Show ${hidden} more →`}
+        </button>
+      ) : null}
+    </section>
+  );
+}
+
+// Consolidated 'good news' card — collapses every positive signal
+// into one bullet card so the page doesn't read as overly
+// celebratory. Each bullet is the observation, slightly muted, with
+// the category as a tiny lead label.
+function PositiveSummary({
+  items,
+  currency,
+}: {
+  items: PushRec[];
+  currency: string;
+}) {
+  void currency;
+  return (
+    <section>
+      <div className="flex items-baseline gap-2 flex-wrap mb-3">
+        <h3 className="text-sm md:text-base font-semibold text-good">
+          {items.length} positive business signal{items.length === 1 ? "" : "s"}
+        </h3>
+        <span className="text-xs text-slate-500">
+          · What&apos;s working — lean into these.
+        </span>
+      </div>
+      <div className="rounded-xl border border-good/30 bg-good/5 p-4">
+        <ul className="space-y-2">
+          {items.map((r) => (
+            <li key={r.id} className="flex items-start gap-2.5">
+              <span className="text-good text-xs mt-1 shrink-0" aria-hidden="true">✓</span>
+              <div className="min-w-0">
+                <span className="text-xs uppercase tracking-wide text-slate-500 mr-1.5">
+                  {CATEGORY_LABEL[r.category] ?? r.category}
+                </span>
+                <span className="text-sm text-slate-200">{r.observation}</span>
+              </div>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
   );
 }
 
