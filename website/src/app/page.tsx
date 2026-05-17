@@ -87,19 +87,23 @@ const FAQ: { q: string; a: string }[] = [
 
 const PRODUCT_URL = "https://adoption-bus-bee-regularly.trycloudflare.com";
 const SIGNUP_URL = `${PRODUCT_URL}/register`;
+const LOGIN_URL  = `${PRODUCT_URL}/login`;
 
 export default function Home() {
   return (
     <main className="flex-1">
-      <header className="container-tweaxly pt-10 pb-6 flex items-center justify-between">
+      <header className="container-tweaxly pt-10 pb-6 flex items-center justify-between gap-3">
         <Logo size="md" showTagline />
         <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
           <a href="#features" className="hover:text-white transition">Features</a>
           <a href="#modules" className="hover:text-white transition">Modules</a>
           <a href="#how-it-works" className="hover:text-white transition">How it works</a>
           <a href="#faq" className="hover:text-white transition">FAQ</a>
-          <a href={PRODUCT_URL} className="btn-brand">Open the app →</a>
         </nav>
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <a href={LOGIN_URL} className="btn-ghost text-sm">Log in</a>
+          <a href={SIGNUP_URL} className="btn-brand text-sm">Sign up</a>
+        </div>
       </header>
 
       {/* Hero */}
