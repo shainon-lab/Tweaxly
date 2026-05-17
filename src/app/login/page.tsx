@@ -4,17 +4,23 @@
 
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import PasswordInput from "@/components/PasswordInput";
 
 export default async function LoginPage({
   searchParams,
-}: { searchParams: Promise<{ err?: string }> }) {
-  const { err } = await searchParams;
+}: { searchParams: Promise<{ err?: string; reset?: string }> }) {
+  const { err, reset } = await searchParams;
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
       <div className="card w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
           <Logo size="lg" showTagline />
         </div>
+        {reset ? (
+          <div className="mb-4 rounded-md border border-good/40 bg-good/10 text-good text-sm px-3 py-2">
+            Your password has been updated. You can now log in.
+          </div>
+        ) : null}
         {err ? (
           <div className="mb-4 rounded-md border border-bad/40 bg-bad/10 text-bad text-sm px-3 py-2">
             Email or password didn&apos;t match. Try again.
@@ -26,8 +32,16 @@ export default async function LoginPage({
             <input className="input" name="email" type="email" required autoFocus />
           </div>
           <div>
-            <label className="label">Password</label>
-            <input className="input" name="password" type="password" required />
+            <div className="flex items-baseline justify-between">
+              <label className="label">Password</label>
+              <Link
+                href="/forgot-password"
+                className="text-xs text-accent hover:underline"
+              >
+                Forgot password?
+              </Link>
+            </div>
+            <PasswordInput name="password" required />
           </div>
           <button className="btn-primary w-full" type="submit">Sign in</button>
         </form>

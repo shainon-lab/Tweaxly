@@ -24,6 +24,26 @@ model User {
   businesses   Business[]
   memberships  BusinessMembership[]
   auditLogs    AuditLog[] @relation("ActorAuditLogs")
+  passwordResetTokens PasswordResetToken[]
+}
+
+// Single-use, hashed, time-boxed password reset token. We never store
+// the plaintext token — only the SHA-256 hash — so a DB leak can't be
+// turned into account takeovers. Token is invalidated on first use
+// (usedAt set) and ignored after expiresAt.
+model PasswordResetToken {
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash   String    @unique
+  expiresAt   DateTime
+  usedAt      DateTime?
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([userId, createdAt])
+  @@index([expiresAt])
 }
 
 // Many-to-many between User and Business with a per-account role.

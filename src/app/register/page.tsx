@@ -3,14 +3,16 @@
 
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import PasswordInput from "@/components/PasswordInput";
 
 export default async function RegisterPage({
   searchParams,
 }: { searchParams: Promise<{ err?: string }> }) {
   const { err } = await searchParams;
+  const isDupe = err === "exists";
   const errorMsg =
-    err === "exists" ? "An account with that email already exists. Sign in instead." :
-    err            ? "Please enter a valid email and a password of at least 6 characters." :
+    isDupe ? "An account with this email already exists. Please log in or reset your password." :
+    err    ? "Please enter a valid email and a password of at least 6 characters." :
     null;
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -23,7 +25,13 @@ export default async function RegisterPage({
         </div>
         {errorMsg ? (
           <div className="mb-4 rounded-md border border-bad/40 bg-bad/10 text-bad text-sm px-3 py-2">
-            {errorMsg}
+            <div>{errorMsg}</div>
+            {isDupe ? (
+              <div className="mt-2 flex items-center gap-3 text-xs">
+                <Link href="/login" className="text-accent hover:underline">Log in →</Link>
+                <Link href="/forgot-password" className="text-accent hover:underline">Reset password →</Link>
+              </div>
+            ) : null}
           </div>
         ) : null}
         <form action="/api/auth/register" method="post" className="space-y-4">
@@ -37,7 +45,7 @@ export default async function RegisterPage({
           </div>
           <div>
             <label className="label">Password (min 6 chars)</label>
-            <input className="input" name="password" type="password" required minLength={6} />
+            <PasswordInput name="password" required minLength={6} />
           </div>
           <button className="btn-primary w-full" type="submit">Create account</button>
         </form>
