@@ -31,13 +31,12 @@ export type PushRec = {
 // severity, with a category nudge for the Opportunity lane.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Badge = "Critical" | "Action Needed" | "Watch" | "Opportunity" | "FYI";
+type Badge = "Critical" | "Watch" | "Informational";
 
 function badgeFor(r: PushRec): Badge {
   if (r.level === "bad")  return "Critical";
-  if (r.level === "warn") return "Action Needed";
-  if (r.level === "good") return r.category === "growth" ? "Opportunity" : "FYI";
-  return "Watch";
+  if (r.level === "warn") return "Watch";
+  return "Informational";
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -446,6 +445,30 @@ export default function PushRecommendations({
 // Signal Deck — uniform compact-height cards, mixed widths so critical
 // signals dominate visually. `grid-auto-flow: dense` packs the grid
 // so wide cards don't leave gaps.
+// Slot-based deck: a 2×3 grid filled by severity. Each slot type only
+// accepts a matching severity so the card's color and its title always
+// agree:
+//   Slot 0, 1 → "critical" — only bad-level signals (red)
+//   Slot 2, 3, 4 → "watch"  — only warn-level signals (orange)
+//   Slot 5 → "info"        — info / good signals (gray)
+// Slots that can't be filled from the pool stay empty. This keeps the
+// 2 red · 3 orange · 1 gray shape without ever placing a positive
+// signal under a critical treatment.
+type Slot = "critical" | "watch" | "info";
+const SLOT_LAYOUT: Slot[] = ["critical", "critical", "watch", "watch", "watch", "info"];
+
+function pickForSlot(slot: Slot, pool: PushRec[], used: Set<string>): PushRec | null {
+  const allowed: string[] =
+    slot === "critical" ? ["bad"] :
+    slot === "watch"    ? ["warn"] :
+                          ["info", "good"];
+  for (const r of pool) {
+    if (used.has(r.id)) continue;
+    if (allowed.includes(r.level)) return r;
+  }
+  return null;
+}
+
 function SignalDeck({
   recs,
   currency,
@@ -460,33 +483,52 @@ function SignalDeck({
   onSelect: (id: string) => void;
 }) {
   void currency;
-  const severityRank: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
   const lifecycleRank: Record<Lifecycle, number> = {
     escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
   };
-  const sorted = [...recs].sort((a, b) => {
-    const sa = severityRank[a.level] ?? 4;
-    const sb = severityRank[b.level] ?? 4;
-    if (sa !== sb) return sa - sb;
+  // Within each severity, escalating / new / impact-desc first.
+  const ranked = [...recs].sort((a, b) => {
     const la = lifecycleRank[lifecycles[a.id] ?? "ongoing"];
     const lb = lifecycleRank[lifecycles[b.id] ?? "ongoing"];
-    return la - lb;
+    if (la !== lb) return la - lb;
+    return b.impact - a.impact;
+  });
+
+  const used = new Set<string>();
+  const filled: Array<{ slot: Slot; rec: PushRec | null }> = SLOT_LAYOUT.map((slot) => {
+    const rec = pickForSlot(slot, ranked, used);
+    if (rec) used.add(rec.id);
+    return { slot, rec };
   });
 
   return (
-    <div
-      className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-      style={{ gridAutoFlow: "dense" }}
-    >
-      {sorted.map((r) => (
-        <SignalCard
-          key={r.id}
-          rec={r}
-          lifecycle={lifecycles[r.id]}
-          selected={selectedId === r.id}
-          onSelect={() => onSelect(r.id)}
-        />
-      ))}
+    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+      {filled.map(({ slot, rec }, i) =>
+        rec ? (
+          <SignalCard
+            key={rec.id}
+            rec={rec}
+            slot={slot}
+            lifecycle={lifecycles[rec.id]}
+            selected={selectedId === rec.id}
+            onSelect={() => onSelect(rec.id)}
+          />
+        ) : (
+          <EmptySlot key={`empty-${i}`} slot={slot} />
+        )
+      )}
+    </div>
+  );
+}
+
+function EmptySlot({ slot }: { slot: Slot }) {
+  const label =
+    slot === "critical" ? "No critical signals" :
+    slot === "watch"    ? "No watch signals"    :
+                          "No informational signals";
+  return (
+    <div className="h-48 rounded-2xl border border-dashed border-line/60 bg-ink-900/20 flex items-center justify-center text-xs text-slate-500">
+      {label}
     </div>
   );
 }
@@ -500,42 +542,52 @@ function SignalDeck({
 
 function SignalCard({
   rec,
+  slot,
   lifecycle,
   selected,
   onSelect,
 }: {
   rec: PushRec;
+  slot: Slot;
   lifecycle?: Lifecycle;
   selected: boolean;
   onSelect: () => void;
 }) {
   const display = compactDisplay(rec);
-  const badge = badgeFor(rec);
-  const isCritical = rec.level === "bad";
 
-  const dotColor =
-    rec.level === "bad"  ? "bg-bad"    :
-    rec.level === "warn" ? "bg-warn"   :
-    rec.level === "good" ? (rec.category === "growth" ? "bg-accent" : "bg-good") :
-                           "bg-slate-500";
-  const borderColor =
-    rec.level === "bad"  ? "border-bad/50"  :
-    rec.level === "warn" ? "border-warn/40" :
-    rec.level === "good" ? (rec.category === "growth" ? "border-accent/30" : "border-good/25") :
-                           "border-line";
-  const glowShadow = isCritical
-    ? "shadow-[0_0_24px_-6px_rgba(239,91,91,0.35)]"
-    : "";
-  const colSpan = isCritical ? "lg:col-span-2" : "";
+  // Slot-driven visual treatment. Card colour/border/badge come from
+  // the slot position, not the underlying rec.level — so the deck
+  // always reads as 2 red · 3 orange · 1 gray.
+  const slotStyle: Record<Slot, {
+    dot: string; border: string; glow: string; badge: string; arrow: string;
+  }> = {
+    critical: {
+      dot:    "bg-bad",
+      border: "border-bad/60",
+      glow:   "shadow-[0_0_24px_-6px_rgba(239,91,91,0.35)]",
+      badge:  "Critical",
+      arrow:  "text-bad",
+    },
+    watch: {
+      dot:    "bg-warn",
+      border: "border-warn/60",
+      glow:   "",
+      badge:  "Watch",
+      arrow:  "text-warn",
+    },
+    info: {
+      dot:    "bg-slate-500",
+      border: "border-line",
+      glow:   "",
+      badge:  "Informational",
+      arrow:  "text-slate-400",
+    },
+  };
+  const s = slotStyle[slot];
+  const isCritical = slot === "critical";
   const selectedRing = selected ? "ring-2 ring-accent/60 ring-offset-2 ring-offset-ink-900" : "";
 
   const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
-  const arrowTone =
-    display.direction === "up"
-      ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
-      : display.direction === "down"
-      ? "text-bad"
-      : "";
 
   return (
     <button
@@ -543,15 +595,15 @@ function SignalCard({
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={`Open details for ${display.title}`}
-      className={`${colSpan} h-48 rounded-2xl border ${borderColor} bg-ink-900/50 ${glowShadow} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
+      className={`h-48 rounded-2xl border ${s.border} bg-ink-900/50 ${s.glow} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
     >
-      {/* Meta line — severity dot + badge + category + lifecycle */}
+      {/* Meta line — slot-driven dot + badge + category + lifecycle */}
       <div className="flex items-center gap-2 text-[11px] text-slate-400">
         <span
-          className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? "animate-pulse" : ""}`}
+          className={`w-1.5 h-1.5 rounded-full ${s.dot} ${isCritical ? "animate-pulse" : ""}`}
           aria-hidden="true"
         />
-        <span className="font-medium tracking-wide text-slate-300">{badge}</span>
+        <span className="font-medium tracking-wide text-slate-300">{s.badge}</span>
         <span className="text-slate-600">·</span>
         <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
         {lifecycle && lifecycle !== "ongoing" ? (
@@ -570,7 +622,7 @@ function SignalCard({
       {/* Hero metric */}
       {display.metric ? (
         <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-white leading-none tabular-nums tracking-tight`}>
-          {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
+          {arrowChar ? <span className={`${s.arrow} mr-1`}>{arrowChar}</span> : null}
           {display.metric}
         </div>
       ) : null}
