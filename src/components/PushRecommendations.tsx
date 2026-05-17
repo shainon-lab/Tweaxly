@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { MessageSquareText } from "lucide-react";
+import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
 import { CONSULT_OPEN_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 
 // Open the floating Consult panel pre-loaded with a question and a
@@ -31,22 +31,14 @@ export type PushRec = {
 // severity, with a category nudge for the Opportunity lane.
 // ─────────────────────────────────────────────────────────────────────────────
 
-type Badge = "Critical" | "Watch" | "Opportunity" | "Info" | "Good";
+type Badge = "Critical" | "Action Needed" | "Watch" | "Opportunity" | "FYI";
 
 function badgeFor(r: PushRec): Badge {
   if (r.level === "bad")  return "Critical";
-  if (r.level === "warn") return "Watch";
-  if (r.level === "good") return r.category === "growth" ? "Opportunity" : "Good";
-  return "Info";
+  if (r.level === "warn") return "Action Needed";
+  if (r.level === "good") return r.category === "growth" ? "Opportunity" : "FYI";
+  return "Watch";
 }
-
-const BADGE_PILL: Record<Badge, string> = {
-  Critical:    "pill-bad",
-  Watch:       "pill-warn",
-  Opportunity: "pill-accent",
-  Info:        "pill",
-  Good:        "pill-good",
-};
 
 const CATEGORY_LABEL: Record<string, string> = {
   marketing: "Marketing",
@@ -278,6 +270,9 @@ export default function PushRecommendations({
   const [refreshing, setRefreshing] = useState(false);
   const [lifecycles, setLifecycles] = useState<Record<string, Lifecycle>>({});
   const [resolved, setResolvedState] = useState<Set<string>>(new Set());
+  // Signal Deck — only one card flipped at a time so the table reads
+  // as 'one card open, everything else compact'.
+  const [flippedId, setFlippedId] = useState<string | null>(null);
   const prevInitialRef = useRef(initial);
 
   if (initial !== prevInitialRef.current) {
@@ -340,6 +335,11 @@ export default function PushRecommendations({
     next.add(key);
     setResolvedState(next);
     writeResolved(next);
+    setFlippedId(null);
+  }
+
+  function toggleFlip(id: string) {
+    setFlippedId((cur) => (cur === id ? null : id));
   }
 
   function clearResolved() {
@@ -404,10 +404,12 @@ export default function PushRecommendations({
           </div>
         </div>
       ) : (
-        <SignalGroups
+        <SignalDeck
           recs={visibleRecs}
           currency={currency}
           lifecycles={lifecycles}
+          flippedId={flippedId}
+          onToggleFlip={toggleFlip}
           onResolve={resolveSignal}
         />
       )}
@@ -419,28 +421,24 @@ export default function PushRecommendations({
 // Three-layer signal layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-function SignalGroups({
+// Signal Deck — uniform compact-height cards, mixed widths so critical
+// signals dominate visually. `grid-auto-flow: dense` packs the grid
+// so wide cards don't leave gaps.
+function SignalDeck({
   recs,
   currency,
   lifecycles,
+  flippedId,
+  onToggleFlip,
   onResolve,
 }: {
   recs: PushRec[];
   currency: string;
   lifecycles: Record<string, Lifecycle>;
+  flippedId: string | null;
+  onToggleFlip: (id: string) => void;
   onResolve: (r: PushRec) => void;
 }) {
-  // Single continuous grid — no section breaks, so cards always
-  // pack tight without blank slots at the end of a Priority row.
-  // Hierarchy is carried at the card level instead: the colored dot
-  // + badge label (Critical / Watch / Opportunity / Info / Good) and
-  // the lifecycle word (New / Escalating / Improving) tell the user
-  // what kind of signal they're looking at.
-  //
-  // Sort:
-  //   1. Severity     (bad → warn → info → good)
-  //   2. Lifecycle    (escalating → new → improving → ongoing)
-  //   3. Impact       (desc, falls out of the input order)
   const severityRank: Record<string, number> = { bad: 0, warn: 1, info: 2, good: 3 };
   const lifecycleRank: Record<Lifecycle, number> = {
     escalating: 0, new: 1, improving: 2, ongoing: 3, resolved: 4,
@@ -455,13 +453,18 @@ function SignalGroups({
   });
 
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
+    <div
+      className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
+      style={{ gridAutoFlow: "dense" }}
+    >
       {sorted.map((r) => (
         <SignalCard
           key={r.id}
           rec={r}
           currency={currency}
           lifecycle={lifecycles[r.id]}
+          flipped={flippedId === r.id}
+          onToggleFlip={() => onToggleFlip(r.id)}
           onResolve={() => onResolve(r)}
         />
       ))}
@@ -470,30 +473,48 @@ function SignalGroups({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Always-open signal card — uniform size across every section. Shows
-// hero (meta · title · metric · subtitle) plus the structured detail
-// stack (What happened · Why it matters · Recommended action) plus
-// the footer actions. No collapse, no click-to-expand.
+// Signal Deck card — a flip card. Front is compact (title · metric ·
+// subtitle), back carries the structured detail. Critical cards span
+// 2 columns at lg+ so they dominate the deck. Fixed height keeps the
+// grid uniform regardless of which side is showing.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function SignalCard({
   rec,
   currency,
   lifecycle,
+  flipped,
+  onToggleFlip,
   onResolve,
 }: {
   rec: PushRec;
   currency: string;
   lifecycle?: Lifecycle;
+  flipped: boolean;
+  onToggleFlip: () => void;
   onResolve: () => void;
 }) {
   const display = compactDisplay(rec);
   const badge = badgeFor(rec);
-  const dot =
+
+  // Severity-driven styling. Critical gets a soft red glow ring +
+  // wider footprint; Action Needed / Opportunity get colored borders
+  // without glow; FYI / Watch sit quiet.
+  const isCritical = rec.level === "bad";
+  const dotColor =
     rec.level === "bad"  ? "bg-bad"    :
     rec.level === "warn" ? "bg-warn"   :
-    rec.level === "good" ? "bg-good"   :
-                           "bg-accent";
+    rec.level === "good" ? (rec.category === "growth" ? "bg-accent" : "bg-good") :
+                           "bg-slate-500";
+  const borderColor =
+    rec.level === "bad"  ? "border-bad/50"  :
+    rec.level === "warn" ? "border-warn/40" :
+    rec.level === "good" ? (rec.category === "growth" ? "border-accent/30" : "border-good/25") :
+                           "border-line";
+  const glowShadow = isCritical
+    ? "shadow-[0_0_24px_-6px_rgba(239,91,91,0.35)]"
+    : "";
+  const colSpan = isCritical ? "lg:col-span-2" : "";
 
   const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
   const arrowTone =
@@ -503,87 +524,144 @@ function SignalCard({
       ? "text-bad"
       : "";
 
-  const consultQuestion = `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
-
   return (
-    <div className="rounded-2xl border border-line bg-ink-900/40 p-5 flex flex-col gap-4 transition-shadow duration-200 hover:shadow-md hover:shadow-black/20">
-      {/* Hero — meta row + title + metric + subtitle */}
-      <div className="flex flex-col gap-3">
-        <div className="flex items-center gap-2 text-[11px] text-slate-400">
-          <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true" />
-          <span className="font-medium tracking-wide">{badge}</span>
-          <span className="text-slate-600">·</span>
-          <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
-          {lifecycle && lifecycle !== "ongoing" ? (
-            <>
-              <span className="text-slate-600">·</span>
-              <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
-            </>
+    <div
+      className={`${colSpan} h-56 [perspective:1200px]`}
+    >
+      <div
+        className={`relative w-full h-full transition-transform duration-500 ease-out [transform-style:preserve-3d] ${flipped ? "[transform:rotateY(180deg)]" : ""}`}
+      >
+        {/* FRONT — compact hero */}
+        <button
+          type="button"
+          onClick={onToggleFlip}
+          aria-pressed={flipped}
+          aria-label={`Show details for ${display.title}`}
+          className={`absolute inset-0 [backface-visibility:hidden] rounded-2xl border ${borderColor} bg-ink-900/50 ${glowShadow} p-5 text-left flex flex-col gap-3 transition-shadow duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 group ${flipped ? "pointer-events-none" : ""}`}
+        >
+          {/* Meta line — severity dot + badge + category + lifecycle */}
+          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <span
+              className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? "animate-pulse" : ""}`}
+              aria-hidden="true"
+            />
+            <span className="font-medium tracking-wide text-slate-300">{badge}</span>
+            <span className="text-slate-600">·</span>
+            <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+            {lifecycle && lifecycle !== "ongoing" ? (
+              <>
+                <span className="text-slate-600">·</span>
+                <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
+              </>
+            ) : null}
+          </div>
+
+          {/* Title + metric — the two things the user reads while scanning */}
+          <div className={`${isCritical ? "text-xl" : "text-lg"} font-semibold text-slate-50 leading-tight tracking-tight`}>
+            {display.title}
+          </div>
+          {display.metric ? (
+            <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-white leading-none tabular-nums tracking-tight`}>
+              {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
+              {display.metric}
+            </div>
           ) : null}
-        </div>
-        <div className="text-lg font-semibold text-slate-50 leading-tight tracking-tight">
-          {display.title}
-        </div>
-        {display.metric ? (
-          <div className="text-3xl font-bold text-white leading-none tabular-nums tracking-tight">
-            {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
-            {display.metric}
-          </div>
-        ) : null}
-        {display.subtitle ? (
-          <div className="text-sm text-slate-400 leading-snug">{display.subtitle}</div>
-        ) : null}
-      </div>
 
-      {/* Structured detail — stacked label/body sections inside the
-          card. Short prose, no card-in-card chrome. */}
-      <div className="border-t border-line pt-4 flex flex-col gap-3">
-        <DetailRow label="What happened" body={rec.observation} />
-        <DetailRow label="Why it matters" body={rec.interpretation} />
-        <DetailRow label="Recommended action" body={rec.recommendation} accent />
-        {rec.impact > 0 ? (
-          <div className="flex items-center justify-between gap-3 text-sm pt-1">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
-              Estimated impact
-            </span>
-            <span className="text-sm font-semibold text-slate-100 tabular-nums">
-              ≈ {fmtMoney(rec.impact, currency)} / mo
-            </span>
-          </div>
-        ) : null}
-      </div>
+          {/* Optional single-sentence framing */}
+          {display.subtitle ? (
+            <div className="text-sm text-slate-400 leading-snug line-clamp-2">
+              {display.subtitle}
+            </div>
+          ) : null}
 
-      {/* Footer — actions stay at the bottom of every card so footers
-          line up across the grid. mt-auto pins them when card content
-          varies in length. */}
-      <div className="mt-auto flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-line">
-        <button
-          type="button"
-          onClick={onResolve}
-          className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
-          title="Hide from this view — restore from the header to bring back"
-        >
-          Mark resolved
+          {/* Flip affordance pinned bottom — quiet by default, lifts on hover */}
+          <div className="mt-auto flex items-center justify-between text-[11px] text-slate-500">
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              Click for details
+            </span>
+            <ChevronRight
+              size={14}
+              strokeWidth={1.75}
+              className="text-slate-500 group-hover:text-slate-200 transition"
+              aria-hidden="true"
+            />
+          </div>
         </button>
-        <button
-          type="button"
-          className="text-xs px-4 py-2 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
-          title="Open consultation with this context"
-          onClick={() => openConsult({
-            prompt: consultQuestion,
-            contextTitle: `Signal · ${CATEGORY_LABEL[rec.category] ?? rec.category}`,
-            contextSubtitle: display.title,
-          })}
+
+        {/* BACK — structured detail + actions */}
+        <div
+          className={`absolute inset-0 [backface-visibility:hidden] [transform:rotateY(180deg)] rounded-2xl border ${borderColor} bg-ink-900/70 ${glowShadow} p-5 flex flex-col gap-3 ${flipped ? "" : "pointer-events-none"}`}
         >
-          <MessageSquareText size={13} strokeWidth={1.75} aria-hidden="true" />
-          <span>Consult on this</span>
-        </button>
+          <div className="flex items-start justify-between gap-2">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} aria-hidden="true" />
+                <span className="font-medium tracking-wide text-slate-300">{badge}</span>
+                <span className="text-slate-600">·</span>
+                <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+              </div>
+              <div className="text-base font-semibold text-slate-50 leading-tight tracking-tight truncate">
+                {display.title}
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={onToggleFlip}
+              className="shrink-0 w-7 h-7 inline-flex items-center justify-center text-slate-400 hover:text-slate-100 hover:bg-ink-700 rounded-md transition"
+              aria-label="Flip back"
+              title="Flip back"
+            >
+              <XIcon size={14} strokeWidth={1.75} />
+            </button>
+          </div>
+
+          {/* Compact 3-line detail. Each line: short label + body. */}
+          <div className="flex-1 min-h-0 overflow-auto flex flex-col gap-2 text-xs">
+            <DetailLine label="What happened"  body={rec.observation} />
+            <DetailLine label="Why it matters" body={rec.interpretation} />
+            <DetailLine label="Do this"        body={rec.recommendation} accent />
+            {rec.impact > 0 ? (
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+                  Est. impact
+                </span>
+                <span className="text-xs font-semibold text-slate-100 tabular-nums">
+                  ≈ {fmtMoney(rec.impact, currency)} / mo
+                </span>
+              </div>
+            ) : null}
+          </div>
+
+          <div className="mt-auto flex items-center justify-between gap-2 pt-2 border-t border-line">
+            <button
+              type="button"
+              onClick={onResolve}
+              className="text-[11px] px-2.5 py-1 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
+              title="Hide — restore from the header to bring back"
+            >
+              Resolved
+            </button>
+            <button
+              type="button"
+              className="text-[11px] px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
+              title="Open consultation with this context"
+              onClick={() => openConsult({
+                prompt: `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`,
+                contextTitle: `Signal · ${CATEGORY_LABEL[rec.category] ?? rec.category}`,
+                contextSubtitle: display.title,
+              })}
+            >
+              <MessageSquareText size={12} strokeWidth={1.75} aria-hidden="true" />
+              <span>Consult on this</span>
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-function DetailRow({
+function DetailLine({
   label,
   body,
   accent,
@@ -594,10 +672,10 @@ function DetailRow({
 }) {
   return (
     <div>
-      <div className={`text-[10px] uppercase tracking-wider ${accent ? "text-accent" : "text-slate-500"} mb-1 font-medium`}>
+      <div className={`text-[9px] uppercase tracking-wider ${accent ? "text-accent" : "text-slate-500"} font-medium`}>
         {label}
       </div>
-      <div className={`text-sm leading-relaxed ${accent ? "text-slate-100" : "text-slate-300"}`}>
+      <div className={`text-xs leading-snug ${accent ? "text-slate-100" : "text-slate-300"} line-clamp-3`}>
         {body}
       </div>
     </div>
