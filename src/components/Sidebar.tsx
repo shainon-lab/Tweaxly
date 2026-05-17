@@ -16,6 +16,7 @@ import {
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import BusinessSwitcher, { type SwitcherWorkspace } from "./BusinessSwitcher";
+import { useT } from "@/lib/i18n/client";
 
 type AlertKey = "transactions" | "insights" | "businessSignals";
 
@@ -23,20 +24,22 @@ type AlertKey = "transactions" | "insights" | "businessSignals";
 // emoji, no filled glyphs, no decorative color. The icons act as quiet
 // orientation anchors and never compete with the AI-driven sections
 // inside the pages. All icons share the same stroke weight and size.
-const NAV: { href: string; label: string; Icon: LucideIcon; alertKey?: AlertKey }[] = [
-  { href: "/dashboard",        label: "Overview",          Icon: LayoutDashboard },
-  { href: "/business-signals", label: "Signals",            Icon: Activity,         alertKey: "businessSignals" },
-  { href: "/consultation",     label: "Advisory",          Icon: MessageSquare },
-  { href: "/forecast",         label: "Forecast",          Icon: TrendingUp },
-  { href: "/report",           label: "Reports",           Icon: FileText,         alertKey: "insights" },
+// Nav labels are translation keys (resolved via useT() inside the
+// component) so the entire sidebar re-renders in the active locale.
+const NAV: { href: string; tKey: string; Icon: LucideIcon; alertKey?: AlertKey }[] = [
+  { href: "/dashboard",        tKey: "nav.overview", Icon: LayoutDashboard },
+  { href: "/business-signals", tKey: "nav.signals",  Icon: Activity,         alertKey: "businessSignals" },
+  { href: "/consultation",     tKey: "nav.advisory", Icon: MessageSquare },
+  { href: "/forecast",         tKey: "nav.forecast", Icon: TrendingUp },
+  { href: "/report",           tKey: "nav.reports",  Icon: FileText,         alertKey: "insights" },
   // Workforce Planning lives inside Forecast as a sub-tab now — the
   // platform is business-intelligence, not HR, so workforce is a
   // financial-planning lever rather than a standalone destination.
   // Data, Integration, and Notifications all live inside Settings
   // as sub-tabs. The transactions alert badge surfaces on Settings
   // so duplicate-review counts stay visible in the sidebar.
-  { href: "/settings",         label: "Settings",          Icon: SlidersHorizontal, alertKey: "transactions" },
-  { href: "/account",          label: "Account",           Icon: CircleUser },
+  { href: "/settings",         tKey: "nav.settings", Icon: SlidersHorizontal, alertKey: "transactions" },
+  { href: "/account",          tKey: "nav.account",  Icon: CircleUser },
 ];
 
 export type SidebarAlerts = { transactions?: number; insights?: number; businessSignals?: number };
@@ -57,6 +60,7 @@ export default function Sidebar({
   workspaces?: SwitcherWorkspace[];
 }) {
   const isSuperAdmin = systemRole === "super_admin";
+  const t = useT();
   const path = usePathname();
   const hasCustomLogo = !!logoData;
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -188,7 +192,7 @@ export default function Sidebar({
                   className={`shrink-0 ${active ? "text-accent" : "text-slate-400"}`}
                   aria-hidden="true"
                 />
-                <span className="flex-1">{n.label}</span>
+                <span className="flex-1">{t(n.tKey)}</span>
                 {alertCount > 0 ? (
                   <span
                     className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-bad text-white text-[11px] font-bold leading-none"
@@ -210,14 +214,14 @@ export default function Sidebar({
               className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition text-brand-purple hover:bg-accent-soft/40 hover:text-white mt-2 border-t border-line pt-3"
             >
               <Shield size={16} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
-              <span className="flex-1">Admin</span>
+              <span className="flex-1">{t("nav.admin")}</span>
               <span className="text-[9px] uppercase tracking-wider opacity-70">super</span>
             </Link>
           ) : null}
         </nav>
         <ThemeToggle />
         <form action="/logout" method="post" className="px-4 py-3 border-t border-line">
-          <button className="btn-ghost w-full" type="submit">Sign out</button>
+          <button className="btn-ghost w-full" type="submit">{t("common.signOut")}</button>
         </form>
       </aside>
     </>

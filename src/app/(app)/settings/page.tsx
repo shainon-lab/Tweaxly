@@ -3,6 +3,7 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { syncVendorsFromTransactions } from "@/lib/vendorSync";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
+import { getServerT } from "@/lib/i18n/server";
 import SettingsClient from "./SettingsClient";
 
 export default async function SettingsPage() {
@@ -28,11 +29,12 @@ export default async function SettingsPage() {
   // Revenue (income) categories first, then outcome categories — applied
   // everywhere a category list is rendered.
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
+  const { t } = await getServerT();
   return (
     <>
       <PageHeader
-        title="Settings"
-        subtitle="Business profile and branding, plus categories, vendors, and the rules that auto-classify your transactions."
+        title={t("settings.title")}
+        subtitle={t("settings.subtitle")}
       />
       <SettingsClient
         business={{

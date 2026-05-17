@@ -23,6 +23,10 @@ model User {
   // Stamped on every successful /api/auth/login. Drives 'last login'
   // columns in the admin Customer 360.
   lastLoginAt  DateTime?
+  // BCP-47 / two-letter language code for the UI. 'en' = English,
+  // 'he' = Hebrew (RTL). Falls back to 'en' for any locale missing
+  // from the dictionary.
+  preferredLanguage String @default("en")
   createdAt    DateTime   @default(now())
   businesses   Business[]
   memberships  BusinessMembership[]

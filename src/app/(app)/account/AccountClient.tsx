@@ -1,31 +1,37 @@
 "use client";
 
 // Account page. Top-level destination under the main sidebar nav (sits
-// alongside Settings). Five sub-tabs:
-//   Billing & Products | Payment Methods | Password | Access Logs | Close Account
+// alongside Settings). Sub-tabs:
+//   Billing & Products | Payment Methods | Password | Language & Region
+//   | Access Logs | Close Account
 
 import { useState } from "react";
+import { useT } from "@/lib/i18n/client";
+import { LanguagePreference } from "./LanguagePreference";
 
 type AccountSubTab =
   | "billing"
   | "payment"
   | "password"
+  | "preferences"
   | "access_logs"
   | "close_account";
 
 export default function AccountClient({
   user,
 }: {
-  user: { email: string; createdAt: string };
+  user: { email: string; createdAt: string; preferredLanguage: string };
 }) {
+  const t = useT();
   const [tab, setTab] = useState<AccountSubTab>("billing");
 
   const subTabs: { value: AccountSubTab; label: string }[] = [
-    { value: "billing",       label: "Billing & Products" },
+    { value: "billing",       label: t("account.tab.billing") },
     { value: "payment",       label: "Payment Methods" },
-    { value: "password",      label: "Password" },
-    { value: "access_logs",   label: "Access Logs" },
-    { value: "close_account", label: "Close Account" },
+    { value: "password",      label: t("account.tab.password") },
+    { value: "preferences",   label: t("account.tab.preferences") },
+    { value: "access_logs",   label: t("account.tab.accessLog") },
+    { value: "close_account", label: t("account.tab.danger") },
   ];
 
   return (
@@ -50,6 +56,7 @@ export default function AccountClient({
       {tab === "billing"       ? <BillingPane /> : null}
       {tab === "payment"       ? <PaymentMethodsPane /> : null}
       {tab === "password"      ? <PasswordPane user={user} /> : null}
+      {tab === "preferences"   ? <LanguagePreference initialLocale={user.preferredLanguage} /> : null}
       {tab === "access_logs"   ? <AccessLogsPane /> : null}
       {tab === "close_account" ? <CloseAccountPane /> : null}
     </>
