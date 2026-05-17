@@ -1,245 +1,430 @@
 import Logo from "@/components/Logo";
+import { SignalDeckFull, SignalDeckHero } from "@/components/mocks/SignalDeck";
+import { ForecastChart } from "@/components/mocks/ForecastChart";
+import { ConsultationMock } from "@/components/mocks/Consultation";
+import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
 
-const FEATURES: { title: string; body: string }[] = [
-  {
-    title: "Business Signals you can act on",
-    body: "Rotating, plain-English insights anchored to specific months — payroll growth, vendor spikes, margin shifts, expense jumps. Refresh to surface different angles; close anything you don't want right now.",
-  },
-  {
-    title: "Insights with seven charts in one view",
-    body: "Trend, cash flow, top expense categories, revenue channels, spending shape, biggest swing, and top vendors — all driven by one period filter (last 6 months, monthly, quarterly, yearly, or a custom range).",
-  },
-  {
-    title: "Forecast as a decision-impact engine",
-    body: "Baseline vs scenario, side-by-side. Layer in hires, terminations, raises, marketing changes, new contracts, one-time expenses — see the dollar effect on revenue, expenses, profit, and cashflow before you commit.",
-  },
-  {
-    title: "Workforce Overview — financial, not HR",
-    body: "Real cost per employee (salary + taxes + pension + benefits + extras), payroll growth vs revenue, fixed vs variable workforce cost, and how many hires the business can actually afford right now.",
-  },
-  {
-    title: "Threshold notifications & AI advisor",
-    body: "Define alert rules (\"revenue down 10% MoM\", \"expenses above $5,000 QoQ\") and they fire automatically. Ask the advisor any question — it answers with your real categories, vendors, and trends.",
-  },
-  {
-    title: "Multi-source upload, branded workspace",
-    body: "Import CSV/Excel from any bank, credit card, or PSP. Rules auto-categorize on every future import. Upload your own logo and favicon — Tweaxly is the engine in the background.",
-  },
-];
+const PRODUCT_URL = "https://tweaxly.vercel.app";
+const SIGNUP_URL  = `${PRODUCT_URL}/register`;
+const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
-const MODULES: { name: string; tagline: string; body: string }[] = [
-  {
-    name: "Dashboard",
-    tagline: "What changed",
-    body: "Live KPIs (revenue, expenses, net profit, payroll, headcount), period comparisons, business signals, and threshold alerts — the first thing you see every morning.",
-  },
-  {
-    name: "Insights",
-    tagline: "Why it changed",
-    body: "Seven visual breakdowns across one chosen window — trend, cash flow, top expense categories, revenue channels, spending shape, swing analysis, top vendors.",
-  },
-  {
-    name: "Workforce Overview",
-    tagline: "What the team costs",
-    body: "Real per-employee cost, payroll-to-revenue ratio, fixed vs variable workforce, contractor share, and how many hires you can support — no HR clutter.",
-  },
-  {
-    name: "Forecast",
-    tagline: "What happens next",
-    body: "Baseline projection plus a scenario layer. Add hires, marketing changes, new revenue, one-time expenses — every assumption flows through to projected profit and cashflow.",
-  },
+const POSITIONING = [
+  "Built for modern SMB owners",
+  "AI-native financial intelligence",
+  "Trends detected in real time",
+  "Forecast business impact",
+  "Signals you can act on",
 ];
 
 const FAQ: { q: string; a: string }[] = [
   {
-    q: "What is TWEAXLY?",
-    a: "TWEAXLY is an AI-powered business intelligence platform for small and medium business owners. It connects your financial data — bank, credit card, payroll, invoices — and turns it into a live dashboard, forecasts, alerts, and an AI advisor that answers questions in plain English.",
+    q: "What is Tweaxly?",
+    a: "Tweaxly is an AI-native business intelligence platform for small and medium business owners. It connects your financial activity, watches for changes, forecasts what's next, and gives you an AI advisor that understands your real numbers — so you can run your business with the clarity of a finance team without hiring one.",
   },
   {
     q: "Is this accounting software?",
-    a: "No. TWEAXLY isn't bookkeeping or ERP. It's the intelligence layer above the systems you already use: it reads your data, tells you what changed, what matters, and what to do next. Your accountant still does the books.",
+    a: "No. Tweaxly isn't bookkeeping or ERP. It's the intelligence layer above the systems you already use — it reads your data, tells you what changed, what matters, and what to do next. Your accountant still does the books.",
   },
   {
-    q: "What data sources does TWEAXLY support?",
-    a: "Bank transactions, credit cards, PayPal/Stripe, invoicing, payroll, and manual entries (recurring or one-time). You can import CSV/Excel files from any source — auto-categorization rules learn your patterns and apply on every future upload.",
+    q: "What data does Tweaxly connect?",
+    a: "Bank transactions, credit cards, payment processors (Stripe / PayPal), invoicing, payroll, and manual entries. Upload CSV/Excel from any source — categorization rules learn your patterns and apply on every future import automatically.",
   },
   {
-    q: "How long does it take to set up?",
-    a: "Most owners are looking at their first dashboard within 5 minutes: upload one bank statement, accept the suggested categories, and the platform fills in the rest. Forecasts and alerts get sharper as you import more.",
+    q: "How long does it take to see something useful?",
+    a: "Most owners see their first signals within minutes of the first upload. Forecasts and signals get sharper as more data arrives, but the platform produces something on day one.",
   },
   {
     q: "Do I need to be technical or financially trained?",
-    a: "No. TWEAXLY is built for owners, not accountants. Every screen is designed around the questions you actually ask: am I profitable, what's changing, and what should I do about it?",
+    a: "No. Tweaxly is built for owners, not accountants. Every screen is designed around the questions you actually ask — am I profitable, what's changing, and what should I do about it?",
   },
   {
     q: "Can the AI advisor see my real numbers?",
-    a: "Yes — that's the point. The advisor reads your actual categories, vendors, employees, and monthly snapshots, so its answers reference your real situation (\"your Marketing & Ads spend in May was $1,100, down from $2,400 in April…\") instead of generic finance tips.",
+    a: "Yes — that's the point. The advisor reads your actual categories, vendors, employees, and monthly snapshots, so its answers reference your real situation (\"Your Marketing & Ads spend in May was $1,100, down from $2,400 in April…\") instead of generic finance tips.",
   },
   {
     q: "Is my data secure?",
-    a: "Your business data is stored in your private workspace and never used to train shared models. We process the minimum amount of data needed to generate the dashboards and answers you see.",
+    a: "Your business data lives in your private workspace and is never used to train shared models. We process only the minimum data needed to generate the dashboards and answers you see.",
   },
   {
     q: "How much does it cost?",
-    a: "We're onboarding a small group of business owners during early access. Pricing will be announced closer to general availability — join the waitlist and we'll keep you posted.",
+    a: "We're onboarding a small group of business owners during early access. Pricing will be announced closer to general availability — sign up and we'll keep you posted.",
   },
 ];
 
-const PRODUCT_URL = "https://tweaxly.vercel.app";
-const SIGNUP_URL = `${PRODUCT_URL}/register`;
-const LOGIN_URL  = `${PRODUCT_URL}/login`;
-
 export default function Home() {
   return (
-    <main className="flex-1">
-      <header className="container-tweaxly pt-10 pb-6 flex items-center justify-between gap-3">
-        <Logo size="md" showTagline />
-        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
-          <a href="#features" className="hover:text-white transition">Features</a>
-          <a href="#modules" className="hover:text-white transition">Modules</a>
-          <a href="#how-it-works" className="hover:text-white transition">How it works</a>
-          <a href="#faq" className="hover:text-white transition">FAQ</a>
-        </nav>
-        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <a href={LOGIN_URL} className="btn-ghost text-sm">Log in</a>
-          <a href={SIGNUP_URL} className="btn-brand text-sm">Sign up</a>
-        </div>
-      </header>
+    <main className="flex-1 overflow-x-hidden">
+      <SiteHeader />
+      <Hero />
+      <PositioningStrip />
+      <SignalsSection />
+      <ConsultationSection />
+      <ForecastSection />
+      <OverviewSection />
+      <HowItWorks />
+      <FAQSection />
+      <FinalCTA />
+      <SiteFooter />
+    </main>
+  );
+}
 
-      {/* Hero */}
-      <section className="container-tweaxly pt-16 pb-24 text-center">
-        <div className="inline-flex items-center gap-2 rounded-full border border-line bg-ink-900/60 px-3 py-1 text-xs text-slate-300 mb-8">
-          <span className="w-1.5 h-1.5 rounded-full bg-good" />
-          AI-powered business intelligence for small business owners
-        </div>
-        <h1 className="text-4xl md:text-6xl font-bold tracking-tight max-w-4xl mx-auto leading-[1.05]">
-          Know what&rsquo;s <span className="gradient-text">really happening</span> in your business.
-        </h1>
-        <p className="mt-6 text-lg text-slate-300 max-w-2xl mx-auto">
-          Tweaxly connects your revenue, expenses, payroll, and cashflow into one
-          intelligent layer — giving you forecasts, business signals, and smarter
-          decision support.
-        </p>
-        <div className="mt-10 flex items-center justify-center gap-3 flex-wrap">
-          <a href={SIGNUP_URL} className="btn-brand text-base px-6 py-3">
-            Try the platform
-          </a>
-          <a href="#features" className="btn-ghost text-base px-6 py-3">
-            See features
-          </a>
-        </div>
-      </section>
+// ─────────────────────────────────────────────────────────────────────
+// Header
+// ─────────────────────────────────────────────────────────────────────
 
-      {/* Features grid */}
-      <section id="features" className="container-tweaxly py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Built for owners, not accountants
-          </h2>
-          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
-            Every screen is designed to answer the questions you actually ask:
-            am I profitable, what&apos;s changing, and what should I do about it?
+function SiteHeader() {
+  return (
+    <header className="container-wide pt-8 pb-4 flex items-center justify-between gap-3">
+      <Logo size="md" showTagline />
+      <nav className="hidden md:flex items-center gap-7 text-sm text-slate-300">
+        <a href="#signals"      className="hover:text-white transition">Signals</a>
+        <a href="#advisory"     className="hover:text-white transition">Advisory</a>
+        <a href="#forecast"     className="hover:text-white transition">Forecast</a>
+        <a href="#how-it-works" className="hover:text-white transition">How it works</a>
+        <a href="#faq"          className="hover:text-white transition">FAQ</a>
+      </nav>
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <a href={LOGIN_URL} className="btn-ghost text-sm">Log in</a>
+        <a href={SIGNUP_URL} className="btn-brand text-sm">Sign up</a>
+      </div>
+    </header>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Hero
+// ─────────────────────────────────────────────────────────────────────
+
+function Hero() {
+  return (
+    <section className="container-wide pt-12 pb-20 lg:pt-16 lg:pb-28">
+      <div className="grid lg:grid-cols-12 gap-12 lg:gap-10 items-center">
+        {/* Copy */}
+        <div className="lg:col-span-5 flex flex-col gap-6">
+          <div className="eyebrow self-start">
+            <span className="w-1.5 h-1.5 rounded-full bg-good anim-pulse-soft" />
+            AI-native business intelligence
+          </div>
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
+            Your business already has <span className="gradient-text">signals</span>. Tweaxly helps you see them.
+          </h1>
+          <p className="text-lg text-slate-300 leading-relaxed max-w-xl">
+            Tweaxly connects your financial activity, detects what&apos;s changing,
+            forecasts where you&apos;re heading, and gives you an AI advisor that
+            understands your real numbers — in real time.
           </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {FEATURES.map((f) => (
-            <div key={f.title} className="card">
-              <div className="text-base font-semibold text-white mb-2">{f.title}</div>
-              <div className="text-sm text-slate-400">{f.body}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* Modules — what's actually in the platform */}
-      <section id="modules" className="container-tweaxly py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Four intelligence modules, one workspace
-          </h2>
-          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
-            Each module answers a different question — together they give you the
-            full operating picture without the spreadsheet workout.
-          </p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {MODULES.map((m) => (
-            <div key={m.name} className="card">
-              <div className="text-xs uppercase tracking-wide text-slate-400">{m.tagline}</div>
-              <div className="text-lg font-semibold text-white mt-1 mb-2">{m.name}</div>
-              <div className="text-sm text-slate-400">{m.body}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="container-tweaxly py-16">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            From first upload to clarity in 5 minutes
-          </h2>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[
-            { step: "1", title: "Connect your data", body: "Upload bank/credit card statements, or paste them in. Add manual entries for income or expenses that don't show up in transactions." },
-            { step: "2", title: "Categorize once", body: "Set up rules so future imports auto-tag themselves. Every other number on the platform sharpens as your data does." },
-            { step: "3", title: "Ask anything", body: "Open the consultation tab and ask questions in plain English. The advisor reads your real data and answers like a CFO who's been with you for years." },
-          ].map((s) => (
-            <div key={s.step} className="card">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="inline-flex items-center justify-center w-8 h-8 rounded-md bg-brand-purple/20 text-brand-purple font-semibold">
-                  {s.step}
-                </span>
-                <div className="text-base font-semibold text-white">{s.title}</div>
-              </div>
-              <div className="text-sm text-slate-400">{s.body}</div>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section id="faq" className="container-tweaxly py-16">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Frequently asked questions
-          </h2>
-          <p className="mt-3 text-slate-400 max-w-2xl mx-auto">
-            Common questions about TWEAXLY, how it works, and what you get.
-          </p>
-        </div>
-        <div className="max-w-3xl mx-auto space-y-3">
-          {FAQ.map((item, i) => (
-            <details key={i} className="faq-item">
-              <summary>{item.q}</summary>
-              <div className="faq-answer">{item.a}</div>
-            </details>
-          ))}
-        </div>
-      </section>
-
-      {/* Final CTA */}
-      <section className="container-tweaxly py-20">
-        <div className="card text-center" style={{ backgroundColor: "#0a1428" }}>
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight">
-            Stop wondering. <span className="gradient-text">Start knowing.</span>
-          </h2>
-          <p className="mt-3 text-slate-400 max-w-xl mx-auto">
-            Open your TWEAXLY workspace and see your finances the way they should look.
-          </p>
-          <div className="mt-8">
+          <div className="flex items-center gap-3 flex-wrap">
             <a href={SIGNUP_URL} className="btn-brand text-base px-6 py-3">
-              Try the platform
+              See the platform
+            </a>
+            <a href="#signals" className="btn-ghost text-base px-6 py-3">
+              Explore insights →
+            </a>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-slate-500 pt-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-good" />
+            No credit card · 5-minute setup · Your data stays yours
+          </div>
+        </div>
+
+        {/* Product visual */}
+        <div className="lg:col-span-7 relative">
+          <SignalDeckHero />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Positioning strip
+// ─────────────────────────────────────────────────────────────────────
+
+function PositioningStrip() {
+  return (
+    <section className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm">
+      <div className="container-wide py-5">
+        <div className="flex items-center justify-between gap-6 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-400">
+          {POSITIONING.map((p) => (
+            <div key={p} className="flex items-center gap-2">
+              <span className="w-1 h-1 rounded-full bg-brand-purple" />
+              {p}
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Section template
+// ─────────────────────────────────────────────────────────────────────
+
+function SectionHeader({
+  eyebrow,
+  title,
+  body,
+}: { eyebrow: string; title: React.ReactNode; body: string }) {
+  return (
+    <div className="max-w-2xl">
+      <div className="eyebrow mb-4">{eyebrow}</div>
+      <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+        {title}
+      </h2>
+      <p className="mt-4 text-lg text-slate-400 leading-relaxed">{body}</p>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Signals
+// ─────────────────────────────────────────────────────────────────────
+
+function SignalsSection() {
+  return (
+    <section id="signals" className="container-wide py-24 lg:py-32">
+      <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <div className="lg:col-span-5">
+          <SectionHeader
+            eyebrow="Signals"
+            title={<>The platform <span className="gradient-text">proactively</span> surfaces what matters.</>}
+            body="Tweaxly watches every line of your financial data and flags the changes worth your attention — vendor spikes, margin compression, cash risks, growth opportunities — before they become problems."
+          />
+          <div className="mt-8 grid grid-cols-2 gap-4 max-w-md">
+            <ValueCell tone="bad"     label="Cash risk detected" />
+            <ValueCell tone="warn"    label="Vendor spike" />
+            <ValueCell tone="purple"  label="Trend reversed" />
+            <ValueCell tone="good"    label="Growth opportunity" />
+          </div>
+        </div>
+        <div className="lg:col-span-7">
+          <SignalDeckFull />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ValueCell({ tone, label }: { tone: "bad" | "warn" | "purple" | "good"; label: string }) {
+  const dot =
+    tone === "bad"    ? "bg-bad"          :
+    tone === "warn"   ? "bg-warn"         :
+    tone === "purple" ? "bg-brand-purple" :
+                        "bg-good";
+  return (
+    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-ink-900/40 px-3 py-2.5 text-sm text-slate-200">
+      <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
+      {label}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Consultation / Advisory
+// ─────────────────────────────────────────────────────────────────────
+
+function ConsultationSection() {
+  return (
+    <section id="advisory" className="relative py-24 lg:py-32">
+      {/* Section accent — purple glow behind */}
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_50%,rgba(167,139,250,0.12),transparent_70%)] pointer-events-none" aria-hidden="true" />
+      <div className="container-wide relative grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <div className="lg:col-span-6 lg:order-2">
+          <SectionHeader
+            eyebrow="Advisory"
+            title={<>Ask your business <span className="gradient-text">anything</span>.</>}
+            body="A built-in AI advisor that reads your real categories, vendors, and trends — and answers in plain English with reasoning you can verify."
+          />
+          <ul className="mt-8 flex flex-col gap-2.5 max-w-md">
+            {[
+              "Why did profitability drop this month?",
+              "What changed in payroll expenses?",
+              "What happens if I hire 2 more engineers?",
+              "Which expense category is growing fastest?",
+            ].map((q) => (
+              <li key={q} className="flex items-start gap-3 text-sm text-slate-300">
+                <span className="mt-1.5 w-1 h-1 rounded-full bg-brand-purple shrink-0" />
+                &ldquo;{q}&rdquo;
+              </li>
+            ))}
+          </ul>
+        </div>
+        <div className="lg:col-span-6 lg:order-1 flex justify-center lg:justify-end">
+          <ConsultationMock />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Forecast
+// ─────────────────────────────────────────────────────────────────────
+
+function ForecastSection() {
+  return (
+    <section id="forecast" className="container-wide py-24 lg:py-32">
+      <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <div className="lg:col-span-5">
+          <SectionHeader
+            eyebrow="Forecast"
+            title={<>See where you&apos;re <span className="gradient-text">heading</span> before deciding.</>}
+            body="Baseline projection plus a scenario layer. Add hires, marketing changes, contracts, one-time expenses — every assumption flows through to projected profit and cashflow."
+          />
+          <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-300">
+            <ListBullet icon="↗">Baseline vs scenario, side by side</ListBullet>
+            <ListBullet icon="◇">Layer hires, raises, contracts, one-time costs</ListBullet>
+            <ListBullet icon="∑">Dollar impact on revenue, margin, and cashflow</ListBullet>
+          </ul>
+        </div>
+        <div className="lg:col-span-7">
+          <ForecastChart />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ListBullet({ icon, children }: { icon: string; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="mt-0.5 w-6 h-6 rounded-md border border-brand-purple/40 bg-brand-purple/10 text-brand-purple text-xs inline-flex items-center justify-center shrink-0">
+        {icon}
+      </span>
+      <span>{children}</span>
+    </li>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Executive Overview
+// ─────────────────────────────────────────────────────────────────────
+
+function OverviewSection() {
+  return (
+    <section id="overview" className="relative py-24 lg:py-32">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_50%,rgba(34,211,238,0.10),transparent_70%)] pointer-events-none" aria-hidden="true" />
+      <div className="container-wide relative">
+        <div className="text-center max-w-2xl mx-auto mb-12">
+          <div className="eyebrow mb-4">Executive Overview</div>
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+            Clarity in minutes, not <span className="gradient-text">spreadsheets</span>.
+          </h2>
+          <p className="mt-4 text-lg text-slate-400 leading-relaxed">
+            The first screen every morning — KPIs, deltas, and a single AI takeaway
+            anchored to what just changed in your numbers.
+          </p>
+        </div>
+        <ExecutiveOverviewMock />
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// How it works
+// ─────────────────────────────────────────────────────────────────────
+
+function HowItWorks() {
+  const STEPS = [
+    { n: "1", title: "Connect your data",  body: "Upload bank, card, or payment-processor statements. Or paste them in. Categorization rules learn your patterns." },
+    { n: "2", title: "Watch the deck",     body: "Within minutes, Signals start populating with what changed, what's at risk, and where the opportunity is." },
+    { n: "3", title: "Ask anything",       body: "Open Advisory and ask in plain English. The AI answers using your real categories, vendors, and trends." },
+  ];
+  return (
+    <section id="how-it-works" className="container-wide py-24 lg:py-32">
+      <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="eyebrow mb-4">How it works</div>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+          From first upload to clarity in <span className="gradient-text">5 minutes</span>.
+        </h2>
+      </div>
+      <div className="grid sm:grid-cols-3 gap-4">
+        {STEPS.map((s) => (
+          <div key={s.n} className="rounded-2xl border border-line bg-ink-900/40 backdrop-blur-sm p-6">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-purple/15 border border-brand-purple/30 text-brand-purple text-sm font-semibold">
+                {s.n}
+              </span>
+              <div className="text-base font-semibold text-white">{s.title}</div>
+            </div>
+            <div className="text-sm text-slate-400 leading-relaxed">{s.body}</div>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// FAQ
+// ─────────────────────────────────────────────────────────────────────
+
+function FAQSection() {
+  return (
+    <section id="faq" className="container-wide py-24 lg:py-32">
+      <div className="text-center max-w-2xl mx-auto mb-12">
+        <div className="eyebrow mb-4">FAQ</div>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+          Common questions.
+        </h2>
+      </div>
+      <div className="max-w-3xl mx-auto space-y-3">
+        {FAQ.map((item, i) => (
+          <details key={i} className="faq-item">
+            <summary>{item.q}</summary>
+            <div className="faq-answer">{item.a}</div>
+          </details>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Final CTA
+// ─────────────────────────────────────────────────────────────────────
+
+function FinalCTA() {
+  return (
+    <section className="container-wide py-20">
+      <div className="relative rounded-3xl border border-brand-purple/25 overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(167,139,250,0.18),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(34,211,238,0.15),transparent_60%)]" aria-hidden="true" />
+        <div className="relative p-10 lg:p-16 text-center">
+          <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+            Stop wondering. <span className="gradient-text">Start understanding.</span>
+          </h2>
+          <p className="mt-4 text-lg text-slate-300 max-w-xl mx-auto">
+            Open Tweaxly and see your business the way a finance team would.
+          </p>
+          <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
+            <a href={SIGNUP_URL} className="btn-brand text-base px-6 py-3">
+              See the platform
+            </a>
+            <a href={LOGIN_URL} className="btn-ghost text-base px-6 py-3">
+              Log in
             </a>
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      <footer className="container-tweaxly py-10 border-t border-line text-xs text-slate-500 flex items-center justify-between">
-        <div>© {new Date().getFullYear()} TWEAXLY</div>
-        <div>AI-Powered Business Intelligence</div>
-      </footer>
-    </main>
+// ─────────────────────────────────────────────────────────────────────
+// Footer
+// ─────────────────────────────────────────────────────────────────────
+
+function SiteFooter() {
+  return (
+    <footer className="container-wide py-10 border-t border-line text-xs text-slate-500 flex items-center justify-between flex-wrap gap-3">
+      <div>© {new Date().getFullYear()} TWEAXLY</div>
+      <div className="flex items-center gap-2">
+        <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
+        AI-native business intelligence
+      </div>
+    </footer>
   );
 }
