@@ -19,7 +19,8 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
 import { MessageSquareText, Sparkles, X } from "lucide-react";
 import { renderMarkdown } from "@/app/(app)/consultation/markdown";
-import { useT } from "@/lib/i18n/client";
+import { useT, useLocale } from "@/lib/i18n/client";
+import { dirFor } from "@/lib/i18n";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Proactive nudge configuration. The values here are tuned to feel
@@ -256,6 +257,14 @@ function deriveViewMeta(pathname: string): ViewMeta {
 
 export default function GlobalConsult() {
   const t = useT();
+  // Mirror every fixed-position element when the document direction
+  // is RTL so the button + nudge + slide-in panel anchor to the left
+  // edge instead of the right.
+  const rtl = dirFor(useLocale()) === "rtl";
+  const fbPos = rtl ? "left-5"  : "right-5";   // floating button + nudge
+  const panelPos = rtl ? "left-0"  : "right-0";   // slide-in panel anchor
+  const panelBorder = rtl ? "border-r" : "border-l"; // edge facing the page
+  const panelAnim = rtl ? "animate-[slideInLeft_220ms_ease-out]" : "animate-[slideInRight_220ms_ease-out]";
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState("");
@@ -465,7 +474,7 @@ export default function GlobalConsult() {
           page, never on top of the open panel, never repeatedly. */}
       {showNudge && !open ? (
         <div
-          className="fixed bottom-[68px] right-5 z-40 max-w-[300px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]"
+          className={`fixed bottom-[68px] ${fbPos} z-40 max-w-[300px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]`}
           role="status"
           aria-live="polite"
         >
@@ -547,7 +556,7 @@ export default function GlobalConsult() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="fixed bottom-5 right-5 z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200"
+        className={`fixed bottom-5 ${fbPos} z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200`}
         aria-label="Open AI business consultation"
         title="Consult with your AI advisor about this view"
       >
@@ -569,7 +578,7 @@ export default function GlobalConsult() {
               on sm+. Smooth slide-in from the right via Tailwind's
               built-in transition utilities. */}
           <aside
-            className="fixed right-0 top-0 bottom-0 z-50 w-full sm:w-[460px] bg-ink-900 border-l border-line shadow-2xl flex flex-col animate-[slideInRight_220ms_ease-out]"
+            className={`fixed ${panelPos} top-0 bottom-0 z-50 w-full sm:w-[460px] bg-ink-900 ${panelBorder} border-line shadow-2xl flex flex-col ${panelAnim}`}
             role="dialog"
             aria-modal="true"
             aria-label="AI consultation panel"

@@ -192,6 +192,13 @@ html[data-theme="light"] [data-surface="sub"] {
   to   { transform: translateX(0);    opacity: 1; }
 }
 
+/* Mirrored variant used when the document direction is RTL — the
+   panel anchors to the left edge and enters from there. */
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); opacity: 0; }
+  to   { transform: translateX(0);     opacity: 1; }
+}
+
 /* Proactive nudge fade/slide-in. Quieter than the panel slide. */
 @keyframes nudgeIn {
   from { transform: translateY(6px); opacity: 0; }
