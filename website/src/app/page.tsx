@@ -85,7 +85,7 @@ const FAQ: { q: string; a: string }[] = [
   },
 ];
 
-const PRODUCT_URL = "https://adoption-bus-bee-regularly.trycloudflare.com";
+const PRODUCT_URL = "https://tweaxly.vercel.app";
 const SIGNUP_URL = `${PRODUCT_URL}/register`;
 const LOGIN_URL  = `${PRODUCT_URL}/login`;
 
