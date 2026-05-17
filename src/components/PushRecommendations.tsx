@@ -69,6 +69,9 @@ type CompactDisplay = {
   title: string;
   metric?: string;
   direction?: "up" | "down" | "flat";
+  // One short contextual sentence — the only prose on a collapsed
+  // card. Kept under ~8 words so the card stays scannable.
+  subtitle?: string;
 };
 
 function firstPct(s: string): string | undefined {
@@ -87,58 +90,59 @@ function compactDisplay(r: PushRec): CompactDisplay {
   const obs = r.observation;
   switch (key) {
     case "marketing_intensity_high":
-      return { title: "Marketing Heavy", metric: firstPct(obs), direction: "up" };
+      return { title: "Marketing Pressure", metric: firstPct(obs), direction: "up", subtitle: "Above the 25% revenue guardrail." };
     case "marketing_cut_held":
-      return { title: "Marketing Cut", metric: "Held", direction: "flat" };
+      return { title: "Marketing Cut", metric: "Held", direction: "flat", subtitle: "Held without hurting revenue." };
     case "vendor_spike":
-      return { title: tail ?? "Vendor Spike", metric: firstPct(obs), direction: "up" };
+      return { title: "Vendor Spike", metric: firstPct(obs), direction: "up", subtitle: tail ? `${tail} cost rose sharply.` : "A vendor cost rose sharply." };
     case "forecast_negative_next_month":
-      return { title: "Cash Risk", metric: firstMoney(obs), direction: "down" };
+      return { title: "Cash Risk", metric: firstMoney(obs), direction: "down", subtitle: "Next month is forecast negative." };
     case "payroll_heavy":
-      return { title: "Payroll Heavy", metric: firstPct(obs) };
+      return { title: "Payroll Pressure", metric: firstPct(obs), subtitle: "Heavy for your current run-rate." };
     case "uncategorized_high": {
       const m = obs.match(/^(\d+)/);
-      return { title: "Uncategorized", metric: m ? `${m[1]} txns` : undefined };
+      return { title: "Uncategorized", metric: m ? `${m[1]} txns` : undefined, subtitle: "Needs categorization to sharpen insights." };
     }
     case "growth_headroom":
-      return { title: "Growth Headroom" };
+      return { title: "Growth Headroom", metric: firstPct(obs), subtitle: "Opportunity to scale marketing." };
     case "vendor_concentration":
-      return { title: tail ?? "Vendor Share", metric: firstPct(obs) };
+      return { title: "Vendor Concentration", metric: firstPct(obs), subtitle: tail ? `${tail} dominates spend this month.` : "Single vendor dominates spend." };
     case "revenue_mom_swing": {
       const pct = firstPct(obs);
       const isDown = obs.toLowerCase().includes("down") || (pct?.startsWith("-") ?? false);
       return {
-        title: isDown ? "Revenue Down" : "Revenue Up",
+        title: isDown ? "Revenue Decrease" : "Revenue Increase",
         metric: pct,
         direction: isDown ? "down" : "up",
+        subtitle: isDown ? "Potential slowdown detected." : "Top-line trending up.",
       };
     }
     case "net_margin_observation":
-      return { title: "Net Margin", metric: firstPct(obs) };
+      return { title: "Net Margin", metric: firstPct(obs), subtitle: "This month's profitability snapshot." };
     case "top_expense_category":
-      return { title: tail ?? "Top Expense", metric: firstMoney(obs) };
+      return { title: "Top Expense", metric: firstMoney(obs), subtitle: tail ? `${tail} leads spend this month.` : "Largest cost category this month." };
     case "expense_mom_jump":
-      return { title: "Expense Jump", metric: firstPct(obs), direction: "up" };
+      return { title: "Expense Jump", metric: firstPct(obs), direction: "up", subtitle: "Operating costs rose month-over-month." };
     case "trailing_3_net":
-      return { title: "3-mo Net", metric: firstMoney(obs) };
+      return { title: "3-mo Net", metric: firstMoney(obs), subtitle: "Trailing three-month performance." };
     case "monthly_revenue_snapshot":
-      return { title: "Revenue", metric: firstMoney(obs) };
+      return { title: "Monthly Revenue", metric: firstMoney(obs), subtitle: "This month's top-line." };
     case "monthly_expense_snapshot":
-      return { title: "Expenses", metric: firstMoney(obs) };
+      return { title: "Monthly Expenses", metric: firstMoney(obs), subtitle: "This month's total spend." };
     case "avg_revenue_trail3":
-      return { title: "Avg Revenue", metric: firstMoney(obs) };
+      return { title: "Avg Revenue", metric: firstMoney(obs), subtitle: "Trailing three-month average." };
     case "recurring_expense_base":
-      return { title: "Recurring Base", metric: firstMoney(obs) };
+      return { title: "Recurring Base", metric: firstMoney(obs), subtitle: "Locked-in monthly spend." };
     case "ytd_snapshot":
-      return { title: "YTD Net", metric: firstMoney(obs) };
+      return { title: "YTD Net", metric: firstMoney(obs), subtitle: "Year-to-date performance." };
     case "headcount_snapshot": {
       const m = obs.match(/^(\d+)/);
-      return { title: "Headcount", metric: m ? m[1] : undefined };
+      return { title: "Headcount", metric: m ? m[1] : undefined, subtitle: "Active employees on payroll." };
     }
     case "upload_freshness":
-      return { title: "Data Freshness", metric: "Stale" };
+      return { title: "Data Freshness", metric: "Stale", subtitle: "Latest upload looks outdated." };
     case "empty_fallback":
-      return { title: "All Clear" };
+      return { title: "All Clear", subtitle: "No urgent issues detected." };
     default:
       return {
         title: CATEGORY_LABEL[r.category] ?? "Signal",
@@ -222,12 +226,14 @@ const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
   ongoing:    "Ongoing",
   resolved:   "Resolved",
 };
-const LIFECYCLE_TONE: Record<Lifecycle, string> = {
-  new:        "border-accent/40 text-accent",
-  escalating: "border-bad/40 text-bad",
-  improving:  "border-good/40 text-good",
-  ongoing:    "border-line text-slate-400",
-  resolved:   "border-line text-slate-500",
+// Text-only lifecycle tone for inline placement in the compact meta
+// row — no border/pill chrome, just a colored word.
+const LIFECYCLE_TEXT: Record<Lifecycle, string> = {
+  new:        "text-accent font-medium",
+  escalating: "text-bad font-medium",
+  improving:  "text-good font-medium",
+  ongoing:    "text-slate-400",
+  resolved:   "text-slate-500",
 };
 
 function fmtMoney(value: number, currency: string) {
@@ -453,7 +459,7 @@ function SignalGroups({
   );
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {priority.length > 0 ? (
         <PrioritySection
           items={priority}
@@ -578,7 +584,7 @@ function DynamicSection({
         hint="What's shifted since you last looked."
         tone="accent"
       />
-      <div className="grid gap-2 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className="grid gap-3 grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
         {sorted.map((r) => (
           <CompactCard
             key={r.id}
@@ -672,16 +678,20 @@ function CompactCard({
   const display = compactDisplay(rec);
   const badge = badgeFor(rec);
 
-  // Visual hierarchy by severity. Priority cards get a thicker left
-  // border stripe and a stronger background tint.
+  // Severity tone — quiet by default. Priority cards add a small
+  // colored dot indicator and the badge does the heavy lifting on
+  // color. We deliberately drop the heavy left-stripe + bg tint so
+  // cards read as 'premium SaaS surface' rather than 'colored alert'.
   const tone =
-    rec.level === "bad"  ? { border: "border-bad/40",  stripe: "border-l-bad",  bg: "bg-bad/5"  } :
-    rec.level === "warn" ? { border: "border-warn/40", stripe: "border-l-warn", bg: "bg-warn/5" } :
-    rec.level === "good" ? { border: "border-good/30", stripe: "border-l-good", bg: "bg-good/5" } :
-                           { border: "border-line",    stripe: "border-l-line", bg: "bg-ink-900/40" };
-  const stripeClass = size === "lg" ? `border-l-4 ${tone.stripe}` : "";
+    rec.level === "bad"  ? { dot: "bg-bad",    hoverBorder: "hover:border-bad/50"  } :
+    rec.level === "warn" ? { dot: "bg-warn",   hoverBorder: "hover:border-warn/50" } :
+    rec.level === "good" ? { dot: "bg-good",   hoverBorder: "hover:border-good/40" } :
+                           { dot: "bg-accent", hoverBorder: "hover:border-accent/40" };
+
   const colSpan = expanded ? "col-span-full" : "";
-  const padding = size === "lg" ? "p-4" : "p-3";
+  const padding = size === "lg" ? "p-5" : "p-4";
+  const titleSize = size === "lg" ? "text-lg" : "text-base";
+  const metricSize = size === "lg" ? "text-4xl" : "text-3xl";
 
   // Direction arrow with sentiment-aware colour. An "up" arrow is bad
   // for expense/spike signals (red) and good for revenue/margin/growth.
@@ -690,47 +700,55 @@ function CompactCard({
     display.direction === "up"
       ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
       : display.direction === "down"
-      ? (rec.level === "good" ? "text-bad" : "text-bad")
+      ? "text-bad"
       : "";
 
   return (
-    <div className={`rounded-xl border ${tone.border} ${tone.bg} ${stripeClass} ${padding} ${colSpan} transition-all`}>
+    <div
+      className={`group relative rounded-2xl border border-line bg-ink-900/40 ${tone.hoverBorder} ${padding} ${colSpan} transition-all duration-200 ${expanded ? "shadow-lg shadow-black/20" : "hover:shadow-md hover:shadow-black/20 hover:bg-ink-900/60"}`}
+    >
       {!expanded ? (
         <button
           type="button"
           onClick={onToggleExpand}
-          className="w-full text-left flex items-start justify-between gap-3 group"
+          className="w-full text-left flex flex-col gap-3"
           aria-expanded="false"
         >
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-              <span className={`${BADGE_PILL[badge]} text-[10px]`}>{badge}</span>
-              {lifecycle && lifecycle !== "ongoing" ? (
-                <span className={`text-[10px] px-1.5 py-0.5 rounded border ${LIFECYCLE_TONE[lifecycle]}`}>
-                  {LIFECYCLE_LABEL[lifecycle]}
-                </span>
-              ) : null}
-            </div>
-            <div className={`${size === "lg" ? "text-base" : "text-sm"} font-semibold text-slate-100 leading-tight truncate`}>
-              {display.title}
-            </div>
-            {display.metric ? (
-              <div className={`${size === "lg" ? "text-2xl" : "text-lg"} font-bold text-slate-100 mt-1 leading-none tabular-nums`}>
-                {arrowChar ? <span className={`${arrowTone} mr-0.5`}>{arrowChar}</span> : null}
-                {display.metric}
-              </div>
-            ) : (
-              <div className="text-xs text-slate-400 mt-1">
-                {CATEGORY_LABEL[rec.category] ?? rec.category}
-              </div>
-            )}
+          {/* Meta row — single line, very small, low contrast. Dot
+              carries severity color so the badge text can be neutral. */}
+          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <span className={`w-1.5 h-1.5 rounded-full ${tone.dot}`} aria-hidden="true" />
+            <span className="font-medium tracking-wide">{badge}</span>
+            <span className="text-slate-600">·</span>
+            <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+            {lifecycle && lifecycle !== "ongoing" ? (
+              <>
+                <span className="text-slate-600">·</span>
+                <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
+              </>
+            ) : null}
           </div>
-          <ChevronRight
-            size={16}
-            strokeWidth={1.75}
-            className="shrink-0 text-slate-500 group-hover:text-slate-200 transition mt-0.5"
-            aria-hidden="true"
-          />
+
+          {/* Title — large, premium, single short phrase. */}
+          <div className={`${titleSize} font-semibold text-slate-50 leading-tight tracking-tight`}>
+            {display.title}
+          </div>
+
+          {/* Metric — the hero number. Big, tabular, with sentiment-
+              colored arrow when there's direction. */}
+          {display.metric ? (
+            <div className={`${metricSize} font-bold text-white leading-none tabular-nums tracking-tight`}>
+              {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
+              {display.metric}
+            </div>
+          ) : null}
+
+          {/* Subtitle — one short sentence. Optional, soft. */}
+          {display.subtitle ? (
+            <div className="text-sm text-slate-400 leading-snug line-clamp-2">
+              {display.subtitle}
+            </div>
+          ) : null}
         </button>
       ) : (
         <ExpandedDetails
@@ -743,6 +761,13 @@ function CompactCard({
           onResolve={onResolve}
         />
       )}
+
+      {/* Subtle 'Learn more' affordance — only on collapsed cards. */}
+      {!expanded ? (
+        <div className="absolute top-4 right-4 text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          <ChevronRight size={16} strokeWidth={1.75} aria-hidden="true" />
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -769,28 +794,43 @@ function ExpandedDetails({
     display.direction === "up"
       ? (rec.level === "bad" || rec.level === "warn" ? "text-bad" : "text-good")
       : display.direction === "down"
-      ? (rec.level === "good" ? "text-bad" : "text-bad")
+      ? "text-bad"
       : "";
   const consultQuestion = `${rec.observation} ${rec.interpretation} You suggested: ${rec.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+  const dot =
+    rec.level === "bad"  ? "bg-bad"    :
+    rec.level === "warn" ? "bg-warn"   :
+    rec.level === "good" ? "bg-good"   :
+                           "bg-accent";
   return (
     <div>
-      <div className="flex items-start justify-between gap-3 mb-4">
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1.5 flex-wrap mb-1.5">
-            <span className={`${BADGE_PILL[badge]} text-[10px]`}>{badge}</span>
-            <span className="pill text-[10px]">{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
+      {/* Hero — same visual rhythm as the collapsed card, with a
+          close affordance instead of the chevron. */}
+      <div className="flex items-start justify-between gap-4 mb-6">
+        <div className="min-w-0 flex-1 flex flex-col gap-3">
+          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+            <span className={`w-1.5 h-1.5 rounded-full ${dot}`} aria-hidden="true" />
+            <span className="font-medium tracking-wide">{badge}</span>
+            <span className="text-slate-600">·</span>
+            <span>{CATEGORY_LABEL[rec.category] ?? rec.category}</span>
             {lifecycle && lifecycle !== "ongoing" ? (
-              <span className={`text-[10px] px-1.5 py-0.5 rounded border ${LIFECYCLE_TONE[lifecycle]}`}>
-                {LIFECYCLE_LABEL[lifecycle]}
-              </span>
+              <>
+                <span className="text-slate-600">·</span>
+                <span className={LIFECYCLE_TEXT[lifecycle]}>{LIFECYCLE_LABEL[lifecycle]}</span>
+              </>
             ) : null}
           </div>
-          <div className="text-lg font-semibold text-slate-100 leading-tight">{display.title}</div>
+          <div className="text-xl font-semibold text-slate-50 leading-tight tracking-tight">
+            {display.title}
+          </div>
           {display.metric ? (
-            <div className="text-3xl font-bold text-slate-100 mt-1 leading-none tabular-nums">
-              {arrowChar ? <span className={`${arrowTone} mr-0.5`}>{arrowChar}</span> : null}
+            <div className="text-4xl font-bold text-white leading-none tabular-nums tracking-tight">
+              {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
               {display.metric}
             </div>
+          ) : null}
+          {display.subtitle ? (
+            <div className="text-sm text-slate-400 leading-snug">{display.subtitle}</div>
           ) : null}
         </div>
         <button
@@ -804,30 +844,35 @@ function ExpandedDetails({
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-3 mb-4">
+      {/* Structured sections — three columns at lg, stacking on
+          smaller widths. Each section is short prose, not paragraphs. */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
         <DetailSection label="What happened" body={rec.observation} />
         <DetailSection label="Why it matters" body={rec.interpretation} />
         <DetailSection label="Recommended action" body={rec.recommendation} accent />
-        {rec.impact > 0 ? (
-          <DetailSection
-            label="Estimated impact"
-            body={`≈ ${fmtMoney(rec.impact, currency)} / month`}
-          />
-        ) : null}
       </div>
 
-      <div className="flex items-center justify-between gap-2 flex-wrap pt-3 border-t border-line">
+      {rec.impact > 0 ? (
+        <div className="mb-6 flex items-center gap-3 text-sm text-slate-300">
+          <span className="text-[10px] uppercase tracking-wide text-slate-500">Estimated impact</span>
+          <span className="text-base font-semibold text-slate-100 tabular-nums">
+            ≈ {fmtMoney(rec.impact, currency)} / month
+          </span>
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-2 flex-wrap pt-4 border-t border-line">
         <button
           type="button"
           onClick={onResolve}
-          className="text-xs px-2.5 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
+          className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
           title="Hide from this view — restore from the header to bring back"
         >
           Mark resolved
         </button>
         <button
           type="button"
-          className="text-xs px-3 py-1.5 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
+          className="text-xs px-4 py-2 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
           title="Open consultation with this context"
           onClick={() => openConsult({
             prompt: consultQuestion,
@@ -853,8 +898,8 @@ function DetailSection({
   accent?: boolean;
 }) {
   return (
-    <div>
-      <div className={`text-[10px] uppercase tracking-wide ${accent ? "text-accent" : "text-slate-500"} mb-1`}>
+    <div className={`rounded-xl border ${accent ? "border-accent/30 bg-accent-soft/10" : "border-line bg-ink-900/40"} p-4`}>
+      <div className={`text-[10px] uppercase tracking-wider ${accent ? "text-accent" : "text-slate-500"} mb-1.5 font-medium`}>
         {label}
       </div>
       <div className={`text-sm leading-relaxed ${accent ? "text-slate-100" : "text-slate-300"}`}>
