@@ -51,6 +51,7 @@ export default async function BusinessSignalsPage() {
   const nowISO = new Date().toISOString();
   const pushRecs = chosenSignals.map((r, i) => ({
     id: `${r.signalKey}-${i}`,
+    signalKey: r.signalKey,
     level: r.level,
     observation: r.observation,
     interpretation: r.interpretation,
