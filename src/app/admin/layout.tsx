@@ -18,7 +18,8 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               Tweaxly · <span className="text-accent">Admin</span>
             </Link>
             <nav className="hidden md:flex items-center gap-5 text-sm text-slate-300">
-              <Link href="/admin" className="hover:text-white transition">Accounts</Link>
+              <Link href="/admin" className="hover:text-white transition">Dashboard</Link>
+              <Link href="/admin/accounts" className="hover:text-white transition">Accounts</Link>
               <Link href="/admin/audit" className="hover:text-white transition">Audit log</Link>
             </nav>
           </div>

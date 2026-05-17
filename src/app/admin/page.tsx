@@ -1,206 +1,229 @@
-// Admin · Accounts list.
-//
-// Shows every business in the system with owner, member count,
-// onboarding signal, data presence, last activity, and status. Each
-// row links to an account detail page where the super_admin can
-// impersonate or change status.
+// Admin · Dashboard. High-level summary cards across the customer
+// base. Everything here is computed from the existing tables —
+// no fake metrics. Billing-dependent cards (MRR, paying, past-due)
+// surface 'no billing connected yet' until Stripe is wired.
 
 import Link from "next/link";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
-function fmtDate(d: Date | null | undefined) {
-  if (!d) return "—";
-  return new Date(d).toLocaleDateString("en-US", {
-    month: "short", day: "numeric", year: "numeric",
-  });
+const RECENT_ACTIVE_DAYS = 7;
+const NEW_SIGNUPS_DAYS = 30;
+const INACTIVE_DAYS = 30;
+
+function startOfDaysAgo(days: number) {
+  const d = new Date();
+  d.setDate(d.getDate() - days);
+  return d;
 }
 
-function fmtRel(d: Date | null | undefined) {
-  if (!d) return "never";
-  const ms = Date.now() - new Date(d).getTime();
-  const m = Math.floor(ms / 60000);
-  if (m < 1) return "just now";
-  if (m < 60) return `${m}m ago`;
-  const h = Math.floor(m / 60);
-  if (h < 24) return `${h}h ago`;
-  const days = Math.floor(h / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
-}
+export default async function AdminDashboard() {
+  const now = new Date();
+  const recentCutoff = startOfDaysAgo(RECENT_ACTIVE_DAYS);
+  const newSignupsCutoff = startOfDaysAgo(NEW_SIGNUPS_DAYS);
+  const inactiveCutoff = startOfDaysAgo(INACTIVE_DAYS);
 
-const STATUS_PILL: Record<string, string> = {
-  active:    "pill-good",
-  suspended: "pill-bad",
-  demo:      "pill-accent",
-  test:      "pill",
-};
-
-export default async function AdminAccountsPage({
-  searchParams,
-}: {
-  searchParams: { status?: string; q?: string };
-}) {
-  const where: { status?: string; OR?: Array<Record<string, unknown>> } = {};
-  if (searchParams.status && searchParams.status !== "all") {
-    where.status = searchParams.status;
-  }
-  if (searchParams.q) {
-    where.OR = [
-      { name: { contains: searchParams.q, mode: "insensitive" } },
-      { owner: { email: { contains: searchParams.q, mode: "insensitive" } } },
-    ];
-  }
-
-  const businesses = await prisma.business.findMany({
-    where,
-    orderBy: [{ lastActivityAt: "desc" }, { createdAt: "desc" }],
-    select: {
-      id: true,
-      name: true,
-      status: true,
-      createdAt: true,
-      lastActivityAt: true,
-      owner: { select: { id: true, email: true, name: true } },
-      _count: {
-        select: {
-          memberships: true,
-          transactions: true,
-          uploads: true,
-        },
+  const [
+    totalAccounts,
+    statusCounts,
+    planCounts,
+    newSignupsCount,
+    recentlyActiveCount,
+    inactiveCount,
+    noDataAccounts,
+    failedLogins24h,
+    impersonations24h,
+    activeTrials,
+    mostActive,
+  ] = await Promise.all([
+    prisma.business.count(),
+    prisma.business.groupBy({ by: ["status"], _count: { _all: true } }),
+    prisma.business.groupBy({ by: ["plan"], _count: { _all: true } }),
+    prisma.business.count({ where: { createdAt: { gte: newSignupsCutoff } } }),
+    prisma.business.count({ where: { lastActivityAt: { gte: recentCutoff } } }),
+    prisma.business.count({
+      where: {
+        OR: [
+          { lastActivityAt: null, createdAt: { lt: inactiveCutoff } },
+          { lastActivityAt: { lt: inactiveCutoff } },
+        ],
+        status: "active",
       },
-    },
-  });
+    }),
+    // "no data" = zero transactions
+    prisma.business.findMany({
+      where: { transactions: { none: {} }, status: "active" },
+      select: { id: true, name: true, owner: { select: { email: true } }, createdAt: true },
+      orderBy: { createdAt: "desc" },
+      take: 5,
+    }),
+    prisma.loginAttempt.count({
+      where: { success: false, createdAt: { gte: startOfDaysAgo(1) } },
+    }),
+    prisma.auditLog.count({
+      where: { action: "impersonation.enter", createdAt: { gte: startOfDaysAgo(1) } },
+    }),
+    prisma.business.count({
+      where: { trialEndsAt: { gte: now } },
+    }),
+    // 5 most recently active accounts
+    prisma.business.findMany({
+      where: { lastActivityAt: { not: null } },
+      orderBy: { lastActivityAt: "desc" },
+      take: 5,
+      select: {
+        id: true,
+        name: true,
+        lastActivityAt: true,
+        owner: { select: { email: true } },
+        status: true,
+      },
+    }),
+  ]);
 
-  const counts = await prisma.business.groupBy({
-    by: ["status"],
-    _count: { _all: true },
-  });
-  const totals = Object.fromEntries(counts.map((c) => [c.status, c._count._all]));
-  const allCount = counts.reduce((acc, c) => acc + c._count._all, 0);
+  const status = Object.fromEntries(statusCounts.map((s) => [s.status, s._count._all]));
+  const plans = Object.fromEntries(planCounts.map((p) => [p.plan, p._count._all]));
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Accounts</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-white">Dashboard</h1>
         <p className="text-sm text-slate-400 mt-1">
-          Every business in the system. Click any row to inspect, change status, or view as customer.
+          What&apos;s happening across all customer accounts.
         </p>
       </div>
 
-      {/* Filter chips */}
-      <div className="flex items-center justify-between gap-3 flex-wrap">
-        <div className="flex items-center gap-2 flex-wrap">
-          <StatusChip current={searchParams.status} value="all"       count={allCount} />
-          <StatusChip current={searchParams.status} value="active"    count={totals.active ?? 0} />
-          <StatusChip current={searchParams.status} value="suspended" count={totals.suspended ?? 0} />
-          <StatusChip current={searchParams.status} value="demo"      count={totals.demo ?? 0} />
-          <StatusChip current={searchParams.status} value="test"      count={totals.test ?? 0} />
-        </div>
-        <form className="flex items-center gap-2">
-          <input
-            type="search"
-            name="q"
-            placeholder="Search name or email"
-            defaultValue={searchParams.q ?? ""}
-            className="input text-sm w-64"
-          />
-          {searchParams.status ? (
-            <input type="hidden" name="status" value={searchParams.status} />
-          ) : null}
-          <button className="btn-ghost text-xs" type="submit">Search</button>
-        </form>
+      {/* Headline tiles */}
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Tile label="Total accounts"  value={totalAccounts.toString()} href="/admin/accounts" />
+        <Tile label="Active"          value={(status.active ?? 0).toString()}   href="/admin/accounts?status=active"    tone="good"   />
+        <Tile label="Trial accounts"  value={activeTrials.toString()}            href="/admin/accounts?trial=1"          tone="accent" />
+        <Tile label="Suspended"       value={(status.suspended ?? 0).toString()} href="/admin/accounts?status=suspended" tone="bad"    />
+        <Tile label="Demo"            value={(status.demo ?? 0).toString()}      href="/admin/accounts?status=demo"      tone="accent" />
+        <Tile label="Internal test"   value={(status.test ?? 0).toString()}      href="/admin/accounts?status=test"      tone="slate"  />
       </div>
 
-      <div className="rounded-xl border border-line bg-ink-900/40 overflow-hidden">
-        <table className="w-full text-sm">
-          <thead className="bg-ink-900/80 text-xs uppercase tracking-wider text-slate-400">
-            <tr>
-              <th className="text-left px-4 py-3">Account</th>
-              <th className="text-left px-4 py-3">Owner</th>
-              <th className="text-left px-4 py-3">Members</th>
-              <th className="text-left px-4 py-3">Data</th>
-              <th className="text-left px-4 py-3">Created</th>
-              <th className="text-left px-4 py-3">Last activity</th>
-              <th className="text-left px-4 py-3">Status</th>
-              <th className="text-right px-4 py-3"></th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-line/60">
-            {businesses.length === 0 ? (
-              <tr><td colSpan={8} className="px-4 py-8 text-center text-sm text-slate-500">
-                No accounts match these filters.
-              </td></tr>
-            ) : businesses.map((b) => {
-              const hasData = b._count.transactions > 0 || b._count.uploads > 0;
-              return (
-                <tr key={b.id} className="hover:bg-ink-800/60 transition">
-                  <td className="px-4 py-3">
-                    <Link href={`/admin/accounts/${b.id}`} className="text-slate-100 font-medium hover:text-accent">
-                      {b.name}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-300">
-                    {b.owner.name ? <div className="text-slate-200">{b.owner.name}</div> : null}
-                    <div className="text-xs text-slate-500">{b.owner.email}</div>
-                  </td>
-                  <td className="px-4 py-3 text-slate-300 tabular-nums">{b._count.memberships}</td>
-                  <td className="px-4 py-3">
-                    {hasData ? (
-                      <span className="text-xs text-slate-300 tabular-nums">
-                        {b._count.transactions.toLocaleString()} txns · {b._count.uploads} uploads
-                      </span>
-                    ) : (
-                      <span className="text-xs text-slate-500">no data yet</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{fmtDate(b.createdAt)}</td>
-                  <td className="px-4 py-3 text-xs text-slate-400">{fmtRel(b.lastActivityAt)}</td>
-                  <td className="px-4 py-3">
-                    <span className={`${STATUS_PILL[b.status] ?? "pill"} text-[10px]`}>{b.status}</span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/accounts/${b.id}`}
-                      className="text-xs text-accent hover:text-white"
-                    >
-                      View →
-                    </Link>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      {/* Acquisition + engagement */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <Tile label={`New signups · last ${NEW_SIGNUPS_DAYS}d`}      value={newSignupsCount.toString()}     href={`/admin/accounts?signupWithin=${NEW_SIGNUPS_DAYS}d`} />
+        <Tile label={`Recently active · last ${RECENT_ACTIVE_DAYS}d`} value={recentlyActiveCount.toString()} href="/admin/accounts?activity=recent" tone="good" />
+        <Tile label={`Inactive ≥ ${INACTIVE_DAYS}d (active accounts)`} value={inactiveCount.toString()}      href="/admin/accounts?activity=inactive" tone="warn" />
+        <Tile label="Accounts without uploaded data" value={noDataAccounts.length === 5 ? "5+" : noDataAccounts.length.toString()} href="/admin/accounts?dataStatus=none" tone="warn" />
       </div>
+
+      {/* Billing — empty state until Stripe is wired */}
+      <Section title="Billing">
+        <div className="rounded-xl border border-line bg-ink-900/40 p-6 text-sm text-slate-400 flex items-start justify-between gap-4 flex-wrap">
+          <div className="max-w-xl">
+            <div className="text-slate-100 font-medium mb-1">No payments provider connected yet</div>
+            <p>
+              MRR, paying customers, past-due, failed payments, and churn metrics will appear here
+              automatically once Stripe (or another provider) is wired into the platform.
+            </p>
+          </div>
+          <span className="text-[10px] uppercase tracking-wider pill">not connected</span>
+        </div>
+      </Section>
+
+      {/* Security */}
+      <Section title="Security · last 24h">
+        <div className="grid grid-cols-2 gap-3">
+          <Tile label="Failed login attempts" value={failedLogins24h.toString()} href="/admin/audit" tone={failedLogins24h > 5 ? "warn" : "slate"} />
+          <Tile label="Impersonation sessions" value={impersonations24h.toString()} href="/admin/audit" tone="accent" />
+        </div>
+      </Section>
+
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Most active */}
+        <Section title={`Most active · last ${RECENT_ACTIVE_DAYS}d`} action={<Link href="/admin/accounts?activity=recent" className="text-xs text-accent hover:text-white">View all →</Link>}>
+          {mostActive.length === 0 ? (
+            <Empty>No account activity yet.</Empty>
+          ) : (
+            <ul className="divide-y divide-line/60">
+              {mostActive.map((b) => (
+                <li key={b.id} className="py-2.5 flex items-center justify-between gap-2 text-sm">
+                  <Link href={`/admin/accounts/${b.id}`} className="text-slate-100 hover:text-accent truncate">
+                    {b.name}
+                  </Link>
+                  <span className="text-xs text-slate-500 tabular-nums">
+                    {b.lastActivityAt ? new Date(b.lastActivityAt).toLocaleString() : "—"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+
+        {/* No data yet */}
+        <Section title="Accounts without uploaded data" action={<Link href="/admin/accounts?dataStatus=none" className="text-xs text-accent hover:text-white">View all →</Link>}>
+          {noDataAccounts.length === 0 ? (
+            <Empty>Every active account has uploaded data.</Empty>
+          ) : (
+            <ul className="divide-y divide-line/60">
+              {noDataAccounts.map((b) => (
+                <li key={b.id} className="py-2.5 flex items-center justify-between gap-2 text-sm">
+                  <Link href={`/admin/accounts/${b.id}`} className="text-slate-100 hover:text-accent truncate">
+                    {b.name}
+                  </Link>
+                  <span className="text-xs text-slate-500 truncate">{b.owner.email}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
+      </div>
+
+      {/* Plan mix */}
+      <Section title="Plan mix">
+        <div className="flex flex-wrap gap-2">
+          {Object.entries(plans).map(([p, n]) => (
+            <Link
+              key={p}
+              href={`/admin/accounts?plan=${p}`}
+              className="rounded-full border border-line bg-ink-900/40 px-3 py-1.5 text-xs text-slate-300 hover:text-white hover:border-slate-500 transition"
+            >
+              {p} <span className="tabular-nums opacity-60">· {n}</span>
+            </Link>
+          ))}
+        </div>
+      </Section>
     </div>
   );
 }
 
-function StatusChip({
-  current,
-  value,
-  count,
-}: {
-  current: string | undefined;
-  value: string;
-  count: number;
-}) {
-  const active = (current ?? "all") === value;
-  const label = value === "all" ? "All" : value;
-  const href = value === "all" ? "/admin" : `/admin?status=${value}`;
+function Tile({
+  label, value, href, tone,
+}: { label: string; value: string; href: string; tone?: "good" | "bad" | "warn" | "accent" | "slate" }) {
+  const accent =
+    tone === "good"   ? "text-good"          :
+    tone === "bad"    ? "text-bad"           :
+    tone === "warn"   ? "text-warn"          :
+    tone === "accent" ? "text-accent"        :
+                        "text-slate-100";
   return (
     <Link
       href={href}
-      className={`text-xs px-3 py-1.5 rounded-full border transition ${
-        active
-          ? "bg-accent-soft border-accent/40 text-accent"
-          : "border-line text-slate-400 hover:text-slate-200 hover:border-slate-500"
-      }`}
+      className="rounded-xl border border-line bg-ink-900/40 p-4 hover:bg-ink-800/60 hover:border-slate-500 transition block"
     >
-      {label} <span className="tabular-nums opacity-60">· {count}</span>
+      <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">{label}</div>
+      <div className={`mt-2 text-2xl font-bold tabular-nums tracking-tight leading-none ${accent}`}>{value}</div>
     </Link>
   );
+}
+
+function Section({ title, action, children }: { title: string; action?: React.ReactNode; children: React.ReactNode }) {
+  return (
+    <section>
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-sm font-semibold text-slate-100 uppercase tracking-wider">{title}</h2>
+        {action}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+function Empty({ children }: { children: React.ReactNode }) {
+  return <div className="rounded-xl border border-line bg-ink-900/40 p-6 text-center text-sm text-slate-500">{children}</div>;
 }

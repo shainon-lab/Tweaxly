@@ -20,11 +20,54 @@ model User {
   // impersonate any business account. This is the ONLY tenant-spanning
   // permission; per-account permissions live on BusinessMembership.role.
   systemRole   String     @default("user")
+  // Stamped on every successful /api/auth/login. Drives 'last login'
+  // columns in the admin Customer 360.
+  lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
   businesses   Business[]
   memberships  BusinessMembership[]
   auditLogs    AuditLog[] @relation("ActorAuditLogs")
   passwordResetTokens PasswordResetToken[]
+  loginAttempts LoginAttempt[]
+  authoredAdminNotes AdminNote[] @relation("AdminNoteAuthor")
+}
+
+// Recorded for every /api/auth/login attempt. Success rows drive
+// 'last login' + login-history surfaces; failure rows surface 'failed
+// attempts' in the security tab and feed brute-force monitoring.
+model LoginAttempt {
+  id          String   @id @default(cuid())
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Always recorded — even when the user can't be resolved (unknown
+  // email) — so we can surface enumeration attempts.
+  email       String
+  success     Boolean  @default(false)
+  ipAddress   String?
+  userAgent   String?
+  createdAt   DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([email, createdAt])
+  @@index([createdAt])
+}
+
+// Internal note attached to an account. Visible only inside the
+// admin panel; never exposed to the customer.
+model AdminNote {
+  id              String   @id @default(cuid())
+  targetBusinessId String
+  targetBusiness   Business @relation(fields: [targetBusinessId], references: [id], onDelete: Cascade)
+  authorUserId     String
+  author           User     @relation("AdminNoteAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
+  body            String
+  // Free-form comma-joined tags: "onboarding,billing,bug,sales,
+  // churn_risk,vip". Kept as a single string so we don't need a
+  // tag table; the admin UI parses on commas.
+  tags            String?
+  createdAt       DateTime @default(now())
+
+  @@index([targetBusinessId, createdAt])
 }
 
 // Single-use, hashed, time-boxed password reset token. We never store
@@ -56,10 +99,16 @@ model BusinessMembership {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  // Per-account role: "account_admin" | "user". Account admins can
-  // change account settings, invite, and run destructive ops. Users
-  // only read + perform their own work.
+  // Per-account role: "account_admin" | "user" | "viewer" | "accountant".
+  // Account admins can change account settings, invite, and run
+  // destructive ops. Other roles are reserved for the future invite
+  // system; today only account_admin is created.
   role       String   @default("user")
+  // Membership lifecycle. "active" once accepted; "invited" before
+  // the user joins; "disabled" if an admin suspended the member.
+  status     String   @default("active")
+  invitedAt  DateTime?
+  joinedAt   DateTime?
   createdAt  DateTime @default(now())
 
   @@unique([userId, businessId])
@@ -113,10 +162,20 @@ model Business {
   // (via the requireBusiness middleware). Used for 'last activity'
   // sorting in the admin panel.
   lastActivityAt  DateTime?
+  // Commercial metadata. None are billing-grade — they describe what
+  // plan/trial the operator has manually assigned. Wire to Stripe
+  // when payments land.
+  plan            String              @default("free")    // free | starter | pro | enterprise | custom
+  trialEndsAt     DateTime?
+  // Self-reported / operator-set profile.
+  industry        String?
+  country         String?
+  timezone        String?
   createdAt       DateTime            @default(now())
 
   memberships     BusinessMembership[]
   auditLogs       AuditLog[]          @relation("AuditLogs")
+  adminNotes      AdminNote[]
   categories      Category[]
   uploads         UploadBatch[]
   transactions    Transaction[]
