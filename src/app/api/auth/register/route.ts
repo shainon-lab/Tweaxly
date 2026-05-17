@@ -27,7 +27,14 @@ export async function POST(req: NextRequest) {
     return NextResponse.redirect(dupeUrl, { status: 303 });
   }
   const passwordHash = await bcrypt.hash(password, 10);
-  const user = await prisma.user.create({ data: { email, passwordHash, name } });
+  // Auto-promote the seeded super-admin email on first signup so the
+  // operator account can immediately reach /admin without a manual
+  // SQL update.
+  const SUPER_ADMIN_EMAIL = "shainon@gmail.com";
+  const systemRole = email === SUPER_ADMIN_EMAIL ? "super_admin" : "user";
+  const user = await prisma.user.create({
+    data: { email, passwordHash, name, systemRole },
+  });
 
   const res = NextResponse.redirect(new URL("/setup", req.url), { status: 303 });
   const session = await getIronSession<SessionData>(req, res, sessionOptions);

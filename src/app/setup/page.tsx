@@ -28,6 +28,12 @@ async function createBusinessAction(formData: FormData) {
           name: c.name, kind: c.kind, isOneTime: !!c.isOneTime,
         })),
       },
+      // First-class multi-tenancy: every new business gets a membership
+      // for its creator with the account_admin role. Future invitees
+      // attach via additional BusinessMembership rows.
+      memberships: {
+        create: { userId: session.userId, role: "account_admin" },
+      },
     },
   });
   session.currentBusinessId = business.id;

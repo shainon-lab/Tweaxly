@@ -1,4 +1,5 @@
 import { redirect } from "next/navigation";
+import { NextResponse } from "next/server";
 import { prisma } from "./db";
 import { getSession } from "./session";
 
@@ -36,10 +37,45 @@ export async function requireUser() {
   return user;
 }
 
+// Tenant-scoped business resolver. The standard call for every authed
+// app surface — every query in the product fans out from the {user,
+// business} pair returned here.
+//
+// Resolution order:
+//   1. If the user is a super_admin AND has an active impersonation
+//      target, return that business (regardless of ownership).
+//   2. Otherwise, prefer the session's currentBusinessId.
+//   3. Otherwise, the user's own most-recent owned business.
+//   4. Otherwise, /setup.
+//
+// Also stamps Business.lastActivityAt for any non-impersonated visit so
+// the admin panel's "last activity" reflects real customer usage rather
+// than internal observation.
 export async function requireBusiness() {
   const user = await requireUser();
   const session = await getSession();
-  let businessId = session.currentBusinessId;
+
+  // 1. Impersonation override — super_admin only.
+  if (session.impersonatingBusinessId && user.systemRole === "super_admin") {
+    const target = await prisma.business.findUnique({
+      where: { id: session.impersonatingBusinessId },
+    });
+    if (target) {
+      return {
+        user,
+        business: target,
+        isImpersonating: true as const,
+        impersonationAllowWrites: !!session.impersonationAllowWrites,
+      };
+    }
+    // Target disappeared — clear and fall through.
+    session.impersonatingBusinessId = undefined;
+    session.impersonationAllowWrites = undefined;
+    await trySaveSession(session);
+  }
+
+  // 2. + 3. Normal user resolution.
+  const businessId = session.currentBusinessId;
   let business = businessId
     ? await prisma.business.findFirst({
         where: { id: businessId, ownerId: user.id },
@@ -54,7 +90,31 @@ export async function requireBusiness() {
     session.currentBusinessId = business.id;
     await trySaveSession(session);
   }
-  return { user, business };
+
+  // Block suspended accounts from any app surface (login still works
+  // so the user sees the message; but every business-scoped page is
+  // off-limits).
+  if (business.status === "suspended") {
+    redirect("/suspended");
+  }
+
+  // Stamp last activity (best-effort; race-safe via fire-and-forget
+  // try/catch — we don't await across the response).
+  try {
+    await prisma.business.update({
+      where: { id: business.id },
+      data: { lastActivityAt: new Date() },
+    });
+  } catch {
+    /* RSC read / race — ignore */
+  }
+
+  return {
+    user,
+    business,
+    isImpersonating: false as const,
+    impersonationAllowWrites: true,
+  };
 }
 
 export async function getOptionalContext() {
@@ -68,4 +128,51 @@ export async function getOptionalContext() {
       })
     : null;
   return { user, business };
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Super-admin gate. Use in every /admin route + every /api/admin route.
+// Server-side enforcement — never trust UI-only gating.
+// ─────────────────────────────────────────────────────────────────────
+
+export async function requireSuperAdmin() {
+  const user = await requireUser();
+  if (user.systemRole !== "super_admin") {
+    redirect("/");
+  }
+  return user;
+}
+
+// API variant — returns a NextResponse instead of redirecting, so a
+// caller can return it directly on the early-exit path.
+export async function requireSuperAdminApi(): Promise<
+  | { ok: true; user: Awaited<ReturnType<typeof requireUser>> }
+  | { ok: false; response: NextResponse }
+> {
+  const session = await getSession();
+  if (!session.userId) {
+    return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  }
+  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  if (!user || user.systemRole !== "super_admin") {
+    return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+  }
+  return { ok: true, user };
+}
+
+// Write-permission gate. Returns a 403 NextResponse if a super_admin
+// is impersonating without explicit write mode enabled, otherwise null
+// (write allowed). Apply at the top of any destructive API route.
+export async function blockWriteDuringImpersonation(): Promise<NextResponse | null> {
+  const session = await getSession();
+  if (!session.impersonatingBusinessId) return null;
+  if (session.impersonationAllowWrites) return null;
+  return NextResponse.json(
+    {
+      error: "writes_disabled_during_impersonation",
+      message:
+        "Writes are blocked while viewing this account as Super Admin. Enable write mode from the admin panel to proceed.",
+    },
+    { status: 403 }
+  );
 }

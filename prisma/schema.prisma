@@ -15,8 +15,59 @@ model User {
   email        String     @unique
   passwordHash String
   name         String?
+  // System-level role. Most users are "user". A small set of internal
+  // operators are flagged "super_admin" and can see the /admin panel +
+  // impersonate any business account. This is the ONLY tenant-spanning
+  // permission; per-account permissions live on BusinessMembership.role.
+  systemRole   String     @default("user")
   createdAt    DateTime   @default(now())
   businesses   Business[]
+  memberships  BusinessMembership[]
+  auditLogs    AuditLog[] @relation("ActorAuditLogs")
+}
+
+// Many-to-many between User and Business with a per-account role.
+// Today every Business has exactly one membership (the owner, as
+// account_admin), but the model supports inviting collaborators later
+// without another migration.
+model BusinessMembership {
+  id         String   @id @default(cuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Per-account role: "account_admin" | "user". Account admins can
+  // change account settings, invite, and run destructive ops. Users
+  // only read + perform their own work.
+  role       String   @default("user")
+  createdAt  DateTime @default(now())
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+}
+
+// Tenant-spanning audit trail. Records every super_admin action that
+// touches a customer account (impersonation enter/exit, status change,
+// etc.). Never store secrets here.
+model AuditLog {
+  id              String   @id @default(cuid())
+  actorUserId     String
+  actor           User     @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: Cascade)
+  // Target business (nullable for actions that aren't account-scoped).
+  targetBusinessId String?
+  targetBusiness   Business? @relation("AuditLogs", fields: [targetBusinessId], references: [id], onDelete: SetNull)
+  // Free-form action key, e.g. "impersonation.enter", "impersonation.exit",
+  // "account.status_change", "account.allow_writes".
+  action          String
+  // Structured detail (JSON-encoded string). Anything sensitive should be
+  // hashed / redacted before being stored here.
+  metadata        String?
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime @default(now())
+
+  @@index([actorUserId, createdAt])
+  @@index([targetBusinessId, createdAt])
 }
 
 model Business {
@@ -33,8 +84,19 @@ model Business {
   // a separate file-serving layer.
   logoData        String?
   faviconData     String?
+  // Account-level lifecycle: "active" | "suspended" | "demo" | "test".
+  // Suspended accounts are blocked from API access (login still works
+  // so the user can see the suspension message). Demo/test accounts
+  // are surfaced separately in the admin panel.
+  status          String              @default("active")
+  // Stamped on every authenticated request that hits this business
+  // (via the requireBusiness middleware). Used for 'last activity'
+  // sorting in the admin panel.
+  lastActivityAt  DateTime?
   createdAt       DateTime            @default(now())
 
+  memberships     BusinessMembership[]
+  auditLogs       AuditLog[]          @relation("AuditLogs")
   categories      Category[]
   uploads         UploadBatch[]
   transactions    Transaction[]

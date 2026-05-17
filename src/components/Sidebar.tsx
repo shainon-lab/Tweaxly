@@ -10,6 +10,7 @@ import {
   FileText,
   SlidersHorizontal,
   CircleUser,
+  Shield,
   type LucideIcon,
 } from "lucide-react";
 import Logo from "./Logo";
@@ -43,7 +44,9 @@ export default function Sidebar({
   businessName,
   logoData,
   alerts,
-}: { businessName: string; logoData?: string | null; alerts?: SidebarAlerts }) {
+  systemRole,
+}: { businessName: string; logoData?: string | null; alerts?: SidebarAlerts; systemRole?: string }) {
+  const isSuperAdmin = systemRole === "super_admin";
   const path = usePathname();
   const hasCustomLogo = !!logoData;
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -177,6 +180,19 @@ export default function Sidebar({
               </Link>
             );
           })}
+          {/* Super-admin-only entry. Server-side rendering already
+              checked systemRole; this is convenience nav. */}
+          {isSuperAdmin ? (
+            <Link
+              href="/admin"
+              onClick={() => setMobileOpen(false)}
+              className="flex items-center gap-2.5 rounded-md px-3 py-2 text-sm transition text-brand-purple hover:bg-accent-soft/40 hover:text-white mt-2 border-t border-line pt-3"
+            >
+              <Shield size={16} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
+              <span className="flex-1">Admin</span>
+              <span className="text-[9px] uppercase tracking-wider opacity-70">super</span>
+            </Link>
+          ) : null}
         </nav>
         <ThemeToggle />
         <form action="/logout" method="post" className="px-4 py-3 border-t border-line">
