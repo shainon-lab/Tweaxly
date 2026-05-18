@@ -616,19 +616,12 @@ function SignalDetailPanel({
   onClose: () => void;
   onResolve: () => void;
 }) {
-  // Keep the last selected rec while the panel is closing so the
-  // exit animation has content to render against.
-  const [snapshot, setSnapshot] = useState<PushRec | null>(rec);
-  useEffect(() => {
-    if (rec) setSnapshot(rec);
-  }, [rec]);
-
-  const open = rec != null;
-  const r = rec ?? snapshot;
-  if (!r) {
-    // No signal ever selected — render nothing.
-    return null;
-  }
+  // When the user closes the panel, unmount it immediately — no exit
+  // slide, no stale snapshot lingering on the side of the screen.
+  // (The entry animation still plays via the slideInRight keyframe
+  // applied on mount.)
+  if (!rec) return null;
+  const r = rec;
 
   const display = compactDisplay(r);
   const badge = badgeFor(r);
@@ -650,8 +643,7 @@ function SignalDetailPanel({
     <aside
       role="dialog"
       aria-label={`Signal details — ${display.title}`}
-      aria-hidden={!open}
-      className={`fixed top-0 right-0 h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-line shadow-2xl shadow-black/40 z-40 transform transition-transform duration-300 ease-out ${open ? "translate-x-0" : "translate-x-full pointer-events-none"} flex flex-col`}
+      className="fixed top-0 right-0 h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-line shadow-2xl shadow-black/40 z-40 flex flex-col animate-[slideInRight_220ms_ease-out]"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-5 border-b border-line">
