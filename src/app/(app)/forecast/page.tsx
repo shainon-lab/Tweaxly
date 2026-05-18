@@ -340,36 +340,24 @@ export default async function ForecastPage({
             </tr>
           </thead>
           <tbody>
-            {points.map((p) => {
-              // Active scenarios for this month = every effective
-              // assumption whose [startMonth, endMonth] window
-              // contains this point. Shows the user's full label
-              // ("Increase marketing", "Expense decline %", etc.)
-              // instead of the engine's abbreviated notes.
-              const activeLabels = effectiveAssumptions
-                .filter((a) => p.index >= a.startMonth && (a.endMonth == null || p.index <= a.endMonth))
-                .map((a) => a.label);
-              return (
-                <tr key={p.index}>
-                  <td className="font-medium">{p.ym}</td>
-                  <td className="text-right text-slate-300">+{fmtMoney(p.baselineRevenue, ccy)}</td>
-                  <td className="text-right text-slate-300">−{fmtMoney(p.baselineExpenses, ccy)}</td>
-                  <td className={`text-right ${p.baselineNet >= 0 ? "text-good" : "text-bad"}`}>
-                    {fmtMoney(p.baselineNet, ccy)}
-                  </td>
-                  <td className="text-right text-good">+{fmtMoney(p.scenarioRevenue, ccy)}</td>
-                  <td className="text-right text-bad">−{fmtMoney(p.scenarioExpenses, ccy)}</td>
-                  <td className={`text-right font-semibold ${p.scenarioNet >= 0 ? "text-good" : "text-bad"}`}>
-                    {fmtMoney(p.scenarioNet, ccy)}
-                  </td>
-                  <td className="text-xs text-slate-400">
-                    {view === "scenarios"
-                      ? (activeLabels.length ? activeLabels.join(", ") : "—")
-                      : (p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—")}
-                  </td>
-                </tr>
-              );
-            })}
+            {points.map((p) => (
+              <tr key={p.index}>
+                <td className="font-medium">{p.ym}</td>
+                <td className="text-right text-slate-300">+{fmtMoney(p.baselineRevenue, ccy)}</td>
+                <td className="text-right text-slate-300">−{fmtMoney(p.baselineExpenses, ccy)}</td>
+                <td className={`text-right ${p.baselineNet >= 0 ? "text-good" : "text-bad"}`}>
+                  {fmtMoney(p.baselineNet, ccy)}
+                </td>
+                <td className="text-right text-good">+{fmtMoney(p.scenarioRevenue, ccy)}</td>
+                <td className="text-right text-bad">−{fmtMoney(p.scenarioExpenses, ccy)}</td>
+                <td className={`text-right font-semibold ${p.scenarioNet >= 0 ? "text-good" : "text-bad"}`}>
+                  {fmtMoney(p.scenarioNet, ccy)}
+                </td>
+                <td className="text-xs text-slate-400">
+                  {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—"}
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </details>
