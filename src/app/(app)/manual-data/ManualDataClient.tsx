@@ -82,8 +82,8 @@ export default function ManualDataClient({
   const fmt = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
   });
 
   // For the existing-category dropdown: filter to revenue-kind for income, exclude revenue for outcome

@@ -29,7 +29,7 @@ function trim2(n: number): string {
   // Up to 2 decimals, no trailing zeros.
   return (Math.round(n * 100) / 100).toLocaleString("en-US", {
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   });
 }
 

@@ -1,24 +1,10 @@
-// Default money format — ALWAYS shows two decimals (including ".00" on whole
-// values). This is the right shape almost everywhere because totals tend to
-// reconcile to the cent. The one exception is standalone stat tiles where
-// the headline number reads better without cents — use fmtMoneyWhole() there.
-// Always uses comma thousands separators (en-US locale).
-export function fmtMoney(value: number, currency = "USD") {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  } catch {
-    return `${currency} ${value.toFixed(2)}`;
-  }
-}
+// Money formatters. Across the entire app, money is rendered as whole
+// dollars — no decimals, ever. KPI tiles, signal cards, dashboards,
+// reports, and tables all share this convention so the eye never has
+// to parse ".00". The underlying numbers stay precise; only the
+// display layer rounds.
 
-// Whole-dollar money — no decimals, ever. For dashboard / stat tiles where
-// the user just wants the headline number without cents distracting them.
-export function fmtMoneyWhole(value: number, currency = "USD") {
+export function fmtMoney(value: number, currency = "USD") {
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
@@ -31,21 +17,15 @@ export function fmtMoneyWhole(value: number, currency = "USD") {
   }
 }
 
-// Exact-to-cents money — ALWAYS shows two decimals, including ".00" for
-// whole values. Use this inside tables so columns of money line up vertically
-// and totals reconcile to the cent.
-export function fmtMoneyExact(value: number, currency = "USD") {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    }).format(value);
-  } catch {
-    return `${currency} ${value.toFixed(2)}`;
-  }
-}
+// Alias retained for callers that semantically asked for the
+// "headline / whole-dollar" form. Behaviour now identical to fmtMoney
+// since the app-wide rule is no decimals.
+export const fmtMoneyWhole = fmtMoney;
+
+// Alias retained for tables that previously asked for to-the-cent
+// precision. The underlying number is still precise; only the display
+// rounds. Single source of truth for money formatting now.
+export const fmtMoneyExact = fmtMoney;
 
 export function fmtMoneySigned(value: number, currency = "USD") {
   const sign = value > 0 ? "+" : value < 0 ? "−" : "";

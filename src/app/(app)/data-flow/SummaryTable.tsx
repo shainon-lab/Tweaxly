@@ -38,11 +38,11 @@ function fmtMoney(v: number, ccy: string) {
     return new Intl.NumberFormat("en-US", {
       style: "currency",
       currency: ccy,
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(v);
   } catch {
-    return `${ccy} ${v.toFixed(2)}`;
+    return `${ccy} ${Math.round(v).toLocaleString("en-US")}`;
   }
 }
 

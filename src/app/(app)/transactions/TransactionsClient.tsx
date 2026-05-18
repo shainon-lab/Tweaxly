@@ -57,7 +57,7 @@ export default function TransactionsClient({
 
   const fmt = useMemo(
     () =>
-      new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+      new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 0 }),
     [currency]
   );
 

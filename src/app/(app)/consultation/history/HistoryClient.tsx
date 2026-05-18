@@ -355,9 +355,9 @@ function formatMoney(value: number, currency: string): string {
   try {
     return new Intl.NumberFormat("en-US", {
       style: "currency", currency,
-      minimumFractionDigits: 2, maximumFractionDigits: 2,
+      minimumFractionDigits: 0, maximumFractionDigits: 0,
     }).format(value);
   } catch {
-    return `${currency} ${value.toFixed(2)}`;
+    return `${currency} ${Math.round(value).toLocaleString("en-US")}`;
   }
 }

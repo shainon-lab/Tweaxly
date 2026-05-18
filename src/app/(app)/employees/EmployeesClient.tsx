@@ -37,7 +37,7 @@ export default function EmployeesClient({
     effectiveDate: new Date().toISOString().slice(0, 10), amount: 0, notes: "",
   });
 
-  const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const fmt = new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: 0, maximumFractionDigits: 0 });
   const delta = futureCost.total - nowCost.total;
 
   async function addEmployee() {
