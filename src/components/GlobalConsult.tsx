@@ -110,6 +110,11 @@ export type ConsultOpenDetail = {
 
 export const CONSULT_OPEN_EVENT = "tweaxly:consult";
 
+// Emitted by feature panels (e.g. the Signals detail panel) so the
+// floating Consult button can hide itself while another side panel
+// owns the bottom-right corner. Payload: { open: boolean }.
+export const DETAIL_PANEL_EVENT = "tweaxly:detail-panel";
+
 // Derive a sensible default ViewMeta from the route. Pages can deepen
 // this in future iterations by registering richer context via a
 // dedicated provider; for now the pathname carries enough signal to
@@ -267,6 +272,18 @@ export default function GlobalConsult() {
   const panelAnim = rtl ? "animate-[slideInLeft_220ms_ease-out]" : "animate-[slideInRight_220ms_ease-out]";
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  // True when another feature surface (currently the Signals detail
+  // panel) owns the bottom-right corner. Hides the floating button
+  // + nudge so the two affordances don't visually collide.
+  const [detailPanelOpen, setDetailPanelOpen] = useState(false);
+  useEffect(() => {
+    function onPanel(e: Event) {
+      const detail = (e as CustomEvent<{ open?: boolean }>).detail;
+      setDetailPanelOpen(!!detail?.open);
+    }
+    window.addEventListener(DETAIL_PANEL_EVENT, onPanel);
+    return () => window.removeEventListener(DETAIL_PANEL_EVENT, onPanel);
+  }, []);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
@@ -471,8 +488,10 @@ export default function GlobalConsult() {
     <>
       {/* Proactive nudge — small floating card pinned just above the
           Consult button. Appears once after ~15s of low activity on a
-          page, never on top of the open panel, never repeatedly. */}
-      {showNudge && !open ? (
+          page, never on top of the open panel, never repeatedly.
+          Also suppressed while a feature-level detail panel (Signals)
+          owns the bottom-right corner. */}
+      {showNudge && !open && !detailPanelOpen ? (
         <div
           className={`fixed bottom-[68px] ${fbPos} z-40 max-w-[300px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]`}
           role="status"
@@ -552,17 +571,22 @@ export default function GlobalConsult() {
       ) : null}
 
       {/* Floating button — anchors bottom-right of every screen, stays
-          accessible while scrolling. Quiet pill style, never glowing. */}
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={`fixed bottom-5 ${fbPos} z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200`}
-        aria-label="Open AI business consultation"
-        title="Consult with your AI advisor about this view"
-      >
-        <MessageSquareText size={16} strokeWidth={1.75} aria-hidden="true" />
-        <span className="text-sm font-medium">{t("consult.button")}</span>
-      </button>
+          accessible while scrolling. Quiet pill style, never glowing.
+          Hidden when a feature-level detail panel (Signals) owns the
+          bottom-right corner so the two affordances don't visually
+          collide; the panel's own Consult action covers that case. */}
+      {!detailPanelOpen ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className={`fixed bottom-5 ${fbPos} z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200`}
+          aria-label="Open AI business consultation"
+          title="Consult with your AI advisor about this view"
+        >
+          <MessageSquareText size={16} strokeWidth={1.75} aria-hidden="true" />
+          <span className="text-sm font-medium">{t("consult.button")}</span>
+        </button>
+      ) : null}
 
       {open ? (
         <>

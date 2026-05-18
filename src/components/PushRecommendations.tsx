@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
-import { CONSULT_OPEN_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
+import { CONSULT_OPEN_EVENT, DETAIL_PANEL_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 
 // Open the floating Consult panel pre-loaded with a question and a
 // per-signal title/subtitle.
@@ -353,6 +353,18 @@ export default function PushRecommendations({
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
+  }, [selectedId]);
+
+  // Tell the global Consult layer that a feature-level detail panel
+  // is open so it can hide its own floating button + nudge while we
+  // own the bottom-right corner. Fires on every transition so the
+  // listener sees both open and close.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent(DETAIL_PANEL_EVENT, { detail: { open: selectedId != null } }));
+    return () => {
+      window.dispatchEvent(new CustomEvent(DETAIL_PANEL_EVENT, { detail: { open: false } }));
+    };
   }, [selectedId]);
 
   const selectedRec = selectedId ? recs.find((r) => r.id === selectedId) ?? null : null;
