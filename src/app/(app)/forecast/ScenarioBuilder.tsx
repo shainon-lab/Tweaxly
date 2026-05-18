@@ -94,6 +94,12 @@ function fmtMoney(value: number, currency: string) {
 
 type RaiseScope = "specific" | "overall";
 
+// Short month labels for the Start / End dropdowns in the form.
+const MONTH_LABELS = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+];
+
 export default function ScenarioBuilder({
   roster,
   activePayrollSum,
@@ -114,18 +120,45 @@ export default function ScenarioBuilder({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [openKey, setOpenKey] = useState<string | null>(null);
+  // Calendar context for the start/end pickers. The forecast horizon
+  // starts at the current calendar month (month index 1) and extends
+  // `maxMonthsAhead` months forward. We render Start / End as two
+  // dropdowns each — month name + year — and translate them to the
+  // 1-based relative month index the engine actually stores.
+  const NOW = new Date();
+  const NOW_YEAR  = NOW.getFullYear();
+  const NOW_MONTH = NOW.getMonth() + 1;
+  function indexToYM(idx: number): { y: number; m: number } {
+    const totalMonths = NOW_YEAR * 12 + (NOW_MONTH - 1) + (idx - 1);
+    return { y: Math.floor(totalMonths / 12), m: (totalMonths % 12) + 1 };
+  }
+  function ymToIndex(y: number, m: number): number {
+    return (y * 12 + (m - 1)) - (NOW_YEAR * 12 + (NOW_MONTH - 1)) + 1;
+  }
+  const horizonYMs = Array.from({ length: maxMonthsAhead }, (_, i) => indexToYM(i + 1));
+  const horizonYears = Array.from(new Set(horizonYMs.map((x) => x.y))).sort();
+  const monthsAvailableInYear = (year: number) =>
+    horizonYMs.filter((x) => x.y === year).map((x) => x.m);
+
+  const defaultStartYM = indexToYM(1);
+
   const [form, setForm] = useState<{
     label: string;
     amount: string;
     percentagePct: string; // entered as percent (e.g. "5" = 5%)
-    startMonth: string;
-    endMonth: string;
+    startMonth: number;    // 1..12
+    startYear: number;
+    endMonth: number | "";  // 1..12 or "" for open-ended
+    endYear: number | "";
     isRecurring: boolean;
     notes: string;
     employeeId: string;    // selected from roster picker (terminate / remove contractor / specific raise)
     raiseScope: RaiseScope; // for salary_increase only
   }>({
-    label: "", amount: "", percentagePct: "", startMonth: "1", endMonth: "",
+    label: "", amount: "", percentagePct: "",
+    startMonth: defaultStartYM.m,
+    startYear:  defaultStartYM.y,
+    endMonth: "", endYear: "",
     isRecurring: true, notes: "", employeeId: "", raiseScope: "specific",
   });
 
@@ -147,8 +180,10 @@ export default function ScenarioBuilder({
       label: "",
       amount: "",
       percentagePct: "",
-      startMonth: "1",
+      startMonth: defaultStartYM.m,
+      startYear:  defaultStartYM.y,
       endMonth: "",
+      endYear: "",
       isRecurring: d?.defaultRecurring ?? true,
       notes: "",
       employeeId: "",
@@ -159,10 +194,18 @@ export default function ScenarioBuilder({
   async function submit() {
     if (!def) return;
 
-    const startMonth = Math.max(1, Math.min(maxMonthsAhead, Number(form.startMonth || 1)));
-    const endMonth = form.endMonth.trim() === ""
-      ? null
-      : Math.max(startMonth, Math.min(maxMonthsAhead, Number(form.endMonth)));
+    // Convert (month, year) UI back to the relative month index the
+    // engine stores. Clamp to the forecast horizon so an out-of-range
+    // pick doesn't crash the run.
+    const startIdxRaw = ymToIndex(form.startYear, form.startMonth);
+    const startMonth = Math.max(1, Math.min(maxMonthsAhead, startIdxRaw));
+    const endMonth =
+      form.endMonth === "" || form.endYear === ""
+        ? null
+        : Math.max(
+            startMonth,
+            Math.min(maxMonthsAhead, ymToIndex(form.endYear as number, form.endMonth as number))
+          );
 
     // Roster-picker variants: terminate / remove contractor
     if (def.pickFromRoster) {
@@ -481,29 +524,94 @@ export default function ScenarioBuilder({
                 </div>
               ) : null}
 
-              <div>
-                <label className="label">Start month</label>
-                <input
-                  className="input"
-                  type="number"
-                  min={1}
-                  max={maxMonthsAhead}
-                  value={form.startMonth}
-                  onChange={(e) => setForm({ ...form, startMonth: e.target.value })}
-                />
+              <div className="md:col-span-2">
+                <label className="label">Start</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <select
+                    className="input"
+                    value={form.startMonth}
+                    onChange={(e) => {
+                      const newMonth = Number(e.target.value);
+                      // If the picked month doesn't exist in the selected year, hop
+                      // to the first available year that does have it.
+                      const available = monthsAvailableInYear(form.startYear);
+                      const newYear = available.includes(newMonth)
+                        ? form.startYear
+                        : horizonYears.find((y) => monthsAvailableInYear(y).includes(newMonth)) ?? form.startYear;
+                      setForm({ ...form, startMonth: newMonth, startYear: newYear });
+                    }}
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                      <option key={m} value={m}>
+                        {MONTH_LABELS[m - 1]}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    className="input"
+                    value={form.startYear}
+                    onChange={(e) => {
+                      const newYear = Number(e.target.value);
+                      const months = monthsAvailableInYear(newYear);
+                      // Snap month into the new year's available range.
+                      const newMonth = months.includes(form.startMonth) ? form.startMonth : (months[0] ?? form.startMonth);
+                      setForm({ ...form, startYear: newYear, startMonth: newMonth });
+                    }}
+                  >
+                    {horizonYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                  </select>
+                </div>
               </div>
               {def.fields.includes("endMonth") ? (
-                <div>
-                  <label className="label">End month (optional)</label>
-                  <input
-                    className="input"
-                    type="number"
-                    min={1}
-                    max={maxMonthsAhead}
-                    value={form.endMonth}
-                    onChange={(e) => setForm({ ...form, endMonth: e.target.value })}
-                    placeholder="open-ended"
-                  />
+                <div className="md:col-span-2">
+                  <label className="label">End <span className="text-slate-500">(optional · leave blank for open-ended)</span></label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      className="input"
+                      value={form.endMonth}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") {
+                          setForm({ ...form, endMonth: "", endYear: "" });
+                          return;
+                        }
+                        const newMonth = Number(v);
+                        // Year defaults to start's year (or first year that has this month).
+                        const yearCandidate = form.endYear === "" ? form.startYear : (form.endYear as number);
+                        const newYear = monthsAvailableInYear(yearCandidate).includes(newMonth)
+                          ? yearCandidate
+                          : horizonYears.find((y) => monthsAvailableInYear(y).includes(newMonth)) ?? yearCandidate;
+                        setForm({ ...form, endMonth: newMonth, endYear: newYear });
+                      }}
+                    >
+                      <option value="">Open-ended</option>
+                      {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
+                        <option key={m} value={m}>
+                          {MONTH_LABELS[m - 1]}
+                        </option>
+                      ))}
+                    </select>
+                    <select
+                      className="input"
+                      value={form.endYear}
+                      onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") {
+                          setForm({ ...form, endMonth: "", endYear: "" });
+                          return;
+                        }
+                        const newYear = Number(v);
+                        const months = monthsAvailableInYear(newYear);
+                        const curMonth = form.endMonth === "" ? months[0] : (form.endMonth as number);
+                        const newMonth = months.includes(curMonth as number) ? curMonth : months[0];
+                        setForm({ ...form, endYear: newYear, endMonth: newMonth ?? "" });
+                      }}
+                      disabled={form.endMonth === ""}
+                    >
+                      <option value="">—</option>
+                      {horizonYears.map((y) => <option key={y} value={y}>{y}</option>)}
+                    </select>
+                  </div>
                 </div>
               ) : null}
               {def.fields.includes("recurring") ? (
