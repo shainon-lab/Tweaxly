@@ -680,11 +680,11 @@ function SignalDetailPanel({
     <aside
       role="dialog"
       aria-label={`Signal details — ${display.title}`}
-      // Whole panel scrolls as one block: header → body → footer all
-      // flow together with no empty space between content and the
-      // action buttons. If content exceeds the viewport, the user
-      // scrolls; if it's short, the buttons sit tight under the text.
-      className="fixed top-0 right-0 h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-line shadow-2xl shadow-black/40 z-40 overflow-y-auto animate-[slideInRight_220ms_ease-out]"
+      // Panel sizes to its content: when content is short, the box
+      // ends right under the action buttons (no empty area below).
+      // `max-h-screen` caps at viewport height so taller content
+      // scrolls inside the box instead of overflowing offscreen.
+      className="fixed top-0 right-0 max-h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-b border-line shadow-2xl shadow-black/40 z-40 overflow-y-auto animate-[slideInRight_220ms_ease-out] rounded-bl-2xl"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-5 border-b border-line">
