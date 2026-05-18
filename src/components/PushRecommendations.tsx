@@ -473,11 +473,31 @@ function SignalDeck({
     return la - lb;
   });
 
+  // When the detail panel is open, shrink the grid to make room
+  // on the right so cards are pushed aside / down (reflowed into
+  // fewer columns) instead of being hidden behind the panel.
+  // The panel itself is `sm:w-[420px] lg:w-[38vw] xl:w-[34vw]
+  // max-w-[560px]` (see SignalDetailPanel), so the right padding
+  // mirrors that.
+  const panelOpen = selectedId != null;
+  const padForPanel = panelOpen
+    ? "sm:pr-[420px] lg:pr-[38vw] xl:pr-[34vw]"
+    : "";
+  // Drop one column when the panel is open so the remaining cards
+  // reflow neatly: lg used to be 3-wide, becomes 2-wide; md stays
+  // 2-wide regardless; small screens stack to 1. Combined with the
+  // right padding above, this gives the user a "cards move aside +
+  // wrap to next row" feel rather than "cards disappear".
+  const cols = panelOpen
+    ? "grid-cols-1 lg:grid-cols-2"
+    : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
+
   return (
-    <div
-      className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3"
-      style={{ gridAutoFlow: "dense" }}
-    >
+    <div className={`transition-[padding] duration-200 ${padForPanel}`}>
+      <div
+        className={`grid gap-4 transition-[grid-template-columns] duration-200 ${cols}`}
+        style={{ gridAutoFlow: "dense" }}
+      >
       {sorted.map((r) => (
         <SignalCard
           key={r.id}
@@ -487,6 +507,7 @@ function SignalDeck({
           onSelect={() => onSelect(r.id)}
         />
       ))}
+      </div>
     </div>
   );
 }
