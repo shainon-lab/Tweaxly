@@ -177,7 +177,10 @@ export default function ScenarioBuilder({
     const d = EVENTS.find((e) => e.key === key);
     setOpenKey(key);
     setForm({
-      label: "",
+      // Pre-fill the label with the event card's title (e.g. "Increase
+      // marketing", "Expense decline %") so the saved assumption reads
+      // back recognizably without the user having to retype it.
+      label: d?.label ?? "",
       amount: "",
       percentagePct: "",
       startMonth: defaultStartYM.m,

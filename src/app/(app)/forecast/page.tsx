@@ -336,7 +336,7 @@ export default async function ForecastPage({
               <th className="text-right">Scenario revenue</th>
               <th className="text-right">Scenario expenses</th>
               <th className="text-right">Scenario net</th>
-              <th>Notes</th>
+              <th>{view === "scenarios" ? "Active scenarios" : "Notes"}</th>
             </tr>
           </thead>
           <tbody>
