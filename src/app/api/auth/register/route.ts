@@ -89,8 +89,10 @@ export async function POST(req: NextRequest) {
     throw err;
   }
 
-  // Drop the new user straight into the product — no /setup detour.
-  const res = NextResponse.redirect(new URL("/dashboard", req.url), { status: 303 });
+  // Drop the new user into the adaptive onboarding wizard, which
+  // ends by routing them to /manual-data (Import Your Business Data)
+  // or seeds a demo workspace if they pick 'Explore Demo Business'.
+  const res = NextResponse.redirect(new URL("/onboarding", req.url), { status: 303 });
   const session = await getIronSession<SessionData>(req, res, sessionOptions);
   session.userId = user.id;
   session.email = user.email;

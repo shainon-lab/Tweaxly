@@ -181,6 +181,26 @@ model Business {
   industry        String?
   country         String?
   timezone        String?
+  // Adaptive-onboarding answers. Drive how signals, forecast
+  // messaging, and dashboard recommendations adapt to the
+  // business's maturity + priorities.
+  //
+  //   businessStage    — "new" | "growing" | "established"
+  //   businessFormat   — "sole_prop" | "llc" | "partnership" | "other"
+  //   hasAnnualReports — true / false / null (not yet answered)
+  //   paysSalaries     — true / false / null
+  //   goals            — comma-separated keys from a fixed list
+  //                      (profitability, expenses, cashflow, trends,
+  //                       growth, certainty)
+  //   onboardedAt      — null until the wizard completes (or is
+  //                      explicitly skipped via Demo mode). Used to
+  //                      gate whether the wizard fires on next login.
+  businessStage    String?
+  businessFormat   String?
+  hasAnnualReports Boolean?
+  paysSalaries     Boolean?
+  goals            String?
+  onboardedAt      DateTime?
   createdAt       DateTime            @default(now())
 
   memberships     BusinessMembership[]

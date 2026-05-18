@@ -5,10 +5,17 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import ManualDataClient from "./ManualDataClient";
+import OnboardingImportIntro from "./OnboardingImportIntro";
 
-export default async function ManualDataPage() {
+export default async function ManualDataPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ onboarding?: string }>;
+}) {
   const { business } = await requireBusiness();
   const { t } = await getServerT();
+  const sp = await searchParams;
+  const fromOnboarding = sp.onboarding === "1";
   const [entries, categoriesRaw] = await Promise.all([
     prisma.manualEntry.findMany({
       where: { businessId: business.id },
@@ -28,10 +35,14 @@ export default async function ManualDataPage() {
   return (
     <>
       <PageHeader
-        title={t("page.manualData.title")}
-        subtitle="Import data — add income or outcome entries manually, or bulk-upload a file."
+        title={fromOnboarding ? "Import Your Business Data" : t("page.manualData.title")}
+        subtitle={
+          fromOnboarding
+            ? "Upload your business activity to generate your first business snapshot."
+            : "Import data — add income or outcome entries manually, or bulk-upload a file."
+        }
       />
-      <BusinessSettingsTabs />
+      {fromOnboarding ? <OnboardingImportIntro /> : <BusinessSettingsTabs />}
       <ManualDataClient
         entries={entries.map((e) => ({
           id: e.id,
