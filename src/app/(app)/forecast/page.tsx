@@ -209,42 +209,74 @@ export default async function ForecastPage({
           when the user is in the Scenarios empty state. */}
       {!(view === "scenarios" && assumptions.length === 0) ? (
         <>
+      {/* KPI tiles. Overview = baseline-only (no scenarios applied).
+          Scenarios = scenario totals with a 'vs baseline' delta. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
           <div className="mt-2 text-xl font-semibold text-good">
-            +{fmtMoney(summary.scenarioRevenueTotal, ccy)}
+            +{fmtMoney(view === "scenarios" ? summary.scenarioRevenueTotal : summary.baselineRevenueTotal, ccy)}
           </div>
-          <div className="text-xs text-slate-400 mt-1">
-            baseline: +{fmtMoney(summary.baselineRevenueTotal, ccy)}
-          </div>
+          {view === "scenarios" ? (
+            <div className="text-xs text-slate-400 mt-1">
+              baseline: +{fmtMoney(summary.baselineRevenueTotal, ccy)}
+            </div>
+          ) : null}
         </div>
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected expenses</div>
           <div className="mt-2 text-xl font-semibold text-bad">
-            −{fmtMoney(summary.scenarioExpensesTotal, ccy)}
+            −{fmtMoney(view === "scenarios" ? summary.scenarioExpensesTotal : summary.baselineExpensesTotal, ccy)}
           </div>
-          <div className="text-xs text-slate-400 mt-1">
-            baseline: −{fmtMoney(summary.baselineExpensesTotal, ccy)}
-          </div>
+          {view === "scenarios" ? (
+            <div className="text-xs text-slate-400 mt-1">
+              baseline: −{fmtMoney(summary.baselineExpensesTotal, ccy)}
+            </div>
+          ) : null}
         </div>
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected net profit</div>
-          <div className={`mt-2 text-xl font-semibold ${summary.scenarioNetTotal >= 0 ? "text-good" : "text-bad"}`}>
-            {fmtMoney(summary.scenarioNetTotal, ccy)}
-          </div>
-          <div className={`text-xs mt-1 ${baselineNetDelta >= 0 ? "text-good" : "text-bad"}`}>
-            {baselineNetDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(baselineNetDelta), ccy)} vs baseline
-          </div>
+          {view === "scenarios" ? (
+            <>
+              <div className={`mt-2 text-xl font-semibold ${summary.scenarioNetTotal >= 0 ? "text-good" : "text-bad"}`}>
+                {fmtMoney(summary.scenarioNetTotal, ccy)}
+              </div>
+              <div className={`text-xs mt-1 ${baselineNetDelta >= 0 ? "text-good" : "text-bad"}`}>
+                {baselineNetDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(baselineNetDelta), ccy)} vs baseline
+              </div>
+            </>
+          ) : (
+            <div className={`mt-2 text-xl font-semibold ${summary.baselineNetTotal >= 0 ? "text-good" : "text-bad"}`}>
+              {fmtMoney(summary.baselineNetTotal, ccy)}
+            </div>
+          )}
         </div>
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Avg monthly net</div>
-          <div className={`mt-2 text-xl font-semibold ${summary.scenarioAvgMonthlyNet >= 0 ? "text-good" : "text-bad"}`}>
-            {fmtMoney(summary.scenarioAvgMonthlyNet, ccy)}
-          </div>
-          <div className="text-xs text-slate-400 mt-1">
-            {summary.scenarioAvgMonthlyNet >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
-          </div>
+          {view === "scenarios" ? (
+            <>
+              <div className={`mt-2 text-xl font-semibold ${summary.scenarioAvgMonthlyNet >= 0 ? "text-good" : "text-bad"}`}>
+                {fmtMoney(summary.scenarioAvgMonthlyNet, ccy)}
+              </div>
+              <div className="text-xs text-slate-400 mt-1">
+                {summary.scenarioAvgMonthlyNet >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
+              </div>
+            </>
+          ) : (
+            (() => {
+              const baselineAvg = summary.baselineNetTotal / Math.max(horizon.months, 1);
+              return (
+                <>
+                  <div className={`mt-2 text-xl font-semibold ${baselineAvg >= 0 ? "text-good" : "text-bad"}`}>
+                    {fmtMoney(baselineAvg, ccy)}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {baselineAvg >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
+                  </div>
+                </>
+              );
+            })()
+          )}
         </div>
       </div>
 
@@ -311,17 +343,25 @@ export default async function ForecastPage({
           <thead>
             <tr>
               <th>Month</th>
-              <th className="text-right">Baseline revenue</th>
-              <th className="text-right">Baseline expenses</th>
-              <th className="text-right">Baseline net</th>
-              <th className="text-right">Scenario revenue</th>
-              <th className="text-right">Scenario expenses</th>
-              <th className="text-right">Scenario net</th>
-              <th>Notes</th>
+              <th className="text-right">{view === "scenarios" ? "Baseline revenue" : "Revenue"}</th>
+              <th className="text-right">{view === "scenarios" ? "Baseline expenses" : "Expenses"}</th>
+              <th className="text-right">{view === "scenarios" ? "Baseline net" : "Net"}</th>
+              {view === "scenarios" ? (
+                <>
+                  <th className="text-right">Scenario revenue</th>
+                  <th className="text-right">Scenario expenses</th>
+                  <th className="text-right">Scenario net</th>
+                  <th>Notes</th>
+                </>
+              ) : null}
             </tr>
           </thead>
           <tbody>
-            {points.map((p) => (
+            {/* Overview uses the clean baseline run (no assumptions
+                applied) so the month-by-month projection is purely
+                what the system expects — scenarios are surfaced only
+                on the Scenarios tab. */}
+            {(view === "scenarios" ? points : baselinePoints).map((p) => (
               <tr key={p.index}>
                 <td className="font-medium">{p.ym}</td>
                 <td className="text-right text-slate-300">+{fmtMoney(p.baselineRevenue, ccy)}</td>
@@ -329,14 +369,18 @@ export default async function ForecastPage({
                 <td className={`text-right ${p.baselineNet >= 0 ? "text-good" : "text-bad"}`}>
                   {fmtMoney(p.baselineNet, ccy)}
                 </td>
-                <td className="text-right text-good">+{fmtMoney(p.scenarioRevenue, ccy)}</td>
-                <td className="text-right text-bad">−{fmtMoney(p.scenarioExpenses, ccy)}</td>
-                <td className={`text-right font-semibold ${p.scenarioNet >= 0 ? "text-good" : "text-bad"}`}>
-                  {fmtMoney(p.scenarioNet, ccy)}
-                </td>
-                <td className="text-xs text-slate-400">
-                  {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—"}
-                </td>
+                {view === "scenarios" ? (
+                  <>
+                    <td className="text-right text-good">+{fmtMoney(p.scenarioRevenue, ccy)}</td>
+                    <td className="text-right text-bad">−{fmtMoney(p.scenarioExpenses, ccy)}</td>
+                    <td className={`text-right font-semibold ${p.scenarioNet >= 0 ? "text-good" : "text-bad"}`}>
+                      {fmtMoney(p.scenarioNet, ccy)}
+                    </td>
+                    <td className="text-xs text-slate-400">
+                      {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—"}
+                    </td>
+                  </>
+                ) : null}
               </tr>
             ))}
           </tbody>
