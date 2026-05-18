@@ -117,16 +117,21 @@ export default async function ForecastPage({
     notes: r.notes,
   }));
 
-  const points = runScenario(baseline, horizon.months, assumptions);
+  // Overview is the clean forecast — it ignores Scenario Builder
+  // assumptions entirely (those live in the Scenarios tab). Feed the
+  // engine an empty assumption list when on Overview so every
+  // downstream UI element (KPI tiles, chart, month-by-month table,
+  // insights) automatically respects the same rule with no per-view
+  // branching elsewhere.
+  const effectiveAssumptions = view === "scenarios" ? assumptions : [];
+  const points = runScenario(baseline, horizon.months, effectiveAssumptions);
   const summary = summarizeForecast(points);
-  // Two distinct intelligence streams:
-  //   - Forecast Insights (Overview): baseline-only, what the system
-  //     currently expects regardless of any user-applied assumptions.
-  //     Pass an empty assumption set so the engine doesn't bake in
-  //     scenario context.
-  //   - Scenario Impact Analysis (Scenarios): includes the user's
-  //     assumptions so the engine can talk about deltas vs baseline.
-  const baselinePoints = runScenario(baseline, horizon.months, []);
+  // Baseline run still gets computed for the Scenarios tab (used in
+  // the comparison insights). On Overview it's identical to `points`
+  // since effectiveAssumptions is empty.
+  const baselinePoints = view === "scenarios"
+    ? runScenario(baseline, horizon.months, [])
+    : points;
   const baselineInsights = generateForecastInsights(baseline, baselinePoints, [], business.currency);
   const scenarioInsights = generateForecastInsights(baseline, points, assumptions, business.currency);
   const insights = view === "scenarios" ? scenarioInsights : baselineInsights;
@@ -209,13 +214,15 @@ export default async function ForecastPage({
           when the user is in the Scenarios empty state. */}
       {!(view === "scenarios" && assumptions.length === 0) ? (
         <>
-      {/* KPI tiles. Overview = baseline-only (no scenarios applied).
-          Scenarios = scenario totals with a 'vs baseline' delta. */}
+      {/* KPI tiles. On Overview `effectiveAssumptions` is empty, so
+          `summary.scenarioRevenueTotal` etc. equal the baseline
+          totals and the 'baseline:' / 'vs baseline' subtext folds
+          back to the same number — Overview reads clean. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
           <div className="mt-2 text-xl font-semibold text-good">
-            +{fmtMoney(view === "scenarios" ? summary.scenarioRevenueTotal : summary.baselineRevenueTotal, ccy)}
+            +{fmtMoney(summary.scenarioRevenueTotal, ccy)}
           </div>
           {view === "scenarios" ? (
             <div className="text-xs text-slate-400 mt-1">
@@ -226,7 +233,7 @@ export default async function ForecastPage({
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected expenses</div>
           <div className="mt-2 text-xl font-semibold text-bad">
-            −{fmtMoney(view === "scenarios" ? summary.scenarioExpensesTotal : summary.baselineExpensesTotal, ccy)}
+            −{fmtMoney(summary.scenarioExpensesTotal, ccy)}
           </div>
           {view === "scenarios" ? (
             <div className="text-xs text-slate-400 mt-1">
@@ -236,47 +243,23 @@ export default async function ForecastPage({
         </div>
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected net profit</div>
+          <div className={`mt-2 text-xl font-semibold ${summary.scenarioNetTotal >= 0 ? "text-good" : "text-bad"}`}>
+            {fmtMoney(summary.scenarioNetTotal, ccy)}
+          </div>
           {view === "scenarios" ? (
-            <>
-              <div className={`mt-2 text-xl font-semibold ${summary.scenarioNetTotal >= 0 ? "text-good" : "text-bad"}`}>
-                {fmtMoney(summary.scenarioNetTotal, ccy)}
-              </div>
-              <div className={`text-xs mt-1 ${baselineNetDelta >= 0 ? "text-good" : "text-bad"}`}>
-                {baselineNetDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(baselineNetDelta), ccy)} vs baseline
-              </div>
-            </>
-          ) : (
-            <div className={`mt-2 text-xl font-semibold ${summary.baselineNetTotal >= 0 ? "text-good" : "text-bad"}`}>
-              {fmtMoney(summary.baselineNetTotal, ccy)}
+            <div className={`text-xs mt-1 ${baselineNetDelta >= 0 ? "text-good" : "text-bad"}`}>
+              {baselineNetDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(baselineNetDelta), ccy)} vs baseline
             </div>
-          )}
+          ) : null}
         </div>
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Avg monthly net</div>
-          {view === "scenarios" ? (
-            <>
-              <div className={`mt-2 text-xl font-semibold ${summary.scenarioAvgMonthlyNet >= 0 ? "text-good" : "text-bad"}`}>
-                {fmtMoney(summary.scenarioAvgMonthlyNet, ccy)}
-              </div>
-              <div className="text-xs text-slate-400 mt-1">
-                {summary.scenarioAvgMonthlyNet >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
-              </div>
-            </>
-          ) : (
-            (() => {
-              const baselineAvg = summary.baselineNetTotal / Math.max(horizon.months, 1);
-              return (
-                <>
-                  <div className={`mt-2 text-xl font-semibold ${baselineAvg >= 0 ? "text-good" : "text-bad"}`}>
-                    {fmtMoney(baselineAvg, ccy)}
-                  </div>
-                  <div className="text-xs text-slate-400 mt-1">
-                    {baselineAvg >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
-                  </div>
-                </>
-              );
-            })()
-          )}
+          <div className={`mt-2 text-xl font-semibold ${summary.scenarioAvgMonthlyNet >= 0 ? "text-good" : "text-bad"}`}>
+            {fmtMoney(summary.scenarioAvgMonthlyNet, ccy)}
+          </div>
+          <div className="text-xs text-slate-400 mt-1">
+            {summary.scenarioAvgMonthlyNet >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
+          </div>
         </div>
       </div>
 
@@ -335,6 +318,10 @@ export default async function ForecastPage({
           Overview so the page reads as insights-first, not a data
           dump. On Scenarios the table is open by default since the
           user is actively investigating the projection. */}
+      {/* On Overview, `points` is computed with effectiveAssumptions
+          = [] so baseline + scenario columns show the same numbers.
+          On Scenarios, points includes the manual assumptions so
+          the right-hand columns reflect the delta. */}
       <details className="card mb-6 overflow-x-auto" open={view === "scenarios"}>
         <summary className="cursor-pointer font-medium mb-3 select-none">
           Month-by-month projection
@@ -343,25 +330,17 @@ export default async function ForecastPage({
           <thead>
             <tr>
               <th>Month</th>
-              <th className="text-right">{view === "scenarios" ? "Baseline revenue" : "Revenue"}</th>
-              <th className="text-right">{view === "scenarios" ? "Baseline expenses" : "Expenses"}</th>
-              <th className="text-right">{view === "scenarios" ? "Baseline net" : "Net"}</th>
-              {view === "scenarios" ? (
-                <>
-                  <th className="text-right">Scenario revenue</th>
-                  <th className="text-right">Scenario expenses</th>
-                  <th className="text-right">Scenario net</th>
-                  <th>Notes</th>
-                </>
-              ) : null}
+              <th className="text-right">Baseline revenue</th>
+              <th className="text-right">Baseline expenses</th>
+              <th className="text-right">Baseline net</th>
+              <th className="text-right">Scenario revenue</th>
+              <th className="text-right">Scenario expenses</th>
+              <th className="text-right">Scenario net</th>
+              <th>Notes</th>
             </tr>
           </thead>
           <tbody>
-            {/* Overview uses the clean baseline run (no assumptions
-                applied) so the month-by-month projection is purely
-                what the system expects — scenarios are surfaced only
-                on the Scenarios tab. */}
-            {(view === "scenarios" ? points : baselinePoints).map((p) => (
+            {points.map((p) => (
               <tr key={p.index}>
                 <td className="font-medium">{p.ym}</td>
                 <td className="text-right text-slate-300">+{fmtMoney(p.baselineRevenue, ccy)}</td>
@@ -369,18 +348,14 @@ export default async function ForecastPage({
                 <td className={`text-right ${p.baselineNet >= 0 ? "text-good" : "text-bad"}`}>
                   {fmtMoney(p.baselineNet, ccy)}
                 </td>
-                {view === "scenarios" ? (
-                  <>
-                    <td className="text-right text-good">+{fmtMoney(p.scenarioRevenue, ccy)}</td>
-                    <td className="text-right text-bad">−{fmtMoney(p.scenarioExpenses, ccy)}</td>
-                    <td className={`text-right font-semibold ${p.scenarioNet >= 0 ? "text-good" : "text-bad"}`}>
-                      {fmtMoney(p.scenarioNet, ccy)}
-                    </td>
-                    <td className="text-xs text-slate-400">
-                      {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—"}
-                    </td>
-                  </>
-                ) : null}
+                <td className="text-right text-good">+{fmtMoney(p.scenarioRevenue, ccy)}</td>
+                <td className="text-right text-bad">−{fmtMoney(p.scenarioExpenses, ccy)}</td>
+                <td className={`text-right font-semibold ${p.scenarioNet >= 0 ? "text-good" : "text-bad"}`}>
+                  {fmtMoney(p.scenarioNet, ccy)}
+                </td>
+                <td className="text-xs text-slate-400">
+                  {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—"}
+                </td>
               </tr>
             ))}
           </tbody>
