@@ -20,7 +20,13 @@ type AccountSubTab =
 export default function AccountClient({
   user,
 }: {
-  user: { email: string; createdAt: string; preferredLanguage: string };
+  user: {
+    email: string;
+    createdAt: string;
+    preferredLanguage: string;
+    region: string | null;
+    detectedRegion: string | null;
+  };
 }) {
   const t = useT();
   const [tab, setTab] = useState<AccountSubTab>("billing");
@@ -56,7 +62,13 @@ export default function AccountClient({
       {tab === "billing"       ? <BillingPane /> : null}
       {tab === "payment"       ? <PaymentMethodsPane /> : null}
       {tab === "password"      ? <PasswordPane user={user} /> : null}
-      {tab === "preferences"   ? <LanguagePreference initialLocale={user.preferredLanguage} /> : null}
+      {tab === "preferences"   ? (
+        <LanguagePreference
+          initialLocale={user.preferredLanguage}
+          initialRegion={user.region}
+          detectedRegion={user.detectedRegion}
+        />
+      ) : null}
       {tab === "access_logs"   ? <AccessLogsPane /> : null}
       {tab === "close_account" ? <CloseAccountPane /> : null}
     </>

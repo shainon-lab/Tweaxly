@@ -27,6 +27,12 @@ model User {
   // 'he' = Hebrew (RTL). Falls back to 'en' for any locale missing
   // from the dictionary.
   preferredLanguage String @default("en")
+  // ISO 3166-1 alpha-2 country code for the user's region. Auto-
+  // detected from the IP on first signup / first visit to the
+  // preferences page when null; the user can override it from
+  // Account → Language & Region. Nullable so we never block on
+  // detection failing.
+  region       String?
   createdAt    DateTime   @default(now())
   businesses   Business[]
   memberships  BusinessMembership[]
