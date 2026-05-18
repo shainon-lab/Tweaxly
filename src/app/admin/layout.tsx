@@ -6,13 +6,14 @@
 // the top with section nav + global search.
 
 import Link from "next/link";
-import { requireSuperAdmin } from "@/lib/auth";
+import { requireAdminOrSuper } from "@/lib/auth";
 import AdminSearch from "@/components/admin/AdminSearch";
 
 export const dynamic = "force-dynamic";
 
 const NAV: { href: string; label: string }[] = [
   { href: "/admin",             label: "Overview" },
+  { href: "/admin/users",       label: "Users" },
   { href: "/admin/accounts",    label: "Accounts" },
   { href: "/admin/activity",    label: "Activity" },
   { href: "/admin/billing",     label: "Billing" },
@@ -22,7 +23,7 @@ const NAV: { href: string; label: string }[] = [
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
-  const user = await requireSuperAdmin();
+  const user = await requireAdminOrSuper();
   return (
     <div className="min-h-screen flex flex-col bg-ink-950">
       <header className="border-b border-line bg-ink-900/95 backdrop-blur sticky top-0 z-30">
@@ -45,7 +46,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </div>
             <div className="flex items-center gap-2 text-xs shrink-0">
               <span className="text-slate-400 hidden lg:inline">{user.email}</span>
-              <span className="pill-accent">super_admin</span>
+              <span className={user.systemRole === "super_admin" ? "pill-accent" : "pill"}>
+                {user.systemRole}
+              </span>
               <Link href="/dashboard" className="btn-ghost text-xs">Exit admin</Link>
             </div>
           </div>

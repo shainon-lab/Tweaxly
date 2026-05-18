@@ -145,9 +145,31 @@ export async function getOptionalContext() {
 // Server-side enforcement — never trust UI-only gating.
 // ─────────────────────────────────────────────────────────────────────
 
+// Role hierarchy: user < admin < super_admin.
+//   - admin can do everything an operator does in the panel
+//     (impersonate, suspend, change plan, add notes, edit memberships)
+//   - admin CANNOT: change system roles, delete users, hard-delete a
+//     workspace's data, or touch the super_admin user
+//   - super_admin is the only role with that destructive surface
+export type SystemRole = "user" | "admin" | "super_admin";
+
+export function isAdminOrSuper(role: string | undefined | null): boolean {
+  return role === "admin" || role === "super_admin";
+}
+
 export async function requireSuperAdmin() {
   const user = await requireUser();
   if (user.systemRole !== "super_admin") {
+    redirect("/");
+  }
+  return user;
+}
+
+// Admin OR super_admin — used for everything that's "operator panel
+// activity" without being a destructive role/data change.
+export async function requireAdminOrSuper() {
+  const user = await requireUser();
+  if (!isAdminOrSuper(user.systemRole)) {
     redirect("/");
   }
   return user;
@@ -165,6 +187,24 @@ export async function requireSuperAdminApi(): Promise<
   }
   const user = await prisma.user.findUnique({ where: { id: session.userId } });
   if (!user || user.systemRole !== "super_admin") {
+    return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
+  }
+  return { ok: true, user };
+}
+
+// API variant of requireAdminOrSuper — most admin-panel mutations use
+// this gate; only role changes and user deletion keep the stricter
+// requireSuperAdminApi.
+export async function requireAdminOrSuperApi(): Promise<
+  | { ok: true; user: Awaited<ReturnType<typeof requireUser>> }
+  | { ok: false; response: NextResponse }
+> {
+  const session = await getSession();
+  if (!session.userId) {
+    return { ok: false, response: NextResponse.json({ error: "unauthorized" }, { status: 401 }) };
+  }
+  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  if (!user || !isAdminOrSuper(user.systemRole)) {
     return { ok: false, response: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
   }
   return { ok: true, user };

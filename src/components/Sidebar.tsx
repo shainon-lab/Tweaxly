@@ -60,6 +60,7 @@ export default function Sidebar({
   workspaces?: SwitcherWorkspace[];
 }) {
   const isSuperAdmin = systemRole === "super_admin";
+  const isAdminOrSuper = systemRole === "admin" || systemRole === "super_admin";
   const t = useT();
   const path = usePathname();
   const hasCustomLogo = !!logoData;
@@ -205,9 +206,10 @@ export default function Sidebar({
               </Link>
             );
           })}
-          {/* Super-admin-only entry. Server-side rendering already
-              checked systemRole; this is convenience nav. */}
-          {isSuperAdmin ? (
+          {/* Admin entry — visible to admin AND super_admin. Server-side
+              renders/admin routes still re-check the role; this is
+              convenience nav only. */}
+          {isAdminOrSuper ? (
             <Link
               href="/admin"
               onClick={() => setMobileOpen(false)}
@@ -215,7 +217,7 @@ export default function Sidebar({
             >
               <Shield size={16} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
               <span className="flex-1">{t("nav.admin")}</span>
-              <span className="text-[9px] uppercase tracking-wider opacity-70">super</span>
+              <span className="text-[9px] uppercase tracking-wider opacity-70">{isSuperAdmin ? "super" : "admin"}</span>
             </Link>
           ) : null}
         </nav>

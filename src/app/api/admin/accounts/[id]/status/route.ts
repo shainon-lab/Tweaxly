@@ -3,13 +3,13 @@
 // super_admin only. Updates Business.status and logs.
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdminApi } from "@/lib/auth";
+import { requireAdminOrSuperApi } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 
 const ALLOWED = new Set(["active", "suspended", "demo", "test"]);
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = await requireSuperAdminApi();
+  const auth = await requireAdminOrSuperApi();
   if (!auth.ok) return auth.response;
 
   let body: { status?: string };

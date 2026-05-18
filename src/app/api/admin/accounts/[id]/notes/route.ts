@@ -2,11 +2,11 @@
 // DELETE /api/admin/accounts/[id]/notes?noteId=... — delete note
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdminApi } from "@/lib/auth";
+import { requireAdminOrSuperApi } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 
 export async function POST(req: Request, { params }: { params: { id: string } }) {
-  const auth = await requireSuperAdminApi();
+  const auth = await requireAdminOrSuperApi();
   if (!auth.ok) return auth.response;
 
   let body: { body?: string; tags?: string };
@@ -40,7 +40,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 }
 
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
-  const auth = await requireSuperAdminApi();
+  const auth = await requireAdminOrSuperApi();
   if (!auth.ok) return auth.response;
 
   const url = new URL(req.url);

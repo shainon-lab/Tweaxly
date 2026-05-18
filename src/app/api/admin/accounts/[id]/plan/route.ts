@@ -3,11 +3,11 @@
 // Update plan + trial-end on an account. super_admin only. Logged.
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireSuperAdminApi } from "@/lib/auth";
+import { requireAdminOrSuperApi } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
-  const auth = await requireSuperAdminApi();
+  const auth = await requireAdminOrSuperApi();
   if (!auth.ok) return auth.response;
 
   let body: { plan?: string; trialEndsAt?: string | null };
