@@ -680,10 +680,14 @@ function SignalDetailPanel({
     <aside
       role="dialog"
       aria-label={`Signal details — ${display.title}`}
-      className="fixed top-0 right-0 h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-line shadow-2xl shadow-black/40 z-40 flex flex-col animate-[slideInRight_220ms_ease-out]"
+      // Whole panel scrolls as one block: header → body → footer all
+      // flow together with no empty space between content and the
+      // action buttons. If content exceeds the viewport, the user
+      // scrolls; if it's short, the buttons sit tight under the text.
+      className="fixed top-0 right-0 h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-line shadow-2xl shadow-black/40 z-40 overflow-y-auto animate-[slideInRight_220ms_ease-out]"
     >
-      {/* Header — pinned to the top */}
-      <div className="shrink-0 flex items-start justify-between gap-3 p-5 border-b border-line">
+      {/* Header */}
+      <div className="flex items-start justify-between gap-3 p-5 border-b border-line">
         <div className="min-w-0 flex-1 flex flex-col gap-2">
           <div className="flex items-center gap-2 text-[11px] text-slate-400">
             <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} aria-hidden="true" />
@@ -718,11 +722,10 @@ function SignalDetailPanel({
         </button>
       </div>
 
-      {/* Body — scrolls inside this region only. `min-h-0` is the
-          flexbox magic that lets `overflow-y-auto` actually clip
-          inside a flex container instead of letting the body grow
-          and push the footer offscreen. */}
-      <div className="flex-1 min-h-0 overflow-y-auto p-5 flex flex-col gap-5">
+      {/* Body — natural height so the action buttons below sit
+          immediately under the text instead of being pushed to the
+          bottom of the viewport with empty space in between. */}
+      <div className="p-5 flex flex-col gap-5">
         <PanelSection label="What happened"      body={r.observation} />
         <PanelSection label="Why it matters"     body={r.interpretation} />
         <PanelSection label="Recommended action" body={r.recommendation} accent />
@@ -739,10 +742,10 @@ function SignalDetailPanel({
         ) : null}
       </div>
 
-      {/* Footer — pinned to the bottom, never scrolls. Always visible
-          so the user can reach Mark resolved / Consult without
-          scrolling through long detail content. */}
-      <div className="shrink-0 border-t border-line p-4 flex items-center justify-between gap-2 bg-ink-900">
+      {/* Footer — immediately under the body content. No flex pinning;
+          when content is short the buttons sit tight under the text,
+          when content is long the user scrolls to reach them. */}
+      <div className="border-t border-line p-4 flex items-center justify-between gap-2 bg-ink-900">
         <button
           type="button"
           onClick={onResolve}
