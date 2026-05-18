@@ -88,7 +88,7 @@ export default async function AdminDashboard() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Dashboard</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Dashboard</h1>
         <p className="text-sm text-slate-400 mt-1">
           What&apos;s happening across all customer accounts.
         </p>

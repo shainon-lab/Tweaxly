@@ -43,7 +43,7 @@ export default async function ActivityFeedPage({
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white">Activity</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-100">Activity</h1>
         <p className="text-xs text-slate-400 mt-1">
           Operational stream across every workspace. Newest first.
         </p>

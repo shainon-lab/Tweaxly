@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
       <header className="border-b border-line bg-ink-900/95 backdrop-blur sticky top-0 z-30">
         <div className="max-w-[1600px] mx-auto px-6 h-12 flex items-center justify-between gap-4">
           <div className="flex items-center gap-5 min-w-0">
-            <Link href="/admin" className="text-sm font-semibold tracking-wide text-white shrink-0">
+            <Link href="/admin" className="text-sm font-semibold tracking-wide text-slate-100 shrink-0">
               Tweaxly · <span className="text-accent">Admin</span>
             </Link>
             <nav className="hidden md:flex items-center gap-4 text-[13px] text-slate-400 min-w-0">

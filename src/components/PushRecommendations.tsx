@@ -590,7 +590,7 @@ function SignalCard({
 
       {/* Hero metric */}
       {display.metric ? (
-        <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-white leading-none tabular-nums tracking-tight`}>
+        <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-slate-50 leading-none tabular-nums tracking-tight`}>
           {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
           {display.metric}
         </div>
@@ -689,7 +689,7 @@ function SignalDetailPanel({
             {display.title}
           </div>
           {display.metric ? (
-            <div className="text-4xl font-bold text-white leading-none tabular-nums tracking-tight">
+            <div className="text-4xl font-bold text-slate-50 leading-none tabular-nums tracking-tight">
               {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
               {display.metric}
             </div>

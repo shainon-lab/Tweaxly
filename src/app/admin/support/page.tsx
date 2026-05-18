@@ -9,7 +9,7 @@ export default function AdminSupportPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white">Support</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-100">Support</h1>
         <p className="text-xs text-slate-400 mt-1">
           Open tickets, recent conversations, customer feedback, and bug reports.
         </p>

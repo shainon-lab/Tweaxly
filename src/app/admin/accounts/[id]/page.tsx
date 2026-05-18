@@ -219,7 +219,7 @@ export default async function Customer360({ params }: { params: { id: string } }
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{business.name}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{business.name}</h1>
             <span className={`${STATUS_PILL[business.status] ?? "pill"} text-[10px]`}>{business.status}</span>
             {trialActive ? (
               <span className="pill-accent text-[10px]">trial ends {fmtDay(business.trialEndsAt)}</span>

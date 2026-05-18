@@ -98,7 +98,7 @@ export default async function AdminUsersPage({
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">Users</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Users</h1>
           <p className="text-xs text-slate-400 mt-1">
             Every login identity. Each user can own multiple workspaces and be invited to others.
             {canChangeRoles

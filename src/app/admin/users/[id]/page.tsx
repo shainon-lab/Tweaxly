@@ -112,7 +112,7 @@ export default async function AdminUserDetail({ params }: { params: { id: string
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div>
           <div className="flex items-center gap-3 mb-1 flex-wrap">
-            <h1 className="text-2xl font-semibold tracking-tight text-white">{user.name ?? user.email}</h1>
+            <h1 className="text-2xl font-semibold tracking-tight text-slate-100">{user.name ?? user.email}</h1>
             <span className={`${ROLE_PILL[user.systemRole] ?? "pill"} text-[10px]`}>{user.systemRole}</span>
             {isMe ? <span className="pill-accent text-[10px]">you</span> : null}
           </div>

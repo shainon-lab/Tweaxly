@@ -21,7 +21,7 @@ export default async function AuditLogPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight text-white">Audit log</h1>
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-100">Audit log</h1>
         <p className="text-sm text-slate-400 mt-1">
           Most recent {entries.length} admin actions.
         </p>

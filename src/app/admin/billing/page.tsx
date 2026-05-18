@@ -19,7 +19,7 @@ export default function AdminBillingPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white">Billing</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-100">Billing</h1>
         <p className="text-xs text-slate-400 mt-1">
           Revenue overview, MRR, churn, refunds, and failed payments.
         </p>

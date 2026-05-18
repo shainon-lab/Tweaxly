@@ -193,7 +193,7 @@ export default async function AdminAccountsPage({
     <div className="space-y-4">
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-white">Accounts</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Accounts</h1>
           <p className="text-xs text-slate-400 mt-1">
             Every workspace in the system. Click any row for the Customer 360.
           </p>

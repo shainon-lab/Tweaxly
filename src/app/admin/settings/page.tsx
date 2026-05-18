@@ -22,7 +22,7 @@ export default async function AdminSettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-white">Settings</h1>
+        <h1 className="text-xl font-semibold tracking-tight text-slate-100">Settings</h1>
         <p className="text-xs text-slate-400 mt-1">
           Operator-level preferences and platform metadata.
         </p>
