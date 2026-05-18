@@ -603,15 +603,19 @@ function SignalCard({
         </div>
       ) : null}
 
-      {/* Subtle affordance — quiet by default, lifts on hover. No
-          Consult button here; that lives inside the detail panel. */}
-      <div className="mt-auto flex items-center justify-end text-[11px] text-slate-500">
-        <ChevronRight
-          size={14}
-          strokeWidth={1.75}
-          className="text-slate-500 group-hover:text-accent group-hover:translate-x-0.5 transition"
+      {/* Click affordance — a pill button pinned at the bottom of every
+          card. Always visible (not hover-only) so the card never reads
+          as 'static info', and it lifts/brightens on hover. The button
+          is non-interactive markup — the whole card is the click
+          target — but it gives the eye a clear 'open this' signal. */}
+      <div className="mt-auto flex items-center justify-end">
+        <span
+          className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border border-accent/40 bg-accent-soft/30 text-accent group-hover:bg-accent-soft group-hover:border-accent group-hover:text-white group-hover:translate-x-0.5 transition duration-200"
           aria-hidden="true"
-        />
+        >
+          <span>View details</span>
+          <ChevronRight size={12} strokeWidth={2} />
+        </span>
       </div>
     </button>
   );
