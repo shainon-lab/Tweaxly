@@ -421,6 +421,9 @@ function SiteFooter() {
   return (
     <footer className="container-wide py-10 border-t border-line text-xs text-slate-500 flex items-center justify-between flex-wrap gap-3">
       <div>© {new Date().getFullYear()} TWEAXLY</div>
+      <nav className="flex items-center gap-5">
+        <a href="/terms" className="hover:text-slate-200 transition">Terms of Service</a>
+      </nav>
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
         AI-native business intelligence

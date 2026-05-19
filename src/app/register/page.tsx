@@ -1,7 +1,7 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
-import PasswordInput from "@/components/PasswordInput";
 import { getServerT } from "@/lib/i18n/server";
+import RegisterForm from "./RegisterForm";
 
 export default async function RegisterPage({
   searchParams,
@@ -10,8 +10,9 @@ export default async function RegisterPage({
   const { t } = await getServerT();
   const isDupe = err === "exists";
   const errorMsg =
-    isDupe ? t("auth.duplicateEmail") :
-    err    ? t("auth.weakSignup")     :
+    isDupe         ? t("auth.duplicateEmail") :
+    err === "terms" ? "You must accept the Terms of Service to create an account." :
+    err            ? t("auth.weakSignup")     :
     null;
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -33,26 +34,16 @@ export default async function RegisterPage({
             ) : null}
           </div>
         ) : null}
-        <form action="/api/auth/register" method="post" className="space-y-4">
-          <div>
-            <label className="label">{t("auth.businessName")}</label>
-            <input className="input" name="businessName" required autoFocus placeholder="e.g. Acme Co." />
-          </div>
-          <div>
-            <label className="label">{t("auth.yourName")}</label>
-            <input className="input" name="name" required placeholder="e.g. Sam Founder" />
-          </div>
-          <div>
-            <label className="label">{t("common.email")}</label>
-            <input className="input" name="email" type="email" required />
-          </div>
-          <div>
-            <label className="label">{t("auth.passwordMinHint")}</label>
-            <PasswordInput name="password" required minLength={6} />
-          </div>
-          <button className="btn-primary w-full" type="submit">{t("auth.createAccount")}</button>
-          <p className="text-xs text-slate-500 text-center">{t("auth.signupFooter")}</p>
-        </form>
+        <RegisterForm
+          labels={{
+            businessName: t("auth.businessName"),
+            yourName:     t("auth.yourName"),
+            email:        t("common.email"),
+            passwordHint: t("auth.passwordMinHint"),
+            create:       t("auth.createAccount"),
+            footer:       t("auth.signupFooter"),
+          }}
+        />
         <div className="mt-4 text-center text-sm text-slate-400">
           {t("auth.haveAccount")}{" "}
           <Link href="/login" className="text-accent hover:underline">{t("auth.signIn")}</Link>

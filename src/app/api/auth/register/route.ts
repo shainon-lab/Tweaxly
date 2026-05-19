@@ -23,9 +23,18 @@ export async function POST(req: NextRequest) {
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim() || null;
   const businessName = String(form.get("businessName") ?? "").trim();
+  const acceptTerms = String(form.get("acceptTerms") ?? "") === "yes";
 
-  const errUrl = new URL("/register?err=1", req.url);
-  const dupeUrl = new URL("/register?err=exists", req.url);
+  const errUrl   = new URL("/register?err=1",      req.url);
+  const dupeUrl  = new URL("/register?err=exists", req.url);
+  const termsUrl = new URL("/register?err=terms",  req.url);
+
+  // Terms of Service must be accepted explicitly. The UI blocks the
+  // submit button until the checkbox is ticked, but we re-validate
+  // server-side as the source of truth.
+  if (!acceptTerms) {
+    return NextResponse.redirect(termsUrl, { status: 303 });
+  }
 
   if (!email || password.length < 6 || !businessName) {
     return NextResponse.redirect(errUrl, { status: 303 });
