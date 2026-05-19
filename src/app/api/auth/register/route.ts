@@ -13,6 +13,10 @@ import { prisma } from "@/lib/db";
 import { getIronSession } from "iron-session";
 import { sessionOptions, type SessionData } from "@/lib/session";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import {
+  generateUnsubscribeToken, MARKETING_POLICY_VERSION,
+} from "@/lib/communications";
+import { recordAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,7 +27,10 @@ export async function POST(req: NextRequest) {
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim() || null;
   const businessName = String(form.get("businessName") ?? "").trim();
-  const acceptTerms = String(form.get("acceptTerms") ?? "") === "yes";
+  const acceptTerms     = String(form.get("acceptTerms") ?? "")     === "yes";
+  // Marketing consent is OPTIONAL — defaulted to false at the model
+  // level, only flipped on if the user explicitly ticks the box.
+  const acceptMarketing = String(form.get("acceptMarketing") ?? "") === "yes";
 
   const errUrl   = new URL("/register?err=1",      req.url);
   const dupeUrl  = new URL("/register?err=exists", req.url);
@@ -54,6 +61,22 @@ export async function POST(req: NextRequest) {
   const SUPER_ADMIN_EMAIL = "shainon@gmail.com";
   const systemRole = email === SUPER_ADMIN_EMAIL ? "super_admin" : "user";
 
+  // Best-effort IP capture for the marketing-consent audit record.
+  // Falls back to null in environments without a proxy header.
+  const ipAddress =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
+    req.headers.get("x-real-ip") ||
+    null;
+
+  // When the user opts in to marketing we flip all four channels on by
+  // default — the single checkbox represents "agree to receive
+  // marketing updates, promotions, newsletters, product
+  // announcements, and commercial communications". Channel-level
+  // granularity lives in Account → Communication Preferences.
+  const marketingDefaults = acceptMarketing
+    ? { marketingEmails: true, marketingSMS: true, productAnnouncements: true, newsletter: true }
+    : { marketingEmails: false, marketingSMS: false, productAnnouncements: false, newsletter: false };
+
   let user;
   let business;
   try {
@@ -62,7 +85,19 @@ export async function POST(req: NextRequest) {
     // to skip. Either everything lands or nothing does.
     const result = await prisma.$transaction(async (tx) => {
       const u = await tx.user.create({
-        data: { email, passwordHash, name, systemRole },
+        data: {
+          email, passwordHash, name, systemRole,
+          ...marketingDefaults,
+          // Stamp the audit record on every signup so we can prove
+          // *when* and *how* the user expressed (or declined) consent.
+          marketingConsentTimestamp: new Date(),
+          marketingConsentSource:    "signup",
+          marketingConsentIp:        ipAddress,
+          marketingPolicyVersion:    MARKETING_POLICY_VERSION,
+          // Issue an unsubscribe token only if the user opted in —
+          // accounts that never granted marketing don't need one.
+          unsubscribeToken: acceptMarketing ? generateUnsubscribeToken() : null,
+        },
       });
       const b = await tx.business.create({
         data: {
@@ -97,6 +132,22 @@ export async function POST(req: NextRequest) {
     }
     throw err;
   }
+
+  // Audit the consent decisions made at signup. Both the legal
+  // acceptance (always true if we got here) and the marketing opt-in
+  // (true/false) are recorded so we can prove the user's choice if
+  // ever challenged. Best-effort — failures here don't block signup.
+  await recordAudit({
+    actorUserId: user.id,
+    action:      "consent.signup",
+    metadata: {
+      acceptTerms:           true,
+      acceptMarketing,
+      policyVersion:         MARKETING_POLICY_VERSION,
+      marketingChannels:     marketingDefaults,
+    },
+    request: req,
+  });
 
   // Drop the new user into the adaptive onboarding wizard, which
   // ends by routing them to /manual-data (Import Your Business Data)

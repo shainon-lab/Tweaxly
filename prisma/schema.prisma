@@ -33,6 +33,29 @@ model User {
   // Account → Language & Region. Nullable so we never block on
   // detection failing.
   region       String?
+  // ── Communication preferences ─────────────────────────────────────
+  // Transactional / system emails (billing, security, password reset)
+  // are governed by `systemEmails` and CANNOT be turned off while the
+  // account is active — they're contractually required. Marketing
+  // channels each have their own flag and default to OFF (explicit
+  // opt-in only).
+  systemEmails              Boolean   @default(true)
+  marketingEmails           Boolean   @default(false)
+  marketingSMS              Boolean   @default(false)
+  productAnnouncements      Boolean   @default(false)
+  newsletter                Boolean   @default(false)
+  // Audit fields for the marketing consent record itself. Stamped at
+  // the moment the user grants or revokes any marketing channel — the
+  // most recent change overwrites previous values; full history lives
+  // in AuditLog.
+  marketingConsentTimestamp DateTime?
+  marketingConsentSource    String?   // "signup" | "settings" | "import"
+  marketingConsentIp        String?   // captured for the consent record
+  marketingPolicyVersion    String?   // /privacy version at consent time
+  // Per-user opaque token used to verify one-click unsubscribe links
+  // without requiring a session. Lazily populated on first marketing
+  // grant so accounts that never opt in don't generate one.
+  unsubscribeToken          String?   @unique
   createdAt    DateTime   @default(now())
   businesses   Business[]
   memberships  BusinessMembership[]
@@ -40,6 +63,25 @@ model User {
   passwordResetTokens PasswordResetToken[]
   loginAttempts LoginAttempt[]
   authoredAdminNotes AdminNote[] @relation("AdminNoteAuthor")
+}
+
+// Suppression list for sent campaigns. Even if a user has the matching
+// flag flipped back on, the campaign sender SHOULD consult this table
+// and skip recipients whose email + channel pair is present (the
+// classic anti-spam pattern: bounces, complaints, and explicit opt-outs
+// stick across re-subscriptions).
+model EmailSuppression {
+  id        String   @id @default(cuid())
+  email     String
+  // "marketing_email" | "marketing_sms" | "newsletter" | "product_announcements"
+  channel   String
+  // "user_unsubscribe" | "bounce" | "complaint" | "admin"
+  reason    String
+  source    String?  // free-form context — campaign id, IP, etc.
+  createdAt DateTime @default(now())
+
+  @@unique([email, channel])
+  @@index([email])
 }
 
 // Recorded for every /api/auth/login attempt. Success rows drive

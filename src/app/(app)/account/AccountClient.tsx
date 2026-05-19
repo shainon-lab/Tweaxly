@@ -8,12 +8,14 @@
 import { useState } from "react";
 import { useT } from "@/lib/i18n/client";
 import { LanguagePreference } from "./LanguagePreference";
+import CommunicationPreferences from "./CommunicationPreferences";
 
 type AccountSubTab =
   | "billing"
   | "payment"
   | "password"
   | "preferences"
+  | "communications"
   | "access_logs"
   | "close_account";
 
@@ -36,6 +38,7 @@ export default function AccountClient({
     { value: "payment",       label: "Payment Methods" },
     { value: "password",      label: t("account.tab.password") },
     { value: "preferences",   label: t("account.tab.preferences") },
+    { value: "communications", label: "Communication Preferences" },
     { value: "access_logs",   label: t("account.tab.accessLog") },
     { value: "close_account", label: t("account.tab.danger") },
   ];
@@ -69,6 +72,7 @@ export default function AccountClient({
           detectedRegion={user.detectedRegion}
         />
       ) : null}
+      {tab === "communications" ? <CommunicationPreferences /> : null}
       {tab === "access_logs"   ? <AccessLogsPane /> : null}
       {tab === "close_account" ? <CloseAccountPane /> : null}
     </>

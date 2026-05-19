@@ -1,13 +1,23 @@
 "use client";
 
-// Wraps the registration form so the submit button stays disabled
-// until the user accepts the Terms of Service. Server still
-// re-validates the acceptTerms hidden value as the source of truth.
+// Registration form. Two consent inputs sit before the submit button:
+//
+//   1. LegalCheckbox      — REQUIRED. Mandatory acceptance of Terms +
+//                           Privacy Policy. Both viewable inline.
+//                           Submit stays disabled until checked.
+//
+//   2. MarketingConsentCheckbox — OPTIONAL. Explicit opt-in to
+//                           marketing communications. Defaults to
+//                           unchecked. Does NOT block registration.
+//
+// The server re-validates `acceptTerms` as the source of truth for
+// legal acceptance and records `acceptMarketing` for the marketing
+// consent record.
 
 import { useState } from "react";
-import Link from "next/link";
 import PasswordInput from "@/components/PasswordInput";
-import TermsCheckbox from "@/components/TermsCheckbox";
+import LegalCheckbox from "@/components/LegalCheckbox";
+import MarketingConsentCheckbox from "@/components/MarketingConsentCheckbox";
 
 export default function RegisterForm({
   labels,
@@ -21,7 +31,8 @@ export default function RegisterForm({
     footer: string;
   };
 }) {
-  const [accepted, setAccepted] = useState(false);
+  const [legalAccepted,   setLegalAccepted]   = useState(false);
+  const [marketingOptIn,  setMarketingOptIn]  = useState(false);
 
   return (
     <form action="/api/auth/register" method="post" className="space-y-4">
@@ -41,13 +52,16 @@ export default function RegisterForm({
         <label className="label">{labels.passwordHint}</label>
         <PasswordInput name="password" required minLength={6} />
       </div>
-      <div className="pt-1">
-        <TermsCheckbox checked={accepted} onChange={setAccepted} />
+
+      <div className="pt-1 space-y-3">
+        <LegalCheckbox checked={legalAccepted} onChange={setLegalAccepted} />
+        <MarketingConsentCheckbox checked={marketingOptIn} onChange={setMarketingOptIn} />
       </div>
+
       <button
         className="btn-primary w-full disabled:opacity-50 disabled:cursor-not-allowed"
         type="submit"
-        disabled={!accepted}
+        disabled={!legalAccepted}
       >
         {labels.create}
       </button>
