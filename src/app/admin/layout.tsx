@@ -26,11 +26,16 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   const user = await requireAdminOrSuper();
   return (
     <div className="min-h-screen flex flex-col bg-ink-950">
-      <header className="border-b border-line bg-ink-900/95 backdrop-blur sticky top-0 z-30">
+      {/* Amber-tinted header makes it instantly obvious you're in the
+          admin context. Same convention as AWS assume-role / Stripe
+          Connect — a privilege-elevated bar that visually breaks from
+          the standard product chrome. */}
+      <header className="border-b-2 border-warn/60 bg-gradient-to-b from-warn/15 to-warn/[0.04] backdrop-blur sticky top-0 z-30 shadow-[0_1px_0_0_rgba(241,176,74,0.20)]">
         <div className="max-w-[1600px] mx-auto px-6 h-12 flex items-center justify-between gap-4">
           <div className="flex items-center gap-5 min-w-0">
-            <Link href="/admin" className="text-sm font-semibold tracking-wide text-slate-100 shrink-0">
-              Tweaxly · <span className="text-accent">Admin</span>
+            <Link href="/admin" className="text-sm font-semibold tracking-wide text-slate-100 shrink-0 inline-flex items-center gap-2">
+              <span aria-hidden="true" className="inline-block w-1.5 h-1.5 rounded-full bg-warn shadow-[0_0_8px_rgba(241,176,74,0.7)]" />
+              Tweaxly · <span className="text-warn">Admin</span>
             </Link>
             <nav className="hidden md:flex items-center gap-4 text-[13px] text-slate-400 min-w-0">
               {NAV.map((n) => (
