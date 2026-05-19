@@ -423,6 +423,7 @@ function SiteFooter() {
       <div>© {new Date().getFullYear()} TWEAXLY</div>
       <nav className="flex items-center gap-5">
         <a href="/terms" className="hover:text-slate-200 transition">Terms of Service</a>
+        <a href="/privacy" className="hover:text-slate-200 transition">Privacy Policy</a>
       </nav>
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
