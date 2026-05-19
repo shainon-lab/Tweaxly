@@ -30,6 +30,18 @@ Running log of accessibility audits, issues found, and fixes applied. Every audi
 | Content | Accessibility Statement updated with WCAG 2.2 AA language + toolbar description | n/a |
 | Footer | Accessibility link in website footer alongside Terms / Privacy | medium |
 
+### Related — Consent Management Platform landed
+
+Separate from the accessibility scope but shipped in the same window:
+
+| Area | Change |
+|------|--------|
+| Both apps | CMP module at `lib/consent/` (provider, registry, GCM v2, storage, banner, modal, footer trigger). |
+| Both apps | Pre-paint init script sets GCM v2 defaults to denied before any tracking script can fire. |
+| Cookie | `tweaxly_consent` scoped to `.tweaxly.com`; 13-month expiry; base64-JSON payload with `consentVersion`, `policyVersion`, `consentTimestamp`, `region`, `source`. |
+| Website | Footer "Privacy Preferences" link reopens preferences modal at any time. |
+| Docs | `docs/consent-management.md` covers architecture, GCM v2 mapping, integration recipe, audit fields, regional hooks. |
+
 ### Outstanding (tracked in `accessibility-known-limitations.md`)
 - Component-level audits across the SaaS app (dashboard, signals, forecast, chat, billing, admin) — landmarks/labels/keyboard flows need a per-screen sweep.
 - Automated tooling (axe-core integration, eslint-plugin-jsx-a11y) not yet wired into CI.

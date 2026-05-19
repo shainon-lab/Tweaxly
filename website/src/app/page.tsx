@@ -3,6 +3,7 @@ import { SignalDeckFull, SignalDeckHero } from "@/components/mocks/SignalDeck";
 import { ForecastChart } from "@/components/mocks/ForecastChart";
 import { ConsultationMock } from "@/components/mocks/Consultation";
 import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
+import { PreferencesLink } from "@/lib/consent";
 
 const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
@@ -425,6 +426,9 @@ function SiteFooter() {
         <a href="/terms" className="hover:text-slate-200 transition">Terms of Service</a>
         <a href="/privacy" className="hover:text-slate-200 transition">Privacy Policy</a>
         <a href="/accessibility" className="hover:text-slate-200 transition">Accessibility</a>
+        <PreferencesLink className="consent-footer-link hover:text-slate-200 transition">
+          Privacy Preferences
+        </PreferencesLink>
       </nav>
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
