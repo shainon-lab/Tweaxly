@@ -424,6 +424,7 @@ function SiteFooter() {
       <nav className="flex items-center gap-5">
         <a href="/terms" className="hover:text-slate-200 transition">Terms of Service</a>
         <a href="/privacy" className="hover:text-slate-200 transition">Privacy Policy</a>
+        <a href="/accessibility" className="hover:text-slate-200 transition">Accessibility</a>
       </nav>
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
