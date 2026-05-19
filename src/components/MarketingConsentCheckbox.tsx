@@ -22,7 +22,7 @@ export default function MarketingConsentCheckbox({
         value="yes"
         checked={checked}
         onChange={(e) => onChange(e.target.checked)}
-        className="mt-0.5 size-4 rounded border-line bg-ink-900 accent-brand-purple"
+        className="mt-0.5 size-4 shrink-0 rounded border-line bg-ink-900 accent-brand-purple"
       />
       <span>
         I agree to receive marketing updates, promotions, newsletters,

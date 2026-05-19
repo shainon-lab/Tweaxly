@@ -33,7 +33,7 @@ export default function LegalCheckbox({
           checked={checked}
           onChange={(e) => onChange(e.target.checked)}
           required
-          className="mt-0.5 size-4 rounded border-line bg-ink-900 accent-brand-purple"
+          className="mt-0.5 size-4 shrink-0 rounded border-line bg-ink-900 accent-brand-purple"
         />
         <span>
           I have read and agree to the{" "}

@@ -80,7 +80,6 @@ export const en: Dictionary = {
   "auth.businessName": "Business name",
   "auth.yourName": "Your name",
   "auth.passwordMinHint": "Password (min 6 chars)",
-  "auth.signupFooter": "You can change currency, fiscal year, and VAT later in Settings.",
   "auth.haveAccount": "Already have an account?",
   "auth.noAccount": "Don’t have an account?",
   "auth.create": "Create one",

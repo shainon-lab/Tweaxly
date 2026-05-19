@@ -61,7 +61,6 @@ export const he: Dictionary = {
   "auth.businessName": "שם העסק",
   "auth.yourName": "השם שלך",
   "auth.passwordMinHint": "סיסמה (לפחות 6 תווים)",
-  "auth.signupFooter": "ניתן לשנות מטבע, שנת כספים ומע״מ בהמשך מתוך הגדרות.",
   "auth.haveAccount": "כבר יש לך חשבון?",
   "auth.noAccount": "אין לך חשבון?",
   "auth.create": "צור אחד",

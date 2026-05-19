@@ -28,7 +28,6 @@ export default function RegisterForm({
     email: string;
     passwordHint: string;
     create: string;
-    footer: string;
   };
 }) {
   const [legalAccepted,   setLegalAccepted]   = useState(false);
@@ -65,7 +64,6 @@ export default function RegisterForm({
       >
         {labels.create}
       </button>
-      <p className="text-xs text-slate-500 text-center">{labels.footer}</p>
     </form>
   );
 }

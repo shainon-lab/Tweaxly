@@ -41,7 +41,6 @@ export default async function RegisterPage({
             email:        t("common.email"),
             passwordHint: t("auth.passwordMinHint"),
             create:       t("auth.createAccount"),
-            footer:       t("auth.signupFooter"),
           }}
         />
         <div className="mt-4 text-center text-sm text-slate-400">
