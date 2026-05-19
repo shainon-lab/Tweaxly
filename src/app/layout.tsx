@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./a11y.css";
 import { getServerLocale } from "@/lib/i18n/server";
 import { dirFor } from "@/lib/i18n";
 import { I18nProvider } from "@/lib/i18n/client";
+import { AccessibilityProvider, AccessibilityWidget, A11Y_INIT_SCRIPT } from "@/lib/a11y";
 
 export const metadata: Metadata = {
   title: "TWEAXLY — AI-Powered Business Intelligence",
@@ -28,9 +30,16 @@ export default async function RootLayout({
     <html lang={locale} dir={dir}>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script dangerouslySetInnerHTML={{ __html: A11Y_INIT_SCRIPT }} />
       </head>
       <body className="min-h-screen font-sans antialiased">
-        <I18nProvider locale={locale}>{children}</I18nProvider>
+        <a href="#main-content" className="skip-link">Skip to main content</a>
+        <I18nProvider locale={locale}>
+          <AccessibilityProvider>
+            {children}
+            <AccessibilityWidget />
+          </AccessibilityProvider>
+        </I18nProvider>
       </body>
     </html>
   );

@@ -9,7 +9,7 @@ export const metadata = {
 
 export default function TermsPage() {
   return (
-    <main className="flex-1">
+    <main id="main-content" className="flex-1">
       <header className="container-wide pt-8 pb-4 flex items-center justify-between gap-3 border-b border-line/40">
         <Link href="/">
           <Logo size="md" showTagline />

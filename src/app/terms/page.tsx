@@ -21,7 +21,7 @@ export default function TermsPage() {
           ← Back to sign in
         </Link>
       </header>
-      <article className="max-w-3xl mx-auto w-full px-6 py-12">
+      <article id="main-content" className="max-w-3xl mx-auto w-full px-6 py-12">
         <div className="mb-8">
           <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-50">Terms of Service</h1>
           <p className="mt-2 text-sm text-slate-400">Last Updated: {TERMS_LAST_UPDATED}</p>

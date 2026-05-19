@@ -53,7 +53,7 @@ const FAQ: { q: string; a: string }[] = [
 
 export default function Home() {
   return (
-    <main className="flex-1 overflow-x-hidden">
+    <main id="main-content" className="flex-1 overflow-x-hidden">
       <SiteHeader />
       <Hero />
       <PositioningStrip />
