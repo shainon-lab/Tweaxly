@@ -259,12 +259,18 @@ export function bucketForHorizon(months: ForecastMonth[]): {
 // line (business as-is) vs a "scenario" line (with user assumptions on top).
 
 export const HISTORICAL_PERIOD_OPTIONS = [
-  { value: "3m",        label: "Last 3 months",      months: 3 },
-  { value: "6m",        label: "Last 6 months",      months: 6 },
-  { value: "12m",       label: "Last 12 months",     months: 12 },
-  { value: "ytd",       label: "Year to date",       months: 0 }, // resolved at runtime
-  { value: "last_year", label: "Last year",          months: 0 }, // resolved at runtime
-  { value: "custom",    label: "Custom range",       months: 0 },
+  // "recommended" maps to the engine-recommended default (typically
+  // "12m"); resolved by the caller. Treated like "12m" here so the
+  // legacy code path stays functional.
+  { value: "recommended", label: "Recommended",          months: 12 },
+  { value: "3m",          label: "Last Quarter (3 mo)",  months: 3  },
+  { value: "6m",          label: "Last 6 months",        months: 6  },
+  { value: "12m",         label: "Last 12 months",       months: 12 },
+  { value: "18m",         label: "Last 18 months",       months: 18 },
+  { value: "24m",         label: "Last 24 months",       months: 24 },
+  { value: "ytd",         label: "Year to date",         months: 0 }, // resolved at runtime
+  { value: "last_year",   label: "Last year",            months: 0 }, // resolved at runtime
+  { value: "custom",      label: "Custom range",         months: 0 },
 ] as const;
 
 export type HistoricalPeriodValue = (typeof HISTORICAL_PERIOD_OPTIONS)[number]["value"];

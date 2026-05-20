@@ -102,6 +102,22 @@ export type BusinessContext = {
   employees: EmployeeInfo[];
   employeeCostMonthly: number;
   forecast: ForecastMonth[];
+  // Centralized forecast engine summary — what the user sees on the
+  // Forecast tab, in structured form. Lets the AI explain projection
+  // context (readiness, baseline, confidence, outliers, recurring,
+  // seasonality, warnings) instead of fabricating a forecast story.
+  forecastEngine?: {
+    readiness: "disabled" | "basic" | "standard" | "reliable" | "advanced";
+    baselineLabel: string;
+    monthsResolved: number;
+    confidence: "low" | "medium" | "high";
+    confidenceScore: number;
+    seasonalityApplied: boolean;
+    outlierMonths: string[];
+    recurringSamples: string[];
+    warnings: string[];
+    explanation: string;
+  };
   uncategorizedCount: number;
   totalThisMonth: number;
   // Tab-level snapshots — what the user sees in their app:
@@ -315,6 +331,54 @@ export async function buildBusinessContext(
     }
   }
 
+  // Centralized forecast engine summary — best-effort; if the engine
+  // can't produce a forecast (not enough data) we leave the field
+  // undefined and the prompt's missing-context language handles it.
+  let forecastEngineSummary: BusinessContext["forecastEngine"];
+  try {
+    const { buildForecastEngine, isForecastReady } = await import("./forecastEngine");
+    const fe = await buildForecastEngine({
+      businessId,
+      baselineId: "recommended",
+      horizonId:  "12m",
+    });
+    if (isForecastReady(fe)) {
+      // Map engine state back to readiness. We re-derive from monthsResolved.
+      const readiness =
+        fe.baselinePeriod.monthsResolved >= 18 ? "advanced"  :
+        fe.baselinePeriod.monthsResolved >= 12 ? "reliable"  :
+        fe.baselinePeriod.monthsResolved >= 6  ? "standard"  :
+                                                 "basic";
+      forecastEngineSummary = {
+        readiness,
+        baselineLabel:      fe.baselinePeriod.label,
+        monthsResolved:     fe.baselinePeriod.monthsResolved,
+        confidence:         fe.confidence,
+        confidenceScore:    fe.confidenceScore,
+        seasonalityApplied: fe.seasonalityApplied,
+        outlierMonths:      fe.outliersDetected.map((o) => o.ym),
+        recurringSamples:   fe.recurringDetected.slice(0, 5).map((r) => r.description),
+        warnings:           fe.warnings,
+        explanation:        fe.explanationText,
+      };
+    } else {
+      forecastEngineSummary = {
+        readiness:          "disabled",
+        baselineLabel:      "—",
+        monthsResolved:     0,
+        confidence:         "low",
+        confidenceScore:    0,
+        seasonalityApplied: false,
+        outlierMonths:      [],
+        recurringSamples:   [],
+        warnings:           [fe.message],
+        explanation:        fe.message,
+      };
+    }
+  } catch {
+    // Engine failure should never break consultation — leave undefined.
+  }
+
   // Currency mix — non-base currencies that show up in this business's
   // transactions. Built from the multi-currency snapshot fields so it
   // reflects what was actually imported, not the business's setting.
@@ -347,6 +411,7 @@ export async function buildBusinessContext(
     employees,
     employeeCostMonthly: employeeCost.total,
     forecast,
+    forecastEngine: forecastEngineSummary,
     uncategorizedCount,
     totalThisMonth,
     dataFlow,

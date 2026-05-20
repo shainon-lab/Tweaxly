@@ -316,13 +316,26 @@ function detectOutliers(
   return out;
 }
 
-// Pull active ManualEntry rows for the business that are tagged as a
-// recurring frequency — these are explicit recurring patterns the
-// user has registered. The forecast engine respects them as projected
-// forward items.
+// Recurring pattern detection — two sources fused into a single list:
+//
+//   1. EXPLICIT: every active ManualEntry tagged with a recurring
+//      frequency (monthly/quarterly/yearly).
+//   2. INFERRED: vendor-clustering on the baseline window's
+//      transactions. A vendor that appears ≥ 3 times in the window
+//      with amounts within ±15% of each other is treated as
+//      recurring. Cadence (monthly / quarterly) is inferred from the
+//      median date gap between occurrences.
+//
+// Inferred recurring is conservative on purpose — we don't want to
+// promote a noisy vendor (e.g. coffee shop appearing weekly with
+// varying amounts) to a "recurring forecast" item. The 3-occurrence
+// minimum + amount-tolerance filter keeps the list tight.
 async function detectRecurring(
   businessId: string,
+  baselineFromYM: string,
+  baselineToYM: string,
 ): Promise<ForecastResult["recurringDetected"]> {
+  // (1) Explicit recurring manual entries.
   const entries = await prisma.manualEntry.findMany({
     where: {
       businessId,
@@ -330,7 +343,7 @@ async function detectRecurring(
     },
     include: { category: { select: { name: true, kind: true } } },
   });
-  return entries.map((e) => ({
+  const explicit: ForecastResult["recurringDetected"] = entries.map((e) => ({
     kind: e.type === "income" ? "income" : "expense",
     description: `${e.category?.name ?? "Manual entry"} (${e.frequency})`,
     monthlyAmount:
@@ -338,6 +351,74 @@ async function detectRecurring(
       e.frequency === "quarterly" ? e.amount / 3 :
       e.frequency === "yearly"    ? e.amount / 12 : 0,
   }));
+
+  // (2) Inferred recurring from transactions in the baseline window.
+  // We only consider vendor-tagged rows — untagged rows can't be
+  // clustered. Source = "manual" rows are excluded because they
+  // already appear via explicit entries.
+  const txns = await prisma.transaction.findMany({
+    where: {
+      businessId,
+      accountingMonth: { gte: baselineFromYM, lte: baselineToYM },
+      isExcludedFromPnl: false,
+      vendor: { not: null },
+      source: { not: "manual" },
+    },
+    select: { vendor: true, amount: true, transactionDate: true, type: true },
+  });
+
+  type Group = { amounts: number[]; dates: Date[]; type: string };
+  const byVendor = new Map<string, Group>();
+  for (const t of txns) {
+    if (!t.vendor) continue;
+    const g = byVendor.get(t.vendor) ?? { amounts: [], dates: [], type: t.type };
+    g.amounts.push(t.amount);
+    g.dates.push(t.transactionDate);
+    byVendor.set(t.vendor, g);
+  }
+
+  const inferred: ForecastResult["recurringDetected"] = [];
+  for (const [vendor, g] of byVendor) {
+    if (g.amounts.length < 3) continue;
+    // Amount tightness: ratio of stdev to mean must be < 15%.
+    const absAmounts = g.amounts.map((a) => Math.abs(a));
+    const mean = absAmounts.reduce((s, v) => s + v, 0) / absAmounts.length;
+    if (mean < 10) continue;  // ignore vendors with sub-$10 averages
+    const variance = absAmounts.reduce((s, v) => s + (v - mean) ** 2, 0) / absAmounts.length;
+    const cv = Math.sqrt(variance) / mean;
+    if (cv > 0.15) continue;
+
+    // Cadence: median day-gap between consecutive sorted dates.
+    const sorted = [...g.dates].sort((a, b) => a.getTime() - b.getTime());
+    const gaps: number[] = [];
+    for (let i = 1; i < sorted.length; i++) {
+      gaps.push(Math.round((sorted[i]!.getTime() - sorted[i - 1]!.getTime()) / 86_400_000));
+    }
+    if (gaps.length === 0) continue;
+    gaps.sort((a, b) => a - b);
+    const medianGap = gaps[Math.floor(gaps.length / 2)]!;
+    const cadence =
+      medianGap >= 20 && medianGap <= 40   ? "monthly"  :
+      medianGap >= 80 && medianGap <= 100  ? "quarterly":
+      medianGap >= 350 && medianGap <= 380 ? "yearly"   : null;
+    if (!cadence) continue;
+
+    const sign = g.amounts.reduce((s, v) => s + v, 0) >= 0 ? "income" : "expense";
+    inferred.push({
+      kind: sign,
+      description: `${vendor} (${cadence}, detected)`,
+      monthlyAmount:
+        cadence === "monthly"   ? mean :
+        cadence === "quarterly" ? mean / 3 :
+                                  mean / 12,
+    });
+  }
+
+  // De-dup against explicit entries by description prefix.
+  const explicitKeys = new Set(explicit.map((e) => e.description.toLowerCase().split(" (")[0]));
+  const filteredInferred = inferred.filter((i) => !explicitKeys.has(i.description.toLowerCase().split(" (")[0]));
+
+  return [...explicit, ...filteredInferred].sort((a, b) => b.monthlyAmount - a.monthlyAmount);
 }
 
 // ── Confidence scoring ───────────────────────────────────────────────
@@ -466,13 +547,89 @@ export async function buildForecastEngine(
     guard++;
   }
   const outliers = detectOutliers(monthlyHistory);
-  const recurring = await detectRecurring(businessId);
 
-  // Seasonality: only meaningful with 12+ months of data per spec.
+  // Outlier-aware trend re-fit: refit the linear-growth slope after
+  // removing flagged months, so a single outlier month doesn't drive
+  // the projection. We only OVERRIDE the legacy baseline's growth
+  // values when the difference is material — < 0.5% per month
+  // difference isn't worth communicating.
+  if (outliers.length > 0) {
+    const flagged = new Set(outliers.map((o) => o.ym));
+    const cleanRevenue  = monthlyHistory.filter((m) => !flagged.has(m.ym)).map((m) => m.income);
+    const cleanExpenses = monthlyHistory.filter((m) => !flagged.has(m.ym)).map((m) => m.expenses);
+    if (cleanRevenue.length >= 2) {
+      const refittedRev = linearGrowthLocal(cleanRevenue);
+      const refittedExp = linearGrowthLocal(cleanExpenses);
+      // Mutate baseline's growth fields in-place (it's a local copy,
+      // not persisted) so downstream summarizeForecast picks them up.
+      const oldRev = baseline.revenueGrowthMoM;
+      const oldExp = baseline.expenseGrowthMoM;
+      baseline.revenueGrowthMoM = refittedRev;
+      baseline.expenseGrowthMoM = refittedExp;
+      // Note in the explanation when refit shifted growth meaningfully.
+      if (Math.abs(oldRev - refittedRev) > 0.005 || Math.abs(oldExp - refittedExp) > 0.005) {
+        outliers.push({
+          ym: "trend_refit",
+          metric: "expense",
+          reason: `Growth slopes re-fit excluding outlier months: revenue ${(oldRev * 100).toFixed(1)}% → ${(refittedRev * 100).toFixed(1)}% MoM, expenses ${(oldExp * 100).toFixed(1)}% → ${(refittedExp * 100).toFixed(1)}% MoM.`,
+        });
+      }
+    }
+  }
+  const recurring = await detectRecurring(businessId, resolved.fromYM, resolved.toYM);
+
+  // Seasonality: 12+ months of data required. We compute a per-
+  // calendar-month multiplier for revenue and expenses, then apply
+  // those multipliers in-place on `projectedMonths`. A multiplier of
+  // 1.0 means "matches the trailing average"; 1.2 means "this month
+  // historically runs 20% above average". Multipliers cap at ±25% so
+  // a single noisy month can't blow up the projection.
   const seasonalityApplied = resolved.monthsResolved >= 12;
-  const seasonalityNote = seasonalityApplied
-    ? "Seasonality adjustment available based on historical monthly behavior."
+  let seasonalityNote = seasonalityApplied
+    ? "Seasonality applied based on historical monthly behavior."
     : "Seasonality was not applied because there is not enough historical data (12+ months required).";
+
+  if (seasonalityApplied) {
+    const revByMonth = new Map<number, number[]>();
+    const expByMonth = new Map<number, number[]>();
+    for (const m of monthlyHistory) {
+      const monthIdx = Number(m.ym.split("-")[1]);
+      (revByMonth.get(monthIdx) ?? revByMonth.set(monthIdx, []).get(monthIdx)!).push(m.income);
+      (expByMonth.get(monthIdx) ?? expByMonth.set(monthIdx, []).get(monthIdx)!).push(m.expenses);
+    }
+    const meanRev = monthlyHistory.reduce((s, m) => s + m.income, 0) / Math.max(1, monthlyHistory.length);
+    const meanExp = monthlyHistory.reduce((s, m) => s + m.expenses, 0) / Math.max(1, monthlyHistory.length);
+    const revMult = new Map<number, number>();
+    const expMult = new Map<number, number>();
+    for (let i = 1; i <= 12; i++) {
+      const r = revByMonth.get(i);
+      const e = expByMonth.get(i);
+      const rMean = r && r.length ? r.reduce((s, v) => s + v, 0) / r.length : meanRev;
+      const eMean = e && e.length ? e.reduce((s, v) => s + v, 0) / e.length : meanExp;
+      revMult.set(i, clamp(meanRev > 0 ? rMean / meanRev : 1, 0.75, 1.25));
+      expMult.set(i, clamp(meanExp > 0 ? eMean / meanExp : 1, 0.75, 1.25));
+    }
+    // Apply to each projected month.
+    for (const pm of projectedMonths) {
+      const monthIdx = Number(pm.ym.split("-")[1]);
+      const rm = revMult.get(monthIdx) ?? 1;
+      const em = expMult.get(monthIdx) ?? 1;
+      pm.baselineRevenue  *= rm;
+      pm.scenarioRevenue  *= rm;
+      pm.baselineExpenses *= em;
+      pm.scenarioExpenses *= em;
+      pm.baselineNet      = pm.baselineRevenue  - pm.baselineExpenses;
+      pm.scenarioNet      = pm.scenarioRevenue  - pm.scenarioExpenses;
+    }
+    // Surface the strongest seasonality month in the note so users
+    // know it was material.
+    const strongestRev = [...revMult.entries()].sort((a, b) => Math.abs(b[1] - 1) - Math.abs(a[1] - 1))[0];
+    if (strongestRev && Math.abs(strongestRev[1] - 1) > 0.05) {
+      const monthName = new Date(Date.UTC(2024, strongestRev[0] - 1, 1)).toLocaleString("en-US", { month: "long" });
+      const pct = ((strongestRev[1] - 1) * 100).toFixed(0);
+      seasonalityNote = `Seasonality applied: ${monthName} historically runs ${strongestRev[1] >= 1 ? "+" : ""}${pct}% versus the trailing average; other months adjusted proportionally.`;
+    }
+  }
 
   // Confidence.
   const { confidence, score, warnings } = await computeConfidence(
@@ -554,4 +711,27 @@ export type { Assumption, Baseline, ForecastPoint };
 // Type guard so callers can branch cleanly.
 export function isForecastReady(r: ForecastResult | ForecastBlocked): r is ForecastResult {
   return r.ok === true;
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return n < lo ? lo : n > hi ? hi : n;
+}
+
+// Local copy of the linear-fit growth helper used for outlier-aware
+// trend refit. Same formula as forecast.ts's `linearGrowth` —
+// duplicated here so we don't expose internals.
+function linearGrowthLocal(values: number[]): number {
+  const n = values.length;
+  if (n < 2) return 0;
+  const mean = values.reduce((s, v) => s + v, 0) / n;
+  if (Math.abs(mean) < 1) return 0;
+  // y = a + b*x → slope b via least squares on x = 0..n-1
+  let sxy = 0, sxx = 0;
+  const xMean = (n - 1) / 2;
+  for (let i = 0; i < n; i++) {
+    sxy += (i - xMean) * (values[i]! - mean);
+    sxx += (i - xMean) * (i - xMean);
+  }
+  const slope = sxx === 0 ? 0 : sxy / sxx;
+  return slope / mean;
 }

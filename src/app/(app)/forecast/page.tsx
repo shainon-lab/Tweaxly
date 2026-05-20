@@ -42,7 +42,10 @@ import ScenariosOnboarding from "./ScenariosOnboarding";
 import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
-  return v === "3m" || v === "6m" || v === "12m" || v === "ytd" || v === "last_year" || v === "custom";
+  return (
+    v === "recommended" || v === "3m" || v === "6m" || v === "12m" ||
+    v === "18m" || v === "24m" || v === "ytd" || v === "last_year" || v === "custom"
+  );
 }
 
 export default async function ForecastPage({
@@ -64,7 +67,7 @@ export default async function ForecastPage({
   //   Workforce Planning lives on /workforce as its own route
   const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
 
-  const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "12m";
+  const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "recommended";
   const horizon = horizonByForecastValue(sp.horizon ?? "12m");
   const range = resolveHistoricalRange(historical, sp.hist_from, sp.hist_to);
 
@@ -75,10 +78,14 @@ export default async function ForecastPage({
   // layer* we render alongside.
   const readiness = await evaluateReadiness(business.id);
   const engineBaselineId =
-    historical === "3m"  ? "last_quarter" :
-    historical === "6m"  ? "last_6m" :
-    historical === "12m" ? "last_12m" :
-    "last_12m";
+    historical === "recommended" ? "recommended" :
+    historical === "3m"          ? "last_quarter" :
+    historical === "6m"          ? "last_6m" :
+    historical === "12m"         ? "last_12m" :
+    historical === "18m"         ? "last_18m" :
+    historical === "24m"         ? "last_24m" :
+    historical === "custom"      ? "custom" :
+    "recommended";
   const engineHorizonId =
     horizon.months <= 3  ? "3m" as const :
     horizon.months <= 6  ? "6m" as const :

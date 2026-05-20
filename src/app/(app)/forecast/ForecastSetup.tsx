@@ -7,13 +7,22 @@
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
+// Aligned with src/lib/forecastEngine.ts BASELINE_OPTIONS.
+//   - "recommended" lets the engine pick per readiness rules (default).
+//   - "Last Month" is intentionally absent — one month is not enough
+//     data for a reliable forecast.
+//   - 18m / 24m are available; recommended default stays 12m even with
+//     24+ months of history (per spec, older data may be less relevant).
 const HISTORICAL_OPTIONS = [
-  { value: "3m",        label: "Last 3 months" },
-  { value: "6m",        label: "Last 6 months" },
-  { value: "12m",       label: "Last 12 months" },
-  { value: "ytd",       label: "Year to date" },
-  { value: "last_year", label: "Last year" },
-  { value: "custom",    label: "Custom range" },
+  { value: "recommended", label: "Recommended" },
+  { value: "3m",          label: "Last Quarter (3 months)" },
+  { value: "6m",          label: "Last 6 months" },
+  { value: "12m",         label: "Last 12 months" },
+  { value: "18m",         label: "Last 18 months" },
+  { value: "24m",         label: "Last 24 months" },
+  { value: "ytd",         label: "Year to date" },
+  { value: "last_year",   label: "Last year" },
+  { value: "custom",      label: "Custom range" },
 ] as const;
 
 const HORIZON_OPTIONS = [

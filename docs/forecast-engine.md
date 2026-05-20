@@ -147,16 +147,16 @@ When the engine returns `ok: false`, the page renders an inline blocked message 
 | §5 Readiness states | ✅ 5 states wired into UI banner |
 | §6.1 Historical baseline | ✅ via `loadBaseline` |
 | §6.2 Trend calculation | ✅ MoM linear fit, capped extrapolation |
-| §6.3 Seasonality | 🟡 12-month gate enforced + note surfaced; per-month multiplier is a follow-up |
-| §6.4 Outlier detection | 🟡 z-score detection + surfaced; outlier-aware trend recompute is a follow-up |
-| §6.5 Recurring pattern detection | 🟡 explicit ManualEntry recurring; auto-detection from transaction history is a follow-up |
+| §6.3 Seasonality | ✅ 12-month gate enforced; per-month multiplier applied to projected months (capped ±25%); strongest seasonal month surfaced in the note |
+| §6.4 Outlier detection | ✅ z-score detection + outlier-aware trend refit (growth slopes recomputed after dropping flagged months) |
+| §6.5 Recurring pattern detection | ✅ explicit ManualEntry recurring AND auto-detection from transaction history (vendor + amount-tightness + cadence clustering) |
 | §6.6 Scenario adjustments | ✅ separate layer, scenarios never mutate actuals |
 | §7 Forecast output | ✅ structured result returned + rendered |
 | §8 "Why this forecast?" | ✅ mandatory panel |
 | §9 Confidence score | ✅ low/medium/high + 0-100 |
 | §10 Data quality | ✅ via `dataConfidence.ts` |
-| §11 Forecast vs Actual | ⏳ deferred |
-| §12 UI baseline + horizon selectors | 🟡 page reads `historical` / `horizon` URL params; the SETUP UI dropdown still uses the legacy options. Spec adds "Recommended" / "Last 18 Months" / "Last 24 Months" — wiring those into `ForecastSetup` is a follow-up (the engine already accepts them) |
+| §11 Forecast vs Actual | ⏳ deferred (needs forecast-snapshot schema to record what was projected, then compare to actuals as months close) |
+| §12 UI baseline + horizon selectors | ✅ ForecastSetup now exposes Recommended / Last Quarter / 6m / 12m / 18m / 24m / YTD / Last year / Custom. Default is Recommended (engine picks per readiness rules). Custom-range 90-day guard surfaces via engine result. |
 | §13 Guardrails | ✅ enforced |
 | §14 Incomplete current month | ✅ warning surfaces |
 | §15 Acceptance tests | ✅ all pass against the engine |
@@ -166,9 +166,8 @@ When the engine returns `ok: false`, the page renders an inline blocked message 
 
 In priority order:
 
-1. **Wire new baseline options into `ForecastSetup`** — expose Recommended / Last 18m / Last 24m / Custom UI. The engine already understands them.
-2. **Outlier-aware trend recomputation** — re-fit growth slopes after dropping flagged months.
-3. **Auto-detected recurring patterns** — vendor + amount + cadence clustering on transaction history.
-4. **Per-month seasonality multiplier** — month-of-year average uplift, applied to projections when ≥ 12 months of data exist.
-5. **Forecast vs Actual** (spec §11) — closed months show forecasted vs actual deltas.
-6. **AI consultation context** — pass the engine result into the consultation prompt so the advisor references projection / confidence directly.
+1. **Forecast vs Actual variance UI** (spec §11) — needs a `ForecastSnapshot` model so each forecast run is persisted with its projected months. As real months close, render side-by-side forecast vs actual deltas. Multi-day initiative — covers schema, snapshot capture (likely at "Apply" time on the setup row), and the comparison UI on /forecast.
+2. **Outlier-aware confidence weighting** — beyond the current trend refit, lower confidence further when the dropped outliers represent > 20% of the baseline window (signals fundamental data instability).
+3. **Recurring detection: extend to category-level cadence** — vendor clustering catches most patterns, but a small business with sparse vendor data still benefits from "category X averages $N every month" detection.
+4. **Seasonality: per-category multipliers** — currently revenue and expenses get aggregate multipliers. A higher-fidelity pass would compute one per category (so December's marketing spike doesn't drag down January's payroll projection).
+5. **AI confidence-pass propagation** — the engine surfaces confidence in the AI context; a future pass should also annotate per-tile signals (e.g. "Marketing spend up $4,200 — low-confidence projection") so the dashboard signals UI carries the same hedging.
