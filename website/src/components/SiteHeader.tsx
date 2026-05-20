@@ -1,9 +1,14 @@
 // Shared site header — same nav on every public page so users can
 // move between Home / About / Pricing / FAQ / Testimonials / Contact
 // without falling back to a "← Back to home" link.
+//
+// The header is sticky on mobile so the hamburger stays in reach as
+// the user scrolls. Desktop nav is unchanged; the <MobileNav> client
+// component renders the hamburger + drawer for viewports below md.
 
 import Link from "next/link";
 import Logo from "@/components/Logo";
+import MobileNav from "@/components/MobileNav";
 
 const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
@@ -26,29 +31,39 @@ const NAV: { id: NonNullable<Props["active"]>; href: string; label: string }[] =
 
 export default function SiteHeader({ active }: Props) {
   return (
-    <header className="container-wide pt-6 sm:pt-8 pb-4 flex items-center justify-between gap-2 sm:gap-3">
-      <div className="min-w-0">
-        <Link href="/" aria-label="Tweaxly home">
-          <Logo size="md" showTagline />
-        </Link>
-      </div>
-
-      <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
-        {NAV.map((n) => (
-          <Link
-            key={n.id}
-            href={n.href}
-            aria-current={active === n.id ? "page" : undefined}
-            className={`hover:text-white transition ${active === n.id ? "text-white" : ""}`}
-          >
-            {n.label}
+    // Sticky on mobile so the hamburger stays reachable while
+    // scrolling. Backdrop-blur keeps the page background visible
+    // through the header for a modern SaaS feel.
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-ink-950/60 border-b border-line/40 supports-[backdrop-filter]:bg-ink-950/40">
+      <div className="container-wide pt-4 sm:pt-6 pb-3 sm:pb-4 flex items-center justify-between gap-2 sm:gap-3">
+        <div className="min-w-0">
+          <Link href="/" aria-label="Tweaxly home">
+            <Logo size="md" showTagline />
           </Link>
-        ))}
-      </nav>
+        </div>
 
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
-        <a href={LOGIN_URL}  className="btn-ghost text-xs sm:text-sm px-3 sm:px-4">Log in</a>
-        <a href={SIGNUP_URL} className="btn-brand text-xs sm:text-sm px-3 sm:px-4">Sign up</a>
+        {/* Desktop nav — visible md+ only. */}
+        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
+          {NAV.map((n) => (
+            <Link
+              key={n.id}
+              href={n.href}
+              aria-current={active === n.id ? "page" : undefined}
+              className={`hover:text-white transition ${active === n.id ? "text-white" : ""}`}
+            >
+              {n.label}
+            </Link>
+          ))}
+        </nav>
+
+        {/* Desktop action buttons — visible md+ only. */}
+        <div className="hidden md:flex items-center gap-3 shrink-0">
+          <a href={LOGIN_URL}  className="btn-ghost text-sm px-4">Log in</a>
+          <a href={SIGNUP_URL} className="btn-brand text-sm px-4">Sign up</a>
+        </div>
+
+        {/* Mobile — hamburger + drawer. Hidden at md and up. */}
+        <MobileNav active={active} />
       </div>
     </header>
   );

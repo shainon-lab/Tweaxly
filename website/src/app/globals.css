@@ -190,3 +190,25 @@ details.faq-item > .faq-answer {
     animation: none !important;
   }
 }
+
+/* ──────────────────────────────────────────────────────────────────
+   Mobile nav drawer — slide in from the right + dim/blur backdrop.
+   prefers-reduced-motion users get a static appearance instead.
+   ────────────────────────────────────────────────────────────────── */
+@keyframes mobile-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+@keyframes mobile-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+.animate-mobile-drawer {
+  animation: mobile-drawer-in 240ms cubic-bezier(.16,.84,.44,1);
+}
+.animate-mobile-fade {
+  animation: mobile-backdrop-in 200ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-mobile-drawer, .animate-mobile-fade { animation: none !important; }
+}
