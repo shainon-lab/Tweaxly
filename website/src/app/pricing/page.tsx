@@ -72,6 +72,47 @@ export default function PricingPage() {
           and we&apos;ll keep you posted.
         </div>
       </section>
+
+      {/* Comparison links - helps owners evaluating Tweaxly against
+          the status quo (Excel, accounting tools, BI dashboards)
+          decide whether early access is worth their time. */}
+      <section className="container-wide pb-24 max-w-5xl">
+        <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
+          How Tweaxly compares
+        </div>
+        <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-6">
+          Evaluating Tweaxly against what you use today.
+        </h2>
+        <div className="grid sm:grid-cols-3 gap-4">
+          <Link href="/compare/excel" className="block card group hover:border-brand-purple/40 transition">
+            <div className="text-base font-semibold text-white">Tweaxly vs Excel</div>
+            <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+              When to move from spreadsheets to continuous AI business intelligence.
+            </div>
+            <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
+              Read →
+            </div>
+          </Link>
+          <Link href="/compare/accounting-software" className="block card group hover:border-brand-purple/40 transition">
+            <div className="text-base font-semibold text-white">Tweaxly vs Accounting Software</div>
+            <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+              Accounting records the past. Tweaxly explains the present and forecasts what&apos;s next.
+            </div>
+            <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
+              Read →
+            </div>
+          </Link>
+          <Link href="/compare/dashboards" className="block card group hover:border-brand-purple/40 transition">
+            <div className="text-base font-semibold text-white">Tweaxly vs Static Dashboards</div>
+            <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+              Power BI &amp; Tableau show data. Tweaxly explains it, forecasts and advises.
+            </div>
+            <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
+              Read →
+            </div>
+          </Link>
+        </div>
+      </section>
     </main>
   );
 }

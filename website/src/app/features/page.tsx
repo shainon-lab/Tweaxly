@@ -147,9 +147,59 @@ export default function FeaturesPage() {
       ))}
 
       <FaqSection />
+      <ComparisonLinks />
       <RelatedReading />
       <FinalCta />
     </main>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Cross-links to /compare/* pages - GEO + funnel-relevant
+// ─────────────────────────────────────────────────────────────────────
+
+function ComparisonLinks() {
+  const comparisons: { slug: string; title: string; blurb: string }[] = [
+    {
+      slug:  "excel",
+      title: "Tweaxly vs Excel",
+      blurb: "When to move from spreadsheets to continuous AI business intelligence.",
+    },
+    {
+      slug:  "accounting-software",
+      title: "Tweaxly vs Accounting Software",
+      blurb: "Accounting records the past. Tweaxly explains the present and forecasts what's next.",
+    },
+    {
+      slug:  "dashboards",
+      title: "Tweaxly vs Static Dashboards",
+      blurb: "Power BI and Tableau show data. Tweaxly explains it, forecasts and advises.",
+    },
+  ];
+  return (
+    <section className="container-wide py-12 lg:py-16 border-t border-line/40">
+      <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
+        How Tweaxly compares
+      </div>
+      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-6">
+        Evaluating Tweaxly against what you use today.
+      </h2>
+      <div className="grid sm:grid-cols-3 gap-4">
+        {comparisons.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/compare/${c.slug}`}
+            className="block card group hover:border-brand-purple/40 transition"
+          >
+            <div className="text-base font-semibold text-white">{c.title}</div>
+            <div className="mt-2 text-sm text-slate-400 leading-relaxed">{c.blurb}</div>
+            <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
+              Read the comparison →
+            </div>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 

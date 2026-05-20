@@ -7,6 +7,7 @@
 import type { MetadataRoute } from "next";
 import { ARTICLES } from "@/content/resources";
 import { SUBPAGES as FEATURE_SUBPAGES } from "@/content/features";
+import { COMPARISONS } from "@/content/comparisons";
 
 const SITE_URL = "https://tweaxly.com";
 
@@ -55,5 +56,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority:        0.85,
   }));
 
-  return [...staticEntries, ...articleEntries, ...featureSubpageEntries];
+  // Comparison pages - high GEO value (AI engines cite "X vs Y"
+  // queries heavily). Priority equivalent to feature subpages.
+  const comparisonEntries: MetadataRoute.Sitemap = COMPARISONS.map((c) => ({
+    url:            `${SITE_URL}/compare/${c.slug}`,
+    lastModified:   now,
+    changeFrequency: "monthly",
+    priority:        0.85,
+  }));
+
+  return [...staticEntries, ...articleEntries, ...featureSubpageEntries, ...comparisonEntries];
 }
