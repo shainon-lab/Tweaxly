@@ -25,6 +25,87 @@ const geistMono = Geist_Mono({
 // single source.
 const SITE_URL = "https://tweaxly.com";
 
+// ─────────────────────────────────────────────────────────────────────
+// Site-wide JSON-LD schemas
+// ─────────────────────────────────────────────────────────────────────
+// These three live on EVERY page (injected via <head> below):
+//   • Organization        - canonical identity for Tweaxly the company
+//   • WebSite             - identity for tweaxly.com, plus the
+//                           SearchAction sitelink-searchbox hint
+//   • SoftwareApplication - global product schema (the /features page
+//                           and any /features/[slug] page also emit
+//                           their own page-scoped SoftwareApplication
+//                           with a featureList; both can coexist)
+//
+// The Organization.logo currently points at /og-image.svg because no
+// dedicated logo.png ships yet. Once a rasterised /logo.png is added
+// to /public, swap the path here for better Google Knowledge Graph
+// support (SVG works but raster is preferred).
+
+const SITE_LOGO_URL = `${SITE_URL}/og-image.svg`;
+
+const SITE_DESCRIPTION =
+  "AI-powered business intelligence platform for SMBs that transforms financial data into actionable insights, forecasts, alerts, and business signals.";
+
+const SITE_ORG_SCHEMA = {
+  "@context": "https://schema.org",
+  "@type":    "Organization",
+  name:       "Tweaxly",
+  url:        SITE_URL,
+  logo:       SITE_LOGO_URL,
+  sameAs:     [],
+  address: {
+    "@type":         "PostalAddress",
+    addressCountry:  "US",
+  },
+  areaServed: {
+    "@type": "Country",
+    name:    "United States",
+  },
+  foundingDate:        "2026",
+  description:         SITE_DESCRIPTION,
+  applicationCategory: "BusinessApplication",
+  operatingSystem:     "Web",
+};
+
+const SITE_WEBSITE_SCHEMA = {
+  "@context":  "https://schema.org",
+  "@type":     "WebSite",
+  name:        "Tweaxly",
+  url:         SITE_URL,
+  inLanguage:  "en-US",
+  potentialAction: {
+    "@type":       "SearchAction",
+    target:        `${SITE_URL}/search?q={search_term_string}`,
+    "query-input": "required name=search_term_string",
+  },
+};
+
+const SITE_SOFTWARE_APP_SCHEMA = {
+  "@context":             "https://schema.org",
+  "@type":                "SoftwareApplication",
+  name:                   "Tweaxly",
+  applicationCategory:    "BusinessApplication",
+  applicationSubCategory: "Financial Analytics Software",
+  operatingSystem:        "Web",
+  url:                    SITE_URL,
+  offers: {
+    "@type":       "Offer",
+    price:         "0",
+    priceCurrency: "USD",
+  },
+  audience: {
+    "@type":      "BusinessAudience",
+    audienceType: "Small and Medium Businesses",
+  },
+  areaServed: {
+    "@type": "Country",
+    name:    "United States",
+  },
+  inLanguage:  "en-US",
+  description: "AI-powered financial intelligence platform for SMB owners. Analyze revenue, expenses, cash flow, forecasts, trends, and business signals in real time.",
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
@@ -89,6 +170,22 @@ export default function RootLayout({
             land before any tracking script ever has a chance to fire. */}
         <script dangerouslySetInnerHTML={{ __html: CONSENT_INIT_SCRIPT }} />
         <script dangerouslySetInnerHTML={{ __html: A11Y_INIT_SCRIPT }} />
+        {/* Site-wide JSON-LD: Organization, WebSite (with SearchAction)
+            and SoftwareApplication. Per-page schemas (FAQPage,
+            BreadcrumbList, Article, etc.) are added by the individual
+            routes - these three are the global identity surface. */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_ORG_SCHEMA) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_WEBSITE_SCHEMA) }}
+        />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_SOFTWARE_APP_SCHEMA) }}
+        />
       </head>
       <body className="min-h-full flex flex-col">
         <a href="#main-content" className="skip-link">Skip to main content</a>
