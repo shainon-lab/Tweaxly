@@ -25,7 +25,14 @@ import {
   type Assumption,
 } from "@/lib/forecast";
 import { fmtMoney } from "@/lib/format";
+import {
+  evaluateReadiness,
+  buildForecastEngine,
+  isForecastReady,
+} from "@/lib/forecastEngine";
 import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/workforce";
+import ForecastReadinessBanner from "./ForecastReadinessBanner";
+import ForecastExplanationPanel from "./ForecastExplanationPanel";
 import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
 import { type RosterMember } from "./ScenarioBuilder";
@@ -60,6 +67,22 @@ export default async function ForecastPage({
   const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "12m";
   const horizon = horizonByForecastValue(sp.horizon ?? "12m");
   const range = resolveHistoricalRange(historical, sp.hist_from, sp.hist_to);
+
+  // Run the centralized engine so we get the readiness gate,
+  // structured explanation, confidence score, and warnings. The
+  // existing baseline/scenario rendering below still uses the legacy
+  // forecast.ts entry points; the engine output is the *explanation
+  // layer* we render alongside.
+  const readiness = await evaluateReadiness(business.id);
+  const engineBaselineId =
+    historical === "3m"  ? "last_quarter" :
+    historical === "6m"  ? "last_6m" :
+    historical === "12m" ? "last_12m" :
+    "last_12m";
+  const engineHorizonId =
+    horizon.months <= 3  ? "3m" as const :
+    horizon.months <= 6  ? "6m" as const :
+    horizon.months <= 12 ? "12m" as const : "24m" as const;
 
   const [baseline, assumptionRows, employees] = await Promise.all([
     loadBaseline(business.id, range.fromYM, range.toYM, range.label),
@@ -140,6 +163,16 @@ export default async function ForecastPage({
   const baselineNetDelta = summary.scenarioNetTotal - summary.baselineNetTotal;
   const { t } = await getServerT();
 
+  // Run the engine for the explanation layer. We pass the same
+  // assumptions the legacy path uses on the Scenarios view so the
+  // engine's `scenariosApplied` matches what the user sees.
+  const engineResult = await buildForecastEngine({
+    businessId: business.id,
+    baselineId: engineBaselineId,
+    horizonId:  engineHorizonId,
+    assumptions: effectiveAssumptions,
+  });
+
   return (
     <>
       <PageHeader
@@ -168,6 +201,21 @@ export default async function ForecastPage({
         }
       />
       <ForecastTabs />
+
+      {/* Readiness gate — if the engine reports disabled (< 90 days
+          of validated data) or the caller's baseline is blocked, we
+          replace the whole forecast body with an educational empty
+          state. Otherwise we render the explanation panel above the
+          existing tiles/chart/table. */}
+      <ForecastReadinessBanner readiness={readiness} />
+      {engineResult.ok ? (
+        <ForecastExplanationPanel result={engineResult} />
+      ) : (
+        <div className="card mb-6 border-warn/30 bg-warn/5">
+          <div className="font-medium text-warn mb-1">Forecast unavailable</div>
+          <div className="text-sm text-slate-300 leading-relaxed">{engineResult.message}</div>
+        </div>
+      )}
 
       {/* Scenarios view, empty state. Hide everything else (KPIs,
           chart, insights, table) until the user has at least one
