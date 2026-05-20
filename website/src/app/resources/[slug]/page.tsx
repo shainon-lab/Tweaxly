@@ -189,8 +189,8 @@ export default async function ArticlePage(
             Bring AI financial intelligence to your business.
           </h2>
           <p className="mt-3 text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-            See how Tweaxly turns your real financial activity into forecasts,
-            business signals, and plain-English answers - in real time.
+            See how Tweaxly turns your real financial activity into business
+            signals, forecasts, and advice - in real time, using AI.
           </p>
           <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
             <a href="https://app.tweaxly.com/register" className="btn-brand text-base px-6 py-3">Start in early access</a>

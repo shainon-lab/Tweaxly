@@ -55,8 +55,8 @@ export default function SiteFooter() {
               <Logo size="md" showTagline />
             </Link>
             <p className="mt-5 text-sm text-slate-400 leading-relaxed max-w-sm">
-              Tweaxly turns your real financial activity into forecasts,
-              business signals, and plain-English answers - in real time.
+              Tweaxly turns your real financial activity into business
+              signals, forecasts, and advice - in real time, using AI.
             </p>
           </div>
 

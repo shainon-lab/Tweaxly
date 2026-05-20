@@ -195,7 +195,7 @@ export const Body = () => (
 
     <ProductCta
       title="Try an AI financial advisor on your own numbers"
-      body="See how Tweaxly turns your real financial activity into forecasts, signals, and plain-English answers - in real time."
+      body="See how Tweaxly turns your real financial activity into business signals, forecasts, and advice - in real time, using AI."
       href="https://app.tweaxly.com/register"
       cta="Start in early access"
     />
