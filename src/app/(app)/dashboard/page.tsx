@@ -20,6 +20,8 @@ import {
 } from "@/lib/executiveSummary";
 import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
 import { prisma } from "@/lib/db";
+import { breakdownFromDb } from "@/lib/currencyBreakdown";
+import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 import Link from "next/link";
 
 const VALID_RANGES: DashboardRange[] = [
@@ -100,6 +102,20 @@ export default async function DashboardPage({
     // when a trend began (e.g. "weakening since March") instead of
     // reading like a single-period snapshot.
     trailingMonthsSummary(business.id, 6, resolved.toYM),
+  ]);
+
+  // Currency composition breakdowns for the three headline tiles. Each
+  // tile shows a small info chip when the underlying transactions
+  // span more than one original currency; hovering opens the per-
+  // currency disclosure. Same range / same business as the tiles.
+  const periodRange = {
+    accountingMonth: { gte: resolved.fromYM, lte: resolved.toYM },
+    businessId:      business.id,
+  } as const;
+  const [revBreakdown, expBreakdown, netBreakdown] = await Promise.all([
+    breakdownFromDb({ ...periodRange, type: "income" }, business.currency, { absolute: true }),
+    breakdownFromDb({ ...periodRange, type: { in: ["expense", "payroll", "fee", "tax"] } }, business.currency, { absolute: true }),
+    breakdownFromDb(periodRange, business.currency),
   ]);
 
   const ccy = business.currency;
@@ -195,7 +211,15 @@ export default async function DashboardPage({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <Stat
               label="Revenue"
-              value={fmtMoneyWhole(current.income, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.income}
+                  baseCurrency={ccy}
+                  currencyBreakdown={revBreakdown.currencyBreakdown}
+                  hasMultipleCurrencies={revBreakdown.hasMultipleCurrencies}
+                  conversionMethod={revBreakdown.conversionMethod}
+                />
+              }
               tone="good"
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.income, ccy),
@@ -222,7 +246,15 @@ export default async function DashboardPage({
             />
             <Stat
               label="Expenses"
-              value={fmtMoneyWhole(current.expenses, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.expenses}
+                  baseCurrency={ccy}
+                  currencyBreakdown={expBreakdown.currencyBreakdown}
+                  hasMultipleCurrencies={expBreakdown.hasMultipleCurrencies}
+                  conversionMethod={expBreakdown.conversionMethod}
+                />
+              }
               tone="bad"
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.expenses, ccy),
@@ -249,7 +281,16 @@ export default async function DashboardPage({
             />
             <Stat
               label="Net profit"
-              value={fmtMoneyWhole(current.netProfit, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.netProfit}
+                  baseCurrency={ccy}
+                  currencyBreakdown={netBreakdown.currencyBreakdown}
+                  hasMultipleCurrencies={netBreakdown.hasMultipleCurrencies}
+                  conversionMethod={netBreakdown.conversionMethod}
+                  signed
+                />
+              }
               tone={current.netProfit >= 0 ? "good" : "bad"}
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.netProfit, ccy),

@@ -167,7 +167,16 @@ export default function ManualDataClient({
       const data = await res.json();
       void data;
       resetForm();
-      startTransition(() => router.refresh());
+      startTransition(() => {
+        router.refresh();
+        // Defer the scroll until the next frame so the refreshed
+        // table (with the new row prepended) is in the DOM before we
+        // move the viewport.
+        requestAnimationFrame(() => {
+          document.getElementById("manual-entries-list")
+            ?.scrollIntoView({ behavior: "smooth", block: "start" });
+        });
+      });
     } catch (e) {
       setError(e instanceof Error ? e.message : String(e));
     } finally {
@@ -439,7 +448,7 @@ export default function ManualDataClient({
         </div>
       </div>
 
-      <div className="card overflow-x-auto">
+      <div id="manual-entries-list" className="card overflow-x-auto scroll-mt-4">
         <div className="font-medium mb-3">Existing manual entries</div>
         {entries.length === 0 ? (
           <div className="text-sm text-slate-400 py-6 text-center">
