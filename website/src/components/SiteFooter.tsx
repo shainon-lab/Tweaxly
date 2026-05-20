@@ -45,8 +45,8 @@ const LINK_CLS =
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-line/60 bg-ink-950/40 mt-16">
-      <div className="container-wide pt-12 pb-24 sm:pb-12">
+    <footer className="border-t border-line bg-ink-900 mt-20">
+      <div className="container-wide pt-14 pb-24 sm:pb-14">
         {/* Top band - brand block + link columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
           {/* Brand block */}
@@ -110,7 +110,7 @@ export default function SiteFooter() {
         </div>
 
         {/* Bottom row */}
-        <div className="mt-12 pt-6 border-t border-line/40 flex items-center justify-between flex-wrap gap-3 text-xs text-slate-500">
+        <div className="mt-12 pt-6 border-t border-line flex items-center justify-between flex-wrap gap-3 text-xs text-slate-500">
           <span>© {new Date().getFullYear()} TWEAXLY. All rights reserved.</span>
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
