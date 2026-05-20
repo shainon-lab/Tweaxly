@@ -93,8 +93,18 @@ export default function MobileNav({ active }: Props) {
 
       {open ? (
         <>
+          {/* Z-indexes have to sit ABOVE the existing global floating
+              UI to avoid a mess on mobile:
+                .consent-banner  9985
+                .consent-modal   9987
+                .a11y-fab        9990  ← was bleeding over the drawer
+                .a11y-dialog     9992
+              We park the backdrop at 9995 and the drawer at 9996
+              so the mobile menu sits on top of everything except
+              system-level overlays (none higher exist). */}
           <div
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 animate-mobile-fade"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm animate-mobile-fade"
+            style={{ zIndex: 9995 }}
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
@@ -104,7 +114,8 @@ export default function MobileNav({ active }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label="Site menu"
-            className="fixed top-0 right-0 bottom-0 w-[88%] max-w-sm bg-ink-900 border-l border-line z-50 flex flex-col shadow-2xl animate-mobile-drawer"
+            style={{ zIndex: 9996 }}
+            className="fixed top-0 right-0 bottom-0 w-[88%] max-w-sm bg-ink-900 border-l border-line flex flex-col shadow-2xl animate-mobile-drawer"
           >
             {/* Header — close button */}
             <div className="flex items-center justify-between p-5 border-b border-line">
