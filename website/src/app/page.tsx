@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 import { SignalDeckFull, SignalDeckHero } from "@/components/mocks/SignalDeck";
 import { ForecastChart } from "@/components/mocks/ForecastChart";
@@ -55,6 +56,7 @@ export default function Home() {
       <SiteHeader active="home" />
       <Hero />
       <PositioningStrip />
+      <PlainEnglishExplainer />
       <SignalsSection />
       <ConsultationSection />
       <ForecastSection />
@@ -133,6 +135,99 @@ function PositioningStrip() {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Plain-English explainer
+// ─────────────────────────────────────────────────────────────────────
+// Sits just after the hero/positioning strip and before the demo
+// sections. Four short blocks (What / Who / Problems / Why different)
+// written as AI-citable snippets so Google AI Overviews, ChatGPT,
+// Perplexity and Gemini can extract a clean summary of Tweaxly
+// without having to scrape the marketing visuals further down.
+
+function PlainEnglishExplainer() {
+  const blocks: { eyebrow: string; h3: string; body: string }[] = [
+    {
+      eyebrow: "What Tweaxly does",
+      h3:      "Turns financial data into decisions.",
+      body:    "Tweaxly is an AI business intelligence platform that ingests your real financial activity (revenue, expenses, vendors, cash) and produces business signals, forecasts, scenario plans and an AI advisor you can ask questions of. It explains what's happening, projects what's next, and recommends what to do - in plain English, in real time.",
+    },
+    {
+      eyebrow: "Who it's for",
+      h3:      "Small and medium business owners.",
+      body:    "Built for owner-operators, founders, fractional CFOs and operations leads at SMBs - typically $250K to $25M in annual revenue. If you're running the business and don't want to hire a finance team to understand the numbers, Tweaxly is the layer between your data and your decisions.",
+    },
+    {
+      eyebrow: "Problems it solves",
+      h3:      "The questions owners actually ask.",
+      body:    "Tweaxly answers \"am I profitable?\", \"what just changed?\", \"is cash going to be a problem?\", \"which vendors got more expensive?\", \"what happens if I hire two engineers?\" - without spreadsheet maintenance, without a BI team, and without waiting for the monthly accounting close.",
+    },
+    {
+      eyebrow: "Why it's different",
+      h3:      "Intelligence layer, not accounting software.",
+      body:    "Accounting software records what happened. Static dashboards display what happened. Tweaxly is the AI intelligence layer above both - it surfaces anomalies, forecasts the future, runs scenarios, and grounds an AI advisor in your real transactions. Most owners keep their accounting tool and use Tweaxly for the live view.",
+    },
+  ];
+
+  return (
+    <section
+      id="what-is-tweaxly"
+      className="container-wide py-20 lg:py-28"
+      aria-labelledby="explainer-h2"
+    >
+      <div className="max-w-3xl mb-10 lg:mb-12">
+        <div className="eyebrow mb-4">What is Tweaxly</div>
+        <h2
+          id="explainer-h2"
+          className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]"
+        >
+          AI business intelligence for SMB owners,{" "}
+          <span className="gradient-text">in plain English</span>.
+        </h2>
+        <p className="mt-5 text-lg text-slate-400 leading-relaxed">
+          The short version of what Tweaxly does, who it&apos;s for, and what
+          makes it different from the accounting software and dashboards you
+          may already use.
+        </p>
+      </div>
+
+      <div className="grid sm:grid-cols-2 gap-4 lg:gap-5">
+        {blocks.map((b) => (
+          <article key={b.h3} className="card">
+            <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
+              {b.eyebrow}
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-white leading-snug">
+              {b.h3}
+            </h3>
+            <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+              {b.body}
+            </p>
+          </article>
+        ))}
+      </div>
+
+      {/* Internal-linking strip - builds the topical-authority graph */}
+      <div className="mt-8 text-sm text-slate-400 flex items-center gap-x-5 gap-y-2 flex-wrap">
+        <Link href="/features" className="text-brand-purple hover:text-brand-teal transition">
+          See all features →
+        </Link>
+        <span className="text-slate-600">·</span>
+        <Link href="/compare/accounting-software" className="text-brand-purple hover:text-brand-teal transition">
+          Tweaxly vs accounting software
+        </Link>
+        <span className="text-slate-600">·</span>
+        <Link href="/compare/dashboards" className="text-brand-purple hover:text-brand-teal transition">
+          Tweaxly vs dashboards
+        </Link>
+        <span className="text-slate-600">·</span>
+        <Link href="/faq" className="text-brand-purple hover:text-brand-teal transition">
+          Read the FAQ →
+        </Link>
       </div>
     </section>
   );
