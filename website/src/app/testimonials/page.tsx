@@ -3,13 +3,34 @@
 // and companies are fictional and clearly framed as illustrative
 // in the page-level disclosure at the bottom.
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 
-export const metadata = {
-  title: "Testimonials — Tweaxly | AI Financial Intelligence",
-  description:
-    "How business owners use Tweaxly's AI financial advisor, financial forecasting, and real-time business insights to plan, forecast, and act with confidence.",
+const DESCRIPTION = "See how business owners use Tweaxly for financial forecasting, cash flow intelligence, AI advisory, and real-time business insights.";
+
+export const metadata: Metadata = {
+  title: { absolute: "Business Owner Testimonials & Reviews | Tweaxly" },
+  description: DESCRIPTION,
+  keywords: [
+    "Tweaxly testimonials",
+    "business owner reviews",
+    "AI financial advisor reviews",
+    "financial forecasting software",
+    "business insights platform",
+  ],
+  alternates: { canonical: "/testimonials" },
+  openGraph: {
+    title: "Business Owner Testimonials & Reviews | Tweaxly",
+    description: DESCRIPTION,
+    url: "/testimonials",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Business Owner Testimonials & Reviews | Tweaxly",
+    description: DESCRIPTION,
+  },
 };
 
 interface Testimonial {

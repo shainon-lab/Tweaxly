@@ -1,9 +1,41 @@
+import type { Metadata } from "next";
 import Logo from "@/components/Logo";
 import { SignalDeckFull, SignalDeckHero } from "@/components/mocks/SignalDeck";
 import { ForecastChart } from "@/components/mocks/ForecastChart";
 import { ConsultationMock } from "@/components/mocks/Consultation";
 import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
 import { PreferencesLink } from "@/lib/consent";
+
+// Homepage metadata — uses the `absolute` title key so we set the
+// full title verbatim (no " | Tweaxly" suffix appended by the
+// root template; the brand already sits at the end of this title).
+export const metadata: Metadata = {
+  title: { absolute: "AI Financial Intelligence for Business Owners | Tweaxly" },
+  description:
+    "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+  keywords: [
+    "AI financial intelligence",
+    "AI financial advisor",
+    "financial forecasting",
+    "cash flow forecasting",
+    "business insights",
+    "financial dashboard",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    description:
+      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+    url: "/",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    description:
+      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+  },
+};
 
 const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;

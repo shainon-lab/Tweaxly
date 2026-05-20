@@ -18,10 +18,53 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Production origin for canonical / Open Graph URLs. metadataBase
+// also lets per-page metadata use relative URLs that get resolved
+// here. If we ever serve from a different prod domain, update this
+// single source.
+const SITE_URL = "https://tweaxly.com";
+
 export const metadata: Metadata = {
-  title: "Tweaxly — AI Financial Intelligence & Forecasting for Businesses",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    // Per-page metadata can override the full title via the
+    // `absolute` key, or pass just the page title and the template
+    // appends " | Tweaxly" automatically.
+    default:  "AI Financial Intelligence for Business Owners | Tweaxly",
+    template: "%s | Tweaxly",
+  },
   description:
-    "Tweaxly is an AI-powered financial intelligence platform for business owners. Get financial forecasting, cash flow insights, business signals, and AI advisory in real time.",
+    "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+  applicationName: "Tweaxly",
+  keywords: [
+    "AI financial intelligence",
+    "AI financial advisor",
+    "financial forecasting",
+    "cash flow forecasting",
+    "business insights",
+    "financial dashboard",
+    "AI CFO",
+    "small business financial software",
+  ],
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "Tweaxly",
+    url: SITE_URL,
+    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    description:
+      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly — AI Financial Intelligence" }],
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    description:
+      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+    images: ["/og-image.svg"],
+  },
+  robots: { index: true, follow: true },
 };
 
 export default function RootLayout({

@@ -1,10 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import TermsContent, { TERMS_LAST_UPDATED } from "@/components/TermsContent";
 
-export const metadata = {
-  title: "Terms of Service — Tweaxly",
-  description: "The Tweaxly Terms of Service. Governs your use of the Tweaxly platform and services.",
+const DESCRIPTION = "The Tweaxly Terms of Service govern your use of the Tweaxly AI financial intelligence platform — forecasting, business signals, and AI advisory.";
+
+export const metadata: Metadata = {
+  title: { absolute: "Terms of Service | Tweaxly" },
+  description: DESCRIPTION,
+  keywords: ["Tweaxly terms of service", "AI financial platform terms", "Tweaxly user agreement"],
+  alternates: { canonical: "/terms" },
+  openGraph: {
+    title: "Terms of Service | Tweaxly",
+    description: DESCRIPTION,
+    url: "/terms",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Terms of Service | Tweaxly",
+    description: DESCRIPTION,
+  },
 };
 
 export default function TermsPage() {

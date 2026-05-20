@@ -1,10 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import AccessibilityContent, { ACCESSIBILITY_LAST_UPDATED } from "@/components/AccessibilityContent";
 
-export const metadata = {
-  title: "Accessibility Statement — Tweaxly",
-  description: "Tweaxly's commitment to making our platform accessible to all users, including individuals with disabilities.",
+const DESCRIPTION = "Tweaxly's commitment to making our AI financial intelligence platform accessible to every business owner, including users of assistive technologies.";
+
+export const metadata: Metadata = {
+  title: { absolute: "Accessibility Statement | Tweaxly" },
+  description: DESCRIPTION,
+  keywords: ["Tweaxly accessibility", "WCAG 2.2 AA", "accessible financial platform", "assistive technology"],
+  alternates: { canonical: "/accessibility" },
+  openGraph: {
+    title: "Accessibility Statement | Tweaxly",
+    description: DESCRIPTION,
+    url: "/accessibility",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Accessibility Statement | Tweaxly",
+    description: DESCRIPTION,
+  },
 };
 
 export default function AccessibilityPage() {

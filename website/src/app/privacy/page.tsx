@@ -1,10 +1,26 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import PrivacyContent, { PRIVACY_LAST_UPDATED } from "@/components/PrivacyContent";
 
-export const metadata = {
-  title: "Privacy Policy — Tweaxly",
-  description: "The Tweaxly Privacy Policy. Explains how we collect, use, store, and protect personal information.",
+const DESCRIPTION = "How Tweaxly collects, uses, stores, processes, discloses, and protects personal information across our AI financial intelligence platform.";
+
+export const metadata: Metadata = {
+  title: { absolute: "Privacy Policy | Tweaxly" },
+  description: DESCRIPTION,
+  keywords: ["Tweaxly privacy policy", "AI financial platform privacy", "data protection", "GDPR"],
+  alternates: { canonical: "/privacy" },
+  openGraph: {
+    title: "Privacy Policy | Tweaxly",
+    description: DESCRIPTION,
+    url: "/privacy",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Privacy Policy | Tweaxly",
+    description: DESCRIPTION,
+  },
 };
 
 export default function PrivacyPage() {
