@@ -4,8 +4,7 @@
 // in the page-level disclosure at the bottom.
 
 import type { Metadata } from "next";
-import Link from "next/link";
-import Logo from "@/components/Logo";
+import SiteHeader from "@/components/SiteHeader";
 
 const DESCRIPTION = "See how business owners use Tweaxly for financial forecasting, cash flow intelligence, AI advisory, and real-time business insights.";
 
@@ -102,14 +101,7 @@ const SUPPORTING_SECTIONS = [
 export default function TestimonialsPage() {
   return (
     <main id="main-content" className="flex-1 overflow-x-hidden">
-      <header className="container-wide pt-8 pb-4 flex items-center justify-between gap-3">
-        <Link href="/">
-          <Logo size="md" showTagline />
-        </Link>
-        <Link href="/" className="text-sm text-slate-400 hover:text-white transition">
-          ← Back to home
-        </Link>
-      </header>
+      <SiteHeader active="testimonials" />
 
       {/* Hero */}
       <section className="container-wide pt-10 pb-16 lg:pt-16 lg:pb-24">
