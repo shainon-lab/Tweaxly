@@ -32,6 +32,7 @@ const PAGES: { href: string; label: string }[] = [
   { href: "/",             label: "Home" },
   { href: "/about",        label: "About" },
   { href: "/pricing",      label: "Pricing" },
+  { href: "/resources",    label: "Resources" },
   { href: "/faq",          label: "FAQ" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/contact",      label: "Contact" },
