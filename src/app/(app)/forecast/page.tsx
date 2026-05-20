@@ -211,13 +211,13 @@ export default async function ForecastPage({
       />
       <ForecastTabs />
 
-      <ForecastReadinessBanner readiness={readiness} />
       {/* When the engine reports the forecast is unavailable (custom
           range under 90 days, missing dates, empty range, or
           insufficient history), render ONLY the prominent
-          unavailable card and hide every downstream tile / chart /
-          table so the user isn't confused by stale data sitting
-          underneath the error. */}
+          unavailable card and suppress everything else — readiness
+          banner, explanation panel, KPIs, chart, table, insights.
+          The user sees one clear message and immediately understands
+          they need to pick a different historical period. */}
       {!engineResult.ok ? (
         <div className="card mb-6 border-warn/40 bg-warn/10 px-6 py-8">
           <div className="text-base font-semibold text-warn mb-2 uppercase tracking-wide">
@@ -228,7 +228,10 @@ export default async function ForecastPage({
           </div>
         </div>
       ) : (
-        <ForecastExplanationPanel result={engineResult} />
+        <>
+          <ForecastReadinessBanner readiness={readiness} />
+          <ForecastExplanationPanel result={engineResult} />
+        </>
       )}
 
       {/* Forecast body — tiles, chart, table, insights — only renders
