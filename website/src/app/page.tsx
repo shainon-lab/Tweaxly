@@ -447,7 +447,7 @@ function SiteFooter() {
         <PreferencesLink className="consent-footer-link hover:text-slate-200 transition">
           Privacy Preferences
         </PreferencesLink>
-        <a href="/accessibility" className="hover:text-slate-200 transition">Accessibility</a>
+        <a href="/accessibility" className="hover:text-slate-200 transition">Accessibility Statement</a>
       </nav>
     </footer>
   );
