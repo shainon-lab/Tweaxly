@@ -5,6 +5,7 @@ import CurrencyPicker from "@/components/CurrencyPicker";
 import RulesClient from "../rules/RulesClient";
 import IntegrationClient from "../integration/IntegrationClient";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import CurrencySection from "./CurrencySection";
 
 // Settings shares a top-level tab row with the Data section
 // (/manual-data, /transactions, /data-log). The shared
@@ -463,6 +464,8 @@ export default function SettingsClient({
           </div>
         </div>
       </div>
+
+      <CurrencySection baseCurrency={business.currency} />
 
       <div className="card mb-6">
         <div className="font-medium mb-1">Branding</div>

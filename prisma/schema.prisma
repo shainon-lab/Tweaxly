@@ -379,8 +379,33 @@ model Transaction {
   externalId           String?
   transactionDate      DateTime
   accountingMonth      String       // YYYY-MM
-  amount               Float        // signed: positive = inflow, negative = outflow
+  // `amount` is the canonical value in the business base currency.
+  // Reports, dashboards, forecasts, AI insights all read this. For
+  // transactions that originated in a different currency, the
+  // pre-conversion value is preserved in `originalAmount` /
+  // `originalCurrency` and is never recalculated automatically.
+  amount               Float        // signed; in business base currency
+  // `currency` is the *original* currency of the transaction at the
+  // time it was imported. For backward compat with pre-multi-currency
+  // rows, this may equal the base currency if no conversion was done.
   currency             String       @default("USD")
+  // ── Multi-currency snapshot fields ────────────────────────────────
+  // Captured once at import/creation time and treated as a permanent
+  // historical record. Do not back-fill rates onto existing
+  // transactions when the rate provider changes — the original
+  // conversion remains authoritative for accounting purposes.
+  originalAmount       Float?       // pre-conversion amount (signed)
+  originalCurrency     String?      // ISO 4217 of the source data
+  baseCurrency         String?      // business base currency at import
+  exchangeRate         Float?       // multiplier from original → base
+  exchangeRateDate     DateTime?    // date the rate applies to
+  exchangeRateSource   String?      // "frankfurter" | "ecb" | "manual" | "same_currency"
+  conversionMethod     String?      // "daily_historical" | "monthly_avg" | "manual_fixed" | "none"
+  isConverted          Boolean      @default(false)
+  manualRateOverride   Boolean      @default(false)
+  manualRateNote       String?
+  // "success" | "missing" | "failed" | "manual" | "same_currency" | "needs_review"
+  rateFetchStatus      String?
   type                 String       // income | expense | transfer | fee | payroll | tax | other
   categoryId           String?
   category             Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
@@ -616,4 +641,26 @@ model ConsultationMessage {
   createdAt      DateTime     @default(now())
 
   @@index([consultationId, createdAt])
+}
+
+// Local cache of exchange rates. Looked up before every external
+// Frankfurter call so a CSV import that touches the same currency/
+// date pair across many rows hits the API once. Also serves as the
+// audit record for which rate was in effect on a given day.
+model ExchangeRate {
+  id            String   @id @default(cuid())
+  baseCurrency  String   // ISO 4217 — currency the rate converts INTO
+  quoteCurrency String   // ISO 4217 — currency the rate converts FROM
+  rate          Float    // 1 unit of quoteCurrency = `rate` units of baseCurrency
+  rateDate      DateTime // date the rate applies to (UTC midnight)
+  // Date the rate provider actually returned. May differ from rateDate
+  // when we requested a non-trading day and got the previous trading
+  // day back ("rolled" rate).
+  effectiveDate DateTime
+  source        String   // "frankfurter" | "ecb" | "manual"
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([baseCurrency, quoteCurrency, rateDate, source])
+  @@index([baseCurrency, quoteCurrency, rateDate])
 }

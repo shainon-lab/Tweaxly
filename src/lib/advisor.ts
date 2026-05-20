@@ -82,6 +82,12 @@ export type RecentUploadInfo = {
 
 export type BusinessContext = {
   ccy: string;
+  // Currencies seen in the underlying transactions when they differ
+  // from the base currency, with a row count per pair. Lets the AI
+  // notice "your USD revenue was stable but your ILS-reported revenue
+  // dropped because the dollar weakened" — i.e. distinguish operating
+  // moves from FX moves. Empty array means everything is single-currency.
+  currencyMix?: { currency: string; count: number }[];
   ym: string;
   current: MonthBuckets;
   prev: MonthBuckets;
@@ -309,8 +315,24 @@ export async function buildBusinessContext(
     }
   }
 
+  // Currency mix — non-base currencies that show up in this business's
+  // transactions. Built from the multi-currency snapshot fields so it
+  // reflects what was actually imported, not the business's setting.
+  const fxRows = await prisma.$queryRaw<Array<{ currency: string; count: bigint }>>`
+    SELECT
+      UPPER(COALESCE("originalCurrency", "currency")) AS currency,
+      COUNT(*)::bigint                                AS count
+    FROM "Transaction"
+    WHERE "businessId" = ${businessId}
+      AND UPPER(COALESCE("originalCurrency", "currency")) <> UPPER(${ccy})
+    GROUP BY UPPER(COALESCE("originalCurrency", "currency"))
+    ORDER BY count DESC
+  `;
+  const currencyMix = fxRows.map((r) => ({ currency: r.currency, count: Number(r.count) }));
+
   return {
     ccy,
+    currencyMix,
     ym: baseYM,
     current,
     prev,

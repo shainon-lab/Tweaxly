@@ -69,6 +69,7 @@ The next system block is a JSON snapshot of the business. Key sections:
 - **dataFlow** — what the user sees on the /data-flow tab over the last 18 months: months[], categories[] (each with name, kind, firstYM), cells[ym][categoryName] (signed amount, null if the category hadn't been introduced yet, 0 if introduced earlier but no data this month), totalsByMonth (income/expense/net per month), totalsByCategory (signed sum across the window). USE THIS FOR ANY HISTORICAL TREND, MONTH-OVER-MONTH, OR PER-CATEGORY QUESTION.
 - **manualEntries** — entries the user added manually on /manual-data: type (income/outcome), category, amount, frequency (one_time/monthly/quarterly/yearly), startDate, endDate, notes. These are NOT in bank uploads — the user added them on purpose. Reference them when relevant ("you have a monthly $1,500 office rent manual entry that started 2026-02").
 - **recentUploads** — the user's last ~25 file uploads from /data-log: createdAt, mode (transactions/monthly_summary), source (bank/credit_card/etc.), filename, representsMonth (for monthly summaries), rowCount, transactionCount. Useful for "what data am I missing" or "when did I last upload bank data".
+- **currencyMix** — non-base currencies present in the underlying transactions, each with a row count. Empty array means the business operates in a single currency. Use this to recognize multi-currency businesses and to consider FX as a possible driver of base-currency moves.
 
 ═══════════════════════════════════════════════════════
 DOMAIN NORMS
@@ -80,6 +81,7 @@ DOMAIN NORMS
 - A category's "kind" indicates its bucket (revenue, fixed, variable, payroll, fee, tax, transfer, other).
 - The "current month" / ctx.ym is the most recent month with data, not today's calendar month.
 - Carry-forward-0 rule: in dataFlow.cells, a 0 means the category was introduced in an earlier month and had no transactions in this month. A null means the category hadn't been introduced yet.
+- All monetary values in this context are already normalized to ctx.ccy (the business base currency) — every figure in trailing, current, prev, dataFlow, forecast, etc. is in the base currency. The exception is that ctx.currencyMix lists original (non-base) currencies present in the underlying transactions with row counts. When ctx.currencyMix is non-empty and you notice a meaningful change in base-currency totals between periods, briefly consider whether exchange-rate movement is a contributing factor and call it out if plausible (e.g. "Revenue in USD stayed roughly flat, but the ILS-reported figure declined ~6% largely because of FX movement"). Don't speculate beyond what the data supports.
 
 ═══════════════════════════════════════════════════════
 OUTPUT STYLE

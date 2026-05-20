@@ -107,8 +107,13 @@ export async function createManualEntryAndMaterialize(
   );
 
   const sign = input.type === "income" ? 1 : -1;
+  // Manual entries are entered in the business base currency by
+  // construction — the form has no currency picker. We still populate
+  // the multi-currency snapshot fields so reports + AI prompts see a
+  // consistent shape across manual and imported transactions.
   const txnRows: { id: string }[] = [];
   for (const d of dates) {
+    const signed = sign * Math.abs(input.amount);
     const t = await prisma.transaction.create({
       data: {
         businessId: input.businessId,
@@ -117,8 +122,17 @@ export async function createManualEntryAndMaterialize(
         originalSourceFile: null,
         transactionDate: d,
         accountingMonth: dateToYM(d),
-        amount: sign * Math.abs(input.amount),
+        amount: signed,
         currency: business.currency,
+        originalAmount: signed,
+        originalCurrency: business.currency,
+        baseCurrency: business.currency,
+        exchangeRate: 1,
+        exchangeRateDate: d,
+        exchangeRateSource: "same_currency",
+        conversionMethod: "none",
+        isConverted: false,
+        rateFetchStatus: "same_currency",
         type: input.type === "income" ? "income" : "expense",
         categoryId: input.categoryId,
         description: cat.name,

@@ -5,6 +5,7 @@ import { normalizeRow, type ColumnMapping } from "@/lib/normalize";
 import { findApplicableRule } from "@/lib/categorize";
 import { findDuplicateCandidates } from "@/lib/duplicates";
 import { kindFromName, parseDate } from "@/lib/parsers";
+import { convertAmount } from "@/lib/fx";
 
 export const runtime = "nodejs";
 
@@ -213,6 +214,18 @@ export async function POST(req: NextRequest) {
       vendor: norm.vendor,
       source: body.source,
     });
+    // Convert the row's amount into the business base currency. The
+    // service handles same-currency short-circuits, local cache hits,
+    // Frankfurter lookups, and weekend roll-back. If the rate is
+    // unavailable, the conversion result reports rateFetchStatus =
+    // "needs_review" — we still save the row but flag it so the user
+    // can manually fix the rate from Transaction → FX Override.
+    const conv = await convertAmount(
+      norm.amount,
+      norm.currency,
+      business.currency,
+      norm.transactionDate,
+    );
     const t = await prisma.transaction.create({
       data: {
         businessId: business.id,
@@ -222,8 +235,17 @@ export async function POST(req: NextRequest) {
         externalId: norm.externalId,
         transactionDate: norm.transactionDate,
         accountingMonth: norm.accountingMonth,
-        amount: norm.amount,
+        amount: conv.amount,
         currency: norm.currency,
+        originalAmount: conv.originalAmount,
+        originalCurrency: conv.originalCurrency,
+        baseCurrency: conv.baseCurrency,
+        exchangeRate: conv.exchangeRate,
+        exchangeRateDate: conv.exchangeRateDate,
+        exchangeRateSource: conv.exchangeRateSource,
+        conversionMethod: conv.conversionMethod,
+        isConverted: conv.isConverted,
+        rateFetchStatus: conv.rateFetchStatus,
         type: body.source === "payroll" ? "payroll" : norm.type,
         categoryId,
         vendor: norm.vendor,
