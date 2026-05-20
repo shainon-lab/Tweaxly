@@ -7,7 +7,7 @@ const DESCRIPTION =
   "Modern financial intelligence insights for business owners. Forecasting, cash flow, business signals, AI financial advisory, and financial planning - in one resource hub.";
 
 export const metadata: Metadata = {
-  title: { absolute: "Resources - AI Financial Intelligence Hub | Tweaxly" },
+  title: { absolute: "Resources - Your AI Business Pulse Hub | Tweaxly" },
   description: DESCRIPTION,
   keywords: [
     "AI financial intelligence",
@@ -19,14 +19,14 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/resources" },
   openGraph: {
-    title: "Resources - AI Financial Intelligence Hub | Tweaxly",
+    title: "Resources - Your AI Business Pulse Hub | Tweaxly",
     description: DESCRIPTION,
     url: "/resources",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Resources - AI Financial Intelligence Hub | Tweaxly",
+    title: "Resources - Your AI Business Pulse Hub | Tweaxly",
     description: DESCRIPTION,
   },
 };

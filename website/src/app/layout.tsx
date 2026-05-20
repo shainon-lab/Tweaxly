@@ -31,7 +31,7 @@ export const metadata: Metadata = {
     // Per-page metadata can override the full title via the
     // `absolute` key, or pass just the page title and the template
     // appends " | Tweaxly" automatically.
-    default:  "AI Financial Intelligence for Business Owners | Tweaxly",
+    default:  "Your AI Business Pulse for Business Owners | Tweaxly",
     template: "%s | Tweaxly",
   },
   description:
@@ -52,15 +52,15 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Tweaxly",
     url: SITE_URL,
-    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    title: "Your AI Business Pulse for Business Owners | Tweaxly",
     description:
       "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly - AI Financial Intelligence" }],
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly - Your AI Business Pulse" }],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    title: "Your AI Business Pulse for Business Owners | Tweaxly",
     description:
       "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
     images: ["/og-image.svg"],

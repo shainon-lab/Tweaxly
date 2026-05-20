@@ -12,9 +12,9 @@ import {
 import { detectIpCountry } from "@/lib/geoip";
 
 export const metadata: Metadata = {
-  title: "TWEAXLY - AI Financial Intelligence",
+  title: "TWEAXLY - Your AI Business Pulse",
   description:
-    "TWEAXLY: AI Financial Intelligence - financial clarity for SMB owners.",
+    "TWEAXLY: Your AI Business Pulse - financial clarity for SMB owners.",
 };
 
 // Sets the saved theme on <html> BEFORE the first paint, so users who

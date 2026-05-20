@@ -53,7 +53,7 @@ export default function Logo({
           className={`uppercase font-medium whitespace-nowrap ${s.gap}`}
           style={{ fontSize: s.taglinePx, letterSpacing: "0.25em", color: "#cbd5e1" }}
         >
-          AI Financial Intelligence
+          Your AI Business Pulse
         </div>
       ) : null}
     </div>

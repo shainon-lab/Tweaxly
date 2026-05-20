@@ -9,7 +9,7 @@ import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
 // full title verbatim (no " | Tweaxly" suffix appended by the
 // root template; the brand already sits at the end of this title).
 export const metadata: Metadata = {
-  title: { absolute: "AI Financial Intelligence for Business Owners | Tweaxly" },
+  title: { absolute: "Your AI Business Pulse for Business Owners | Tweaxly" },
   description:
     "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
   keywords: [
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    title: "Your AI Business Pulse for Business Owners | Tweaxly",
     description:
       "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
     url: "/",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Financial Intelligence for Business Owners | Tweaxly",
+    title: "Your AI Business Pulse for Business Owners | Tweaxly",
     description:
       "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
   },
@@ -82,10 +82,10 @@ function Hero() {
         <div className="lg:col-span-5 flex flex-col">
           <div className="eyebrow self-start mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-good anim-pulse-soft" />
-            AI Financial Intelligence
+            Your AI Business Pulse
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-            <span className="gradient-text">AI Financial Intelligence</span> for Business Owners
+            <span className="gradient-text">Your AI Business Pulse</span> for Business Owners
           </h1>
           <p className="mt-8 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-xl">
             Financial planning, forecasting, and AI-powered business insights

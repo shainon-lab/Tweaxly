@@ -5,7 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 const DESCRIPTION = "Tweaxly is an AI financial intelligence platform built for small and medium business owners. Forecast, monitor, and decide with the clarity of a finance team.";
 
 export const metadata: Metadata = {
-  title: { absolute: "About - AI Financial Intelligence Platform | Tweaxly" },
+  title: { absolute: "About - Your AI Business Pulse Platform | Tweaxly" },
   description: DESCRIPTION,
   keywords: [
     "about Tweaxly",
@@ -16,14 +16,14 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/about" },
   openGraph: {
-    title: "About - AI Financial Intelligence Platform | Tweaxly",
+    title: "About - Your AI Business Pulse Platform | Tweaxly",
     description: DESCRIPTION,
     url: "/about",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "About - AI Financial Intelligence Platform | Tweaxly",
+    title: "About - Your AI Business Pulse Platform | Tweaxly",
     description: DESCRIPTION,
   },
 };

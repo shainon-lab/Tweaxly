@@ -3,7 +3,7 @@
 // content category, and legal/consent controls.
 //
 // Layout:
-//   • Top band: Logo (with "AI Financial Intelligence" tagline) and a
+//   • Top band: Logo (with "Your AI Business Pulse" tagline) and a
 //     short brand description on the left; three link columns
 //     (COMPANY / RESOURCES / LEGAL) on the right.
 //   • Bottom row: copyright + brand dot.
@@ -114,7 +114,7 @@ export default function SiteFooter() {
           <span>© {new Date().getFullYear()} TWEAXLY. All rights reserved.</span>
           <span className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
-            AI Financial Intelligence
+            Your AI Business Pulse
           </span>
         </div>
       </div>

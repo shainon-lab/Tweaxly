@@ -5,7 +5,7 @@ import SiteHeader from "@/components/SiteHeader";
 const DESCRIPTION = "Tweaxly pricing for AI financial intelligence, forecasting, business insights, cash flow monitoring, and AI advisory - full plans launching soon.";
 
 export const metadata: Metadata = {
-  title: { absolute: "AI Financial Intelligence Pricing | Tweaxly" },
+  title: { absolute: "Your AI Business Pulse Pricing | Tweaxly" },
   description: DESCRIPTION,
   keywords: [
     "Tweaxly pricing",
@@ -16,14 +16,14 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/pricing" },
   openGraph: {
-    title: "AI Financial Intelligence Pricing | Tweaxly",
+    title: "Your AI Business Pulse Pricing | Tweaxly",
     description: DESCRIPTION,
     url: "/pricing",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI Financial Intelligence Pricing | Tweaxly",
+    title: "Your AI Business Pulse Pricing | Tweaxly",
     description: DESCRIPTION,
   },
 };
