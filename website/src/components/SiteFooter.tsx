@@ -23,6 +23,7 @@ const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
 const COMPANY: { href: string; label: string; external?: boolean }[] = [
   { href: "/about",            label: "About" },
+  { href: "/features",         label: "Features" },
   { href: "/#how-it-works",    label: "How it works" },
   { href: "/pricing",          label: "Pricing" },
   { href: "/faq",              label: "FAQ" },

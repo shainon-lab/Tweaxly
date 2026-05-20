@@ -34,6 +34,7 @@ const LOGIN_URL   = `${PRODUCT_URL}/login`;
 const PAGES: { href: string; label: string }[] = [
   { href: "/",             label: "Home" },
   { href: "/about",        label: "About" },
+  { href: "/features",     label: "Features" },
   { href: "/pricing",      label: "Pricing" },
   { href: "/faq",          label: "FAQ" },
   { href: "/testimonials", label: "Testimonials" },
