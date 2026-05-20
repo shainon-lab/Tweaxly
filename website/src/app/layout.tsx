@@ -54,7 +54,7 @@ export const metadata: Metadata = {
     title: "AI Financial Intelligence for Business Owners | Tweaxly",
     description:
       "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly — AI Financial Intelligence" }],
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly - AI Financial Intelligence" }],
     locale: "en_US",
   },
   twitter: {
@@ -72,7 +72,7 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // Marketing site pages stay static — region is captured at decision
+  // Marketing site pages stay static - region is captured at decision
   // time client-side by the consent provider (or left null on the
   // marketing site, where the cookie's region is enriched once the
   // user later visits the authenticated product).

@@ -4,7 +4,7 @@
 //   - A super_admin (or future invited collaborator) signs in without
 //     a business and requireBusiness() redirects them here.
 //   - A signup transaction failed mid-flight and left a User without a
-//     Business — rare, but recoverable from here.
+//     Business - rare, but recoverable from here.
 //
 // Defaults match the register route: USD, no VAT, January fiscal year.
 // All of that is editable in Settings → Business profile.

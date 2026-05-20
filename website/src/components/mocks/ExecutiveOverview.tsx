@@ -1,4 +1,4 @@
-// Mockup of the Executive Overview surface — a 4-tile KPI grid plus
+// Mockup of the Executive Overview surface - a 4-tile KPI grid plus
 // a Decision Anchor card on the right that mirrors the product's
 // AI-narrative panel.
 
@@ -53,7 +53,7 @@ export function ExecutiveOverviewMock() {
         })}
       </div>
 
-      {/* Decision Anchor — the AI-narrative panel */}
+      {/* Decision Anchor - the AI-narrative panel */}
       <div className="lg:col-span-2 rounded-2xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-ink-900/60 to-brand-teal/5 p-5 backdrop-blur-sm flex flex-col">
         <div className="flex items-center gap-2 text-[11px] mb-3">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-purple anim-pulse-soft" />
@@ -61,7 +61,7 @@ export function ExecutiveOverviewMock() {
         </div>
         <div className="text-sm text-slate-200 leading-relaxed">
           Your business is profitable and trending up. The main thing to watch is
-          <span className="text-white font-semibold"> vendor concentration on Stripe Atlas</span> —
+          <span className="text-white font-semibold"> vendor concentration on Stripe Atlas</span> -
           a single line is now <span className="text-white font-semibold tabular-nums">14.2%</span> of expenses.
         </div>
 

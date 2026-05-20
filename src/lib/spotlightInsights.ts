@@ -1,4 +1,4 @@
-// Spotlight insights — randomly-sampled, data-driven cards shown below the
+// Spotlight insights - randomly-sampled, data-driven cards shown below the
 // auto-detected alerts on the /insights page. Each template fetches a slice
 // of business data and returns one card (headline + body + chart spec).
 // Templates that don't have enough data return null and get skipped.
@@ -52,7 +52,7 @@ const incomeMix: Template = async (businessId, ym, ccy) => {
   return {
     id: "income-mix",
     headline: `Where your revenue came from in ${ymToLabel(ym)}`,
-    body: `**${top.name}** brought in ${fmtMoney(top.amount, ccy)} — ${fmtPct(share)} of your revenue this month. ${rows.length === 1 ? "All your revenue came from one source — diversifying could reduce risk." : `You had ${rows.length} active revenue sources.`}`,
+    body: `**${top.name}** brought in ${fmtMoney(top.amount, ccy)} - ${fmtPct(share)} of your revenue this month. ${rows.length === 1 ? "All your revenue came from one source - diversifying could reduce risk." : `You had ${rows.length} active revenue sources.`}`,
     chart: { kind: "categoryBars", data: rows },
   };
 };

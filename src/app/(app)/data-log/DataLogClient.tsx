@@ -108,7 +108,7 @@ export default function DataLogClient({
                   <td className="text-slate-200 truncate max-w-[280px]">
                     {r.label}
                   </td>
-                  <td className="text-slate-300">{r.representsMonth ?? "—"}</td>
+                  <td className="text-slate-300">{r.representsMonth ?? "-"}</td>
                   <td className="text-right text-slate-300">{r.rowCount}</td>
                   <td className="text-right text-slate-300">{r.transactions}</td>
                   <td className="text-right">
@@ -137,7 +137,7 @@ export default function DataLogClient({
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-base font-semibold mb-2">
-              This action will delete data — are you sure you want to proceed?
+              This action will delete data - are you sure you want to proceed?
             </div>
             <div className="text-sm text-slate-400 mb-4">
               Removing this {confirming.kind === "manual" ? "manual entry" : "upload"} will permanently delete:
@@ -159,7 +159,7 @@ export default function DataLogClient({
               </li>
               <li>
                 <span className="text-slate-400">Represents:</span>{" "}
-                {confirming.representsMonth ?? "—"}
+                {confirming.representsMonth ?? "-"}
               </li>
               <li>
                 <span className="text-slate-400">Will delete:</span>{" "}
@@ -179,14 +179,14 @@ export default function DataLogClient({
                 disabled={busyId === confirming.id}
                 onClick={() => setConfirming(null)}
               >
-                No — keep the data
+                No - keep the data
               </button>
               <button
                 className="btn-danger"
                 disabled={busyId === confirming.id}
                 onClick={() => reallyDelete(confirming)}
               >
-                {busyId === confirming.id ? "Removing…" : "Yes — remove"}
+                {busyId === confirming.id ? "Removing…" : "Yes - remove"}
               </button>
             </div>
           </div>

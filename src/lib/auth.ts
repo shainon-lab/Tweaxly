@@ -6,13 +6,13 @@ import { getSession } from "./session";
 // Persisting the session cookie writes via cookies().set(), which Next.js
 // rejects from Server Components (read-only renders). Wrap saves in a
 // try/catch so a stale session.currentBusinessId or a missing user during
-// a page render doesn't blow up — any subsequent Server Action / Route
+// a page render doesn't blow up - any subsequent Server Action / Route
 // Handler will re-persist the resolved value cleanly.
 async function trySaveSession(session: Awaited<ReturnType<typeof getSession>>) {
   try {
     await session.save();
   } catch {
-    // Server Component render — cookies can't be mutated here. No-op.
+    // Server Component render - cookies can't be mutated here. No-op.
   }
 }
 
@@ -20,7 +20,7 @@ async function tryDestroySession(session: Awaited<ReturnType<typeof getSession>>
   try {
     await session.destroy();
   } catch {
-    // Same as above — happens during reads where session is already invalid.
+    // Same as above - happens during reads where session is already invalid.
   }
 }
 
@@ -38,7 +38,7 @@ export async function requireUser() {
 }
 
 // Tenant-scoped business resolver. The standard call for every authed
-// app surface — every query in the product fans out from the {user,
+// app surface - every query in the product fans out from the {user,
 // business} pair returned here.
 //
 // Resolution order:
@@ -55,7 +55,7 @@ export async function requireBusiness() {
   const user = await requireUser();
   const session = await getSession();
 
-  // 1. Impersonation override — super_admin only.
+  // 1. Impersonation override - super_admin only.
   if (session.impersonatingBusinessId && user.systemRole === "super_admin") {
     const target = await prisma.business.findUnique({
       where: { id: session.impersonatingBusinessId },
@@ -68,13 +68,13 @@ export async function requireBusiness() {
         impersonationAllowWrites: !!session.impersonationAllowWrites,
       };
     }
-    // Target disappeared — clear and fall through.
+    // Target disappeared - clear and fall through.
     session.impersonatingBusinessId = undefined;
     session.impersonationAllowWrites = undefined;
     await trySaveSession(session);
   }
 
-  // 2. + 3. Normal user resolution — scoped by membership, not
+  // 2. + 3. Normal user resolution - scoped by membership, not
   // ownership, so invited collaborators and accountants see every
   // workspace they were added to. Disabled memberships are excluded.
   const businessId = session.currentBusinessId;
@@ -106,14 +106,14 @@ export async function requireBusiness() {
   }
 
   // Stamp last activity (best-effort; race-safe via fire-and-forget
-  // try/catch — we don't await across the response).
+  // try/catch - we don't await across the response).
   try {
     await prisma.business.update({
       where: { id: business.id },
       data: { lastActivityAt: new Date() },
     });
   } catch {
-    /* RSC read / race — ignore */
+    /* RSC read / race - ignore */
   }
 
   return {
@@ -142,7 +142,7 @@ export async function getOptionalContext() {
 
 // ─────────────────────────────────────────────────────────────────────
 // Super-admin gate. Use in every /admin route + every /api/admin route.
-// Server-side enforcement — never trust UI-only gating.
+// Server-side enforcement - never trust UI-only gating.
 // ─────────────────────────────────────────────────────────────────────
 
 // Role hierarchy: user < admin < super_admin.
@@ -165,7 +165,7 @@ export async function requireSuperAdmin() {
   return user;
 }
 
-// Admin OR super_admin — used for everything that's "operator panel
+// Admin OR super_admin - used for everything that's "operator panel
 // activity" without being a destructive role/data change.
 export async function requireAdminOrSuper() {
   const user = await requireUser();
@@ -175,7 +175,7 @@ export async function requireAdminOrSuper() {
   return user;
 }
 
-// API variant — returns a NextResponse instead of redirecting, so a
+// API variant - returns a NextResponse instead of redirecting, so a
 // caller can return it directly on the early-exit path.
 export async function requireSuperAdminApi(): Promise<
   | { ok: true; user: Awaited<ReturnType<typeof requireUser>> }
@@ -192,7 +192,7 @@ export async function requireSuperAdminApi(): Promise<
   return { ok: true, user };
 }
 
-// API variant of requireAdminOrSuper — most admin-panel mutations use
+// API variant of requireAdminOrSuper - most admin-panel mutations use
 // this gate; only role changes and user deletion keep the stricter
 // requireSuperAdminApi.
 export async function requireAdminOrSuperApi(): Promise<

@@ -32,7 +32,7 @@ export default function ContactForm() {
         setStatus({ kind: "err", text: body.error ?? `Something went wrong (HTTP ${res.status}). Please try again.` });
         return;
       }
-      setStatus({ kind: "ok", text: "Thanks — we got your message. We'll get back to you at the email you provided." });
+      setStatus({ kind: "ok", text: "Thanks - we got your message. We'll get back to you at the email you provided." });
       setName(""); setEmail(""); setSubject(""); setMessage(""); setAccepted(false);
     } catch (err) {
       setStatus({ kind: "err", text: err instanceof Error ? err.message : "Network error. Please try again." });

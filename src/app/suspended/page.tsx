@@ -1,5 +1,5 @@
 // Landing for users whose account has been suspended by an admin.
-// Render-only — the suspension check lives in requireBusiness().
+// Render-only - the suspension check lives in requireBusiness().
 import Link from "next/link";
 import { requireUser } from "@/lib/auth";
 import Logo from "@/components/Logo";

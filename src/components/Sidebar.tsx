@@ -20,7 +20,7 @@ import { useT } from "@/lib/i18n/client";
 
 type AlertKey = "transactions" | "insights" | "businessSignals";
 
-// Sidebar nav is intentionally calm — thin outline icons (lucide), no
+// Sidebar nav is intentionally calm - thin outline icons (lucide), no
 // emoji, no filled glyphs, no decorative color. The icons act as quiet
 // orientation anchors and never compete with the AI-driven sections
 // inside the pages. All icons share the same stroke weight and size.
@@ -32,7 +32,7 @@ const NAV: { href: string; tKey: string; Icon: LucideIcon; alertKey?: AlertKey }
   { href: "/consultation",     tKey: "nav.advisory", Icon: MessageSquare },
   { href: "/forecast",         tKey: "nav.forecast", Icon: TrendingUp },
   { href: "/report",           tKey: "nav.reports",  Icon: FileText,         alertKey: "insights" },
-  // Workforce Planning lives inside Forecast as a sub-tab now — the
+  // Workforce Planning lives inside Forecast as a sub-tab now - the
   // platform is business-intelligence, not HR, so workforce is a
   // financial-planning lever rather than a standalone destination.
   // Data, Integration, and Notifications all live inside Settings
@@ -84,7 +84,7 @@ export default function Sidebar({
 
   return (
     <>
-      {/* Mobile hamburger toggle — sits in the top-left corner over the
+      {/* Mobile hamburger toggle - sits in the top-left corner over the
           main pane. Hidden on lg+ where the sidebar is always visible. */}
       <button
         type="button"
@@ -96,7 +96,7 @@ export default function Sidebar({
         <span className="text-xl leading-none">☰</span>
       </button>
 
-      {/* Backdrop — shows on mobile when the drawer is open. Click to close. */}
+      {/* Backdrop - shows on mobile when the drawer is open. Click to close. */}
       {mobileOpen ? (
         <div
           className="lg:hidden fixed inset-0 bg-black/60 z-40"
@@ -126,7 +126,7 @@ export default function Sidebar({
               />
             </div>
           ) : null}
-          {/* Workspace switcher — replaces the static business-name label.
+          {/* Workspace switcher - replaces the static business-name label.
               Always visible so users with multiple workspaces have a
               one-click switch + 'Create new workspace' affordance. */}
           {workspaces && workspaces.length > 0 ? (
@@ -206,7 +206,7 @@ export default function Sidebar({
               </Link>
             );
           })}
-          {/* Admin entry — visible to admin AND super_admin. Server-side
+          {/* Admin entry - visible to admin AND super_admin. Server-side
               renders/admin routes still re-check the role; this is
               convenience nav only. */}
           {isAdminOrSuper ? (

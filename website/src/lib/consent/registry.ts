@@ -15,7 +15,7 @@ import type { ConsentState, OptionalCategory } from "./types";
 import { isGranted } from "./types";
 
 export interface TrackingProvider {
-  id:          string;           // stable identifier — "ga4", "meta-pixel", …
+  id:          string;           // stable identifier - "ga4", "meta-pixel", …
   name:        string;           // human-readable name for docs / UI
   category:    OptionalCategory; // necessary providers don't need registration
   load:        () => void | Promise<void>;
@@ -55,7 +55,7 @@ export async function applyConsent(state: ConsentState): Promise<void> {
         loaded.add(p.id);
       } catch (err) {
         // Don't take down the whole consent system if one provider's
-        // injection fails — log to console and continue.
+        // injection fails - log to console and continue.
         // eslint-disable-next-line no-console
         console.error(`[consent] provider ${p.id} failed to load`, err);
       }

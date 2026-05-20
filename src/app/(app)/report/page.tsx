@@ -34,7 +34,7 @@ export default async function ReportPage({
   // ── URL params with safe defaults ─────────────────────────────────────────
   const granularity: Granularity = isValidGranularity(sp.gran) ? sp.gran : "month";
   // Default the anchor to the LATEST month that actually has data, not
-  // today's calendar month — uploads usually trail real time.
+  // today's calendar month - uploads usually trail real time.
   let anchor = sp.period;
   if (!anchor) {
     const months = await listAccountingMonths(business.id);
@@ -101,7 +101,7 @@ export default async function ReportPage({
           }),
         ]);
         // Group by category name; income rows use signed sums, outcome
-        // rows use absolute values — matches the table's display rule.
+        // rows use absolute values - matches the table's display rule.
         const byName = new Map<string, typeof perCatRows>();
         for (const r of perCatRows) {
           const name = r.category?.name ?? "Uncategorized";
@@ -126,7 +126,7 @@ export default async function ReportPage({
   const kindByName = new Map<string, string>();
   for (const c of categories) kindByName.set(c.name, c.kind);
 
-  // Union of every category that appears in any period — keeps rows stable
+  // Union of every category that appears in any period - keeps rows stable
   // even when a category had no activity in one of the comparison columns.
   const allCatNames = new Set<string>();
   for (const a of aggregates) for (const n of Object.keys(a.byCategory)) allCatNames.add(n);
@@ -219,7 +219,7 @@ export default async function ReportPage({
   };
   const exportPayload: ExportPayload = {
     filename:    `Tweaxly_PnL_Statement_${primary.anchor}`,
-    title:       `P&L Statement — ${primary.label}`,
+    title:       `P&L Statement - ${primary.label}`,
     subtitle:    compare > 0 ? `vs ${compareSpecs.map((p) => p.label).join(" vs ")}` : undefined,
     businessName: business.name,
     baseCurrency: ccy,
@@ -243,7 +243,7 @@ export default async function ReportPage({
   return (
     <>
       <PageHeader
-        title={`P&L Statement — ${primary.label}`}
+        title={`P&L Statement - ${primary.label}`}
         subtitle={business.name}
         right={
           <div className="flex items-center gap-3 flex-wrap justify-end">
@@ -279,7 +279,7 @@ export default async function ReportPage({
                   {fmtPct(revDelta.pct ?? 0)} vs {prevLabel}
                 </span>
               )
-              : "—"
+              : "-"
           }
         />
         <Stat
@@ -302,7 +302,7 @@ export default async function ReportPage({
                   {fmtPct(outDelta.pct ?? 0)} vs {prevLabel}
                 </span>
               )
-              : "—"
+              : "-"
           }
         />
         <Stat
@@ -316,12 +316,12 @@ export default async function ReportPage({
                   {fmtPct(pnlDelta.pct ?? 0)} vs {prevLabel}
                 </span>
               )
-              : "—"
+              : "-"
           }
         />
         <Stat
           label="Margin"
-          value={marginByPeriod[0] == null ? "—" : fmtPct(marginByPeriod[0]!)}
+          value={marginByPeriod[0] == null ? "-" : fmtPct(marginByPeriod[0]!)}
           tone={
             marginByPeriod[0] == null
               ? "default"
@@ -334,7 +334,7 @@ export default async function ReportPage({
 
       <div className="card mb-6 overflow-x-auto">
         <div className="font-medium mb-3">
-          Categories — {primary.label}
+          Categories - {primary.label}
           {compare > 0 ? (
             <span className="text-slate-400 text-sm ml-2">
               vs {compareSpecs.map((p) => p.label).join(" vs ")}
@@ -350,7 +350,7 @@ export default async function ReportPage({
                 <th
                   key={p.anchor}
                   // !text-right because .table-base thead th applies
-                  // text-left via @apply — without the bang the period
+                  // text-left via @apply - without the bang the period
                   // labels mis-align over the right-aligned numbers.
                   className={`!normal-case !text-base !text-slate-100 !text-right whitespace-nowrap ${
                     i === 0 ? "!font-bold underline decoration-accent decoration-2 underline-offset-[6px]" : "!font-semibold"
@@ -440,7 +440,7 @@ export default async function ReportPage({
                               <>{sign}{fmtMoneyExact(value, ccy)}</>
                             )
                           ) : (
-                            "—"
+                            "-"
                           )}
                           {!isPrimary && value > 0 ? (
                             <DeltaPct
@@ -520,7 +520,7 @@ export default async function ReportPage({
                       : m >= 0 ? "text-good" : "text-bad"
                   } ${i === 0 ? "font-bold" : ""}`}
                 >
-                  {m == null ? "—" : fmtPct(m)}
+                  {m == null ? "-" : fmtPct(m)}
                   {i > 0 ? (
                     <DeltaPP cur={marginByPeriod[0]} prev={m} />
                   ) : null}
@@ -530,7 +530,7 @@ export default async function ReportPage({
           </tbody>
         </table>
         <div className="text-xs text-slate-500 mt-3">
-          Pick a primary period above. Add comparison columns to see up to {MAX_COMPARE} prior {granularity}s alongside it. Every category that has appeared in your data is listed; categories with no activity in a given period show <span className="text-slate-300">—</span>.
+          Pick a primary period above. Add comparison columns to see up to {MAX_COMPARE} prior {granularity}s alongside it. Every category that has appeared in your data is listed; categories with no activity in a given period show <span className="text-slate-300">-</span>.
         </div>
       </div>
     </>

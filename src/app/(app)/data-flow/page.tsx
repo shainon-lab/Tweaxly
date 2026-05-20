@@ -171,7 +171,7 @@ async function SummaryView({
   const categoryBreakdowns: Record<string, BreakdownResult> = {};
   for (const [catId, txns] of byCatId) {
     // Revenue rows use signed sums (already positive), outcome rows
-    // use magnitudes — match the absolute/signed convention the
+    // use magnitudes - match the absolute/signed convention the
     // SummaryTable shows.
     const isRevenue = txns[0]?.category?.kind === "revenue";
     categoryBreakdowns[catId] = breakdownFromTxns(txns, ccy, { absolute: !isRevenue });
@@ -199,7 +199,7 @@ async function SummaryView({
   // exported file is what the user sees.
   const exportPayload: ExportPayload = {
     filename:     `Tweaxly_Category_Trends_${summary.fromYM}_to_${summary.toYM}`,
-    title:        "Category Trends — Summary",
+    title:        "Category Trends - Summary",
     subtitle:     `${ymToLabel(summary.fromYM)} → ${ymToLabel(summary.toYM)} · ${monthsLabel}`,
     baseCurrency: ccy,
     filters: {
@@ -452,7 +452,7 @@ async function DetailView({
                   if (v == null) {
                     return (
                       <td key={ym} className="text-right text-slate-600">
-                        —
+                        -
                       </td>
                     );
                   }
@@ -510,8 +510,8 @@ async function DetailView({
 
       <div className="text-xs text-slate-500 mt-3">
         Once a category appears anywhere in your history, it persists in every
-        later month — 0 means "no transactions in that month after the category
-        was introduced". A dash "—" means the category hadn't been introduced
+        later month - 0 means "no transactions in that month after the category
+        was introduced". A dash "-" means the category hadn't been introduced
         yet.
       </div>
     </>

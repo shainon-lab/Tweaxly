@@ -13,7 +13,7 @@
 // expense entered as monthly with no end date would silently
 // materialize as N transactions across N months, including the
 // current month. The user's mental model is "Start Date is the date
-// the entry applies to" — so we honor that literally and require an
+// the entry applies to" - so we honor that literally and require an
 // explicit endDate when a user really wants the gap filled.
 //
 // The forecast engine still projects recurring entries forward from
@@ -180,7 +180,7 @@ export async function createManualEntryAndMaterialize(
     txnRows.push({ id: t.id });
   }
 
-  // touch — keep `todayYM` import used in case future logic needs it
+  // touch - keep `todayYM` import used in case future logic needs it
   void todayYM;
 
   return { entry, materialized: txnRows.length };

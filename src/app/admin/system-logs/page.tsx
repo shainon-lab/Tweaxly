@@ -58,13 +58,13 @@ export default async function AuditLogPage() {
                         {e.targetBusiness.name}
                       </Link>
                     ) : (
-                      <span className="text-slate-600">—</span>
+                      <span className="text-slate-600">-</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-400 font-mono max-w-xs truncate" title={e.metadata ?? ""}>
-                    {e.metadata ?? "—"}
+                    {e.metadata ?? "-"}
                   </td>
-                  <td className="px-4 py-3 text-xs text-slate-500 tabular-nums">{e.ipAddress ?? "—"}</td>
+                  <td className="px-4 py-3 text-xs text-slate-500 tabular-nums">{e.ipAddress ?? "-"}</td>
                 </tr>
               ))}
             </tbody>

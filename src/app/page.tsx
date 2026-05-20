@@ -8,7 +8,7 @@ import { requireBusiness } from "@/lib/auth";
 //   - signed in but no business yet → /setup
 //   - signed in with at least one business → /dashboard (and the oldest
 //     business is auto-selected if currentBusinessId wasn't already set on
-//     the session — this is what makes a fresh login on an existing demo
+//     the session - this is what makes a fresh login on an existing demo
 //     account land on the dashboard with its data, instead of being pushed
 //     into the new-business setup flow).
 export default async function Home() {

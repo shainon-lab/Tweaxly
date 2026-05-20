@@ -1,8 +1,8 @@
 "use client";
 
 // Payroll trend chart for /workforce. Two views:
-//   "payroll"          — historical actuals + roster-projected payroll
-//   "payroll_vs_rev"   — payroll & revenue side-by-side over the historical window
+//   "payroll"          - historical actuals + roster-projected payroll
+//   "payroll_vs_rev"   - payroll & revenue side-by-side over the historical window
 
 import { useMemo, useState } from "react";
 import {
@@ -20,7 +20,7 @@ type Point = {
 };
 
 function fmtCompact(v: number): string {
-  if (!isFinite(v)) return "—";
+  if (!isFinite(v)) return "-";
   const sign = v < 0 ? "−" : "";
   const abs = Math.abs(v);
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;

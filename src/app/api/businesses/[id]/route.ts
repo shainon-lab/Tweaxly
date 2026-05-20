@@ -10,7 +10,7 @@
 // DELETE /api/businesses/[id]
 //   - owner only (Business.ownerId === user.id)
 //   - cascade-deletes every related record via the Prisma onDelete
-//     rules on Business — this is irreversible
+//     rules on Business - this is irreversible
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db";

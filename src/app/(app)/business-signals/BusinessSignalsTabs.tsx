@@ -1,8 +1,8 @@
 "use client";
 
 // Sub-tab nav for the Business Signals page.
-//   Signals — rotating advisor observations (the random-5-of-15 feed).
-//   Monitor — threshold rules that have fired (formerly "Alerts"). The
+//   Signals - rotating advisor observations (the random-5-of-15 feed).
+//   Monitor - threshold rules that have fired (formerly "Alerts"). The
 //             Monitor sub-tab also houses notification rule management
 //             via an inline "Monitor Events" toggle.
 // When `firingAlerts > 0`, the Monitor tab gets a red count badge so the

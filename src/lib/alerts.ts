@@ -20,7 +20,7 @@ export async function getSidebarAlerts(businessId: string): Promise<SidebarAlert
     prisma.duplicateGroup.count({ where: { businessId, status: "open" } }),
     evaluateNotificationRules(businessId),
   ]);
-  // Only count alerts the user hasn't already acknowledged — that's what
+  // Only count alerts the user hasn't already acknowledged - that's what
   // they're expecting to clear with the "Mark as read" button.
   const unread = triggered.filter((t) => t.acknowledgedAt == null);
   return {

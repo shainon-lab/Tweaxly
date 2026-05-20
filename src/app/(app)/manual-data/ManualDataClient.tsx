@@ -77,9 +77,9 @@ export default function ManualDataClient({
   const [error, setError] = useState<string | null>(null);
 
   // Bulk upload now has two flavors:
-  //   "dated"   — each row carries its own date (bank export / template).
+  //   "dated"   - each row carries its own date (bank export / template).
   //               System derives accountingMonth per row.
-  //   "monthly" — one file per month, user picks the month for the whole
+  //   "monthly" - one file per month, user picks the month for the whole
   //               file (legacy P&L summary style).
   // Default to "dated" since it matches what most people upload.
   const [uploadMode, setUploadMode] = useState<UploadMode>("dated");
@@ -94,8 +94,8 @@ export default function ManualDataClient({
   // base currency; if the user picks something else, the server
   // converts at the historical rate from the start date.
   const [entryCurrency, setEntryCurrency] = useState<string>(currency);
-  // Default to one_time. This matches the most common use case — a
-  // single historical or current expense/income — and avoids the
+  // Default to one_time. This matches the most common use case - a
+  // single historical or current expense/income - and avoids the
   // common UX trap where users picked monthly without an end date
   // and the system silently materialized many transactions through
   // the current month.
@@ -107,7 +107,7 @@ export default function ManualDataClient({
   const [confirmDelete, setConfirmDelete] = useState<Entry | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
-  // Manual entries are shown in a table — keep `.00` so columns align.
+  // Manual entries are shown in a table - keep `.00` so columns align.
   const fmt = new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
@@ -154,7 +154,7 @@ export default function ManualDataClient({
       const body: Record<string, unknown> = {
         type,
         amount: amt,
-        // Only send when it differs from base — keeps the wire format
+        // Only send when it differs from base - keeps the wire format
         // backward-compatible with anything that ignores it.
         currency: entryCurrency.toUpperCase(),
         frequency,
@@ -222,13 +222,13 @@ export default function ManualDataClient({
         <div className="flex items-start gap-3">
           <span className="pill-warn shrink-0 mt-0.5">heads-up</span>
           <div className="text-sm text-slate-200 leading-relaxed">
-            <span className="font-medium">Before adding anything manually, make sure it's not already in a file you've uploaded — and won't be in a file you'll upload soon.</span>{" "}
-            Manual entries are for things that <em>aren't</em> in your bank/payroll exports — for example, a personal-card business purchase, a gift, or a one-off invoice you settled outside the books. If the same item also lands in an upload later, it'll be counted twice.
+            <span className="font-medium">Before adding anything manually, make sure it's not already in a file you've uploaded - and won't be in a file you'll upload soon.</span>{" "}
+            Manual entries are for things that <em>aren't</em> in your bank/payroll exports - for example, a personal-card business purchase, a gift, or a one-off invoice you settled outside the books. If the same item also lands in an upload later, it'll be counted twice.
           </div>
         </div>
       </div>
 
-      {/* Mode selector — two upload patterns. Each renders the matching card. */}
+      {/* Mode selector - two upload patterns. Each renders the matching card. */}
       <div className="card mb-4">
         <div className="font-medium mb-1">How are you uploading?</div>
         <div className="text-sm text-slate-400 mb-3">
@@ -271,7 +271,7 @@ export default function ManualDataClient({
               <span className="font-medium text-slate-100">Monthly summary</span>
             </div>
             <div className="text-xs text-slate-400 leading-relaxed">
-              All rows in the file belong to the same month — like a P&L sheet for May. You pick the month, we apply it to every row.
+              All rows in the file belong to the same month - like a P&L sheet for May. You pick the month, we apply it to every row.
             </div>
           </button>
         </div>
@@ -379,7 +379,7 @@ export default function ManualDataClient({
                 onChange={(e) => setCategoryId(e.target.value)}
               >
                 <option value="">
-                  — pick {type === "income" ? "an income" : "an outcome"} category —
+                  - pick {type === "income" ? "an income" : "an outcome"} category -
                 </option>
                 {filteredCategories.map((c) => (
                   <option key={c.id} value={c.id}>
@@ -398,7 +398,7 @@ export default function ManualDataClient({
             )}
             {categoryMode === "existing" && filteredCategories.length === 0 ? (
               <div className="text-xs text-slate-400 mt-1">
-                No existing {type} categories — switch to "New category" to add one.
+                No existing {type} categories - switch to "New category" to add one.
               </div>
             ) : null}
           </div>
@@ -517,11 +517,11 @@ export default function ManualDataClient({
                     {e.startDate.slice(0, 10)}
                   </td>
                   <td className="text-slate-300 whitespace-nowrap">
-                    {e.endDate ? e.endDate.slice(0, 10) : "—"}
+                    {e.endDate ? e.endDate.slice(0, 10) : "-"}
                   </td>
                   <td className="text-right text-slate-300">{e.materialized}</td>
                   <td className="text-xs text-slate-400 max-w-[220px] truncate" title={e.notes ?? ""}>
-                    {e.notes ?? "—"}
+                    {e.notes ?? "-"}
                   </td>
                   <td className="text-right whitespace-nowrap">
                     <button
@@ -549,7 +549,7 @@ export default function ManualDataClient({
             onClick={(ev) => ev.stopPropagation()}
           >
             <div className="text-base font-semibold mb-2">
-              This action will delete data — are you sure you want to proceed?
+              This action will delete data - are you sure you want to proceed?
             </div>
             <div className="text-sm text-slate-400 mb-4">
               Removing this manual entry will permanently delete:
@@ -590,14 +590,14 @@ export default function ManualDataClient({
                 disabled={deletingId === confirmDelete.id}
                 onClick={() => setConfirmDelete(null)}
               >
-                No — keep the data
+                No - keep the data
               </button>
               <button
                 className="btn-danger"
                 disabled={deletingId === confirmDelete.id}
                 onClick={() => reallyDelete(confirmDelete)}
               >
-                {deletingId === confirmDelete.id ? "Removing…" : "Yes — remove"}
+                {deletingId === confirmDelete.id ? "Removing…" : "Yes - remove"}
               </button>
             </div>
           </div>

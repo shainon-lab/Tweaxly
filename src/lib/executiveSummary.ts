@@ -3,10 +3,10 @@
 // surface the key signals at a glance.
 //
 // Two paths:
-//   1. Claude path — if ANTHROPIC_API_KEY is set, prompt the model with
+//   1. Claude path - if ANTHROPIC_API_KEY is set, prompt the model with
 //      a structured snapshot of the period and a tight set of
 //      instructions about tone, structure, and soft-confidence language.
-//   2. Deterministic fallback — assemble the narrative from the same
+//   2. Deterministic fallback - assemble the narrative from the same
 //      snapshot using templated phrasing. Used when no API key is
 //      configured or the API call errors.
 
@@ -21,7 +21,7 @@ export type SummaryChip = {
   tone: "good" | "warn" | "bad" | "neutral";
 };
 
-// Bulletin — a single anchor in the right-side "Business Bulletins"
+// Bulletin - a single anchor in the right-side "Business Bulletins"
 // column. Lightweight by design: a short label + a short value, with
 // an optional trend arrow. NOT a KPI card.
 export type Bulletin = {
@@ -89,7 +89,7 @@ export async function buildExecutiveSummary(
       }
     } catch {
       // Fall through to deterministic. We don't surface the error to
-      // the user — the deterministic version reads fine on its own.
+      // the user - the deterministic version reads fine on its own.
     }
   }
 
@@ -113,16 +113,16 @@ Tone:
 - Balanced and credible. Never marketing-polished. Never breathless.
 - Never robotic. Never dramatic. Never use AI buzzwords or hype.
 
-Confidence calibration — this is critical:
+Confidence calibration - this is critical:
 - Never assert the future as certain. Avoid "WILL decline", "IS failing", "guaranteed to improve".
 - Prefer soft phrasings: "current trends indicate", "based on recent activity", "the data suggests", "appears to be stabilizing", "may continue if…", "remains uncertain", "for now".
 - Acknowledge uncertainty when warranted. It is fine to say "the picture is mixed" or "this stabilization may not hold if X continues".
 
-Length: one paragraph, 3–5 sentences. Plain prose only — no headings, no bullets, no markdown, no emoji.
+Length: one paragraph, 3–5 sentences. Plain prose only - no headings, no bullets, no markdown, no emoji.
 
-Variability — equally critical. Every summary must feel like it was written specifically for this business, this period:
+Variability - equally critical. Every summary must feel like it was written specifically for this business, this period:
 - Do NOT use a fixed template. Do not always open with "The business started…" or "Revenue increased…" or "During this period…". Vary the opening every time.
-- Choose what to lead with based on what's most material in this period — sometimes lead with profitability, sometimes cash flow, sometimes operational pressure, sometimes growth momentum, sometimes a single vendor or category move that dominates the data.
+- Choose what to lead with based on what's most material in this period - sometimes lead with profitability, sometimes cash flow, sometimes operational pressure, sometimes growth momentum, sometimes a single vendor or category move that dominates the data.
 - Vary sentence structure across summaries. Do not always go in the order opening→change→impact→forward. If the most important thing is the forward-looking concern, you can lead with that. If the most important thing is that a margin held despite revenue weakness, lead with the resilience.
 - A summary can omit a "section" if it's not interesting. If nothing is forward-looking-worthy, don't tack on a forecast sentence just to fill the slot.
 
@@ -144,28 +144,28 @@ Adapt emphasis to the timeframe:
 
 Honesty rules:
 - Do not invent numbers. Use the figures in the snapshot. If a metric isn't present, don't fabricate one.
-- Avoid percentages in every sentence — one or two grounded numbers in the paragraph is enough. Prose first, figures sparingly.
+- Avoid percentages in every sentence - one or two grounded numbers in the paragraph is enough. Prose first, figures sparingly.
 - If the picture is genuinely mixed (revenue up but margin down; profit positive but cash flow softening), say so plainly. Mixed reads as more credible than uniformly positive or negative.
-- It's okay — and often better — to surface a small concern even in a generally good period ("collections slowed slightly", "expense growth bears watching").
+- It's okay - and often better - to surface a small concern even in a generally good period ("collections slowed slightly", "expense growth bears watching").
 
-Temporal awareness — the snapshot includes a 'trailing' array of monthly figures, plus computed trend shapes for revenue, expenses, and net profit. Use them. Talk about when a trend began, whether it's accelerating or stabilizing, and how long it's held. Examples of phrasing to aim for:
+Temporal awareness - the snapshot includes a 'trailing' array of monthly figures, plus computed trend shapes for revenue, expenses, and net profit. Use them. Talk about when a trend began, whether it's accelerating or stabilizing, and how long it's held. Examples of phrasing to aim for:
 - "Revenue decline accelerated during the last 60 days."
 - "Margin stability improved after operational adjustments in Q2."
 - "Cash flow has remained stable despite slower collections since March."
 - "Growth momentum weakened gradually throughout the second half of the year."
-Avoid robotic time references ("during this period", "for the selected timeframe") — write naturally, like a CFO commenting on the arc.
+Avoid robotic time references ("during this period", "for the selected timeframe") - write naturally, like a CFO commenting on the arc.
 
-Visual emphasis — wrap 2–3 strategically important short phrases per paragraph in **double asterisks** so the UI can render them with subtle bold. Examples:
+Visual emphasis - wrap 2–3 strategically important short phrases per paragraph in **double asterisks** so the UI can render them with subtle bold. Examples:
 - "...the **headline story** of the period is..."
 - "...**margin pressure** appears to be easing..."
 - "...the **highest-leverage next step** is..."
 - "...**profitability held up** despite revenue softness..."
-Use emphasis sparingly — only the most strategic phrases. Never bold a number. Never bold more than three phrases. Never bold a whole clause longer than ~5 words.
+Use emphasis sparingly - only the most strategic phrases. Never bold a number. Never bold more than three phrases. Never bold a whole clause longer than ~5 words.
 
 Examples of preferred phrasing:
 - "Cash flow remained stable, although recent collections appear to have slowed."
 - "Profitability improved moderately following payroll adjustments, though revenue growth has flattened."
-- "Operating margins held above 20% for the period, partly because one-time expenses dropped — sustainable margin still bears watching."
+- "Operating margins held above 20% for the period, partly because one-time expenses dropped - sustainable margin still bears watching."
 - "Current trends suggest possible margin pressure if expense growth continues at this pace."
 
 Examples to avoid:
@@ -285,7 +285,7 @@ function buildDeterministicNarrative(input: SummaryInput): string {
   if (expDelta != null && expDelta > 0.10) scores.push({ focus: "expense_pressure", score: 20 + expDelta * 100 });
   if (revDelta != null && revDelta < -0.05) scores.push({ focus: "revenue_decline", score: 20 + Math.abs(revDelta) * 100 });
   if (revDelta != null && revDelta > 0.10) scores.push({ focus: "revenue_growth", score: 15 + revDelta * 80 });
-  // Resilience: revenue softened but margins held — worth highlighting.
+  // Resilience: revenue softened but margins held - worth highlighting.
   if (revDelta != null && revDelta < -0.05 && curMargin != null && curMargin >= 0.15 && (marginShift == null || marginShift > -0.03)) {
     scores.push({ focus: "margin_resilience", score: 25 });
   }
@@ -293,12 +293,12 @@ function buildDeterministicNarrative(input: SummaryInput): string {
   scores.sort((a, b) => b.score - a.score);
   const focus: Focus = scores[0]?.focus ?? "stability";
 
-  // Variant seed — stable per (period × business name) so a given page
+  // Variant seed - stable per (period × business name) so a given page
   // always reads the same, but different periods/businesses pick
   // different template options.
   const seed = hashString(`${input.periodLabel}|${input.businessName}|${focus}`);
 
-  // Trend shapes derived from trailing data — these power the
+  // Trend shapes derived from trailing data - these power the
   // "since March" / "throughout the second half" temporal phrasing.
   const trailing = input.trailing ?? [];
   const yms = trailing.map((t) => t.ym);
@@ -353,7 +353,7 @@ type NarrCtx = {
   netImproving: boolean;
   netDeclining: boolean;
   seed: number;
-  // Temporal awareness — trend shapes derived from the trailing window.
+  // Temporal awareness - trend shapes derived from the trailing window.
   refYM: string;
   revShape: TrendShape | null;
   netShape: TrendShape | null;
@@ -389,7 +389,7 @@ function pctDelta(curr: number, prior: number): number | null {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Trend evolution — derives time-aware insight from the trailing series
+// Trend evolution - derives time-aware insight from the trailing series
 // so the narrative and bulletins can talk about *when* a trend began,
 // whether it's accelerating or stabilizing, and how long it's held.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -399,7 +399,7 @@ export type Direction = "rising" | "falling" | "flat";
 export type TrendShape = {
   // Overall direction across the trailing window.
   direction: Direction;
-  // Pace: "accelerating" / "decelerating" / "steady" — derived by comparing
+  // Pace: "accelerating" / "decelerating" / "steady" - derived by comparing
   // the latter half of the window against the earlier half.
   pace: "accelerating" | "decelerating" | "steady";
   // The earliest YM in the trailing window where the current direction
@@ -443,7 +443,7 @@ function analyzeSeries(values: number[], yms: string[]): TrendShape | null {
     lastStep === "down" ? "falling" :
     "flat";
 
-  // Pace — compare avg recent slope to avg earlier slope.
+  // Pace - compare avg recent slope to avg earlier slope.
   const half = Math.floor(steps.length / 2);
   const earlier = steps.slice(0, half);
   const recent = steps.slice(half);
@@ -463,7 +463,7 @@ function analyzeSeries(values: number[], yms: string[]): TrendShape | null {
 // Picks the right granularity: "March", "Q2", "this past quarter" etc.
 function naturalSinceLabel(ym: string | null, refYM: string): string | null {
   if (!ym) return null;
-  // If onset is the same as the reference month, the trend just started —
+  // If onset is the same as the reference month, the trend just started -
   // not worth a "since" anchor.
   if (ym === refYM) return null;
   const [y, m] = ym.split("-").map(Number);
@@ -501,7 +501,7 @@ function describeTrend(
   return { momentumWord: "Stable", sincePhrase: null };
 }
 
-// Tiny string hash used to pick a sentence variant — deterministic and
+// Tiny string hash used to pick a sentence variant - deterministic and
 // good enough for choosing between 2–3 phrasings per spot.
 function hashString(s: string): number {
   let h = 2166136261 >>> 0;
@@ -516,7 +516,7 @@ function pick<T>(variants: T[], seed: number, offset = 0): T {
   return variants[(seed + offset) % variants.length];
 }
 
-// Compose helpers — each builds a paragraph for one focus. Each picks
+// Compose helpers - each builds a paragraph for one focus. Each picks
 // among 2–3 sentence variants so the wording differs across periods.
 
 function composeLoss(c: NarrCtx): string {
@@ -525,7 +525,7 @@ function composeLoss(c: NarrCtx): string {
   const opening = pick([
     `${c.periodLabel} closed in a ${em("loss position")} of ${loss}, with expenses of ${exp} running ahead of revenue.`,
     `The period ended with a ${loss} loss, as the cost base of ${exp} ${em("outpaced what came in")}.`,
-    `Profitability slipped into negative territory in ${c.periodLabel} — a ${loss} loss against ${exp} of operating cost.`,
+    `Profitability slipped into negative territory in ${c.periodLabel} - a ${loss} loss against ${exp} of operating cost.`,
   ], c.seed, 0);
 
   const tClause = temporalClause(c.netShape, c.refYM);
@@ -540,7 +540,7 @@ function composeLoss(c: NarrCtx): string {
             `Expenses ran ${fmtPct(c.expDelta)} higher than the prior period; without a matching revenue lift, the gap ${em("widened the loss")}.`,
             `Cost growth of ${fmtPct(c.expDelta)} did most of the damage, since revenue did not move enough to absorb it.`,
           ], c.seed, 2)
-        : `The picture is mixed — the loss reflects a cost base sized for stronger revenue than the period delivered.`;
+        : `The picture is mixed - the loss reflects a cost base sized for stronger revenue than the period delivered.`;
 
   const forward = c.prev.netProfit < 0
     ? pick([
@@ -548,7 +548,7 @@ function composeLoss(c: NarrCtx): string {
         `The data suggests this is not a one-off, and the response probably needs to be at the cost-structure level rather than the line-item level.`,
       ], c.seed, 3)
     : pick([
-        `Whether this reverses next period depends largely on whether revenue recovers or cost growth slows — both can carry the result.`,
+        `Whether this reverses next period depends largely on whether revenue recovers or cost growth slows - both can carry the result.`,
         `The next period will likely turn on which side of the equation moves first; for now, the loss appears ${em("more recoverable than structural")}.`,
       ], c.seed, 4);
 
@@ -559,14 +559,14 @@ function composeMarginCompression(c: NarrCtx): string {
   if (c.curMargin == null) return composeStability(c);
   const tClause = temporalClause(c.netShape ?? c.revShape, c.refYM);
   const opening = pick([
-    `${em("Margin pressure")} is the headline of ${c.periodLabel} — operating margin landed at ${fmtPct(c.curMargin)}${tClause}, down from ${c.prevMargin != null ? fmtPct(c.prevMargin) : "a wider band"} in the prior period.`,
-    `${c.periodLabel} saw operating margin tighten to ${fmtPct(c.curMargin)} — a ${c.marginShift != null ? fmtPct(Math.abs(c.marginShift)) : "noticeable"} ${em("contraction")}${tClause}.`,
+    `${em("Margin pressure")} is the headline of ${c.periodLabel} - operating margin landed at ${fmtPct(c.curMargin)}${tClause}, down from ${c.prevMargin != null ? fmtPct(c.prevMargin) : "a wider band"} in the prior period.`,
+    `${c.periodLabel} saw operating margin tighten to ${fmtPct(c.curMargin)} - a ${c.marginShift != null ? fmtPct(Math.abs(c.marginShift)) : "noticeable"} ${em("contraction")}${tClause}.`,
     `Profitability gave back some ground in ${c.periodLabel}, with net margin slipping to ${fmtPct(c.curMargin)}${tClause}.`,
   ], c.seed, 0);
 
   const driver =
     c.revDelta != null && c.revDelta < -0.05 && c.expDelta != null && c.expDelta > 0.05
-      ? `The compression came from both sides — revenue softening while expenses pressed higher.`
+      ? `The compression came from both sides - revenue softening while expenses pressed higher.`
       : c.expDelta != null && c.expDelta > 0.10
         ? pick([
             `The pressure came mostly from the ${em("cost side")}, with expenses up ${fmtPct(c.expDelta)} period-over-period.`,
@@ -574,7 +574,7 @@ function composeMarginCompression(c: NarrCtx): string {
           ], c.seed, 1)
         : c.revDelta != null && c.revDelta < -0.05
           ? pick([
-              `Revenue eased by ${fmtPct(Math.abs(c.revDelta))} while expenses stayed largely flat — the margin ${em("took the hit")}.`,
+              `Revenue eased by ${fmtPct(Math.abs(c.revDelta))} while expenses stayed largely flat - the margin ${em("took the hit")}.`,
               `Top-line softness of ${fmtPct(Math.abs(c.revDelta))} carried the compression; the cost base was largely intact.`,
             ], c.seed, 2)
           : `The cause is distributed across smaller line items rather than a single dominant driver.`;
@@ -586,7 +586,7 @@ function composeMarginCompression(c: NarrCtx): string {
       ], c.seed, 3)
     : pick([
         `At this margin level, an unplanned cost could push the period negative, so ${em("tightening discretionary spend")} would be prudent.`,
-        `Current trends indicate the margin is now thin enough that a single bad month could flip the result — caution on new commitments is warranted.`,
+        `Current trends indicate the margin is now thin enough that a single bad month could flip the result - caution on new commitments is warranted.`,
       ], c.seed, 4);
 
   return [opening, driver, forward].join(" ");
@@ -597,9 +597,9 @@ function composeExpensePressure(c: NarrCtx): string {
   const expPct = c.expDelta != null ? fmtPct(c.expDelta) : null;
   const tClause = temporalClause(c.expShape, c.refYM);
   const opening = pick([
-    `${em("Expense growth")} was the defining feature of ${c.periodLabel} — costs ran to ${exp}${expPct ? `, up ${expPct} period-over-period` : ""}${tClause}.`,
+    `${em("Expense growth")} was the defining feature of ${c.periodLabel} - costs ran to ${exp}${expPct ? `, up ${expPct} period-over-period` : ""}${tClause}.`,
     `${c.periodLabel} saw operating costs climb to ${exp}${expPct ? ` (${expPct} above the prior period)` : ""}${tClause}, dominating the period's narrative.`,
-    `The biggest move in ${c.periodLabel} came from the ${em("cost side")}, with total expenses landing at ${exp}${expPct ? ` — a ${expPct} increase` : ""}${tClause}.`,
+    `The biggest move in ${c.periodLabel} came from the ${em("cost side")}, with total expenses landing at ${exp}${expPct ? ` - a ${expPct} increase` : ""}${tClause}.`,
   ], c.seed, 0);
 
   const rev =
@@ -609,7 +609,7 @@ function composeExpensePressure(c: NarrCtx): string {
           `Top-line growth of ${fmtPct(c.revDelta)} cushioned the impact, but did not fully offset it.`,
         ], c.seed, 1)
       : c.revDelta != null && c.revDelta <= -0.03
-        ? `Revenue did not keep pace — it eased by ${fmtPct(Math.abs(c.revDelta))} — so the cost growth landed disproportionately on the bottom line.`
+        ? `Revenue did not keep pace - it eased by ${fmtPct(Math.abs(c.revDelta))} - so the cost growth landed disproportionately on the bottom line.`
         : pick([
             `Revenue held roughly flat, so the cost increase translated almost directly into margin pressure.`,
             `Top-line was essentially unchanged, meaning the increase showed up in margin rather than scale.`,
@@ -617,7 +617,7 @@ function composeExpensePressure(c: NarrCtx): string {
 
   const forward = pick([
     `Current trends suggest ${em("possible margin pressure")} if expense growth continues at this pace; identifying which categories drove the increase is the natural next step.`,
-    `Based on recent activity, this is the kind of move that compounds — the next period will likely turn on whether the cost growth was ${em("one-off or structural")}.`,
+    `Based on recent activity, this is the kind of move that compounds - the next period will likely turn on whether the cost growth was ${em("one-off or structural")}.`,
     `For now profitability remains workable, but the data suggests caution on any further discretionary commitments until the cost base settles.`,
   ], c.seed, 3);
 
@@ -629,24 +629,24 @@ function composeRevenueDecline(c: NarrCtx): string {
   const rev = fmtMoney(c.current.income, c.ccy);
   const tClause = temporalClause(c.revShape, c.refYM);
   const opening = pick([
-    `Top-line activity ${em("softened")} in ${c.periodLabel} — revenue came in at ${rev}, ${decline} below the prior period${tClause}.`,
+    `Top-line activity ${em("softened")} in ${c.periodLabel} - revenue came in at ${rev}, ${decline} below the prior period${tClause}.`,
     `Revenue is the ${em("headline story")} for ${c.periodLabel}: ${rev}, down ${decline} from the prior period${tClause}.`,
     `${c.periodLabel} saw revenue ease by ${decline}, landing at ${rev}${tClause}.`,
   ], c.seed, 0);
 
   const impact = c.curMargin != null && c.curMargin >= 0.15
     ? pick([
-        `Margins held above ${fmtPct(c.curMargin)} despite the softness, which suggests the cost base is ${em("right-sized for now")} — though that resilience may not last if the slowdown continues.`,
-        `${em("Profitability held up")} at ${fmtPct(c.curMargin)} — encouraging, but contingent on expense discipline continuing.`,
+        `Margins held above ${fmtPct(c.curMargin)} despite the softness, which suggests the cost base is ${em("right-sized for now")} - though that resilience may not last if the slowdown continues.`,
+        `${em("Profitability held up")} at ${fmtPct(c.curMargin)} - encouraging, but contingent on expense discipline continuing.`,
       ], c.seed, 1)
     : c.curMargin != null && c.curMargin >= 0
-      ? `Margins tightened to ${fmtPct(c.curMargin)} as a result — workable, but with less cushion than before.`
+      ? `Margins tightened to ${fmtPct(c.curMargin)} as a result - workable, but with less cushion than before.`
       : `Profitability turned negative as the cost base wasn't able to absorb the drop quickly enough.`;
 
   const forward = pick([
-    `Tracing the decline to a specific channel, customer, or contract is the ${em("highest-leverage next step")} — the data suggests it is concentrated rather than broad.`,
+    `Tracing the decline to a specific channel, customer, or contract is the ${em("highest-leverage next step")} - the data suggests it is concentrated rather than broad.`,
     `Based on recent activity, near-term revenue appears soft, and holding the expense line will matter more than usual until the cause is identified.`,
-    `Current trends indicate this may stabilize, but for now the picture ${em("warrants caution")} — particularly around new fixed commitments.`,
+    `Current trends indicate this may stabilize, but for now the picture ${em("warrants caution")} - particularly around new fixed commitments.`,
   ], c.seed, 2);
 
   return [opening, impact, forward].join(" ");
@@ -658,23 +658,23 @@ function composeRevenueGrowth(c: NarrCtx): string {
   const tClause = temporalClause(c.revShape, c.refYM);
   const opening = pick([
     `Revenue led ${c.periodLabel}, ${em("accelerating")} by ${growth} period-over-period to ${rev}${tClause}.`,
-    `${c.periodLabel} stood out for ${em("top-line momentum")} — revenue rose ${growth} to ${rev}${tClause}.`,
+    `${c.periodLabel} stood out for ${em("top-line momentum")} - revenue rose ${growth} to ${rev}${tClause}.`,
     `${em("Growth")} was the defining feature of ${c.periodLabel}: ${rev} in revenue, ${growth} above the prior period${tClause}.`,
   ], c.seed, 0);
 
   const margin = c.curMargin != null && c.curMargin >= 0.20
     ? pick([
-        `Margins came along — net margin landed at a healthy ${fmtPct(c.curMargin)}, suggesting the growth was ${em("efficient rather than bought")}.`,
+        `Margins came along - net margin landed at a healthy ${fmtPct(c.curMargin)}, suggesting the growth was ${em("efficient rather than bought")}.`,
         `Profitability scaled with revenue rather than diluting it, with margin holding at ${fmtPct(c.curMargin)}.`,
       ], c.seed, 1)
     : c.curMargin != null && c.curMargin >= 0
-      ? `Margin came in at ${fmtPct(c.curMargin)} — the growth absorbed some cost pressure but did not fully translate into profitability.`
-      : `The growth did not translate into profit yet — the period still closed below breakeven.`;
+      ? `Margin came in at ${fmtPct(c.curMargin)} - the growth absorbed some cost pressure but did not fully translate into profitability.`
+      : `The growth did not translate into profit yet - the period still closed below breakeven.`;
 
   const forward = pick([
-    `Whether this momentum continues likely depends on whether the underlying driver — channel, contract, or seasonal — is ${em("repeatable")}.`,
+    `Whether this momentum continues likely depends on whether the underlying driver - channel, contract, or seasonal - is ${em("repeatable")}.`,
     `For now, the data suggests durable growth is possible, though concentrating bets on what drove this period is worth doing carefully.`,
-    `Current trends are encouraging, but a single strong period is not yet a trend — the next period will tell.`,
+    `Current trends are encouraging, but a single strong period is not yet a trend - the next period will tell.`,
   ], c.seed, 2);
 
   return [opening, margin, forward].join(" ");
@@ -685,18 +685,18 @@ function composeMarginResilience(c: NarrCtx): string {
   const decline = c.revDelta != null ? fmtPct(Math.abs(c.revDelta)) : "modestly";
   const tClause = temporalClause(c.revShape, c.refYM);
   const opening = pick([
-    `${c.periodLabel} is a study in ${em("resilience")} — revenue eased by ${decline}${tClause}, yet net margin held at ${margin}.`,
+    `${c.periodLabel} is a study in ${em("resilience")} - revenue eased by ${decline}${tClause}, yet net margin held at ${margin}.`,
     `Despite a ${decline} softening in revenue${tClause}, profitability ${em("held up")} at ${margin}.`,
     `Margins stayed firm at ${margin} in ${c.periodLabel}, even as top-line activity slipped by ${decline}${tClause}.`,
   ], c.seed, 0);
 
   const middle = pick([
-    `That points to a cost base that's currently ${em("right-sized")} — discretionary spend appears to have flexed with revenue rather than running on autopilot.`,
+    `That points to a cost base that's currently ${em("right-sized")} - discretionary spend appears to have flexed with revenue rather than running on autopilot.`,
     `The resilience suggests ${em("expense discipline")} is working; whether it can be sustained as the slowdown continues is the open question.`,
   ], c.seed, 1);
 
   const forward = pick([
-    `For now the picture is steady, but margin resilience without a revenue recovery typically has a half-life — the next period or two will indicate whether this stabilizes.`,
+    `For now the picture is steady, but margin resilience without a revenue recovery typically has a half-life - the next period or two will indicate whether this stabilizes.`,
     `Current trends suggest profitability can hold a while longer at this margin, though planning around the assumption it does could leave the business exposed if revenue softens further.`,
   ], c.seed, 2);
 
@@ -707,30 +707,30 @@ function composeStability(c: NarrCtx): string {
   const rev = fmtMoney(c.current.income, c.ccy);
   const exp = fmtMoney(c.current.expenses, c.ccy);
   const opening = pick([
-    `${c.periodLabel} settled into a ${em("stable band")} — revenue of ${rev} and expenses of ${exp} both tracked close to the prior period.`,
+    `${c.periodLabel} settled into a ${em("stable band")} - revenue of ${rev} and expenses of ${exp} both tracked close to the prior period.`,
     `The picture for ${c.periodLabel} is mostly ${em("continuity")}: ${rev} in revenue against ${exp} in operating costs, with neither side moving materially.`,
-    `${c.periodLabel} closed with the business operating in a familiar range — ${rev} of revenue and ${exp} of expense, in line with recent periods.`,
+    `${c.periodLabel} closed with the business operating in a familiar range - ${rev} of revenue and ${exp} of expense, in line with recent periods.`,
   ], c.seed, 0);
 
   const middle = c.curMargin != null
     ? c.curMargin >= 0.20
-      ? `Net margin of ${fmtPct(c.curMargin)} is a ${em("healthy place to be")} — there's room to invest selectively or hold cash for optionality.`
+      ? `Net margin of ${fmtPct(c.curMargin)} is a ${em("healthy place to be")} - there's room to invest selectively or hold cash for optionality.`
       : c.curMargin >= 0
         ? `Margin of ${fmtPct(c.curMargin)} is workable, though it leaves limited room to absorb an unplanned expense.`
         : `Margin remains below breakeven, so this stability is in a thin band rather than a comfortable one.`
     : `Without booked revenue, the picture is more a cost-base snapshot than a profitability one.`;
 
   const forward = pick([
-    `Current trends suggest the next period will look similar absent a deliberate change — a useful baseline for planning, not necessarily a position to defend.`,
+    `Current trends suggest the next period will look similar absent a deliberate change - a useful baseline for planning, not necessarily a position to defend.`,
     `Based on recent activity, the business appears to be in a ${em("steady operational rhythm")}; stability is its own kind of result, even if it's the least interesting one to write about.`,
-    `For now the data suggests continuity, which is a reasonable platform for whichever specific bet — growth, cost reduction, or hire — feels most useful next.`,
+    `For now the data suggests continuity, which is a reasonable platform for whichever specific bet - growth, cost reduction, or hire - feels most useful next.`,
   ], c.seed, 1);
 
   return [opening, middle, forward].join(" ");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Chips — small headline signals shown under the narrative.
+// Chips - small headline signals shown under the narrative.
 // ─────────────────────────────────────────────────────────────────────────────
 
 function buildChips(input: SummaryInput): SummaryChip[] {
@@ -776,7 +776,7 @@ function buildChips(input: SummaryInput): SummaryChip[] {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Bulletins — the right-side anchor list. Lightweight, max 5, dynamically
+// Bulletins - the right-side anchor list. Lightweight, max 5, dynamically
 // chosen so the most material business dimensions are surfaced first.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -790,7 +790,7 @@ function buildBulletins(input: SummaryInput): Bulletin[] {
   const prevMargin = prev.income > 0 ? (prev.income - prev.expenses) / prev.income : null;
   const marginShift = curMargin != null && prevMargin != null ? curMargin - prevMargin : null;
 
-  // Trend shapes from the trailing window — power the temporal phrasing
+  // Trend shapes from the trailing window - power the temporal phrasing
   // in the bulletin values ("Weakening since March").
   const series = trailing ?? [];
   const yms = series.map((t) => t.ym);
@@ -801,7 +801,7 @@ function buildBulletins(input: SummaryInput): Bulletin[] {
   type Candidate = Bulletin & { priority: number };
   const candidates: Candidate[] = [];
 
-  // ── Anchor: Revenue momentum (interpretive — replaces raw "Revenue").
+  // ── Anchor: Revenue momentum (interpretive - replaces raw "Revenue").
   // Combines momentum word with a "since X" qualifier when the trend has
   // a clear onset.
   if (revShape) {
@@ -830,7 +830,7 @@ function buildBulletins(input: SummaryInput): Bulletin[] {
     });
   }
 
-  // ── Anchor: Margin stability — qualitative read with optional context.
+  // ── Anchor: Margin stability - qualitative read with optional context.
   if (curMargin != null) {
     let value: string;
     let tone: Bulletin["tone"];
@@ -925,7 +925,7 @@ function buildBulletins(input: SummaryInput): Bulletin[] {
     if (ratio >= 0.5) {
       candidates.push({
         label: "Payroll Load",
-        value: ratio >= 0.70 ? "Very heavy — squeezing margin" : "Heavy relative to revenue",
+        value: ratio >= 0.70 ? "Very heavy - squeezing margin" : "Heavy relative to revenue",
         tone: "warn",
         priority: 65,
       });

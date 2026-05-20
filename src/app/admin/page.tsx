@@ -1,5 +1,5 @@
 // Admin · Dashboard. High-level summary cards across the customer
-// base. Everything here is computed from the existing tables —
+// base. Everything here is computed from the existing tables -
 // no fake metrics. Billing-dependent cards (MRR, paying, past-due)
 // surface 'no billing connected yet' until Stripe is wired.
 
@@ -112,7 +112,7 @@ export default async function AdminDashboard() {
         <Tile label="Accounts without uploaded data" value={noDataAccounts.length === 5 ? "5+" : noDataAccounts.length.toString()} href="/admin/accounts?dataStatus=none" tone="warn" />
       </div>
 
-      {/* Billing — empty state until Stripe is wired */}
+      {/* Billing - empty state until Stripe is wired */}
       <Section title="Billing">
         <div className="rounded-xl border border-line bg-ink-900/40 p-6 text-sm text-slate-400 flex items-start justify-between gap-4 flex-wrap">
           <div className="max-w-xl">
@@ -147,7 +147,7 @@ export default async function AdminDashboard() {
                     {b.name}
                   </Link>
                   <span className="text-xs text-slate-500 tabular-nums">
-                    {b.lastActivityAt ? new Date(b.lastActivityAt).toLocaleString() : "—"}
+                    {b.lastActivityAt ? new Date(b.lastActivityAt).toLocaleString() : "-"}
                   </span>
                 </li>
               ))}

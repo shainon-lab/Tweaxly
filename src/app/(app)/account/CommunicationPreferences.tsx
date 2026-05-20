@@ -1,10 +1,10 @@
 "use client";
 
-// Communication Preferences pane — lives under Account → tab.
+// Communication Preferences pane - lives under Account → tab.
 //
 // Marketing channels are individually opt-in / opt-out. System
 // (transactional) email is shown for transparency but is non-editable
-// — it's contractually required to operate the account.
+// - it's contractually required to operate the account.
 
 import { useEffect, useState } from "react";
 

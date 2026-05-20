@@ -20,7 +20,7 @@ export default async function RegisterPage({
         <div className="flex flex-col items-center mb-6">
           <Logo size="lg" showTagline />
           <div className="text-sm text-slate-400 mt-4 text-center">
-            {t("auth.createAccount")} — one workspace per business owner.
+            {t("auth.createAccount")} - one workspace per business owner.
           </div>
         </div>
         {errorMsg ? (

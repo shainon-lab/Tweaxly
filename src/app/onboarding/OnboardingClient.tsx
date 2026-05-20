@@ -121,7 +121,7 @@ export function OnboardingClient({
       if (!res.ok) { setError("Couldn't load the demo dataset. Try again."); setBusy(false); return; }
       window.location.assign("/dashboard");
     } catch {
-      setError("Network error — check your connection.");
+      setError("Network error - check your connection.");
       setBusy(false);
     }
   }
@@ -148,7 +148,7 @@ export function OnboardingClient({
       if (!res.ok) { setError("Couldn't save your answers. Try again."); setBusy(false); return; }
       window.location.assign("/manual-data?onboarding=1");
     } catch {
-      setError("Network error — check your connection.");
+      setError("Network error - check your connection.");
       setBusy(false);
     }
   }
@@ -244,7 +244,7 @@ export function OnboardingClient({
                       value={form.country}
                       onChange={(e) => setForm({ ...form, country: e.target.value })}
                     >
-                      <option value="">—</option>
+                      <option value="">-</option>
                       {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}
                     </select>
                   </Field>
@@ -321,7 +321,7 @@ export function OnboardingClient({
               icon={<Target size={20} strokeWidth={1.75} />}
               eyebrow={form.businessStage === "new" ? "04 · Business goals" : "05 · Business goals"}
               title="What would you like to improve most?"
-              subtitle="Pick anything that resonates — we'll personalize Quick Overview, Signals, and Consultation around these."
+              subtitle="Pick anything that resonates - we'll personalize Quick Overview, Signals, and Consultation around these."
             >
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 {GOALS.map((g) => (

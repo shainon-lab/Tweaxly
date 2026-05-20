@@ -6,7 +6,7 @@
 //
 // The drawer must render via a portal to document.body. SiteHeader
 // uses `backdrop-filter: blur(...)` which establishes a CSS
-// containing block — that traps `position: fixed` descendants
+// containing block - that traps `position: fixed` descendants
 // inside the header instead of the viewport, so a drawer rendered
 // inline would appear (or disappear) inside the tiny header bar.
 // Portal escapes the containing block entirely.
@@ -37,7 +37,7 @@ const PAGES: { href: string; label: string }[] = [
   { href: "/contact",      label: "Contact" },
 ];
 
-// Homepage anchor sections — useful entry points from the mobile
+// Homepage anchor sections - useful entry points from the mobile
 // menu when the user is on the homepage. On other pages these still
 // resolve back to "/" + anchor, so they always work.
 const SECTIONS: { href: string; label: string }[] = [
@@ -53,7 +53,7 @@ interface Props {
 
 export default function MobileNav({ active }: Props) {
   const [open, setOpen] = useState(false);
-  // `mounted` guards against SSR — createPortal needs the document
+  // `mounted` guards against SSR - createPortal needs the document
   // node which isn't available during the server render pass.
   const [mounted, setMounted] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
@@ -130,7 +130,7 @@ export default function MobileNav({ active }: Props) {
             style={{ zIndex: 9996 }}
             className="fixed top-0 right-0 bottom-0 w-[88%] max-w-sm bg-ink-900 border-l border-line flex flex-col shadow-2xl animate-mobile-drawer"
           >
-            {/* Header — close button */}
+            {/* Header - close button */}
             <div className="flex items-center justify-between p-5 border-b border-line">
               <div className="text-sm font-semibold tracking-wide text-slate-200">Menu</div>
               <button

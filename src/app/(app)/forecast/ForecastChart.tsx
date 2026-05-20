@@ -1,6 +1,6 @@
 "use client";
 
-// Forecast chart — baseline vs scenario over time. Lets the user toggle which
+// Forecast chart - baseline vs scenario over time. Lets the user toggle which
 // metric (revenue / expenses / net / cashflow) is plotted. Cashflow is the
 // cumulative scenario net.
 
@@ -32,7 +32,7 @@ const METRIC_LABEL: Record<Metric, string> = {
 };
 
 function fmtCompact(v: number): string {
-  if (!isFinite(v)) return "—";
+  if (!isFinite(v)) return "-";
   const sign = v < 0 ? "−" : "";
   const abs = Math.abs(v);
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`;
@@ -45,7 +45,7 @@ export default function ForecastChart({
   showScenario = true,
 }: {
   points: Point[];
-  // When false, render only the baseline line — used on Forecast →
+  // When false, render only the baseline line - used on Forecast →
   // Overview where the projection is intentionally passive and
   // shouldn't display a scenario comparison.
   showScenario?: boolean;

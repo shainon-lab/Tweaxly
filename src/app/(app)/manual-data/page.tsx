@@ -37,7 +37,7 @@ export default async function ManualDataPage({
       where: { businessId: business.id },
     }),
   ]);
-  // Income first, outcome second — applied everywhere category lists render.
+  // Income first, outcome second - applied everywhere category lists render.
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
 
   return (
@@ -47,7 +47,7 @@ export default async function ManualDataPage({
         subtitle={
           fromOnboarding
             ? "Upload your business activity to generate your first business snapshot."
-            : "Import data — add income or outcome entries manually, or bulk-upload a file."
+            : "Import data - add income or outcome entries manually, or bulk-upload a file."
         }
       />
       {fromOnboarding ? <OnboardingImportIntro /> : <BusinessSettingsTabs />}
@@ -57,7 +57,7 @@ export default async function ManualDataPage({
           const baseCurrency  = business.currency.toUpperCase();
           // For non-base entries, prefer the most-recent occurrence's
           // base-currency amount. If nothing has materialized yet
-          // (future start date), fall back to the entered amount —
+          // (future start date), fall back to the entered amount -
           // the conversion will appear once an occurrence lands.
           const latestBaseAmount = e.transactions[0]?.amount;
           const convertedAmount =

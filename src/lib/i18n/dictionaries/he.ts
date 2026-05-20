@@ -1,5 +1,5 @@
 // Hebrew (RTL). Keys missing here fall back to the English value at
-// runtime — adding new keys to en.ts doesn't break this locale.
+// runtime - adding new keys to en.ts doesn't break this locale.
 
 import type { Dictionary } from "../types";
 
@@ -100,7 +100,7 @@ export const he: Dictionary = {
   "account.preferences.title": "שפה ואזור",
   "account.preferences.intro": "בחר את השפה והגדרות האזור עבור התצוגה שלך ב־Tweaxly.",
   "account.preferences.language": "שפת הממשק",
-  "account.preferences.languageHelp": "חל על תפריטים, כפתורים, טפסים והודעות. מסכי המוצר העמוקים (תחזית, סיגנלים, ייעוץ) עדיין באנגלית — אנחנו מתרגמים בהדרגה.",
+  "account.preferences.languageHelp": "חל על תפריטים, כפתורים, טפסים והודעות. מסכי המוצר העמוקים (תחזית, סיגנלים, ייעוץ) עדיין באנגלית - אנחנו מתרגמים בהדרגה.",
   "account.preferences.dirAuto": "כיוון הפריסה משתנה אוטומטית לפי השפה (עברית מימין לשמאל).",
 
   // ─── settings ──────────────────────────────────────────────────
@@ -118,14 +118,14 @@ export const he: Dictionary = {
   "page.dashboard.title": "סקירה",
   "page.dashboard.subtitle": "השינויים החשובים ביותר בעסק שלך, במבט חטוף.",
   "page.signals.title": "סיגנלים",
-  "page.signals.subtitle": "מבט פיקודי על מה שמשתנה בעסק שלך — לחץ על כרטיס לקריאת הסיפור המלא.",
+  "page.signals.subtitle": "מבט פיקודי על מה שמשתנה בעסק שלך - לחץ על כרטיס לקריאת הסיפור המלא.",
   "page.advisory.title": "ייעוץ",
   "page.advisory.subtitle": "המלצות AI אסטרטגיות מבוססות על נתוני העסק שלך.",
   "page.forecast.title": "תחזית",
   "page.forecast.subtitle.overview": "תחזית AI לחודשים הקרובים על בסיס מה שהנתונים שלך עושים היום.",
   "page.forecast.subtitle.scenarios": "הוסף שכירות, העלאות שכר, חוזים ואירועים חד־פעמיים על גבי קו הבסיס.",
   "page.workforce.title": "תחזית",
-  "page.workforce.subtitle": "תכנון כוח אדם — עלויות צוות אמיתיות, יחס שכר להכנסות, ויכולת שכירה.",
+  "page.workforce.subtitle": "תכנון כוח אדם - עלויות צוות אמיתיות, יחס שכר להכנסות, ויכולת שכירה.",
   "page.employees.title": "תחזית",
   "page.employees.subtitle": "תכנון כוח אדם · עריכת רשימת עובדים.",
   "page.report.title": "דוח רווח והפסד",
@@ -196,7 +196,7 @@ export const he: Dictionary = {
 
   // ─── errors ────────────────────────────────────────────────────
   "errors.generic": "משהו השתבש. אנא נסה שוב.",
-  "errors.network": "שגיאת רשת — בדוק את החיבור.",
+  "errors.network": "שגיאת רשת - בדוק את החיבור.",
 };
 
 export default he;

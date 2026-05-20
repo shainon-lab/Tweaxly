@@ -6,13 +6,13 @@
 //
 // Conventions:
 //   - All sums are signed (income > 0, expense < 0) by default. Pass
-//     `absolute: true` to sum |amount| instead — useful for "total
+//     `absolute: true` to sum |amount| instead - useful for "total
 //     expenses" tiles where we want the magnitude.
 //   - originalAmount + originalCurrency are the source of truth for
 //     the original column. Pre-multi-currency rows where these are
 //     null fall back to amount + currency.
 //   - baseCurrency on the row wins over the business-level base
-//     because it captures what the base was AT IMPORT TIME — a future
+//     because it captures what the base was AT IMPORT TIME - a future
 //     base-currency change does not retroactively alter snapshots.
 
 import type { Prisma } from "@prisma/client";
@@ -98,7 +98,7 @@ export function breakdownFromTxns(
 }
 
 // Compute a breakdown directly from the database. The caller provides
-// a `where` clause (any Prisma Transaction filter — businessId,
+// a `where` clause (any Prisma Transaction filter - businessId,
 // accountingMonth, categoryId, transactionDate range, etc.) and we
 // groupBy originalCurrency / currency.
 //
@@ -112,7 +112,7 @@ export async function breakdownFromDb(
 ): Promise<BreakdownResult> {
   const base = businessBaseCurrency.toUpperCase();
 
-  // SUM grouped by COALESCE(originalCurrency, currency) — handles both
+  // SUM grouped by COALESCE(originalCurrency, currency) - handles both
   // new and legacy rows in one query.
   type Row = {
     currency:          string;

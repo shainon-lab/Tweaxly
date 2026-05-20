@@ -105,7 +105,7 @@ export default function IntegrationClient() {
   }
 
   function submitInterest() {
-    // For MVP we don't actually persist the email — we'd hook this up to a
+    // For MVP we don't actually persist the email - we'd hook this up to a
     // real waitlist/notification backend when the integration ships.
     setSubmitted(true);
   }
@@ -124,7 +124,7 @@ export default function IntegrationClient() {
           <span className="pill-accent shrink-0 mt-0.5">heads-up</span>
           <div className="text-sm text-slate-200 leading-relaxed">
             <span className="font-medium">Direct integrations are on the roadmap.</span>{" "}
-            We're wiring up OAuth and per-provider sync. In the meantime, every provider below has a clean export-to-CSV path —{" "}
+            We're wiring up OAuth and per-provider sync. In the meantime, every provider below has a clean export-to-CSV path -{" "}
             <Link href="/manual-data" className="text-accent hover:underline">
               import from the Manual Data tab
             </Link>{" "}
@@ -201,7 +201,7 @@ export default function IntegrationClient() {
 
             {submitted ? (
               <div className="card-tight border-good/40 bg-good/5 text-sm text-slate-200 mb-4">
-                Got it — we'll let you know when {active.name} integration ships.
+                Got it - we'll let you know when {active.name} integration ships.
               </div>
             ) : (
               <div className="mb-4">

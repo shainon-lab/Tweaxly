@@ -1,6 +1,6 @@
 "use server";
 
-// Server actions for the Forecast tab — CRUD on ForecastAssumption rows.
+// Server actions for the Forecast tab - CRUD on ForecastAssumption rows.
 // Used by the scenario builder and assumptions panel.
 
 import { revalidatePath } from "next/cache";

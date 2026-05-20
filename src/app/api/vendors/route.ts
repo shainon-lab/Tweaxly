@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(created);
 }
 
-// PATCH: update a vendor — change category or toggle isOneTime.
+// PATCH: update a vendor - change category or toggle isOneTime.
 // Body: { id, categoryId? | null, isOneTime? }
 export async function PATCH(req: NextRequest) {
   const { business } = await requireBusiness();

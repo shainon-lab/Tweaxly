@@ -1,6 +1,6 @@
 "use client";
 
-// Interactive employee table for the Workforce Overview tab. Read-only —
+// Interactive employee table for the Workforce Overview tab. Read-only -
 // editing still lives on /employees; this view is the financial breakdown
 // (gross + breakdown + total) with sort/filter/search.
 
@@ -162,19 +162,19 @@ export default function EmployeeTable({
               sorted.map((r) => (
                 <tr key={r.id}>
                   <td className="font-medium">{r.name}</td>
-                  <td className="text-slate-300">{r.role ?? "—"}</td>
-                  <td className="text-slate-300">{r.department ?? "—"}</td>
+                  <td className="text-slate-300">{r.role ?? "-"}</td>
+                  <td className="text-slate-300">{r.department ?? "-"}</td>
                   <td><span className="pill text-[10px] capitalize">{r.employmentType}</span></td>
                   <td><span className={`${STATUS_PILL[r.status] ?? "pill"} text-[10px] capitalize`}>{r.status}</span></td>
                   <td className="text-right">{fmtMoney(r.gross, currency)}</td>
-                  <td className="text-right text-slate-300">{r.employerTaxes ? fmtMoney(r.employerTaxes, currency) : "—"}</td>
-                  <td className="text-right text-slate-300">{r.pension ? fmtMoney(r.pension, currency) : "—"}</td>
-                  <td className="text-right text-slate-300">{r.benefits ? fmtMoney(r.benefits, currency) : "—"}</td>
-                  <td className="text-right text-slate-300">{r.additionalCosts ? fmtMoney(r.additionalCosts, currency) : "—"}</td>
+                  <td className="text-right text-slate-300">{r.employerTaxes ? fmtMoney(r.employerTaxes, currency) : "-"}</td>
+                  <td className="text-right text-slate-300">{r.pension ? fmtMoney(r.pension, currency) : "-"}</td>
+                  <td className="text-right text-slate-300">{r.benefits ? fmtMoney(r.benefits, currency) : "-"}</td>
+                  <td className="text-right text-slate-300">{r.additionalCosts ? fmtMoney(r.additionalCosts, currency) : "-"}</td>
                   <td className="text-right font-semibold">{fmtMoney(r.totalMonthly, currency)}</td>
                   <td className="text-right text-slate-400">{fmtMoney(r.annualizedTotal, currency)}</td>
                   <td className="text-slate-300">{r.startDate}</td>
-                  <td className="text-slate-300">{r.endDate ?? "—"}</td>
+                  <td className="text-slate-300">{r.endDate ?? "-"}</td>
                 </tr>
               ))
             )}

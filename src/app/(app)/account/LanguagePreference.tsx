@@ -1,7 +1,7 @@
 "use client";
 
 // Language & Region pane. Language picker drives UI translation +
-// document direction. Region is the user's country — auto-filled
+// document direction. Region is the user's country - auto-filled
 // from the IP geolocation header on first visit and overridable
 // from the dropdown afterward.
 
@@ -43,7 +43,7 @@ export function LanguagePreference({
     try {
       const body: { locale?: Locale; region?: string | null } = {};
       if (locale !== startLocale) body.locale = locale;
-      // Always send region — null clears it, an ISO code sets it.
+      // Always send region - null clears it, an ISO code sets it.
       body.region = region === "" ? null : region;
 
       const res = await fetch("/api/preferences", {
@@ -104,7 +104,7 @@ export function LanguagePreference({
             value={region}
             onChange={(e) => setRegion(e.target.value)}
           >
-            <option value="">— Not set —</option>
+            <option value="">- Not set -</option>
             {REGIONS.map((r) => (
               <option key={r.code} value={r.code}>{r.name}</option>
             ))}
@@ -116,7 +116,7 @@ export function LanguagePreference({
             </div>
           ) : (
             <div className="mt-2 text-xs text-slate-500 leading-snug">
-              We use this to set sensible defaults — currency suggestions, date format,
+              We use this to set sensible defaults - currency suggestions, date format,
               and tax assumptions. Changing it here doesn&apos;t affect existing data.
             </div>
           )}

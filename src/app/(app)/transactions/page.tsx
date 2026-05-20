@@ -50,7 +50,7 @@ export default async function TransactionsPage({
     <>
       <PageHeader
         title={t("page.transactions.title")}
-        subtitle={`Transactions — ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
+        subtitle={`Transactions - ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
       />
       <BusinessSettingsTabs />
       <TransactionsClient

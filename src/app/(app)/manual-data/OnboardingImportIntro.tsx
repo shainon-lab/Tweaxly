@@ -54,7 +54,7 @@ export default function OnboardingImportIntro() {
           </div>
           <div className="text-base font-medium text-slate-100">Bank & integrations</div>
           <div className="text-xs text-slate-400 mt-1">
-            Connect banks and financial systems automatically — no more CSV exports.
+            Connect banks and financial systems automatically - no more CSV exports.
           </div>
         </div>
       </div>

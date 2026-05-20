@@ -1,4 +1,4 @@
-// Dashboard Insights — a grid of visual cards (Trend, Cash flow, Top
+// Dashboard Insights - a grid of visual cards (Trend, Cash flow, Top
 // expense categories, Revenue channel, Spending shape, Swing, Top vendors)
 // all scoped to a single user-chosen period (month / quarter / year).
 //
@@ -45,7 +45,7 @@ export default async function DashboardInsights({
   let priorLabel: string;
 
   // Default to the current year (or the latest year that has data) when no
-  // explicit granularity is in the URL — Charts opens on a 12-month view
+  // explicit granularity is in the URL - Charts opens on a 12-month view
   // so the user immediately sees the full year's shape.
   const effectiveGran =
     granularity === "custom"    ? "custom"    :
@@ -95,7 +95,7 @@ export default async function DashboardInsights({
     pickerAnchor = toYM;
     priorLabel = "prior 6 months";
   } else if (effectiveGran === "all") {
-    // All time — earliest data month through latest. listAccountingMonths
+    // All time - earliest data month through latest. listAccountingMonths
     // returns desc, so [0] = latest, last = earliest.
     const months = await listAccountingMonths(businessId);
     const toYM = months[0] ?? todayYM();
@@ -137,7 +137,7 @@ export default async function DashboardInsights({
   // the Swing card).
   const prevFromYM = shiftYM(period.fromYM, -monthSpan);
   const prevToYM = shiftYM(period.toYM, -monthSpan);
-  // Trend / Cash flow series covers exactly the chosen window — same months
+  // Trend / Cash flow series covers exactly the chosen window - same months
   // every other card in the grid is built from.
   const trendMonths = monthSpan;
   const [aggregate, prevAggregate, trend, topVendorsRows] = await Promise.all([
@@ -164,14 +164,14 @@ export default async function DashboardInsights({
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 8);
 
-  // Revenue channel — income split by category.
+  // Revenue channel - income split by category.
   const revenueChannel = Object.entries(aggregate.byCategory)
     .filter(([, v]) => v > 0)
     .map(([name, v]) => ({ name, amount: v }))
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 8);
 
-  // Spending shape — outcome by accounting kind.
+  // Spending shape - outcome by accounting kind.
   const spendingShape = [
     { name: "Fixed",     amount: aggregate.fixed },
     { name: "Variable",  amount: aggregate.variable },
@@ -183,7 +183,7 @@ export default async function DashboardInsights({
     .filter((r) => r.amount > 0)
     .sort((a, b) => b.amount - a.amount);
 
-  // Swing — biggest mover across categories vs the prior period.
+  // Swing - biggest mover across categories vs the prior period.
   const swing = biggestSwing(aggregate.byCategory, prevAggregate.byCategory);
 
   // Top vendors for the period.
@@ -216,10 +216,10 @@ export default async function DashboardInsights({
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {/* Trend — full width */}
+          {/* Trend - full width */}
           <div className="card lg:col-span-2">
             <div className="flex items-center justify-between mb-2">
-              <div className="font-medium">Trend — {period.label}</div>
+              <div className="font-medium">Trend - {period.label}</div>
               <div className="text-xs text-slate-400">income · expenses · net</div>
             </div>
             <TrendChart data={trend} />
@@ -227,14 +227,14 @@ export default async function DashboardInsights({
 
           {/* Cash flow */}
           <div className="card">
-            <div className="font-medium mb-2">Cash flow — {period.label}</div>
+            <div className="font-medium mb-2">Cash flow - {period.label}</div>
             <CashflowChart data={trend.map((t) => ({ ym: t.ym, net: t.net }))} />
           </div>
 
           {/* Top expense categories */}
           <div className="card">
             <div className="font-medium mb-2">
-              Top expense categories — {period.label}
+              Top expense categories - {period.label}
             </div>
             {topCategories.length ? (
               <CategoryBars data={topCategories} />
@@ -267,7 +267,7 @@ export default async function DashboardInsights({
             )}
           </div>
 
-          {/* Swing — biggest category change vs prior period (full width
+          {/* Swing - biggest category change vs prior period (full width
               because of the trailing detail line) */}
           <div className="card lg:col-span-2">
             <div className="font-medium mb-2">Swing</div>
@@ -297,9 +297,9 @@ export default async function DashboardInsights({
             )}
           </div>
 
-          {/* Top vendors — full width */}
+          {/* Top vendors - full width */}
           <div className="card lg:col-span-2">
-            <div className="font-medium mb-2">Top vendors — {period.label}</div>
+            <div className="font-medium mb-2">Top vendors - {period.label}</div>
             {topVendors.length ? (
               <CategoryBars data={topVendors} />
             ) : (
@@ -325,7 +325,7 @@ function monthsBetween(fromYM: string, toYM: string): number {
   return Math.max(1, (ty - fy) * 12 + (tm - fm) + 1);
 }
 
-// Human-readable label for the window immediately before `period` — shown
+// Human-readable label for the window immediately before `period` - shown
 // as the "prev" bar label on the Swing card.
 function prevWindowLabel(
   period: { fromYM: string; toYM: string },

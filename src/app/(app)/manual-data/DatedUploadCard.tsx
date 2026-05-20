@@ -13,7 +13,7 @@
 //      render a preview table with per-row status (valid / warning /
 //      error) and summary cards.
 //   4. On commit, expense rows get a negative sign, and we POST to
-//      /api/upload/commit WITHOUT forceAccountingMonth — the existing
+//      /api/upload/commit WITHOUT forceAccountingMonth - the existing
 //      pipeline derives accountingMonth from each row's date column.
 
 import { useMemo, useState, useTransition } from "react";
@@ -43,7 +43,7 @@ type ValidatedRow = {
 
 // Map common header variations to the canonical Tweaxly columns. The
 // user might download our template (exact column names) or hand us a
-// bank export — we try a small set of synonyms so the second case
+// bank export - we try a small set of synonyms so the second case
 // works without forcing them to rename headers.
 const HEADER_ALIASES: Record<string, string[]> = {
   date:        ["date", "transaction date", "txn date", "posted date", "value date"],
@@ -90,7 +90,7 @@ function parseDateStr(raw: unknown): string | null {
   if (!s) return null;
   // Accept ISO YYYY-MM-DD directly.
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // SheetJS may emit Excel-serial strings or numbers for dates — we already
+  // SheetJS may emit Excel-serial strings or numbers for dates - we already
   // get formatted strings by default, but be defensive.
   // Try Date.parse for everything else (handles slashes, dots, etc.).
   s = s.replace(/\./g, "/");
@@ -131,7 +131,7 @@ function validateRow(
     .toUpperCase();
   const finalCurrency = currencyStr || defaultCurrency;
   if (!currencyStr) {
-    issues.push(`Currency missing — using ${defaultCurrency}`);
+    issues.push(`Currency missing - using ${defaultCurrency}`);
   }
 
   const category = String((cols.category ? raw[cols.category] : "") ?? "").trim();
@@ -280,7 +280,7 @@ export default function DatedUploadCard({ currency }: { currency: string }) {
             vendor: null,
           },
           signOverride: 1,
-          // No forceAccountingMonth — each row's date drives its month.
+          // No forceAccountingMonth - each row's date drives its month.
           saveTemplateName: null,
         }),
       });
@@ -310,7 +310,7 @@ export default function DatedUploadCard({ currency }: { currency: string }) {
       <div className="font-medium mb-1">Upload your business transactions</div>
       <div className="text-sm text-slate-400 mb-4 leading-relaxed">
         Download our CSV template, fill it in with your business activity, and upload it back.
-        Each row needs a date, a type (income or expense), an amount, and a currency — the rest is optional.
+        Each row needs a date, a type (income or expense), an amount, and a currency - the rest is optional.
         Your bank&apos;s export usually works too if it has these columns.
       </div>
 
@@ -435,22 +435,22 @@ export default function DatedUploadCard({ currency }: { currency: string }) {
                     <td>
                       <StatusPill row={r} />
                     </td>
-                    <td className="whitespace-nowrap">{r.date || "—"}</td>
+                    <td className="whitespace-nowrap">{r.date || "-"}</td>
                     <td>
                       {r.type ? (
                         <span className={r.type === "income" ? "pill-good text-[10px]" : "pill-bad text-[10px]"}>
                           {r.type}
                         </span>
-                      ) : <span className="text-slate-500">—</span>}
+                      ) : <span className="text-slate-500">-</span>}
                     </td>
                     <td className="text-right whitespace-nowrap">
-                      {r.amount > 0 ? fmtMoney(r.amount, r.currency || currency) : "—"}
+                      {r.amount > 0 ? fmtMoney(r.amount, r.currency || currency) : "-"}
                     </td>
-                    <td>{r.currency || "—"}</td>
-                    <td>{r.category || <span className="text-slate-500">—</span>}</td>
-                    <td className="text-slate-300">{r.description || <span className="text-slate-500">—</span>}</td>
+                    <td>{r.currency || "-"}</td>
+                    <td>{r.category || <span className="text-slate-500">-</span>}</td>
+                    <td className="text-slate-300">{r.description || <span className="text-slate-500">-</span>}</td>
                     <td className="text-slate-400 text-xs max-w-xs truncate" title={r.notes}>
-                      {r.notes || <span className="text-slate-600">—</span>}
+                      {r.notes || <span className="text-slate-600">-</span>}
                     </td>
                   </tr>
                 ))}
@@ -469,7 +469,7 @@ export default function DatedUploadCard({ currency }: { currency: string }) {
               {summary.error > 0
                 ? `Fix the ${summary.error} invalid row${summary.error === 1 ? "" : "s"} above before uploading.`
                 : summary.warning > 0
-                  ? `${summary.warning} row${summary.warning === 1 ? "" : "s"} have warnings — they'll still upload.`
+                  ? `${summary.warning} row${summary.warning === 1 ? "" : "s"} have warnings - they'll still upload.`
                   : "All rows look good."}
             </div>
             <button

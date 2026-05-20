@@ -11,7 +11,7 @@
 //   - If we're creating the Vendor row for the first time, set its categoryId
 //     to the *most-frequent* category for that vendor's transactions, so the
 //     user doesn't have to manually re-assign every existing vendor.
-//   - Existing Vendor rows are NEVER overwritten — the user's explicit
+//   - Existing Vendor rows are NEVER overwritten - the user's explicit
 //     assignment wins over any heuristic.
 
 import { prisma } from "./db";
@@ -39,7 +39,7 @@ export async function syncVendorsFromTransactions(businessId: string): Promise<{
   }
   if (votes.size === 0) return { created: 0 };
 
-  // Skip vendors that already have a row — never overwrite the user's choice.
+  // Skip vendors that already have a row - never overwrite the user's choice.
   const existing = await prisma.vendor.findMany({
     where: { businessId },
     select: { name: true },

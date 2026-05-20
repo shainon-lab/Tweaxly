@@ -141,7 +141,7 @@ export function MembersTable({
         </tbody>
       </table>
       <div className="px-4 py-2 text-[11px] text-slate-500 border-t border-line">
-        Invitation flow not yet implemented — new members today join via existing memberships only.
+        Invitation flow not yet implemented - new members today join via existing memberships only.
       </div>
     </div>
   );

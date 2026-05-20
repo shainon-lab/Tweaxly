@@ -1,6 +1,6 @@
 // Native HTML/CSS mockup of the product's Signal Deck. Mirrors the
-// real cards in tweaxly/business-signals — same dot · badge · title ·
-// metric · subtitle rhythm — so visitors see the actual UI vocabulary
+// real cards in tweaxly/business-signals - same dot · badge · title ·
+// metric · subtitle rhythm - so visitors see the actual UI vocabulary
 // instead of a static screenshot.
 
 type SignalTone = "critical" | "watch" | "good" | "info";
@@ -87,7 +87,7 @@ const FULL_SIGNALS: Signal[] = [
   { tone: "info",     badge: "FYI",      category: "Revenue",    title: "Net Margin",        metric: "23.4%",                        subtitle: "This month's profitability snapshot." },
 ];
 
-// Full product-accurate deck — used inside the Business Signals section.
+// Full product-accurate deck - used inside the Business Signals section.
 export function SignalDeckFull() {
   return (
     <div className="glass p-5 sm:p-6">
@@ -109,7 +109,7 @@ export function SignalDeckFull() {
   );
 }
 
-// Compact stylized deck for the hero — 4 cards in a tight grid with
+// Compact stylized deck for the hero - 4 cards in a tight grid with
 // floating cards drifting alongside it.
 export function SignalDeckHero() {
   const heroSignals: Signal[] = [FULL_SIGNALS[0], FULL_SIGNALS[1], FULL_SIGNALS[3], FULL_SIGNALS[4]];
@@ -141,7 +141,7 @@ export function SignalDeckHero() {
         </div>
       </div>
 
-      {/* Floating insight chips around the deck — subtle motion */}
+      {/* Floating insight chips around the deck - subtle motion */}
       <div className="hidden lg:block absolute -top-8 -left-12 anim-float-slow">
         <FloatChip tone="good" label="Trend detected" body="Marketing efficiency improving 3 months running." />
       </div>

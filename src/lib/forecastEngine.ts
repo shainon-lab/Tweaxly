@@ -1,8 +1,8 @@
 // Centralized Forecasting Engine.
 //
-// Every screen that displays a forecasted number — Forecast tab,
+// Every screen that displays a forecasted number - Forecast tab,
 // dashboard projection tile, signals quoting forward figures, AI
-// consultation context — MUST route through this engine. Do not
+// consultation context - MUST route through this engine. Do not
 // add ad-hoc projection math elsewhere.
 //
 // Design (per docs/forecast-engine.md):
@@ -10,7 +10,7 @@
 //   2. Resolve the baseline window (spec-defined options, no
 //      "Last Month", recommended logic, custom-range validator).
 //   3. Aggregate historical actuals month-by-month (financial-date
-//      filtered — uses Transaction.accountingMonth, never createdAt).
+//      filtered - uses Transaction.accountingMonth, never createdAt).
 //   4. Detect outliers, recurring patterns, light seasonality.
 //   5. Project forward; apply scenarios as a separate layer.
 //   6. Compute a confidence score from data-quality signals.
@@ -44,7 +44,7 @@ export interface BaselineOption {
   months: number;      // 0 = resolved at runtime (recommended/custom)
 }
 
-// "Last Month" is intentionally absent — one month is not enough
+// "Last Month" is intentionally absent - one month is not enough
 // data for a reliable forecast.
 export const BASELINE_OPTIONS: BaselineOption[] = [
   { id: "recommended",  label: "Recommended",     months: 0 },
@@ -106,7 +106,7 @@ export interface ForecastResult {
     fromYM: string;
     toYM: string;
     monthsResolved: number;   // calendar months in the window
-    monthsWithData: number;   // months that actually contain transactions — drives confidence
+    monthsWithData: number;   // months that actually contain transactions - drives confidence
     label: string;
   };
   forecastHorizon: { id: HorizonId; months: number };
@@ -287,7 +287,7 @@ export function resolveBaseline(
     // including it would distort the trend. We clamp the user's
     // selected end-date to that boundary BEFORE counting days, so
     // the "Selected range is N days" number reflects what actually
-    // feeds the baseline — not what the user thought they picked.
+    // feeds the baseline - not what the user thought they picked.
     const bRaw = clampToLastDayPrevMonth(bRawInput);
     const a = aRaw.slice(0, 7);
     let   b = bRaw.slice(0, 7);
@@ -296,7 +296,7 @@ export function resolveBaseline(
     if (selectedDays < 90) {
       return {
         error: "custom_range_too_short",
-        message: `Selected range is ${selectedDays} day${selectedDays === 1 ? "" : "s"} — forecasts require at least 90 days of historical data. Please select a longer period to create a reliable forecast.`,
+        message: `Selected range is ${selectedDays} day${selectedDays === 1 ? "" : "s"} - forecasts require at least 90 days of historical data. Please select a longer period to create a reliable forecast.`,
       };
     }
     return {
@@ -304,7 +304,7 @@ export function resolveBaseline(
       fromYM: a,
       toYM: b,
       monthsResolved: monthsBetween(a, b),
-      label: `Custom Range — ${aRaw} to ${bRaw}`,
+      label: `Custom Range - ${aRaw} to ${bRaw}`,
     };
   }
 
@@ -327,7 +327,7 @@ export function resolveBaseline(
 // ── Outlier / Recurring / Seasonality detection ──────────────────────
 
 // Simple z-score over monthly income / expense, flagging months that
-// sit > 2 stdev from the trailing mean. Pure statistics — no LLM.
+// sit > 2 stdev from the trailing mean. Pure statistics - no LLM.
 function detectOutliers(
   monthlyHistory: { ym: string; income: number; expenses: number }[],
 ): ForecastResult["outliersDetected"] {
@@ -345,7 +345,7 @@ function detectOutliers(
         out.push({
           ym: m.ym,
           metric: metric === "income" ? "income" : "expense",
-          reason: `${m.ym} ${metric} was ${z > 0 ? "+" : ""}${z.toFixed(1)} stdev from the period mean — treated as outlier.`,
+          reason: `${m.ym} ${metric} was ${z > 0 ? "+" : ""}${z.toFixed(1)} stdev from the period mean - treated as outlier.`,
         });
       }
     });
@@ -353,7 +353,7 @@ function detectOutliers(
   return out;
 }
 
-// Recurring pattern detection — two sources fused into a single list:
+// Recurring pattern detection - two sources fused into a single list:
 //
 //   1. EXPLICIT: every active ManualEntry tagged with a recurring
 //      frequency (monthly/quarterly/yearly).
@@ -363,7 +363,7 @@ function detectOutliers(
 //      recurring. Cadence (monthly / quarterly) is inferred from the
 //      median date gap between occurrences.
 //
-// Inferred recurring is conservative on purpose — we don't want to
+// Inferred recurring is conservative on purpose - we don't want to
 // promote a noisy vendor (e.g. coffee shop appearing weekly with
 // varying amounts) to a "recurring forecast" item. The 3-occurrence
 // minimum + amount-tolerance filter keeps the list tight.
@@ -491,7 +491,7 @@ async function detectRecurring(
   const explicitKeys = new Set(explicit.map((e) => e.description.toLowerCase().split(" (")[0]));
   const filteredInferred = inferred.filter((i) => !explicitKeys.has(i.description.toLowerCase().split(" (")[0]));
 
-  // Consolidated payroll line — single entry combining the active
+  // Consolidated payroll line - single entry combining the active
   // roster's fully-loaded cost AND any payroll-tagged manual entries
   // or detected payroll vendors not already on the roster. Prefer the
   // larger of (roster + manual) vs (inferred-from-transactions) so
@@ -525,7 +525,7 @@ async function computeConfidence(
   const warnings: string[] = [...dq.warnings];
 
   // Months-with-data is the primary determinant of forecast
-  // confidence — same rule across every baseline path (predefined,
+  // confidence - same rule across every baseline path (predefined,
   // YTD, last_year, custom). The data-quality components from
   // dataConfidence still contribute warnings, but the score itself
   // anchors on the band the user's selected baseline lands in:
@@ -543,17 +543,17 @@ async function computeConfidence(
 
   if (outlierCount > 0) {
     score -= 5 * Math.min(3, outlierCount);
-    warnings.push(`${outlierCount} historical month${outlierCount === 1 ? " was" : "s were"} flagged as outliers — confidence reduced.`);
+    warnings.push(`${outlierCount} historical month${outlierCount === 1 ? " was" : "s were"} flagged as outliers - confidence reduced.`);
   }
   if (scenarioCount > 3) {
     score -= 5;
-    warnings.push("More than 3 scenario assumptions stacked — projection complexity reduces confidence.");
+    warnings.push("More than 3 scenario assumptions stacked - projection complexity reduces confidence.");
   }
   score = Math.max(0, Math.min(100, Math.round(score)));
   // Display cap: forecasts are inherently uncertain, so we never
   // surface a perfect 100/100. Two rules per product intent:
-  //   • Continuous cap at 98 — any score above that displays as 98.
-  //   • Step-of-5 cap at 95 — when the raw score lands at exactly
+  //   • Continuous cap at 98 - any score above that displays as 98.
+  //   • Step-of-5 cap at 95 - when the raw score lands at exactly
   //     100, snap to 95 (the next multiple of 5 below) so the score
   //     stays consistent with bands that step in fives.
   if (score >= 100) score = 95;
@@ -644,7 +644,7 @@ export async function buildForecastEngine(
 
   // Build the monthly history block (signed by accounting month) so
   // we can run outlier detection without re-querying. We hit
-  // buildMonthSnapshot per month inside the resolved window — same
+  // buildMonthSnapshot per month inside the resolved window - same
   // path the Baseline uses internally.
   const { buildMonthSnapshot } = await import("./metrics");
   const monthlyHistory: { ym: string; income: number; expenses: number }[] = [];
@@ -661,7 +661,7 @@ export async function buildForecastEngine(
   // Outlier-aware trend re-fit: refit the linear-growth slope after
   // removing flagged months, so a single outlier month doesn't drive
   // the projection. We only OVERRIDE the legacy baseline's growth
-  // values when the difference is material — < 0.5% per month
+  // values when the difference is material - < 0.5% per month
   // difference isn't worth communicating.
   if (outliers.length > 0) {
     const flagged = new Set(outliers.map((o) => o.ym));
@@ -742,7 +742,7 @@ export async function buildForecastEngine(
   }
 
   // Confidence is anchored on months WITH actual data inside the
-  // selected baseline window — not the calendar span. A YTD baseline
+  // selected baseline window - not the calendar span. A YTD baseline
   // that resolves to 5 calendar months but only has 3 months of
   // uploaded transactions counts as 3 for confidence purposes.
   const monthsWithData = monthlyHistory.filter(
@@ -766,7 +766,7 @@ export async function buildForecastEngine(
 
   // Incomplete current month warning.
   if (resolved.toYM >= todayYM()) {
-    warnings.unshift("The current month is still in progress and may distort the forecast — the engine excluded it from the baseline anchor.");
+    warnings.unshift("The current month is still in progress and may distort the forecast - the engine excluded it from the baseline anchor.");
   }
 
   // Compose the explanation text.
@@ -777,14 +777,14 @@ export async function buildForecastEngine(
     `Revenue ${revTrend >= 0 ? "grew" : "declined"} by an average of ${(Math.abs(revTrend) * 100).toFixed(1)}% month-over-month, while expenses ${expTrend >= 0 ? "grew" : "declined"} by ${(Math.abs(expTrend) * 100).toFixed(1)}%.`,
     recurring.length > 0
       ? `${recurring.length} recurring item${recurring.length === 1 ? "" : "s"} (e.g. ${recurring.slice(0, 2).map((r) => r.description).join(", ")}) are projected forward.`
-      : "No explicit recurring entries are registered — forecast relies on the trailing average.",
+      : "No explicit recurring entries are registered - forecast relies on the trailing average.",
     seasonalityNote,
     outliers.length > 0
       ? `${outliers.length} historical month${outliers.length === 1 ? "" : "s"} were flagged as outliers and excluded from trend calculation.`
       : "No outlier months detected.",
     assumptions.length > 0
       ? `${assumptions.length} scenario assumption${assumptions.length === 1 ? "" : "s"} added on top of the baseline.`
-      : "No scenarios are applied — this is the baseline forecast.",
+      : "No scenarios are applied - this is the baseline forecast.",
     `Forecast confidence: ${confidence.toUpperCase()} (${score}/100), based on ${monthsWithData} month${monthsWithData === 1 ? "" : "s"} of validated data inside the selected window.`,
   ];
   const explanationText = explanationLines.join(" ");
@@ -835,7 +835,7 @@ function clamp(n: number, lo: number, hi: number): number {
 }
 
 // Local copy of the linear-fit growth helper used for outlier-aware
-// trend refit. Same formula as forecast.ts's `linearGrowth` —
+// trend refit. Same formula as forecast.ts's `linearGrowth` -
 // duplicated here so we don't expose internals.
 function linearGrowthLocal(values: number[]): number {
   const n = values.length;

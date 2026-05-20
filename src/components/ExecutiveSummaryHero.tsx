@@ -1,10 +1,10 @@
 // The "Summary" hero at the top of the Executive Summary dashboard.
 // Two columns: narrative on the left, "Business Bulletins" anchor list
-// on the right. The bulletins are an AI-curated digest — never more
-// than 5 — surfacing the most material business anchors so the user
+// on the right. The bulletins are an AI-curated digest - never more
+// than 5 - surfacing the most material business anchors so the user
 // can read the period in 3–5 seconds.
 //
-// Design rules — important:
+// Design rules - important:
 //   - Bulletins are NOT KPI cards. No heavy borders, no boxed widgets.
 //     The right column is a lightweight vertical list with subtle row
 //     dividers, premium and quiet.
@@ -25,7 +25,7 @@ const TONE_CLASS: Record<NonNullable<Bulletin["tone"]>, string> = {
 // Parse a narrative paragraph for **emphasis** markers and render the
 // emphasized fragments with subtle bold + slightly brighter text. Plain
 // text passes through unchanged. This is intentionally not a full
-// markdown renderer — we only want soft semantic emphasis inside the
+// markdown renderer - we only want soft semantic emphasis inside the
 // summary, nothing else.
 function renderNarrative(text: string): ReactNode[] {
   if (!text) return [];

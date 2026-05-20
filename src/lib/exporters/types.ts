@@ -17,7 +17,7 @@ export interface ExportColumn {
   key: string;        // matches the row object key
   label: string;      // header text
   kind: ColumnKind;
-  width?: number;     // approximate character width — XLSX uses it
+  width?: number;     // approximate character width - XLSX uses it
 }
 
 export type CellValue = string | number | null;
@@ -33,7 +33,7 @@ export interface ExportSection {
 }
 
 export interface ExportPayload {
-  // Filename prefix — gets "_YYYY-MM-DD.<ext>" appended automatically.
+  // Filename prefix - gets "_YYYY-MM-DD.<ext>" appended automatically.
   filename:  string;
 
   // Header block printed at the top of every export.

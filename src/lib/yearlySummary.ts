@@ -1,4 +1,4 @@
-// Yearly summary engine — used by the /insights/yearly tab.
+// Yearly summary engine - used by the /insights/yearly tab.
 //
 // Given a business and a calendar year, compute:
 //   • headline financial metrics (revenue, expenses, P&L, margin, ...)
@@ -110,7 +110,7 @@ async function buildYearMonths(
     const lastMonth = Number(months[months.length - 1].ym.split("-")[1]);
     const isPartial = firstMonth !== 1 || lastMonth !== 12;
     const partialNote = isPartial
-      ? `${year} data covers ${months.length} month${months.length === 1 ? "" : "s"} — from ${MONTH_NAMES[firstMonth - 1]} ${year} through ${MONTH_NAMES[lastMonth - 1]} ${year}. Yearly figures are calculated on those months only.`
+      ? `${year} data covers ${months.length} month${months.length === 1 ? "" : "s"} - from ${MONTH_NAMES[firstMonth - 1]} ${year} through ${MONTH_NAMES[lastMonth - 1]} ${year}. Yearly figures are calculated on those months only.`
       : null;
     coverage = { year, monthCount: months.length, firstMonth, lastMonth, isPartial, partialNote };
   }
@@ -195,7 +195,7 @@ export async function computeYearlyStats(
     }
   }
 
-  // Workforce — fetch the roster and compute month-by-month coverage
+  // Workforce - fetch the roster and compute month-by-month coverage
   const employees = await prisma.employee.findMany({ where: { businessId } });
   const rows: EmployeeRow[] = employees.map((e) => ({
     id: e.id, name: e.name, role: e.role,
@@ -318,7 +318,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: s.revenueYoYPct >= 0.15 ? 9 : s.revenueYoYPct <= -0.05 ? 9.5 : 7,
       text: `Revenue ${sign} ${fmtPct(Math.abs(s.revenueYoYPct))} versus ${yr - 1} (${fmtMoney(s.totalRevenue, ccy)} vs ${fmtMoney(s.prior!.revenue, ccy)}).`,
       tip: s.revenueYoYPct >= 0
-        ? "Make sure the customer mix that drove growth is durable — overconcentration in one channel or contract is the most common reason for a flat next year."
+        ? "Make sure the customer mix that drove growth is durable - overconcentration in one channel or contract is the most common reason for a flat next year."
         : "Diagnose the drop by channel: was it churn, lost deals, pricing, or seasonality? Targeted action depends on which.",
     });
   }
@@ -330,7 +330,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: s.expensesYoYPct >= 0.20 ? 9 : 7,
       text: `Expenses ${sign} ${fmtPct(Math.abs(s.expensesYoYPct))} versus ${yr - 1}.`,
       tip: s.expensesYoYPct > (s.revenueYoYPct ?? 0)
-        ? "Expense growth outpaced revenue growth — review which categories drove the gap and whether they unlock future revenue or just add overhead."
+        ? "Expense growth outpaced revenue growth - review which categories drove the gap and whether they unlock future revenue or just add overhead."
         : "Healthy: expense growth came in below revenue growth. Confirm the savings weren't from one-off cuts that have to be repeated.",
     });
   }
@@ -342,9 +342,9 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: pct < 0 ? 9.5 : pct < 0.05 ? 8 : 6,
       text: `Net margin landed at ${fmtPct(pct)}.`,
       tip: pct < 0
-        ? "Unprofitable year — model a 12-month path to break-even on the Forecast tab using cuts and revenue moves."
+        ? "Unprofitable year - model a 12-month path to break-even on the Forecast tab using cuts and revenue moves."
         : pct < 0.10
-          ? "Margin is thin — a single bad quarter could flip the year. Build a 3-month cash cushion before increasing fixed spend."
+          ? "Margin is thin - a single bad quarter could flip the year. Build a 3-month cash cushion before increasing fixed spend."
           : "Healthy margin gives you room to invest. Decide where the next dollar should go before the next budget cycle.",
     });
   }
@@ -355,7 +355,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: s.monthsInRed > s.coverage.monthCount / 2 ? 9 : s.monthsInRed > 0 ? 7 : 5,
       text: `${s.monthsInRed} of ${s.coverage.monthCount} month${s.coverage.monthCount === 1 ? "" : "s"} closed in the red.`,
       tip: s.monthsInRed === 0
-        ? "Every month positive — strong sign. Identify the structural reasons (mix of recurring revenue, expense discipline) and document them."
+        ? "Every month positive - strong sign. Identify the structural reasons (mix of recurring revenue, expense discipline) and document them."
         : "Pinpoint the loss months and check whether they were seasonal dips, one-time hits, or warning signs of an underlying pattern.",
     });
   }
@@ -367,8 +367,8 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: ratio > 2 ? 8 : 6,
       text: `Revenue peaked in ${ymToLabel(s.bestRevenueMonth.ym)} at ${fmtMoney(s.bestRevenueMonth.amount, ccy)} and bottomed in ${ymToLabel(s.worstRevenueMonth.ym)} at ${fmtMoney(s.worstRevenueMonth.amount, ccy)}.`,
       tip: ratio > 2
-        ? "Strong seasonality — make sure cash from the peak months is reserved to cover the troughs."
-        : "Revenue is relatively even — predictable cashflow is an asset; use it to negotiate longer terms with vendors.",
+        ? "Strong seasonality - make sure cash from the peak months is reserved to cover the troughs."
+        : "Revenue is relatively even - predictable cashflow is an asset; use it to negotiate longer terms with vendors.",
     });
   }
 
@@ -381,8 +381,8 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       tip: r > 0.5
         ? "Heavy payroll-to-revenue ratio leaves little room for overheads or downturns. Either grow revenue or rebalance the team."
         : r > 0.35
-          ? "Workable but watch the slope — if payroll keeps growing faster than revenue you'll be in the same conversation a year from now."
-          : "Comfortable ratio — you have room to make a strategic hire if there's a clear ROI case.",
+          ? "Workable but watch the slope - if payroll keeps growing faster than revenue you'll be in the same conversation a year from now."
+          : "Comfortable ratio - you have room to make a strategic hire if there's a clear ROI case.",
     });
   }
 
@@ -390,7 +390,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
   if (s.marketingPctRevenue != null && s.totalMarketing > 0) {
     out.push({
       importance: s.marketingPctRevenue > 0.20 ? 8 : 6,
-      text: `Marketing spend hit ${fmtMoney(s.totalMarketing, ccy)} — ${fmtPct(s.marketingPctRevenue)} of revenue.`,
+      text: `Marketing spend hit ${fmtMoney(s.totalMarketing, ccy)} - ${fmtPct(s.marketingPctRevenue)} of revenue.`,
       tip: s.marketingPctRevenue > 0.20
         ? "Above 20% of revenue is aggressive. Confirm payback period and CAC trend before committing the same intensity next year."
         : "Below the typical 15–20% band for growth-stage SMBs. If revenue growth is healthy, this is efficient marketing; if growth is flat, may signal under-investment.",
@@ -402,10 +402,10 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     const share = s.topCategoryByExpense.amount / s.totalExpenses;
     out.push({
       importance: share > 0.30 ? 8 : 6,
-      text: `${s.topCategoryByExpense.name} was the largest cost center — ${fmtMoney(s.topCategoryByExpense.amount, ccy)} (${fmtPct(share)} of total expenses).`,
+      text: `${s.topCategoryByExpense.name} was the largest cost center - ${fmtMoney(s.topCategoryByExpense.amount, ccy)} (${fmtPct(share)} of total expenses).`,
       tip: share > 0.30
         ? "Concentrated cost. A 10% efficiency gain here moves the P&L more than effort spent on smaller categories."
-        : "Worth a once-a-year review even if it's not concentrated — every line above 10% of expenses deserves a fresh look.",
+        : "Worth a once-a-year review even if it's not concentrated - every line above 10% of expenses deserves a fresh look.",
     });
   }
 
@@ -414,10 +414,10 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     const share = s.topVendorByExpense.amount / s.totalExpenses;
     out.push({
       importance: share > 0.15 ? 8 : 5,
-      text: `${s.topVendorByExpense.vendor} was your largest vendor — ${fmtMoney(s.topVendorByExpense.amount, ccy)} (${fmtPct(share)} of expenses).`,
+      text: `${s.topVendorByExpense.vendor} was your largest vendor - ${fmtMoney(s.topVendorByExpense.amount, ccy)} (${fmtPct(share)} of expenses).`,
       tip: share > 0.15
         ? "Concentrated dependency. Renegotiation, multi-vendor sourcing, or volume discount conversations are all on the table."
-        : "Diversified vendor mix — preserve it. Long-term single-vendor dependencies show up later as pricing pressure.",
+        : "Diversified vendor mix - preserve it. Long-term single-vendor dependencies show up later as pricing pressure.",
     });
   }
 
@@ -428,10 +428,10 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: 6,
       text: `Headcount moved from ${s.startHeadcount} to ${s.endHeadcount} (peaked at ${s.peakHeadcount}, averaged ${s.avgHeadcount.toFixed(1)}).`,
       tip: delta > 0
-        ? "Growing team — confirm each role has a clear contribution to revenue or a load you couldn't cover otherwise."
+        ? "Growing team - confirm each role has a clear contribution to revenue or a load you couldn't cover otherwise."
         : delta < 0
-          ? "Team shrank — review where work redistributed and whether anyone is at risk of burnout."
-          : "Stable headcount — predictable payroll planning. Consider whether new roles unlock revenue you're leaving on the table.",
+          ? "Team shrank - review where work redistributed and whether anyone is at risk of burnout."
+          : "Stable headcount - predictable payroll planning. Consider whether new roles unlock revenue you're leaving on the table.",
     });
   }
 
@@ -441,10 +441,10 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: s.terminations > 1 ? 7 : 5,
       text: `${s.newHires} hire${s.newHires === 1 ? "" : "s"} and ${s.terminations} departure${s.terminations === 1 ? "" : "s"} during ${yr}.`,
       tip: s.terminations > s.newHires
-        ? "Net negative — diagnose whether departures were planned (reorg) or attrition you didn't intend."
+        ? "Net negative - diagnose whether departures were planned (reorg) or attrition you didn't intend."
         : s.newHires > 3
-          ? "Aggressive hiring year. Plan the next year's payroll baseline carefully — the full annualized cost of these hires won't be visible until next year."
-          : "Measured talent activity — fine. Use the Workforce tab to model the impact of one more hire before committing.",
+          ? "Aggressive hiring year. Plan the next year's payroll baseline carefully - the full annualized cost of these hires won't be visible until next year."
+          : "Measured talent activity - fine. Use the Workforce tab to model the impact of one more hire before committing.",
     });
   }
 
@@ -453,7 +453,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     out.push({
       importance: 5,
       text: `${fmtMoney(s.totalOneTime, ccy)} of expenses (${fmtPct(s.oneTimeShareOfExpenses)}) were tagged one-time.`,
-      tip: "Strip these out when calculating run-rate. The recurring expense base — what repeats every month — is what matters for budgeting next year.",
+      tip: "Strip these out when calculating run-rate. The recurring expense base - what repeats every month - is what matters for budgeting next year.",
     });
   }
 
@@ -462,7 +462,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     out.push({
       importance: 5,
       text: `Average fully-loaded cost per employee: ${fmtMoney(s.avgCostPerEmployee, ccy)}/month.`,
-      tip: "Use this number as a quick sanity check when evaluating new hires — anyone significantly above it should have a clear revenue or productivity case attached.",
+      tip: "Use this number as a quick sanity check when evaluating new hires - anyone significantly above it should have a clear revenue or productivity case attached.",
     });
   }
 
@@ -473,8 +473,8 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: 4,
       text: `Fixed costs were ${fmtMoney(s.totalFixed, ccy)} versus ${fmtMoney(s.totalVariable, ccy)} variable (fixed share ${fmtPct(fixedShare)}).`,
       tip: fixedShare > 0.6
-        ? "High fixed-cost base — review which fixed lines could be renegotiated to a variable or usage-based deal."
-        : "Healthy balance — variable costs flex with revenue, giving you breathing room in slow periods.",
+        ? "High fixed-cost base - review which fixed lines could be renegotiated to a variable or usage-based deal."
+        : "Healthy balance - variable costs flex with revenue, giving you breathing room in slow periods.",
     });
   }
 
@@ -487,10 +487,10 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
         importance: 6,
         text: `Marketing efficiency proxy: every ${fmtMoney(1, ccy)} of marketing produced ${fmtMoney(efficiency, ccy)} of incremental revenue versus ${yr - 1}.`,
         tip: efficiency >= 2
-          ? "Strong efficiency — keep funding what's working and consider raising the budget."
+          ? "Strong efficiency - keep funding what's working and consider raising the budget."
           : efficiency >= 0.5
-            ? "OK efficiency — there's likely a better-converting channel mix worth testing."
-            : "Weak efficiency — review which campaigns / channels drove the spend and whether any can be cut cleanly.",
+            ? "OK efficiency - there's likely a better-converting channel mix worth testing."
+            : "Weak efficiency - review which campaigns / channels drove the spend and whether any can be cut cleanly.",
       });
     }
   }
@@ -510,8 +510,8 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: 3,
       text: `Worked with ${s.uniqueVendorCount} distinct vendor${s.uniqueVendorCount === 1 ? "" : "s"} over the year.`,
       tip: s.uniqueVendorCount > 30
-        ? "Long tail of vendors — consolidating the smallest 20 could save more than the spend justifies in admin overhead."
-        : "Compact vendor list — easier to negotiate but watch concentration risk on the top few.",
+        ? "Long tail of vendors - consolidating the smallest 20 could save more than the spend justifies in admin overhead."
+        : "Compact vendor list - easier to negotiate but watch concentration risk on the top few.",
     });
   }
 
@@ -521,21 +521,21 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     out.push({
       importance: 5,
       text: `Revenue per employee landed at ${fmtMoney(revPerEmployee, ccy)} (averaged over the year).`,
-      tip: "Compare against last year — if this number is rising, you're getting more leverage out of each hire; if it's falling, the team grew faster than revenue.",
+      tip: "Compare against last year - if this number is rising, you're getting more leverage out of each hire; if it's falling, the team grew faster than revenue.",
     });
   }
 
   // 20. Run-rate vs actual
   if (s.coverage.monthCount >= 6) {
     const last3 = (s.coverage.monthCount >= 3)
-      ? null  // computed below from raw monthly series — skipped for simplicity
+      ? null  // computed below from raw monthly series - skipped for simplicity
       : null;
     void last3;
     const recurringRunRate = (s.totalExpenses - s.totalOneTime) / Math.max(s.coverage.monthCount, 1) * 12;
     out.push({
       importance: 4,
       text: `Recurring expense run-rate (one-times stripped): ~${fmtMoney(recurringRunRate, ccy)}/year.`,
-      tip: "Use this as the floor in your next-year budget — anything below this means cuts; anything above means real growth, not just one-offs returning.",
+      tip: "Use this as the floor in your next-year budget - anything below this means cuts; anything above means real growth, not just one-offs returning.",
     });
   }
 
@@ -559,9 +559,9 @@ export async function listCompletedYearsWithData(
   return Array.from(years).sort((a, b) => b - a);
 }
 
-// Convenience for the page — render a stat-box row.
+// Convenience for the page - render a stat-box row.
 export function statBoxes(s: YearlyStats, ccy: string): { label: string; value: string; hint?: string; tone?: "good" | "warn" | "bad" }[] {
-  function pct(v: number | null) { return v == null ? "—" : fmtPct(v); }
+  function pct(v: number | null) { return v == null ? "-" : fmtPct(v); }
   function money(v: number) { return fmtMoney(v, ccy); }
   function tone(v: number | null, mode: "higher" | "lower" = "higher"): "good" | "warn" | "bad" {
     if (v == null) return "good";
@@ -577,18 +577,18 @@ export function statBoxes(s: YearlyStats, ccy: string): { label: string; value: 
     { label: "Avg monthly revenue", value: money(s.avgMonthlyRevenue) },
     { label: "Avg monthly expenses",value: money(s.avgMonthlyExpenses) },
     { label: "Avg monthly net",     value: money(s.avgMonthlyNet),     tone: tone(s.avgMonthlyNet) },
-    { label: "Best revenue month",  value: s.bestRevenueMonth ? money(s.bestRevenueMonth.amount) : "—",  hint: s.bestRevenueMonth ? ymToLabel(s.bestRevenueMonth.ym) : undefined },
-    { label: "Worst revenue month", value: s.worstRevenueMonth ? money(s.worstRevenueMonth.amount) : "—", hint: s.worstRevenueMonth ? ymToLabel(s.worstRevenueMonth.ym) : undefined },
+    { label: "Best revenue month",  value: s.bestRevenueMonth ? money(s.bestRevenueMonth.amount) : "-",  hint: s.bestRevenueMonth ? ymToLabel(s.bestRevenueMonth.ym) : undefined },
+    { label: "Worst revenue month", value: s.worstRevenueMonth ? money(s.worstRevenueMonth.amount) : "-", hint: s.worstRevenueMonth ? ymToLabel(s.worstRevenueMonth.ym) : undefined },
     { label: "Months in the red",   value: `${s.monthsInRed} / ${s.coverage.monthCount}`, tone: s.monthsInRed > s.coverage.monthCount / 2 ? "bad" : s.monthsInRed > 0 ? "warn" : "good" },
-    { label: `Revenue vs ${s.year - 1}`,  value: s.revenueYoYPct == null ? "—" : (s.revenueYoYPct >= 0 ? "+" : "") + fmtPct(s.revenueYoYPct), tone: tone(s.revenueYoYPct) },
-    { label: `Expenses vs ${s.year - 1}`, value: s.expensesYoYPct == null ? "—" : (s.expensesYoYPct >= 0 ? "+" : "") + fmtPct(s.expensesYoYPct), tone: tone(s.expensesYoYPct, "lower") },
-    { label: `Net vs ${s.year - 1}`,      value: s.netYoYPct == null ? "—" : (s.netYoYPct >= 0 ? "+" : "") + fmtPct(s.netYoYPct), tone: tone(s.netYoYPct) },
+    { label: `Revenue vs ${s.year - 1}`,  value: s.revenueYoYPct == null ? "-" : (s.revenueYoYPct >= 0 ? "+" : "") + fmtPct(s.revenueYoYPct), tone: tone(s.revenueYoYPct) },
+    { label: `Expenses vs ${s.year - 1}`, value: s.expensesYoYPct == null ? "-" : (s.expensesYoYPct >= 0 ? "+" : "") + fmtPct(s.expensesYoYPct), tone: tone(s.expensesYoYPct, "lower") },
+    { label: `Net vs ${s.year - 1}`,      value: s.netYoYPct == null ? "-" : (s.netYoYPct >= 0 ? "+" : "") + fmtPct(s.netYoYPct), tone: tone(s.netYoYPct) },
     { label: "Avg headcount",       value: s.avgHeadcount.toFixed(1),  hint: `start ${s.startHeadcount} → end ${s.endHeadcount}` },
     { label: "Hires / departures",  value: `${s.newHires} / ${s.terminations}` },
     { label: "Total payroll",       value: money(s.totalPayroll),      hint: pct(s.payrollPctRevenue) + " of revenue" },
     { label: "Total marketing",     value: money(s.totalMarketing),    hint: pct(s.marketingPctRevenue) + " of revenue" },
     { label: "One-time expenses",   value: money(s.totalOneTime),      hint: pct(s.oneTimeShareOfExpenses) + " of expenses" },
-    { label: "Top expense category",value: s.topCategoryByExpense ? money(s.topCategoryByExpense.amount) : "—", hint: s.topCategoryByExpense?.name },
-    { label: "Top vendor",          value: s.topVendorByExpense ? money(s.topVendorByExpense.amount) : "—", hint: s.topVendorByExpense?.vendor },
+    { label: "Top expense category",value: s.topCategoryByExpense ? money(s.topCategoryByExpense.amount) : "-", hint: s.topCategoryByExpense?.name },
+    { label: "Top vendor",          value: s.topVendorByExpense ? money(s.topVendorByExpense.amount) : "-", hint: s.topVendorByExpense?.vendor },
   ];
 }

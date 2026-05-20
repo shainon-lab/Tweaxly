@@ -35,7 +35,7 @@ const CATEGORIES: CategoryMeta[] = [
     title: "Analytics",
     summary: "Helps us understand how the platform is used so we can improve it.",
     whatWeCollect: "Aggregated page views, click events, performance metrics, session duration, anonymized usage patterns.",
-    whyWeCollect: "To identify slow pages, broken flows, and which features get used — so we can fix problems and prioritize improvements.",
+    whyWeCollect: "To identify slow pages, broken flows, and which features get used - so we can fix problems and prioritize improvements.",
     examples: ["Google Analytics (GA4)", "Performance monitoring", "Heatmaps", "Session analytics"],
     impactIfOff: "We won't be able to measure how well the site performs for you, but no feature is affected.",
   },
@@ -89,7 +89,7 @@ export default function PreferencesModal() {
     });
   }, [isPrefsOpen, state]);
 
-  // Focus management — trap focus inside the dialog while open.
+  // Focus management - trap focus inside the dialog while open.
   useEffect(() => {
     if (!isPrefsOpen) return;
     previouslyFocused.current = document.activeElement as HTMLElement;

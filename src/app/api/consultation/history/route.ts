@@ -1,4 +1,4 @@
-// Delete a single consultation history entry — defined as a user
+// Delete a single consultation history entry - defined as a user
 // message plus its immediately-following assistant message in the
 // same thread. Identified by the user message id, since that's what
 // the history list uses for selection.

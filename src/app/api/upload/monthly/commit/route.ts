@@ -108,7 +108,7 @@ export async function POST(req: NextRequest) {
 
     // Pull the actual category record so we can use its `kind` to decide the
     // sign convention. The category drives whether this is income or expense
-    // — NOT the user-uploaded sign. This matters when the spreadsheet has
+    // - NOT the user-uploaded sign. This matters when the spreadsheet has
     // all-positive numbers (e.g. user lists "Marketing 2400" without a minus).
     const ensuredIds = new Set<string>();
     for (const item of sheet.items) {

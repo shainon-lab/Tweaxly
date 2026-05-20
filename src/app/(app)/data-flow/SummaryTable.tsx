@@ -56,7 +56,7 @@ function fmtMoney(v: number, ccy: string) {
 }
 
 function fmtPct(v: number) {
-  if (!isFinite(v)) return "—";
+  if (!isFinite(v)) return "-";
   const sign = v > 0 ? "+" : "";
   return `${sign}${(v * 100).toFixed(1)}%`;
 }
@@ -126,7 +126,7 @@ export default function SummaryTable(props: SummaryProps) {
               <span className="font-medium">
                 The system didn't recognize any revenue in this view.
               </span>{" "}
-              That usually means a category that should be revenue (Sales, Income, Service Fee, …) was classified as outcome. Click <span className="font-medium">"→ Income"</span> on the right side of any row below to flip its type — existing transactions will be re-signed automatically.
+              That usually means a category that should be revenue (Sales, Income, Service Fee, …) was classified as outcome. Click <span className="font-medium">"→ Income"</span> on the right side of any row below to flip its type - existing transactions will be re-signed automatically.
             </div>
           </div>
         </div>
@@ -144,7 +144,7 @@ export default function SummaryTable(props: SummaryProps) {
             </tr>
           </thead>
           <tbody>
-            {/* One row per revenue category — same structure as outcomes */}
+            {/* One row per revenue category - same structure as outcomes */}
             {revenues.map((r) => {
               return (
                 <tr key={r.categoryId} className="bg-good/5">
@@ -166,7 +166,7 @@ export default function SummaryTable(props: SummaryProps) {
                       ) : <>+{fmtMoney(r.total, ccy)}</>;
                     })()}
                   </td>
-                  <td className="text-right text-slate-500">—</td>
+                  <td className="text-right text-slate-500">-</td>
                   <td className="text-right">
                     <button
                       className="btn-ghost py-1 text-xs"
@@ -180,7 +180,7 @@ export default function SummaryTable(props: SummaryProps) {
                 </tr>
               );
             })}
-            {/* Total revenue subtotal — shown when there are 2+ revenue categories */}
+            {/* Total revenue subtotal - shown when there are 2+ revenue categories */}
             {revenues.length > 1 ? (
               <tr className="bg-good/10 border-t-2 border-good/30">
                 <td colSpan={2} className="font-bold uppercase tracking-wide text-xs text-good">
@@ -195,7 +195,7 @@ export default function SummaryTable(props: SummaryProps) {
                     conversionMethod={revenueFx.conversionMethod}
                   />
                 </td>
-                <td className="text-right text-slate-500">—</td>
+                <td className="text-right text-slate-500">-</td>
                 <td></td>
               </tr>
             ) : null}
@@ -225,7 +225,7 @@ export default function SummaryTable(props: SummaryProps) {
                     })()}
                   </td>
                   <td className="text-right text-slate-300">
-                    {pct == null ? "—" : `${(pct * 100).toFixed(1)}%`}
+                    {pct == null ? "-" : `${(pct * 100).toFixed(1)}%`}
                   </td>
                   <td className="text-right">
                     <button
@@ -254,7 +254,7 @@ export default function SummaryTable(props: SummaryProps) {
                 />
               </td>
               <td className="text-right font-semibold text-slate-200">
-                {totalOutcome > 0 ? "100.0%" : "—"}
+                {totalOutcome > 0 ? "100.0%" : "-"}
               </td>
               <td></td>
             </tr>
@@ -277,7 +277,7 @@ export default function SummaryTable(props: SummaryProps) {
                   signed
                 />
               </td>
-              <td className="text-right text-slate-500">—</td>
+              <td className="text-right text-slate-500">-</td>
               <td></td>
             </tr>
           </tbody>
@@ -285,7 +285,7 @@ export default function SummaryTable(props: SummaryProps) {
       </div>
 
       <div className="text-xs text-slate-500 mt-3">
-        Revenue is treated as income; every non-revenue category is outcome. The <span className="text-slate-300">% of total outcome</span> column shows each outcome category&apos;s share of total spend — the column sums to 100% across outcome rows. Click <span className="text-slate-300">&quot;→ Income&quot;</span> on any outcome row to reclassify it — existing transactions will be re-signed.
+        Revenue is treated as income; every non-revenue category is outcome. The <span className="text-slate-300">% of total outcome</span> column shows each outcome category&apos;s share of total spend - the column sums to 100% across outcome rows. Click <span className="text-slate-300">&quot;→ Income&quot;</span> on any outcome row to reclassify it - existing transactions will be re-signed.
       </div>
     </>
   );

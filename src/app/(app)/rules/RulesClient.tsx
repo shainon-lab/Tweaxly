@@ -125,7 +125,7 @@ export default function RulesClient({
           </div>
         </div>
         {rules.length === 0 ? (
-          <div className="text-sm text-slate-400 py-6 text-center">No rules yet — bulk-categorizing on the Transactions page is also fine.</div>
+          <div className="text-sm text-slate-400 py-6 text-center">No rules yet - bulk-categorizing on the Transactions page is also fine.</div>
         ) : (
           <table className="table-base">
             <thead>
@@ -138,7 +138,7 @@ export default function RulesClient({
                   <td>{r.matchField}</td>
                   <td>{r.matchType}</td>
                   <td className="font-mono text-xs">{r.pattern}</td>
-                  <td>{categories.find((c) => c.id === r.categoryId)?.name ?? "—"}</td>
+                  <td>{categories.find((c) => c.id === r.categoryId)?.name ?? "-"}</td>
                   <td className="space-x-1">
                     {r.setRecurring ? <span className="pill-accent">recurring</span> : null}
                     {r.setOneTime ? <span className="pill-warn">one-time</span> : null}

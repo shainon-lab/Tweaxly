@@ -2,7 +2,7 @@
 //
 // Cross-tenant search for the admin command bar. Returns grouped
 // results: businesses, users, consultations. (Invoice/Order/Payment
-// types are listed in the spec but no underlying tables exist yet —
+// types are listed in the spec but no underlying tables exist yet -
 // they'll plug in here once Stripe is wired.)
 //
 // Limit: 5 per group. The bar is for "find then jump", not for

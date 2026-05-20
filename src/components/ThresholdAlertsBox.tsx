@@ -28,7 +28,7 @@ const LEVEL_PILL: Record<TriggeredAlert["level"], string> = {
 };
 
 function relTime(d: Date | string | null): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const date = typeof d === "string" ? new Date(d) : d;
   const diffMs = Date.now() - date.getTime();
   const sec = Math.floor(diffMs / 1000);
@@ -71,7 +71,7 @@ export default function ThresholdAlertsBox({
   const [pending, startTransition] = useTransition();
   const [refreshing, setRefreshing] = useState(false);
   const [busyId, setBusyId] = useState<string | null>(null);
-  // "Monitor Events" toggle — when open, the full notification-rule
+  // "Monitor Events" toggle - when open, the full notification-rule
   // manager renders inline below the alerts card. Replaces the previous
   // "Manage notifications" Link to /notifications.
   const [eventsOpen, setEventsOpen] = useState(false);
@@ -132,7 +132,7 @@ export default function ThresholdAlertsBox({
             {a.headline}
           </div>
           <div className="text-xs text-slate-400 mt-0.5">{a.detail}</div>
-          {/* New rows: just the appearance date. Previous rows: both —
+          {/* New rows: just the appearance date. Previous rows: both -
               when it appeared and when it was marked read, side by side. */}
           {opts.showMarkRead ? (
             a.firstFiredAt ? (
@@ -277,7 +277,7 @@ export default function ThresholdAlertsBox({
             <>
               <div className="text-sm font-medium text-slate-200 mb-1">All clear</div>
               <div className="text-xs text-slate-400 max-w-xs">
-                You have {enabledRules} active notification{enabledRules === 1 ? "" : "s"} — none have crossed their threshold yet.{" "}
+                You have {enabledRules} active notification{enabledRules === 1 ? "" : "s"} - none have crossed their threshold yet.{" "}
                 <button
                   type="button"
                   className="text-accent hover:underline"
@@ -292,7 +292,7 @@ export default function ThresholdAlertsBox({
       )}
     </div>
 
-    {/* Monitor Events — the notification-rule manager. Toggled inline
+    {/* Monitor Events - the notification-rule manager. Toggled inline
         below the alerts card so the user can add/edit/disable rules
         without leaving the Monitor sub-tab. */}
     {eventsOpen ? (

@@ -18,7 +18,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const { user, business, isImpersonating, impersonationAllowWrites } = await requireBusiness();
   const alerts = await getSidebarAlerts(business.id);
   // Workspaces the user can switch into. Excludes disabled memberships.
-  // Skipped while impersonating — the switcher is for the actual user's
+  // Skipped while impersonating - the switcher is for the actual user's
   // workspaces, not the customer's.
   const memberships = isImpersonating
     ? []
@@ -40,9 +40,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     }));
   return (
     // Lock the outer container to the viewport height and make only the main
-    // area scroll — the sidebar stays put no matter how long the page is.
+    // area scroll - the sidebar stays put no matter how long the page is.
     <div className="h-screen flex flex-col overflow-hidden">
-      {/* Persistent impersonation banner — shown only when a super_admin
+      {/* Persistent impersonation banner - shown only when a super_admin
           is viewing this account as a customer. Sits above the layout so
           it's visible on every page. */}
       {isImpersonating ? (

@@ -60,7 +60,7 @@ export function writeConsent(state: ConsentState): void {
     `Path=/`,
     `Max-Age=${COOKIE_MAX_AGE}`,
     `SameSite=Lax`,
-    // Secure can't be set on http://localhost — only add it elsewhere.
+    // Secure can't be set on http://localhost - only add it elsewhere.
     typeof window !== "undefined" && window.location.protocol === "https:" ? "Secure" : "",
     cookieDomain(),
   ].filter(Boolean);

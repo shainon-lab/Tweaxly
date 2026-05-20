@@ -15,7 +15,7 @@
 //   - mark this token usedAt = now()
 //   - invalidate any OTHER outstanding tokens for the same user (single-
 //     use already, but a second active token would let an attacker who
-//     just compromised the first one try again — wipe them)
+//     just compromised the first one try again - wipe them)
 //   - destroy any active session in the cookie (don't auto-login;
 //     spec calls for "redirect the user to login" with success msg)
 
@@ -38,7 +38,7 @@ function back(req: NextRequest, token: string, err: string) {
 }
 
 export async function POST(req: NextRequest) {
-  // Rate-limit redemption attempts per IP — slows brute force on a
+  // Rate-limit redemption attempts per IP - slows brute force on a
   // leaked token guess. Liberal: 10 per 15 min.
   const ip = ipFromRequest(req);
   const limited = checkRateLimit({

@@ -270,7 +270,7 @@ export default function TransactionsClient({
                       {t.isDuplicateCandidate ? (
                         <span
                           className="inline-flex items-center justify-center w-5 h-5 mt-0.5 shrink-0 rounded-full bg-bad text-white text-[11px] font-bold leading-none"
-                          title="Possible duplicate — review the matching transaction; ignore one of them or dismiss the alert."
+                          title="Possible duplicate - review the matching transaction; ignore one of them or dismiss the alert."
                           aria-label="Possible duplicate"
                         >
                           !
@@ -278,7 +278,7 @@ export default function TransactionsClient({
                       ) : null}
                       <div className="min-w-0">
                         <div className={`truncate ${ignored ? "line-through text-slate-500" : "text-slate-100"}`} title={t.description}>
-                          {t.description || "—"}
+                          {t.description || "-"}
                         </div>
                         {t.vendor ? <div className={`text-xs truncate ${ignored ? "text-slate-600" : "text-slate-400"}`}>{t.vendor}</div> : null}
                         {t.notes ? (
@@ -379,12 +379,12 @@ export default function TransactionsClient({
             </div>
             <div className="text-sm text-slate-400 mb-3">
               {ignoreTarget.kind === "single"
-                ? "This transaction will be grayed out and excluded from your dashboard, forecast, insights, and consultation. Add a short reason — it'll show on hover."
+                ? "This transaction will be grayed out and excluded from your dashboard, forecast, insights, and consultation. Add a short reason - it'll show on hover."
                 : "These will be excluded from all P&L calculations. Add a single reason that applies to all of them."}
             </div>
             {ignoreTarget.kind === "single" ? (
               <div className="text-xs text-slate-500 mb-3 border-l-2 border-line pl-3">
-                <div className="text-slate-300 truncate">{ignoreTarget.txn.description || "—"}</div>
+                <div className="text-slate-300 truncate">{ignoreTarget.txn.description || "-"}</div>
                 <div>{ignoreTarget.txn.transactionDate.slice(0, 10)} · {ignoreTarget.txn.source} · {ignoreTarget.txn.amount >= 0 ? "+" : "−"}{fmt.format(Math.abs(ignoreTarget.txn.amount))}</div>
               </div>
             ) : null}
@@ -394,7 +394,7 @@ export default function TransactionsClient({
               rows={3}
               value={ignoreNote}
               onChange={(e) => setIgnoreNote(e.target.value)}
-              placeholder='e.g. "Personal — bought a TV for home" or "Birthday gift, not business income"'
+              placeholder='e.g. "Personal - bought a TV for home" or "Birthday gift, not business income"'
               autoFocus
             />
             <div className="flex gap-2 justify-end mt-4">

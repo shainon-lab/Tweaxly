@@ -23,7 +23,7 @@ export default function AdminSupportPage() {
         <p className="text-sm text-slate-400 max-w-2xl">
           Tickets, conversations, and customer feedback will live here once a support
           tool is wired up. Internal admin notes on individual accounts (with tags like
-          VIP / Onboarding / Churn Risk) already work today — open any account&apos;s
+          VIP / Onboarding / Churn Risk) already work today - open any account&apos;s
           Customer 360 → Internal notes section.
         </p>
       </div>

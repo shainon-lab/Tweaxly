@@ -1,4 +1,4 @@
-// CSV export — lightweight, raw data only, UTF-8 with BOM so Excel
+// CSV export - lightweight, raw data only, UTF-8 with BOM so Excel
 // opens it without prompting for encoding.
 
 import type { ExportPayload, CellValue } from "./types";
@@ -33,7 +33,7 @@ function formatCell(value: CellValue, kind: string): string {
 export function buildCsv(payload: ExportPayload): string {
   const lines: string[] = [];
 
-  // Header block — lightweight prelude lines starting with #.
+  // Header block - lightweight prelude lines starting with #.
   lines.push(`# ${payload.title}`);
   if (payload.subtitle) lines.push(`# ${payload.subtitle}`);
   if (payload.businessName) lines.push(`# Business: ${payload.businessName}`);

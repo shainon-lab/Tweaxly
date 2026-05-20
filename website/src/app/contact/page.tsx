@@ -5,7 +5,7 @@ import ContactForm from "./ContactForm";
 const DESCRIPTION = "Get in touch with Tweaxly. Ask about AI financial intelligence, forecasting, business signals, the AI advisor, or early access for your business.";
 
 export const metadata: Metadata = {
-  title: { absolute: "Contact — AI Financial Intelligence | Tweaxly" },
+  title: { absolute: "Contact - AI Financial Intelligence | Tweaxly" },
   description: DESCRIPTION,
   keywords: [
     "contact Tweaxly",
@@ -15,14 +15,14 @@ export const metadata: Metadata = {
   ],
   alternates: { canonical: "/contact" },
   openGraph: {
-    title: "Contact — AI Financial Intelligence | Tweaxly",
+    title: "Contact - AI Financial Intelligence | Tweaxly",
     description: DESCRIPTION,
     url: "/contact",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Contact — AI Financial Intelligence | Tweaxly",
+    title: "Contact - AI Financial Intelligence | Tweaxly",
     description: DESCRIPTION,
   },
 };
@@ -39,7 +39,7 @@ export default function ContactPage() {
         </h1>
         <p className="mt-6 text-lg text-slate-300 leading-relaxed">
           Questions about the AI financial advisor, forecasting, business
-          signals, early access, or your specific business setup — send us a
+          signals, early access, or your specific business setup - send us a
           note and a real human gets back to you.
         </p>
       </section>

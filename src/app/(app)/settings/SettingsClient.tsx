@@ -98,7 +98,7 @@ export default function SettingsClient({
   const [view, setView] = useState<View>("categories");
   // The active panel is driven by the ?tab= query so the shared
   // BusinessSettingsTabs nav (which is just a row of Links) and the
-  // panel selection stay in sync — switching tabs is a navigation, not
+  // panel selection stay in sync - switching tabs is a navigation, not
   // local state. Defaulting to "profile" means /settings with no query
   // renders the Business Profile panel.
   const tab: SettingsTab = resolveSettingsTab(searchParams.get("tab"));
@@ -112,13 +112,13 @@ export default function SettingsClient({
     name: "", categoryId: "__new__", isOneTime: false,
   });
 
-  // Branding draft state — staged changes that only persist on Save.
+  // Branding draft state - staged changes that only persist on Save.
   const [logoPending, setLogoPending] = useState<Pending>(undefined);
   const [faviconPending, setFaviconPending] = useState<Pending>(undefined);
   const [brandSaving, setBrandSaving] = useState<"logo" | "favicon" | null>(null);
   const [brandError, setBrandError] = useState<string | null>(null);
 
-  // Business-card save state — keeps the user informed when their name /
+  // Business-card save state - keeps the user informed when their name /
   // currency / VAT changes actually land in the database.
   const [bizSaving, setBizSaving] = useState(false);
   const [bizSaved, setBizSaved] = useState(false);
@@ -155,7 +155,7 @@ export default function SettingsClient({
         setBizError(msg);
         return;
       }
-      // Sync local form state with what the server actually persisted — this
+      // Sync local form state with what the server actually persisted - this
       // is the user's confirmation that the name override took effect.
       const updated = await res.json();
       setBiz((b) => ({
@@ -176,7 +176,7 @@ export default function SettingsClient({
       // new name shows up everywhere else immediately.
       startTransition(() => router.refresh());
     } catch (err) {
-      setBizError(err instanceof Error ? err.message : "Save failed — check the browser console.");
+      setBizError(err instanceof Error ? err.message : "Save failed - check the browser console.");
     } finally {
       setBizSaving(false);
     }
@@ -207,7 +207,7 @@ export default function SettingsClient({
     } catch (err) {
       // Network failure, body too large, etc. Surface it instead of leaving
       // the user staring at an unresponsive Save button.
-      const msg = err instanceof Error ? err.message : "Save failed — check the browser console.";
+      const msg = err instanceof Error ? err.message : "Save failed - check the browser console.";
       setBrandError(msg);
       return false;
     } finally {
@@ -319,7 +319,7 @@ export default function SettingsClient({
     startTransition(() => router.refresh());
   }
 
-  // "GENERAL" or a specific vendor — picks the category's primary vendor.
+  // "GENERAL" or a specific vendor - picks the category's primary vendor.
   async function setPrimaryVendor(catId: string, raw: string) {
     const primaryVendorId = raw === "__general__" ? null : raw;
     setCats((cur) => cur.map((c) => (c.id === catId ? { ...c, primaryVendorId } : c)));
@@ -379,7 +379,7 @@ export default function SettingsClient({
 
   async function toggleOneTime(c: Cat) {
     const next = !c.isOneTime;
-    // Optimistic update — flip the local row first, roll back if the API
+    // Optimistic update - flip the local row first, roll back if the API
     // rejects. Changing the category default flows through to every place
     // that uses it (data flow, dashboard, forecasts) on the next render.
     setCats(cats.map((x) => (x.id === c.id ? { ...x, isOneTime: next } : x)));
@@ -406,7 +406,7 @@ export default function SettingsClient({
         <div className="font-medium mb-1">Business Profile</div>
         <div className="text-xs text-slate-400 mb-4">
           These settings drive every financial calculation in the platform. Defaults
-          (USD, January fiscal year, no VAT) work for most US-based businesses —
+          (USD, January fiscal year, no VAT) work for most US-based businesses -
           change anything that doesn&apos;t fit yours.
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
@@ -477,7 +477,7 @@ export default function SettingsClient({
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <BrandSlot
             label="Logo"
-            hint="PNG, JPEG, WEBP, or SVG. Up to 1 MB. Rectangular logos look best — they'll be scaled to fit a ~48px tall slot in the sidebar."
+            hint="PNG, JPEG, WEBP, or SVG. Up to 1 MB. Rectangular logos look best - they'll be scaled to fit a ~48px tall slot in the sidebar."
             previewBg="#0a1428"
             previewClassName="h-24 w-full flex items-center justify-center"
             saved={biz.logoData}
@@ -495,7 +495,7 @@ export default function SettingsClient({
           />
           <BrandSlot
             label="Favicon"
-            hint="PNG, SVG, or ICO. Up to 1 MB. A square image works best — browsers render it at 16–32px."
+            hint="PNG, SVG, or ICO. Up to 1 MB. A square image works best - browsers render it at 16–32px."
             previewBg="#0a1428"
             previewClassName="h-24 w-full flex items-center justify-center"
             saved={biz.faviconData}
@@ -666,7 +666,7 @@ export default function SettingsClient({
         ) : null}
       </div>
 
-      {/* Categorization rules — auto-assign categories to incoming
+      {/* Categorization rules - auto-assign categories to incoming
           transactions when their description or vendor matches a
           pattern. Lives inside this tab because rules edit how
           categories get applied. */}
@@ -910,7 +910,7 @@ function BrandSlot({
           />
           {saved || (typeof pending === "string") ? "Replace" : "Upload"}
         </label>
-        {/* Stage a removal — only meaningful if there's something currently saved or pending */}
+        {/* Stage a removal - only meaningful if there's something currently saved or pending */}
         {(saved || typeof pending === "string") ? (
           <button
             className="btn-ghost"

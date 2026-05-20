@@ -7,7 +7,7 @@ import AccountClient from "./AccountClient";
 export default async function AccountPage() {
   const user = await requireUser();
   const { t } = await getServerT();
-  // IP-derived region — used as a default when User.region is null
+  // IP-derived region - used as a default when User.region is null
   // so the picker arrives pre-filled. The user can override it.
   const detectedRegion = detectIpCountry();
   return (

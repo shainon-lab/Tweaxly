@@ -1,4 +1,4 @@
-// Money helpers — every site that does arithmetic on monetary amounts
+// Money helpers - every site that does arithmetic on monetary amounts
 // MUST go through this module. JS Float arithmetic is fine for the
 // kinds of summation we do at SMB scale (no transaction-grade reads
 // or writes in the hot path), but every result that lands on a tile,
@@ -13,7 +13,7 @@
 // Tracked as a deferred initiative in docs/financial-data-integrity.md.
 // Until then, this module is the single discipline.
 
-// Banker's rounding (round-half-to-even) — the IEEE 754 default and
+// Banker's rounding (round-half-to-even) - the IEEE 754 default and
 // the rule used by GAAP/IFRS for financial reporting. Avoids the
 // systematic upward bias of round-half-up.
 export function roundMoney(value: number, decimals = 2): number {

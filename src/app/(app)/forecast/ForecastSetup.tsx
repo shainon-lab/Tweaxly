@@ -1,6 +1,6 @@
 "use client";
 
-// The setup row at the top of the Forecast tab — historical period selector
+// The setup row at the top of the Forecast tab - historical period selector
 // and forecast horizon selector, both URL-driven. Custom historical range
 // exposes from/to month inputs.
 
@@ -9,11 +9,11 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 // Aligned with src/lib/forecastEngine.ts BASELINE_OPTIONS.
 //   - "recommended" lets the engine pick per readiness rules (default).
-//   - "Last Month" is intentionally absent — one month is not enough
+//   - "Last Month" is intentionally absent - one month is not enough
 //     data for a reliable forecast.
 //   - 18m / 24m are available; recommended default stays 12m even with
 //     24+ months of history (per spec, older data may be less relevant).
-// "Last 12 months" carries the (recommended) tag in the picker — it's
+// "Last 12 months" carries the (recommended) tag in the picker - it's
 // the readiness-engine's default for any business with 12+ months of
 // validated data. The dropdown no longer has a separate "Recommended"
 // entry; the page maps a missing/legacy `recommended` URL value back
@@ -43,7 +43,7 @@ function thisYM() {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-// Last day of the previous calendar month — used as the maximum
+// Last day of the previous calendar month - used as the maximum
 // allowed "To" date in the custom picker. Forecasts must never
 // include an in-progress month because incomplete data would
 // distort the baseline trend.
@@ -66,7 +66,7 @@ function defaultCustomFromISO() {
 
 // Engine accepts either YM (YYYY-MM) or full ISO (YYYY-MM-DD). We
 // push full ISO so the engine can count actual days selected and
-// include the number in its error message — keeps the message
+// include the number in its error message - keeps the message
 // consistent with what the user just picked.
 
 // Validation now lives in the engine: it returns "Forecast unavailable"
@@ -113,7 +113,7 @@ export default function ForecastSetup({
   // Auto-apply on every date change. The page's SSR engine sees the
   // new range, validates the 90-day rule, and either renders the
   // forecast or surfaces the "Forecast unavailable" card. Removing
-  // the explicit Apply button keeps state consistent — there's no
+  // the explicit Apply button keeps state consistent - there's no
   // "inline warning + stale forecast underneath" confusion.
   function applyDates(fromISO: string, toISO: string) {
     if (!fromISO || !toISO) return;
@@ -123,7 +123,7 @@ export default function ForecastSetup({
   }
 
   return (
-    // Compact inline filter cluster — designed to live in the
+    // Compact inline filter cluster - designed to live in the
     // PageHeader's `right` slot. Used to be a full-width card; now
     // it's a quiet row of selects that sit at the same visual
     // height as the action buttons on /workforce.
@@ -140,7 +140,7 @@ export default function ForecastSetup({
             if (v === "custom") {
               // Seed the URL with the day-level defaults so the first
               // render of "Custom" produces a valid 12-month window
-              // — no flicker through an invalid state.
+              // - no flicker through an invalid state.
               update({
                 historical: "custom",
                 hist_from:  draftFromISO,

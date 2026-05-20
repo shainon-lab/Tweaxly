@@ -34,7 +34,7 @@ export default function AccessibilityWidget() {
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
 
-  // Reading guide / mask handlers — driven by pointer.
+  // Reading guide / mask handlers - driven by pointer.
   useEffect(() => {
     if (!prefs.readingGuide && !prefs.readingMask) return;
 
@@ -273,7 +273,7 @@ export default function AccessibilityWidget() {
   );
 }
 
-// Helper type — keys of A11yPrefs whose value is boolean.
+// Helper type - keys of A11yPrefs whose value is boolean.
 type BooleanKeys = {
   [K in keyof A11yPrefs]: A11yPrefs[K] extends boolean ? K : never
 }[keyof A11yPrefs];

@@ -85,7 +85,7 @@ export default function ReportPeriodPicker({
     if (/^\d{4}$/.test(anchor)) yearOnly = Number(anchor);
   }
 
-  // Allowed months / quarters when the year is the current year — can't pick
+  // Allowed months / quarters when the year is the current year - can't pick
   // future periods.
   const monthsForYear = useMemo(() => {
     const max = monthYear >= today.y ? today.m : 12;

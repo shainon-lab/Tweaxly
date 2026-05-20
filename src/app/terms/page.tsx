@@ -6,7 +6,7 @@ import Logo from "@/components/Logo";
 import TermsContent, { TERMS_LAST_UPDATED } from "@/components/TermsContent";
 
 export const metadata = {
-  title: "Terms of Service — Tweaxly",
+  title: "Terms of Service - Tweaxly",
   description: "The Tweaxly Terms of Service. Governs your use of the Tweaxly platform and services.",
 };
 

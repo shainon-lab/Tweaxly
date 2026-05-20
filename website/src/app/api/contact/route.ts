@@ -1,11 +1,11 @@
-// POST /api/contact — accepts a contact form submission.
+// POST /api/contact - accepts a contact form submission.
 //
 // MVP behaviour:
 //   - Validates required fields + the legal-acceptance flag.
 //   - If RESEND_API_KEY is configured in the Vercel env, sends the
 //     message to the operator inbox.
 //   - Otherwise logs to the server console so submissions aren't
-//     lost in dev — the user still gets a successful response so the
+//     lost in dev - the user still gets a successful response so the
 //     form UX works end-to-end.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
       console.error("contact resend exception", err);
     }
   } else {
-    // No mail provider configured — log to the server console so
+    // No mail provider configured - log to the server console so
     // the submission isn't lost. The user still sees a successful
     // response so they don't double-submit.
     console.info("contact submission (no RESEND_API_KEY configured):", text);

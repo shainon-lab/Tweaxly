@@ -35,7 +35,7 @@ export default async function YearlyNumbersPage({
       <>
         <PageHeader
           title="Insights"
-          subtitle="Yearly retrospective — drill into a completed year's full picture."
+          subtitle="Yearly retrospective - drill into a completed year's full picture."
         />
         <ReportsInnerTabs />
         <div className="card text-center py-12">
@@ -68,7 +68,7 @@ export default async function YearlyNumbersPage({
         <DownloadButton
           payload={{
             filename:     `Tweaxly_Yearly_Summary_${selected}`,
-            title:        `Yearly Summary — ${selected}`,
+            title:        `Yearly Summary - ${selected}`,
             subtitle:     stats.coverage.partialNote ?? undefined,
             businessName: business.name,
             baseCurrency: ccy,

@@ -8,7 +8,7 @@
 //   - Target user's current role must not be 'super_admin' (super
 //     admin is untouchable from this surface)
 //   - New role must be 'user' or 'admin' (we don't promote to
-//     super_admin via UI — that's a deliberate manual DB op)
+//     super_admin via UI - that's a deliberate manual DB op)
 //   - Caller cannot demote themselves (you can't lock yourself out)
 
 import { NextResponse } from "next/server";

@@ -5,7 +5,7 @@
 // category list, creates the owner's account_admin membership, and
 // switches the session into the new workspace so the next page render
 // already shows it. Defaults match the signup flow (USD, January,
-// no VAT) — finance settings are tunable later in Settings → Business
+// no VAT) - finance settings are tunable later in Settings → Business
 // profile.
 
 import { NextRequest, NextResponse } from "next/server";

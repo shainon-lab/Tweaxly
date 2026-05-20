@@ -21,7 +21,7 @@ type Workbook = { SheetNames: string[]; Sheets: Record<string, Sheet> };
 
 // Maps our column kind to an Excel format code. Currency uses
 // {symbol}#,##0.00 with a thousands separator. Percent multiplies the
-// stored number by 100 in the display — we keep the underlying value
+// stored number by 100 in the display - we keep the underlying value
 // as the decimal fraction (e.g. 0.215) for portability.
 function formatForKind(kind: ExportColumn["kind"], currency: string): string | undefined {
   switch (kind) {
@@ -56,7 +56,7 @@ function currencySymbol(code: string): string {
 }
 
 export async function buildXlsxBlob(payload: ExportPayload): Promise<Blob> {
-  // SheetJS is a CommonJS package — dynamic import keeps the
+  // SheetJS is a CommonJS package - dynamic import keeps the
   // ~700KB lib out of the initial bundle and ensures it only
   // loads when the user actually clicks Download.
   const XLSX = await import("xlsx");
@@ -69,7 +69,7 @@ export async function buildXlsxBlob(payload: ExportPayload): Promise<Blob> {
   const aoa: CellValue[][] = [];
   const boldRowIndexes = new Set<number>();
   const sectionTitleIndexes = new Set<number>();
-  const formatRow: (string | undefined)[][] = []; // parallel array — format per (row, col)
+  const formatRow: (string | undefined)[][] = []; // parallel array - format per (row, col)
 
   // Helper: add an arbitrary header row spanning the full width.
   function addHeaderRow(text: string, opts: { bold?: boolean } = {}) {

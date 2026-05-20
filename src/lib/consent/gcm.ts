@@ -1,17 +1,17 @@
 // Google Consent Mode v2 helper.
 //
-// GCM v2 wants two events: a default state (set BEFORE gtag.js loads —
+// GCM v2 wants two events: a default state (set BEFORE gtag.js loads -
 // see init-script.ts), and an update event after the user makes a
 // decision. We split this into two functions so the init script can
 // emit the default and the provider can emit the update.
 //
 // Signals:
-//   ad_storage           — cookies for ads/conversion
-//   analytics_storage    — cookies for analytics (GA4)
-//   ad_user_data         — sending user data to Google for ads
-//   ad_personalization   — personalized advertising
-//   security_storage     — always granted (necessary)
-//   functionality_storage / personalization_storage — feature & preference cookies
+//   ad_storage           - cookies for ads/conversion
+//   analytics_storage    - cookies for analytics (GA4)
+//   ad_user_data         - sending user data to Google for ads
+//   ad_personalization   - personalized advertising
+//   security_storage     - always granted (necessary)
+//   functionality_storage / personalization_storage - feature & preference cookies
 
 import type { ConsentState } from "./types";
 

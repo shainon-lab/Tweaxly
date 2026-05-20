@@ -58,7 +58,7 @@ export async function POST(req: NextRequest) {
       enabled: body.enabled !== false,
     },
   });
-  // New rule can immediately fire and flip the sidebar badge —
+  // New rule can immediately fire and flip the sidebar badge -
   // revalidate the layout so the count updates everywhere.
   revalidatePath("/", "layout");
   return NextResponse.json(rule);
@@ -99,7 +99,7 @@ export async function DELETE(req: NextRequest) {
   await prisma.notificationRule.deleteMany({
     where: { id, businessId: business.id },
   });
-  // Deleted rule no longer contributes to the unread count —
+  // Deleted rule no longer contributes to the unread count -
   // revalidate the layout so the badge updates everywhere.
   revalidatePath("/", "layout");
   return NextResponse.json({ ok: true });

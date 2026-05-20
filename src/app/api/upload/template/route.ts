@@ -1,5 +1,5 @@
 // Emit the canonical Tweaxly transactions CSV template. Users download
-// this, fill in their business activity row-by-row, and upload it back —
+// this, fill in their business activity row-by-row, and upload it back -
 // the dated-upload pipeline assigns each transaction to its accounting
 // month based on the date column (vs the monthly-summary path which pins
 // everything to a single month).

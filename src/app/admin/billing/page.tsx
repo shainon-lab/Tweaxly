@@ -7,12 +7,12 @@ import Link from "next/link";
 export const dynamic = "force-dynamic";
 
 const PLANNED_TILES = [
-  { label: "MRR",                value: "—", hint: "Sum of active subscriptions" },
-  { label: "Active subscriptions", value: "—", hint: "Paying customers" },
-  { label: "Trial accounts",     value: "—", hint: "From your existing trial data" },
-  { label: "Past due",           value: "—", hint: "Failed invoices" },
-  { label: "Churned this month", value: "—", hint: "Cancellations" },
-  { label: "Net revenue",        value: "—", hint: "After refunds / disputes" },
+  { label: "MRR",                value: "-", hint: "Sum of active subscriptions" },
+  { label: "Active subscriptions", value: "-", hint: "Paying customers" },
+  { label: "Trial accounts",     value: "-", hint: "From your existing trial data" },
+  { label: "Past due",           value: "-", hint: "Failed invoices" },
+  { label: "Churned this month", value: "-", hint: "Cancellations" },
+  { label: "Net revenue",        value: "-", hint: "After refunds / disputes" },
 ];
 
 export default function AdminBillingPage() {

@@ -1,10 +1,10 @@
-// Register as a POST Route Handler. Mirrors /api/auth/login — see that
+// Register as a POST Route Handler. Mirrors /api/auth/login - see that
 // file for why we don't use a server action for these mutations.
 //
 // Onboarding contract: signup creates User + Business + the owner's
 // account_admin membership in one transaction, using default finance
 // settings (USD, no VAT, January fiscal year). The user lands on
-// /dashboard immediately — no /setup detour. Currency / fiscal year /
+// /dashboard immediately - no /setup detour. Currency / fiscal year /
 // VAT are configurable later in Settings → Business profile.
 
 import { NextRequest, NextResponse } from "next/server";
@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
   const name = String(form.get("name") ?? "").trim() || null;
   const businessName = String(form.get("businessName") ?? "").trim();
   const acceptTerms     = String(form.get("acceptTerms") ?? "")     === "yes";
-  // Marketing consent is OPTIONAL — defaulted to false at the model
+  // Marketing consent is OPTIONAL - defaulted to false at the model
   // level, only flipped on if the user explicitly ticks the box.
   const acceptMarketing = String(form.get("acceptMarketing") ?? "") === "yes";
 
@@ -69,7 +69,7 @@ export async function POST(req: NextRequest) {
     null;
 
   // When the user opts in to marketing we flip all four channels on by
-  // default — the single checkbox represents "agree to receive
+  // default - the single checkbox represents "agree to receive
   // marketing updates, promotions, newsletters, product
   // announcements, and commercial communications". Channel-level
   // granularity lives in Account → Communication Preferences.
@@ -94,7 +94,7 @@ export async function POST(req: NextRequest) {
           marketingConsentSource:    "signup",
           marketingConsentIp:        ipAddress,
           marketingPolicyVersion:    MARKETING_POLICY_VERSION,
-          // Issue an unsubscribe token only if the user opted in —
+          // Issue an unsubscribe token only if the user opted in -
           // accounts that never granted marketing don't need one.
           unsubscribeToken: acceptMarketing ? generateUnsubscribeToken() : null,
         },
@@ -123,7 +123,7 @@ export async function POST(req: NextRequest) {
     user = result.u;
     business = result.b;
   } catch (err: unknown) {
-    // P2002 — race with another concurrent signup on the same email.
+    // P2002 - race with another concurrent signup on the same email.
     if (
       typeof err === "object" && err !== null &&
       "code" in err && (err as { code?: string }).code === "P2002"
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
   // Audit the consent decisions made at signup. Both the legal
   // acceptance (always true if we got here) and the marketing opt-in
   // (true/false) are recorded so we can prove the user's choice if
-  // ever challenged. Best-effort — failures here don't block signup.
+  // ever challenged. Best-effort - failures here don't block signup.
   await recordAudit({
     actorUserId: user.id,
     action:      "consent.signup",

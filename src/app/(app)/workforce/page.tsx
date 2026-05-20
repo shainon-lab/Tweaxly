@@ -1,4 +1,4 @@
-// Workforce Planning — financial intelligence about the team. Lives
+// Workforce Planning - financial intelligence about the team. Lives
 // under Forecast as a planning lever, NOT as a standalone HR product.
 // It answers: how much does the team cost, how fast is payroll
 // growing, can the business afford additional hires, and what's the
@@ -65,7 +65,7 @@ export default async function WorkforcePage() {
 
   // Build the roster the Scenario Builder needs. Workforce Planning
   // surfaces the same payroll/team scenario events as Forecast, so
-  // it can reuse the same Builder component — just scoped to
+  // it can reuse the same Builder component - just scoped to
   // payroll-family events via the filter on the open trigger.
   const roster: RosterMember[] = rows.map((r) => ({
     id: r.id,
@@ -108,7 +108,7 @@ export default async function WorkforcePage() {
     .filter((s) => s.forecastPayroll > 0)
     .reduce((s, m) => s + m.forecastPayroll, 0);
 
-  // Affordable additional hires — what's left in monthly profit divided by
+  // Affordable additional hires - what's left in monthly profit divided by
   // the average cost per active employee. Capped so the insight stays sane.
   const monthlyProfit = lastSnap.income - lastSnap.expenses;
   const avgCost = summary.avgCostPerEmployee;
@@ -201,7 +201,7 @@ export default async function WorkforcePage() {
             <div className="card-tight">
               <div className="text-xs uppercase tracking-wide text-slate-400">Payroll % of revenue</div>
               <div className={`mt-2 text-xl font-semibold ${payrollPctTone}`}>
-                {payrollPctRevenue == null ? "—" : fmtPct(payrollPctRevenue)}
+                {payrollPctRevenue == null ? "-" : fmtPct(payrollPctRevenue)}
               </div>
               <div className="text-xs text-slate-400 mt-1">
                 healthy &lt; 35% · warning 35–50% · risky &gt; 50%
@@ -222,7 +222,7 @@ export default async function WorkforcePage() {
             <div className="card-tight">
               <div className="text-xs uppercase tracking-wide text-slate-400">MoM payroll change</div>
               <div className={`mt-2 text-xl font-semibold ${momTone}`}>
-                {payrollMoM == null ? "—" : (payrollMoM >= 0 ? "+" : "") + fmtPct(payrollMoM)}
+                {payrollMoM == null ? "-" : (payrollMoM >= 0 ? "+" : "") + fmtPct(payrollMoM)}
               </div>
               <div className="text-xs text-slate-400 mt-1">vs prior month booked</div>
             </div>
@@ -264,7 +264,7 @@ export default async function WorkforcePage() {
             <Metric label="Variable workforce"   value={fmtMoney(summary.variableCost, ccy)} hint="contractors + freelancers" />
             <Metric
               label="Contractor share"
-              value={summary.activeCount > 0 ? fmtPct(summary.contractorCount / summary.activeCount) : "—"}
+              value={summary.activeCount > 0 ? fmtPct(summary.contractorCount / summary.activeCount) : "-"}
               hint="vs total active"
             />
             <Metric
@@ -278,7 +278,7 @@ export default async function WorkforcePage() {
         </>
       )}
 
-      {/* Panel mounted at the page level — listens for the workforce-
+      {/* Panel mounted at the page level - listens for the workforce-
           scoped open event dispatched by WorkforceBuilderTrigger in
           the header. Stays mounted even on the empty-roster state so
           the trigger keeps working. */}

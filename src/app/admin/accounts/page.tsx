@@ -18,7 +18,7 @@ import RowActions from "@/components/admin/RowActions";
 export const dynamic = "force-dynamic";
 
 function fmtDate(d: Date | null | undefined) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 function fmtRel(d: Date | null | undefined) {
@@ -79,7 +79,7 @@ export default async function AdminAccountsPage({
     if (m) where.createdAt = { gte: daysAgoDate(Number(m[1])) };
   }
 
-  // Smart filters — operational shortcuts.
+  // Smart filters - operational shortcuts.
   switch (searchParams.smart) {
     case "needs_onboarding":
       // No transactions AND > 1 day old AND active.
@@ -215,7 +215,7 @@ export default async function AdminAccountsPage({
         </form>
       </div>
 
-      {/* Filter strip — sticks under the admin header */}
+      {/* Filter strip - sticks under the admin header */}
       <div className="sticky top-12 z-10 -mx-6 px-6 py-2 bg-ink-950/95 backdrop-blur border-y border-line/40 space-y-2">
         <FilterRow label="Status">
           <Chip name="status" cur={searchParams.status} val={undefined} label="All" count={allCount} base={baseQuery} />
@@ -283,7 +283,7 @@ export default async function AdminAccountsPage({
               const dataLabel =
                 dataStatus === "active"  ? `${total.toLocaleString()}` :
                 dataStatus === "partial" ? `${total} · partial` :
-                                            "—";
+                                            "-";
               const dataTone =
                 dataStatus === "active"  ? "text-good"  :
                 dataStatus === "partial" ? "text-warn"  :
@@ -320,7 +320,7 @@ export default async function AdminAccountsPage({
                   </td>
                   <td className="px-3 py-2 text-slate-300 tabular-nums">{b._count.memberships}</td>
                   <td className={`px-3 py-2 text-xs ${dataTone}`}>{dataLabel}</td>
-                  <td className="px-3 py-2 text-xs text-slate-500">—</td>
+                  <td className="px-3 py-2 text-xs text-slate-500">-</td>
                   <td className="px-3 py-2 text-xs text-slate-400 tabular-nums">{fmtRel(b.lastActivityAt)}</td>
                   <td className="px-3 py-2 text-xs text-slate-400">{fmtDate(b.createdAt)}</td>
                   <td className="px-3 py-2 text-right">

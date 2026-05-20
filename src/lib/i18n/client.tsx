@@ -2,7 +2,7 @@
 
 // React context + hook for client components. The active locale and
 // its dictionary are seeded from the server (via I18nProvider in the
-// root layout) and stay constant for the page render — switching
+// root layout) and stay constant for the page render - switching
 // locales triggers a full reload, which is the simplest way to make
 // every server-rendered string in the document update without
 // touching every layout boundary.

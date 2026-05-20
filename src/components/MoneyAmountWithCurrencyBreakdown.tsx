@@ -4,7 +4,7 @@
 //
 // Display primitive for aggregated financial amounts. When the
 // underlying transactions are all in the business base currency, this
-// renders identically to plain fmtMoney() — no badge, no tooltip.
+// renders identically to plain fmtMoney() - no badge, no tooltip.
 //
 // When the aggregate includes more than one original currency, it
 // shows the base-currency total followed by a small info chip; on
@@ -32,10 +32,10 @@ export interface CurrencyBreakdownItem {
 
 // Where the tooltip opens relative to the info chip. Useful for
 // right-aligned table cells where the default bottom-left opens past
-// the viewport edge — set "top-right" so it opens upward and anchored
+// the viewport edge - set "top-right" so it opens upward and anchored
 // to the chip's right edge.
 export type BreakdownTooltipPlacement =
-  | "bottom-left"   // default — tooltip's top-left at chip's bottom-left
+  | "bottom-left"   // default - tooltip's top-left at chip's bottom-left
   | "bottom-right"  // tooltip's top-right at chip's bottom-right
   | "top-left"      // tooltip's bottom-left at chip's top-left
   | "top-right";    // tooltip's bottom-right at chip's top-right
@@ -91,8 +91,8 @@ const METHOD_LABEL: Record<string, string> = {
   daily_historical: "Daily historical rate",
   monthly_avg:      "Monthly average rate",
   manual_fixed:     "Manual fixed rate",
-  same_currency:    "—",
-  none:             "—",
+  same_currency:    "-",
+  none:             "-",
 };
 
 export default function MoneyAmountWithCurrencyBreakdown(p: MoneyAmountWithCurrencyBreakdownProps) {

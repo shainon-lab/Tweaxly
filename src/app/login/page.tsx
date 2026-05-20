@@ -1,6 +1,6 @@
 // Plain HTML form posting to a Route Handler. Server actions for auth had
 // intermittent "Connection closed" failures on Vercel when iron-session's
-// cookies().set() raced with redirect() — see /api/auth/login.
+// cookies().set() raced with redirect() - see /api/auth/login.
 
 import Link from "next/link";
 import Logo from "@/components/Logo";

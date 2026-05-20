@@ -10,7 +10,7 @@ export type StatComparison = {
   // up = good. Expenses/payroll/fees/etc up = bad. Used to color the
   // percentage red or green.
   upIsGood: boolean;
-  // Optional caption appended after the parens — e.g. "vs Last quarter".
+  // Optional caption appended after the parens - e.g. "vs Last quarter".
   prevLabel?: string;
 };
 
@@ -117,7 +117,7 @@ function Comparison({ c }: { c: StatComparison }) {
           : "text-bad";
   const sign = c.pct == null ? "" : c.pct > 0 ? "+" : c.pct < 0 ? "−" : "";
   const pctStr =
-    c.pct == null ? "—" :
+    c.pct == null ? "-" :
     `${sign}${(Math.abs(c.pct) * 100).toFixed(1)}%`;
   return (
     <div className="mt-1 text-xs text-slate-400 leading-relaxed">

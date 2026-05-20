@@ -26,7 +26,7 @@ function validateDataUrl(value: unknown, kind: "logo" | "favicon"): string | nul
 }
 
 // Partial update: only fields actually present in the request body are
-// touched. Crucial for branding-only PATCH calls — otherwise the server
+// touched. Crucial for branding-only PATCH calls - otherwise the server
 // would silently overwrite vatEnabled / fiscalStartMonth back to defaults.
 export async function PATCH(req: NextRequest) {
   const { business } = await requireBusiness();
@@ -85,7 +85,7 @@ export async function PATCH(req: NextRequest) {
     // Surface the underlying error so the client can show something useful
     // instead of an opaque 500. Common cause locally: dev server was started
     // before `prisma db push` and is running with a stale Prisma client that
-    // doesn't know about the new branding columns — restart `npm run dev`.
+    // doesn't know about the new branding columns - restart `npm run dev`.
     const msg = err instanceof Error ? err.message : "Database update failed";
     console.error("PATCH /api/business failed:", err);
     return NextResponse.json({ error: msg }, { status: 500 });

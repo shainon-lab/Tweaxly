@@ -23,7 +23,7 @@ export function detectIpCountry(): string | null {
       }
     }
   } catch {
-    // headers() throws if called outside a request scope — caller
+    // headers() throws if called outside a request scope - caller
     // should fall back to null.
   }
   return null;

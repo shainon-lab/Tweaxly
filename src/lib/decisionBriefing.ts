@@ -1,23 +1,23 @@
-// Decision Briefing — turns a raw consultation response (narrative
+// Decision Briefing - turns a raw consultation response (narrative
 // content + optional structured payload) into a scannable executive
 // briefing with five sections:
 //
-//   1. Executive Takeaway   — the single most important conclusion
-//   2. Decision Anchors     — lightweight scan points (savings target,
+//   1. Executive Takeaway   - the single most important conclusion
+//   2. Decision Anchors     - lightweight scan points (savings target,
 //                             best option, highest impact, growth risk,
 //                             timing implications)
-//   3. AI Reasoning         — the narrative prose, with the option
+//   3. AI Reasoning         - the narrative prose, with the option
 //                             paragraphs stripped so they don't
 //                             duplicate the Strategic Paths section
-//   4. Strategic Paths      — each option, ranked into primary /
+//   4. Strategic Paths      - each option, ranked into primary /
 //                             high-impact / low-impact tiers with
 //                             visible coverage of the target
-//   5. Risks & Tradeoffs    — collected from each option's tradeoff
+//   5. Risks & Tradeoffs    - collected from each option's tradeoff
 //                             text plus any warning callouts in the
 //                             narrative
 //
 // Works for savings-style answers (where payload.horizons is populated)
-// AND for free-form answers where only content exists — in that case
+// AND for free-form answers where only content exists - in that case
 // the briefing degrades gracefully: takeaway is the first sentence,
 // the rest of the narrative becomes the reasoning, and the structured
 // sections collapse out.
@@ -177,8 +177,8 @@ function buildSavingsTakeaway(
     coverage >= 90
       ? `Covers the full ${h.label.toLowerCase()} target on its own.`
       : coverage >= 50
-        ? `Covers ~${coverage}% of the ${h.label.toLowerCase()} target — combine with one more lever to close the gap.`
-        : `Covers ~${coverage}% of the ${h.label.toLowerCase()} target on its own — you'll need to stack it with another path to close the gap.`;
+        ? `Covers ~${coverage}% of the ${h.label.toLowerCase()} target - combine with one more lever to close the gap.`
+        : `Covers ~${coverage}% of the ${h.label.toLowerCase()} target on its own - you'll need to stack it with another path to close the gap.`;
   return { headline, subhead };
 }
 
@@ -221,7 +221,7 @@ function buildSavingsAnchors(
     });
   }
 
-  // Growth risk — derived from any option whose tradeoff explicitly
+  // Growth risk - derived from any option whose tradeoff explicitly
   // talks about acquisition, growth, or revenue slowdown.
   const growthOption = h.options.find((o) =>
     /acquisition|slow new|revenue dip|new-customer|hurt growth/i.test(o.tradeoff),
@@ -234,7 +234,7 @@ function buildSavingsAnchors(
     });
   }
 
-  // Timing — derived from the headcount option's tradeoff (the one
+  // Timing - derived from the headcount option's tradeoff (the one
   // that typically mentions "weeks" before savings materialize).
   const timingOption = h.options.find((o) => /\d+\s*[–-]\s*\d+\s*weeks?/i.test(o.tradeoff));
   if (timingOption) {
@@ -264,7 +264,7 @@ function buildRisks(horizons: HorizonBlock[], content: string): RiskNote[] {
       risks.push({ label: o.title, text: o.tradeoff, tone });
     }
   }
-  // Any warning callout in the narrative — typically prefixed with ⚠
+  // Any warning callout in the narrative - typically prefixed with ⚠
   // or "Over the X horizon..." short-of-target text.
   const warnLines = content
     .split(/\n+/)
@@ -294,7 +294,7 @@ function stripOptionParagraphs(content: string, horizons: HorizonBlock[]): strin
     for (const o of h.options) optionTitles.add(o.title);
   }
   // Each option paragraph in the current advisor output starts with
-  // **Option Title** — at the head of a line. Split on double-newline
+  // **Option Title** - at the head of a line. Split on double-newline
   // paragraphs and drop any that start with one of the option titles.
   const paragraphs = content.split(/\n\n+/);
   const kept = paragraphs.filter((p) => {
@@ -302,15 +302,15 @@ function stripOptionParagraphs(content: string, horizons: HorizonBlock[]): strin
     for (const title of optionTitles) {
       if (
         stripped.startsWith(`**${title}**`) ||
-        stripped.startsWith(title + " —") ||
-        stripped.startsWith(title + "—")
+        stripped.startsWith(title + " -") ||
+        stripped.startsWith(title + "-")
       ) {
         return false;
       }
     }
     return true;
   });
-  // Also strip the warning callout — it lives under "Risks & Tradeoffs".
+  // Also strip the warning callout - it lives under "Risks & Tradeoffs".
   const withoutWarnings = kept.filter((p) => !/^⚠/.test(p.trim()));
   // Also strip the trailing disclaimer about "ranked cost data only".
   const withoutDisclaimer = withoutWarnings.filter(

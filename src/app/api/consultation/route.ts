@@ -5,7 +5,7 @@ import { buildBusinessContext, answerQuestion, deriveTitle } from "@/lib/advisor
 
 export const runtime = "nodejs";
 
-// GET — list consultations for current business, with last message preview
+// GET - list consultations for current business, with last message preview
 export async function GET() {
   const { business } = await requireBusiness();
   const list = await prisma.consultation.findMany({
@@ -19,7 +19,7 @@ export async function GET() {
   return NextResponse.json({ consultations: list });
 }
 
-// POST — send a message. If no consultationId, creates a new thread.
+// POST - send a message. If no consultationId, creates a new thread.
 // Body: { consultationId?: string, message: string }
 export async function POST(req: NextRequest) {
   const { business } = await requireBusiness();
@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
     consultationId = created.id;
   }
 
-  // Pull the conversation history BEFORE inserting the new user message —
+  // Pull the conversation history BEFORE inserting the new user message -
   // we'll pass that as the prior turns and add the new message as the
   // current user turn inside answerQuestion.
   const priorMessages = await prisma.consultationMessage.findMany({
@@ -84,7 +84,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json({ consultation: fresh, mode });
 }
 
-// DELETE — remove a thread
+// DELETE - remove a thread
 export async function DELETE(req: NextRequest) {
   const { business } = await requireBusiness();
   const id = new URL(req.url).searchParams.get("id");

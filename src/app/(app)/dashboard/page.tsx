@@ -74,7 +74,7 @@ export default async function DashboardPage({
   const { business } = await requireBusiness();
   const { t } = await getServerT();
   const sp = await searchParams;
-  // Default landing view: "This year" — gives the owner a year-to-date view
+  // Default landing view: "This year" - gives the owner a year-to-date view
   // by default. They can narrow to a month/quarter via the picker.
   const range = (VALID_RANGES.includes(sp.range as DashboardRange)
     ? (sp.range as DashboardRange)
@@ -131,7 +131,7 @@ export default async function DashboardPage({
   // AI-generated executive narrative. Built server-side so it lands
   // with the rest of the page. Falls back to a deterministic narrative
   // when no API key is configured or the model call errors. We skip the
-  // call entirely when the business has no data — there's nothing to
+  // call entirely when the business has no data - there's nothing to
   // narrate yet, and the empty-state card below covers that case.
   const summary = empty
     ? null
@@ -147,7 +147,7 @@ export default async function DashboardPage({
         employeeCostMonthly: employeeCost.total,
       });
 
-  // Default custom-range start/end fed into the picker — used when user
+  // Default custom-range start/end fed into the picker - used when user
   // switches to "custom" and we need initial values.
   const initialStart = sp.start ?? todayISODate();
   const initialEnd = sp.end ?? todayISODate();
@@ -162,7 +162,7 @@ export default async function DashboardPage({
     <>
       <PageHeader
         title={t("page.dashboard.title")}
-        subtitle={`${DASHBOARD_RANGE_LABEL[range]}: ${resolved.label} (${current.monthCount} month${current.monthCount === 1 ? "" : "s"}) — ${business.name}`}
+        subtitle={`${DASHBOARD_RANGE_LABEL[range]}: ${resolved.label} (${current.monthCount} month${current.monthCount === 1 ? "" : "s"}) - ${business.name}`}
         right={
           <DashboardPeriodPicker
             range={range}
@@ -190,7 +190,7 @@ export default async function DashboardPage({
         </div>
       ) : (
         <>
-          {/* Summary hero — the AI-generated executive narrative is the
+          {/* Summary hero - the AI-generated executive narrative is the
               primary entry point of the dashboard. Sits above the stat
               tiles so the user reads the interpretation before the
               numbers. */}
@@ -225,15 +225,15 @@ export default async function DashboardPage({
                 description:
                   "The change in revenue between periods is the headline growth signal. The absolute prior value gives you the scale; the colored percentage tells you the direction. Green here = the business is bringing in more than it used to.",
                 tips: [
-                  "Compare against the expense change side-by-side — revenue up by 10% while expenses are up 15% means margin shrank.",
+                  "Compare against the expense change side-by-side - revenue up by 10% while expenses are up 15% means margin shrank.",
                   "A big revenue swing usually traces back to one customer or one channel. Open Insights → Top vendors / Revenue channel to find the driver.",
                 ],
               } : {
                 description:
-                  "Total income recognized in the selected period — every Stripe payout, invoice payment, and other inbound transaction tagged as a revenue category.",
+                  "Total income recognized in the selected period - every Stripe payout, invoice payment, and other inbound transaction tagged as a revenue category.",
                 tips: [
                   "Pick a Compare to option in the picker above to see how this period stacks against another.",
-                  "Concentration in a small number of customers is the most common quiet risk — keep an eye on the top vendor / channel split in Insights.",
+                  "Concentration in a small number of customers is the most common quiet risk - keep an eye on the top vendor / channel split in Insights.",
                   "Use Forecast to project where this line is heading over the next 3-12 months.",
                 ],
               }}
@@ -258,16 +258,16 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Change in total outflow between periods. Green = expenses are down; red = they grew. Compare with the revenue tile — costs growing faster than revenue is the warning sign.",
+                  "Change in total outflow between periods. Green = expenses are down; red = they grew. Compare with the revenue tile - costs growing faster than revenue is the warning sign.",
                 tips: [
                   "If expenses grew, open Insights → Top expense categories to see which specific line drove the increase.",
-                  "Watch one-time costs separately (their own tile) — a big one-time hit can make this number look worse than the steady state.",
+                  "Watch one-time costs separately (their own tile) - a big one-time hit can make this number look worse than the steady state.",
                 ],
               } : {
                 description:
-                  "Sum of every outflow — payroll, rent, software, marketing, fees, taxes, one-time costs. Down is good. Up needs a why.",
+                  "Sum of every outflow - payroll, rent, software, marketing, fees, taxes, one-time costs. Down is good. Up needs a why.",
                 tips: [
-                  "Strip one-time costs (the dedicated tile) to see the recurring base — that's your monthly floor.",
+                  "Strip one-time costs (the dedicated tile) to see the recurring base - that's your monthly floor.",
                   "Concentrated cost (one category > 30% of total) is where 10% efficiency moves the P&L the most.",
                   "Pick a Compare to option above to see whether this period's spend is in line with history.",
                 ],
@@ -285,7 +285,7 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Change in bottom-line profit between periods. This is the single most important number on the page — did the business actually keep more cash than before?",
+                  "Change in bottom-line profit between periods. This is the single most important number on the page - did the business actually keep more cash than before?",
                 tips: [
                   "A big swing here without a matching revenue swing usually means one-time items hit on either side. Check the Normalized profit tile.",
                   "Net profit growth that lags revenue growth means margin is shrinking. Open Gross margin's Learn-more for the diagnosis.",
@@ -296,7 +296,7 @@ export default async function DashboardPage({
                 tips: [
                   "One bad month is noise; three in a row is a trend.",
                   "Below break-even? Use the Forecast tab to model a path back into the black with hires, cuts, and revenue moves.",
-                  "Healthy SMB net margin sits in the 10–20%+ band — see Gross margin for that ratio.",
+                  "Healthy SMB net margin sits in the 10–20%+ band - see Gross margin for that ratio.",
                 ],
               }}
             />
@@ -311,17 +311,17 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Comparing normalized profit isolates the operating engine — a clean read on whether the recurring business actually improved versus the prior period, free of one-time noise on either side.",
+                  "Comparing normalized profit isolates the operating engine - a clean read on whether the recurring business actually improved versus the prior period, free of one-time noise on either side.",
                 tips: [
                   "If raw Net profit changed dramatically but Normalized profit barely moved, the swing is one-time, not structural.",
-                  "Use this number as the base for next-period budgeting — it's the closest thing to your run-rate profit.",
+                  "Use this number as the base for next-period budgeting - it's the closest thing to your run-rate profit.",
                 ],
               } : {
                 description:
-                  "Net profit with one-time / non-recurring expenses added back. This is the cleaner read of the operating engine — what the business would earn if no unusual costs hit the period.",
+                  "Net profit with one-time / non-recurring expenses added back. This is the cleaner read of the operating engine - what the business would earn if no unusual costs hit the period.",
                 tips: [
                   "Use this number for trend reading; use raw net profit for the period's actual cash impact.",
-                  "If Normalized profit is healthy but raw Net profit is weak, the gap is the one-time hit — find it in Insights → Top expense categories.",
+                  "If Normalized profit is healthy but raw Net profit is weak, the gap is the one-time hit - find it in Insights → Top expense categories.",
                 ],
               }}
             />
@@ -347,14 +347,14 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Change in baseline overhead — rent, insurance, subscriptions. Fixed costs should grow slowly and deliberately; a sharp uptick usually means a new long-term commitment landed in the period.",
+                  "Change in baseline overhead - rent, insurance, subscriptions. Fixed costs should grow slowly and deliberately; a sharp uptick usually means a new long-term commitment landed in the period.",
                 tips: [
-                  "Big jump? Trace it to a specific contract — a new lease, software upgrade, or insurance renewal.",
+                  "Big jump? Trace it to a specific contract - a new lease, software upgrade, or insurance renewal.",
                   "Fixed-cost growth permanently raises your monthly break-even, so any increase needs a matching revenue plan.",
                 ],
               } : {
                 description:
-                  "Costs that don't move with sales volume — rent, insurance, subscriptions you'd pay even on a zero-revenue month. These set the floor on what the business has to cover.",
+                  "Costs that don't move with sales volume - rent, insurance, subscriptions you'd pay even on a zero-revenue month. These set the floor on what the business has to cover.",
                 tips: [
                   "Watch the ratio of Fixed to Variable: heavy fixed = less flex in a slow quarter.",
                   "Renegotiate or convert to variable/usage-based contracts to lower this without cutting capability.",
@@ -380,16 +380,16 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Variable costs should scale with revenue. The percentage change here only makes sense alongside the Revenue change — if variable went up 20% and revenue went up 5%, you're losing efficiency per dollar.",
+                  "Variable costs should scale with revenue. The percentage change here only makes sense alongside the Revenue change - if variable went up 20% and revenue went up 5%, you're losing efficiency per dollar.",
                 tips: [
                   "Healthy: variable cost % growth ≤ revenue % growth.",
                   "Compare each variable category individually in Insights → Spending shape to find the inefficient ones.",
                 ],
               } : {
                 description:
-                  "Costs that scale with activity — contractors, marketing campaigns, raw materials, transaction fees, anything that grows when the business does.",
+                  "Costs that scale with activity - contractors, marketing campaigns, raw materials, transaction fees, anything that grows when the business does.",
                 tips: [
-                  "Variable costs are easier to dial down in a slow period — they're your shock absorber.",
+                  "Variable costs are easier to dial down in a slow period - they're your shock absorber.",
                   "If they're growing faster than revenue, you're losing efficiency per dollar of sales.",
                 ],
               }}
@@ -413,14 +413,14 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Period-over-period payroll change captures hires, raises, terminations, and bonus payouts. Pair with the revenue change — payroll growing faster than revenue is the most common SMB cash trap.",
+                  "Period-over-period payroll change captures hires, raises, terminations, and bonus payouts. Pair with the revenue change - payroll growing faster than revenue is the most common SMB cash trap.",
                 tips: [
                   "Use Workforce Overview to see which months added or shed headcount.",
                   "If payroll grew >15% versus the compared period, there's at least one structural change worth understanding.",
                 ],
               } : {
                 description:
-                  "Total fully-loaded compensation cost — salaries plus employer taxes, pension, benefits, and any extras. We use the larger of the booked payroll transactions and the roster-computed cost so missing payroll uploads don't understate it.",
+                  "Total fully-loaded compensation cost - salaries plus employer taxes, pension, benefits, and any extras. We use the larger of the booked payroll transactions and the roster-computed cost so missing payroll uploads don't understate it.",
                 tips: [
                   "Healthy payroll-to-revenue ratio sits under 50%; below 35% is comfortable, above 50% is risky.",
                   "Use Workforce Overview to see per-employee cost and model the impact of one more hire.",
@@ -449,13 +449,13 @@ export default async function DashboardPage({
                   "Change in marketing spend versus the compared period. Pair with the Revenue change to gauge marketing efficiency: revenue rose with less spend = you got more efficient.",
                 tips: [
                   "Cutting marketing improves the P&L immediately but the revenue hit lags 60–90 days. Watch the next period.",
-                  "If marketing rose but revenue didn't, the campaigns probably aren't paying back yet — model timing in Forecast.",
+                  "If marketing rose but revenue didn't, the campaigns probably aren't paying back yet - model timing in Forecast.",
                 ],
               } : {
                 description:
-                  "Spend in any category tagged for marketing or advertising — Google/Meta/LinkedIn ads, agencies, content writers, sponsorships, events.",
+                  "Spend in any category tagged for marketing or advertising - Google/Meta/LinkedIn ads, agencies, content writers, sponsorships, events.",
                 tips: [
-                  "Most growth-stage SMBs run 10–20% of revenue on marketing. Above 25% is aggressive — confirm payback and CAC trend.",
+                  "Most growth-stage SMBs run 10–20% of revenue on marketing. Above 25% is aggressive - confirm payback and CAC trend.",
                   "Cutting marketing improves the P&L immediately but the revenue hit lags 60–90 days, so model the trade-off in Forecast first.",
                 ],
               }}
@@ -481,17 +481,17 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "Fee changes should roughly track revenue changes (they're proportional). If fees grew faster than revenue, your effective rate is creeping up — time to renegotiate.",
+                  "Fee changes should roughly track revenue changes (they're proportional). If fees grew faster than revenue, your effective rate is creeping up - time to renegotiate.",
                 tips: [
-                  "Divide the period's fees by revenue — if that ratio rose, the cost of taking each dollar of revenue went up.",
+                  "Divide the period's fees by revenue - if that ratio rose, the cost of taking each dollar of revenue went up.",
                   "Most processors will negotiate at $100k/year in volume. Bring usage numbers to the call.",
                 ],
               } : {
                 description:
-                  "Payment processor and bank fees — Stripe, PayPal, card networks, ACH, wires. Typically 2-3% of revenue for SMBs taking online payments.",
+                  "Payment processor and bank fees - Stripe, PayPal, card networks, ACH, wires. Typically 2-3% of revenue for SMBs taking online payments.",
                 tips: [
                   "Above 3.5% of revenue means it's worth shopping rates with a different processor.",
-                  "Mostly invisible because they're skimmed off the top — surface them here so they don't quietly grow.",
+                  "Mostly invisible because they're skimmed off the top - surface them here so they don't quietly grow.",
                 ],
               }}
             />
@@ -516,14 +516,14 @@ export default async function DashboardPage({
                 description:
                   "Tax payments lag revenue by roughly a quarter, so a change here usually reflects the prior period's activity, not the current one. Don't read it as a same-period efficiency signal.",
                 tips: [
-                  "If taxes spiked, look at the period two months back — that's usually what's being settled now.",
-                  "Wild swings often mean a missing reconciliation — make sure the tax category was tagged correctly on imports.",
+                  "If taxes spiked, look at the period two months back - that's usually what's being settled now.",
+                  "Wild swings often mean a missing reconciliation - make sure the tax category was tagged correctly on imports.",
                 ],
               } : {
                 description:
                   "Quarterly estimates, sales tax remittances, payroll taxes, and any other tax payments inside the period.",
                 tips: [
-                  "Taxes lag revenue by a quarter — a big revenue quarter often shows up here a couple of months later.",
+                  "Taxes lag revenue by a quarter - a big revenue quarter often shows up here a couple of months later.",
                   "If this number swings wildly, double-check that bookkeeping reconciled the right tax category before the next forecast.",
                 ],
               }}
@@ -548,16 +548,16 @@ export default async function DashboardPage({
               } : undefined}
               explain={comparing ? {
                 description:
-                  "One-time costs vary wildly between periods — a big swing here is normal. The number to watch is the recurring base (Normalized profit), not this line.",
+                  "One-time costs vary wildly between periods - a big swing here is normal. The number to watch is the recurring base (Normalized profit), not this line.",
                 tips: [
-                  "Use this tile's percent change to explain a confusing Net profit move — if both moved together, the swing was one-time.",
-                  "If neither period had one-times, you'll see —; that's the cleanest read of recurring health.",
+                  "Use this tile's percent change to explain a confusing Net profit move - if both moved together, the swing was one-time.",
+                  "If neither period had one-times, you'll see -; that's the cleanest read of recurring health.",
                 ],
               } : {
                 description:
-                  "Costs flagged as non-recurring — equipment purchases, legal fees, severance, audits, etc. These distort the period's net profit because they won't repeat.",
+                  "Costs flagged as non-recurring - equipment purchases, legal fees, severance, audits, etc. These distort the period's net profit because they won't repeat.",
                 tips: [
-                  "Strip these out to read the run-rate — that's what Normalized profit shows.",
+                  "Strip these out to read the run-rate - that's what Normalized profit shows.",
                   "If one-time costs are >15% of total expenses, the period's headline numbers don't reflect the steady state.",
                 ],
               }}
@@ -567,7 +567,7 @@ export default async function DashboardPage({
               value={
                 current.income > 0
                   ? fmtPct((current.income - current.expenses) / current.income)
-                  : "—"
+                  : "-"
               }
               comparison={
                 comparing && current.income > 0 && prev.income > 0
@@ -583,15 +583,15 @@ export default async function DashboardPage({
                 description:
                   "Margin change is the single best efficiency signal. Up = the business kept more of each dollar than before; down = costs grew faster than revenue.",
                 tips: [
-                  "Margin can rise even when revenue falls — that means costs fell faster. Look at the Expenses tile to confirm.",
-                  "A small margin drop on a big revenue jump is usually an OK trade — you bought growth.",
+                  "Margin can rise even when revenue falls - that means costs fell faster. Look at the Expenses tile to confirm.",
+                  "A small margin drop on a big revenue jump is usually an OK trade - you bought growth.",
                 ],
               } : {
                 description:
                   "Net profit as a percentage of revenue. Tells you how much of every dollar earned actually stays with the business.",
                 tips: [
                   "Healthy SMB margins typically sit in the 10–20% band; sub-10% is workable but thin; above 30% is excellent.",
-                  "Falling margin while revenue grows means costs are growing faster than sales — surface where in the Insights → Spending shape chart.",
+                  "Falling margin while revenue grows means costs are growing faster than sales - surface where in the Insights → Spending shape chart.",
                 ],
               }}
             />
@@ -643,7 +643,7 @@ function PnlBreakdown({
   const cmp = compareByCategory ? split(compareByCategory) : null;
 
   // Union of category names, sorted by current outcome desc (or compare's
-  // outcome if current has zero) — keeps the table consistent across periods.
+  // outcome if current has zero) - keeps the table consistent across periods.
   const incomeNames = Array.from(new Set([
     ...cur.income.map((r) => r.name),
     ...(cmp ? cmp.income.map((r) => r.name) : []),
@@ -692,7 +692,7 @@ function PnlBreakdown({
   if (cur.income.length === 0 && cur.outcome.length === 0 && (!cmp || (cmp.income.length === 0 && cmp.outcome.length === 0))) {
     return (
       <div className="card">
-        <div className="font-medium mb-2">P&amp;L breakdown — {label}</div>
+        <div className="font-medium mb-2">P&amp;L breakdown - {label}</div>
         <div className="text-sm text-slate-400 py-8 text-center">
           No categorized activity for this period yet.{" "}
           <Link className="text-accent" href="/transactions">
@@ -708,7 +708,7 @@ function PnlBreakdown({
     <div className="card">
       <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
         <div className="font-medium">
-          P&amp;L breakdown — {label}
+          P&amp;L breakdown - {label}
           {compareOn ? (
             <span className="text-slate-400 font-normal ml-2 text-xs">
               vs <span className="text-slate-200">{compareLabel}</span>
@@ -765,12 +765,12 @@ function PnlBreakdown({
                   <tr key={`inc-${name}`} className="text-slate-400">
                     <td className="pl-6">{name}</td>
                     <td className="text-right whitespace-nowrap">
-                      {curAmt > 0 ? `+${fmtMoneyExact(curAmt, currency)}` : "—"}
+                      {curAmt > 0 ? `+${fmtMoneyExact(curAmt, currency)}` : "-"}
                       {deltaText(curAmt, prevAmt, false)}
                     </td>
                     {compareOn ? (
                       <td className="text-right whitespace-nowrap">
-                        {prevAmt > 0 ? `+${fmtMoneyExact(prevAmt, currency)}` : "—"}
+                        {prevAmt > 0 ? `+${fmtMoneyExact(prevAmt, currency)}` : "-"}
                       </td>
                     ) : null}
                   </tr>
@@ -793,12 +793,12 @@ function PnlBreakdown({
               <tr key={`out-${name}`}>
                 <td className="pl-6 text-slate-200">{name}</td>
                 <td className="text-right text-bad whitespace-nowrap">
-                  {curAmt > 0 ? `−${fmtMoneyExact(curAmt, currency)}` : "—"}
+                  {curAmt > 0 ? `−${fmtMoneyExact(curAmt, currency)}` : "-"}
                   {deltaText(curAmt, prevAmt, true)}
                 </td>
                 {compareOn ? (
                   <td className="text-right text-slate-300 whitespace-nowrap">
-                    {prevAmt > 0 ? `−${fmtMoneyExact(prevAmt, currency)}` : "—"}
+                    {prevAmt > 0 ? `−${fmtMoneyExact(prevAmt, currency)}` : "-"}
                   </td>
                 ) : null}
               </tr>

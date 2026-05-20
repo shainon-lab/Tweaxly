@@ -45,14 +45,14 @@ export async function POST(
   if (!txn) return NextResponse.json({ error: "not_found" }, { status: 404 });
 
   // Fallbacks for transactions imported before multi-currency support
-  // — assume they were already in the business base currency.
+  // - assume they were already in the business base currency.
   const orig = txn.originalAmount ?? txn.amount;
   const origCcy = (txn.originalCurrency ?? txn.currency ?? business.currency).toUpperCase();
   const base = (txn.baseCurrency ?? business.currency).toUpperCase();
 
   if (origCcy === base) {
     return NextResponse.json({
-      error: "Transaction is already in the base currency — no rate to override.",
+      error: "Transaction is already in the base currency - no rate to override.",
     }, { status: 400 });
   }
 

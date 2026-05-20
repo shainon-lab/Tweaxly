@@ -1,11 +1,11 @@
 "use client";
 
 // Sub-tab nav for the Forecast section. Three views:
-//   Overview            — passive AI-generated outlook (default landing)
-//   Scenarios           — interactive scenario builder ('what if…')
-//   Workforce Planning  — workforce financial-impact view at /workforce
+//   Overview            - passive AI-generated outlook (default landing)
+//   Scenarios           - interactive scenario builder ('what if…')
+//   Workforce Planning  - workforce financial-impact view at /workforce
 //
-// Overview and Scenarios share the same /forecast route — they're
+// Overview and Scenarios share the same /forecast route - they're
 // differentiated by a ?view= query. Switching between them preserves
 // the historical-period and assumption state in the URL so a user
 // can build a scenario and flip back to Overview without losing it.
@@ -20,7 +20,7 @@ export default function ForecastTabs() {
   const sp = useSearchParams();
   const currentView = sp.get("view");
 
-  // Preserve every other query param when generating tab links —
+  // Preserve every other query param when generating tab links -
   // hist_from/hist_to/horizon/assumptions all live in the URL.
   const preserve = (override: Record<string, string | null>) => {
     const params = new URLSearchParams(sp.toString());

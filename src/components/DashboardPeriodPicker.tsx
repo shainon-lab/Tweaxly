@@ -24,7 +24,7 @@ const RANGE_OPTIONS: { value: Range; label: string }[] = [
 ];
 
 // Labels shown in the "Compare to" dropdown depend on the primary range so the
-// option text reads naturally — e.g. "Last quarter" when primary = This quarter,
+// option text reads naturally - e.g. "Last quarter" when primary = This quarter,
 // "Same month last year" when primary = This month, etc.
 function compareOptionsFor(range: Range): { value: Compare; label: string }[] {
   let previousLbl: string;

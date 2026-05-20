@@ -1,5 +1,5 @@
 // TWEAXLY wordmark. The X is two chevrons (< purple + > teal) meeting at a
-// shared center vertex — matching the brand mark exactly. The component
+// shared center vertex - matching the brand mark exactly. The component
 // carries its own navy panel so it always sits on the correct background
 // regardless of where it's rendered.
 
@@ -32,7 +32,7 @@ export default function Logo({
     // The brand is a left-to-right wordmark ("TWEA · X · LY") with a
     // tagline below. When the surrounding document is RTL (Hebrew),
     // flex children would reverse and the mark would render as
-    // "YL · X · AEWT" — so we lock the Logo to dir="ltr" regardless
+    // "YL · X · AEWT" - so we lock the Logo to dir="ltr" regardless
     // of the page direction.
     <div
       dir="ltr"

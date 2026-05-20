@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 
 type Theme = "dark" | "light";
 
-// Sidebar mode picker — toggles between dark and light. Dark is the default.
+// Sidebar mode picker - toggles between dark and light. Dark is the default.
 // The value is persisted in localStorage under "theme" and applied to the
 // html element via the data-theme attribute. An inline script in the root
 // layout sets the attribute BEFORE the first paint so there's no flash.

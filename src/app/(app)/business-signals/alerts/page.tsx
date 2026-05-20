@@ -1,6 +1,6 @@
 // Business Signals → Monitor sub-tab. Threshold notification rules that
 // are currently over their limits, plus an inline "Monitor Events" panel
-// that surfaces the full notification-rule manager — collapsing the
+// that surfaces the full notification-rule manager - collapsing the
 // formerly-separate /notifications page into this tab.
 
 import PageHeader from "@/components/PageHeader";
@@ -35,7 +35,7 @@ export default async function BusinessSignalsMonitorPage() {
     <>
       <PageHeader
         title="Signals"
-        subtitle="Monitor — threshold rules that have crossed their limits, plus the rule editor inline below."
+        subtitle="Monitor - threshold rules that have crossed their limits, plus the rule editor inline below."
       />
       <BusinessSignalsTabs
         firingAlerts={thresholdAlerts.filter((a) => a.acknowledgedAt == null).length}

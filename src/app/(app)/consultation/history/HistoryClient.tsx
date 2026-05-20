@@ -1,7 +1,7 @@
 "use client";
 
 // Split-screen history view: list on the left, viewer on the right.
-// Selection lives in the URL (?id=xxx) so navigation feels stable —
+// Selection lives in the URL (?id=xxx) so navigation feels stable -
 // each click triggers a server-rendered swap of the right panel
 // without touching the left list.
 

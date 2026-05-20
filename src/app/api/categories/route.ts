@@ -41,7 +41,7 @@ export async function POST(req: NextRequest) {
   return NextResponse.json(cat);
 }
 
-// PATCH — update a category. Supports:
+// PATCH - update a category. Supports:
 //   - kind change (with optional `flipSigns: true` to re-sign all materialized
 //     transactions in this category to match the new kind)
 //   - isOneTime flag
@@ -68,7 +68,7 @@ export async function PATCH(req: NextRequest) {
   if (typeof b.isOneTime === "boolean") {
     data.isOneTime = b.isOneTime;
   }
-  // Primary vendor — pass null to clear, or a vendor id (must belong to the
+  // Primary vendor - pass null to clear, or a vendor id (must belong to the
   // same business). The Settings categories table uses this for the "GENERAL
   // / pick vendor" cell.
   if ("primaryVendorId" in b) {

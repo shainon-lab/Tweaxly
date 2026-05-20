@@ -1,5 +1,5 @@
 // Money formatters. Across the entire app, money is rendered as whole
-// dollars — no decimals, ever. KPI tiles, signal cards, dashboards,
+// dollars - no decimals, ever. KPI tiles, signal cards, dashboards,
 // reports, and tables all share this convention so the eye never has
 // to parse ".00". The underlying numbers stay precise; only the
 // display layer rounds.
@@ -33,7 +33,7 @@ export function fmtMoneySigned(value: number, currency = "USD") {
 }
 
 export function fmtPct(value: number) {
-  if (!isFinite(value)) return "—";
+  if (!isFinite(value)) return "-";
   const sign = value > 0 ? "+" : "";
   return `${sign}${(value * 100).toFixed(1)}%`;
 }

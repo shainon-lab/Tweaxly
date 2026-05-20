@@ -34,7 +34,7 @@ export const SCENARIO_BUILDER_OPEN_EVENT = "tweaxly:open-scenario-builder";
 // every category visible.
 export type ScenarioBuilderOpenDetail = {
   filter?: ("revenue" | "expense" | "payroll")[];
-  // Header text overrides — used when the panel opens from a
+  // Header text overrides - used when the panel opens from a
   // scoped context (Workforce Planning) so the user sees the
   // intent in the header.
   title?: string;
@@ -109,7 +109,7 @@ export default function ScenarioBuilderPanel({
     <>
       {open ? (
         <>
-          {/* Dimmed overlay — keeps the forecast results visible
+          {/* Dimmed overlay - keeps the forecast results visible
               behind the builder so the user maintains visual
               connection to what they're modeling. */}
           <div
@@ -118,7 +118,7 @@ export default function ScenarioBuilderPanel({
             aria-hidden="true"
           />
 
-          {/* Right-side panel — wider than the Consult panel since
+          {/* Right-side panel - wider than the Consult panel since
               the builder has more controls. Smooth slide-in via
               the shared slideInRight keyframe. */}
           <aside

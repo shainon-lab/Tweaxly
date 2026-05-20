@@ -89,7 +89,7 @@ function BillingPane() {
       <div className="rounded-xl border border-line bg-ink-900/40 p-5 mb-3">
         <div className="flex items-center gap-2 mb-1">
           <span className="pill-good">Active</span>
-          <span className="text-base font-semibold text-slate-100">Tweaxly Free — Preview</span>
+          <span className="text-base font-semibold text-slate-100">Tweaxly Free - Preview</span>
         </div>
         <div className="text-sm text-slate-400">
           You&apos;re on the preview plan with full access to every feature while we&apos;re in beta.
@@ -112,7 +112,7 @@ function PaymentMethodsPane() {
       <div className="rounded-xl border border-dashed border-line bg-ink-900/30 p-6 text-center">
         <div className="text-sm font-medium text-slate-200 mb-1">No payment methods on file</div>
         <div className="text-xs text-slate-400 max-w-md mx-auto">
-          You don&apos;t need one yet — Tweaxly is free during preview. Once paid plans go live, you&apos;ll be able to add a card here.
+          You don&apos;t need one yet - Tweaxly is free during preview. Once paid plans go live, you&apos;ll be able to add a card here.
         </div>
       </div>
     </div>
@@ -174,7 +174,7 @@ function PasswordPane({ user }: { user: { email: string; createdAt: string } }) 
           aria-readonly="true"
         />
         <div className="text-xs text-slate-500 mt-2">
-          Need to change this? Reach out at support@tweaxly.com — email changes go through a confirmation step.
+          Need to change this? Reach out at support@tweaxly.com - email changes go through a confirmation step.
         </div>
       </div>
 
@@ -251,7 +251,7 @@ function PasswordPane({ user }: { user: { email: string; createdAt: string } }) 
           </button>
           <span className="text-xs text-slate-500">
             {twoFAEnabled
-              ? "Preview only — enforcement at sign-in lands with the production billing release."
+              ? "Preview only - enforcement at sign-in lands with the production billing release."
               : "Not enabled."}
           </span>
         </div>
@@ -302,7 +302,7 @@ function CloseAccountPane() {
           disabled={confirm !== "DELETE"}
           onClick={() =>
             alert(
-              "Account deletion runs through support during preview to prevent accidental data loss. We've recorded your intent — please confirm by emailing support@tweaxly.com from this email address and we'll process it within 24 hours.",
+              "Account deletion runs through support during preview to prevent accidental data loss. We've recorded your intent - please confirm by emailing support@tweaxly.com from this email address and we'll process it within 24 hours.",
             )
           }
         >

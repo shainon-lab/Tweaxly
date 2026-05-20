@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
   const sign: 1 | -1 = body.signOverride === -1 ? -1 : 1;
 
-  // Optional period override — must be YYYY-MM and ≤ current month.
+  // Optional period override - must be YYYY-MM and ≤ current month.
   let forceYM: string | null = null;
   if (body.forceAccountingMonth) {
     if (!YM_RE.test(body.forceAccountingMonth)) {
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
     forceYM = body.forceAccountingMonth;
   }
 
-  // Either we have a date column OR a forced period — otherwise we'd have no
+  // Either we have a date column OR a forced period - otherwise we'd have no
   // way to bucket the rows.
   if (!body.mapping?.date && !forceYM) {
     return NextResponse.json({
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  // P&L-style files often have only [Category, Amount] columns — no date. If
+  // P&L-style files often have only [Category, Amount] columns - no date. If
   // the user supplied a period, synthesize a date column on the rows so
   // downstream parsing has a valid date for every row. Rows that DO have a
   // valid date in the mapped column keep theirs; rows with missing/bad dates
@@ -100,7 +100,7 @@ export async function POST(req: NextRequest) {
   // error listing exactly which codes were unsupported so they can
   // fix the source file and re-upload.
   //
-  // Same rule applies regardless of base currency — Frankfurter
+  // Same rule applies regardless of base currency - Frankfurter
   // exposes bilateral pairs between every currency in its supported
   // list, so a non-USD business (e.g. EUR base) inherits the same
   // supported set.
@@ -137,7 +137,7 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  // Fetch existing rules. Uncategorized is no longer a fallback — instead each
+  // Fetch existing rules. Uncategorized is no longer a fallback - instead each
   // unmapped transaction creates / reuses a category named after the transaction
   // itself (vendor or description).
   const rules = await prisma.categorizationRule.findMany({
@@ -253,7 +253,7 @@ export async function POST(req: NextRequest) {
     // service handles same-currency short-circuits, local cache hits,
     // Frankfurter lookups, and weekend roll-back. If the rate is
     // unavailable, the conversion result reports rateFetchStatus =
-    // "needs_review" — we still save the row but flag it so the user
+    // "needs_review" - we still save the row but flag it so the user
     // can manually fix the rate from Transaction → FX Override.
     const conv = await convertAmount(
       norm.amount,

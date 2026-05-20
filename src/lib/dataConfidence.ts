@@ -5,7 +5,7 @@
 // data-health view and can be embedded into AI prompts so the model
 // hedges its language when the data is thin or broken.
 //
-// Scoring is intentionally conservative — perfect data is 100;
+// Scoring is intentionally conservative - perfect data is 100;
 // realistically most healthy businesses land 70-90 once they have
 // a few months of clean uploads. Below 50 means the AI should
 // explicitly tell the user "data is incomplete; treat this as a
@@ -71,7 +71,7 @@ export async function buildDataConfidence(
       weight: 0.25,
       detail: `${monthsCount} month${monthsCount === 1 ? "" : "s"} of data`,
     });
-    if (monthsCount < 3) warnings.push("Less than 3 months of history — trend reads are unreliable.");
+    if (monthsCount < 3) warnings.push("Less than 3 months of history - trend reads are unreliable.");
   }
 
   // Component 2: Categorization completeness (25%).
@@ -86,7 +86,7 @@ export async function buildDataConfidence(
         : `${uncategorized}/${totalTxns} uncategorized (${(100 - pct).toFixed(1)}%)`,
     });
     if (uncategorized > 0 && uncategorized / Math.max(1, totalTxns) > 0.1) {
-      warnings.push("More than 10% of transactions are uncategorized — category-level totals will understate spend.");
+      warnings.push("More than 10% of transactions are uncategorized - category-level totals will understate spend.");
     }
   }
 
@@ -99,7 +99,7 @@ export async function buildDataConfidence(
       weight: 0.15,
       detail: `${dupCandidates} potential duplicates flagged`,
     });
-    if (dupCandidates > 0) warnings.push(`${dupCandidates} potential duplicate transaction(s) flagged — review before relying on totals.`);
+    if (dupCandidates > 0) warnings.push(`${dupCandidates} potential duplicate transaction(s) flagged - review before relying on totals.`);
   }
 
   // Component 4: Date integrity (10%).
@@ -113,7 +113,7 @@ export async function buildDataConfidence(
         ? "All transactions have valid dates"
         : `${missingDate} transactions missing/invalid date`,
     });
-    if (missingDate > 0) warnings.push(`${missingDate} transaction(s) have missing or invalid dates — excluded from period reports.`);
+    if (missingDate > 0) warnings.push(`${missingDate} transaction(s) have missing or invalid dates - excluded from period reports.`);
   }
 
   // Component 5: FX integrity (10%).
@@ -127,7 +127,7 @@ export async function buildDataConfidence(
         ? "All multi-currency rows converted cleanly"
         : `${fxNeedsReview} rows with unresolved exchange-rate status`,
     });
-    if (fxNeedsReview > 0) warnings.push(`${fxNeedsReview} transaction(s) have unresolved FX rates — set a manual rate or re-import.`);
+    if (fxNeedsReview > 0) warnings.push(`${fxNeedsReview} transaction(s) have unresolved FX rates - set a manual rate or re-import.`);
   }
 
   // Component 6: Freshness (15%).
@@ -139,7 +139,7 @@ export async function buildDataConfidence(
       // Linear decay: 0 days = 100, 30 days = 70, 90 days = 0.
       pct = Math.max(0, 100 - (ageDays / 90) * 100);
       detail = `Last upload ${Math.round(ageDays)} day${Math.round(ageDays) === 1 ? "" : "s"} ago`;
-      if (ageDays > 45) warnings.push(`Last data upload was ${Math.round(ageDays)} days ago — current-month totals may be incomplete.`);
+      if (ageDays > 45) warnings.push(`Last data upload was ${Math.round(ageDays)} days ago - current-month totals may be incomplete.`);
     }
     components.push({ key: "freshness", score: pct, weight: 0.15, detail });
   }

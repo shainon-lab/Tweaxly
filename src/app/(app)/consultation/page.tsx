@@ -41,7 +41,7 @@ export default async function ConsultationPage({
     recommended = pickRecommendedConsultation(ctx, signals);
     suggested = pickSuggestedConsultations(ctx, signals, recommended?.signalKey);
   } catch {
-    // Fresh accounts without any data still render — the freeform
+    // Fresh accounts without any data still render - the freeform
     // input below is always available.
     focus = null;
     recommended = null;

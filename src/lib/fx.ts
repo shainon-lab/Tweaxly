@@ -1,4 +1,4 @@
-// ExchangeRateService — single entry point for currency conversion.
+// ExchangeRateService - single entry point for currency conversion.
 //
 // Order of operations on every getRate() call:
 //
@@ -7,14 +7,14 @@
 //   3. If miss, hit Frankfurter. https://api.frankfurter.dev/v1/{date}
 //      returns the latest available rate for that date (Frankfurter
 //      automatically rolls back to the previous trading day for
-//      weekends / holidays — we then pin the rateDate to what the
+//      weekends / holidays - we then pin the rateDate to what the
 //      user asked for and stamp the effectiveDate with what came back,
 //      so the snapshot remains a faithful audit record).
 //   4. If Frankfurter fails (network, 5xx, parse), return a
 //      status="failed" stub so the caller can mark the transaction
 //      needs_review rather than silently guessing.
 //
-// The service never throws — every error becomes a structured result
+// The service never throws - every error becomes a structured result
 // the caller can act on (success / missing / failed / same_currency).
 
 import { prisma } from "./db";
@@ -30,7 +30,7 @@ export interface RateLookup {
 
 const FRANKFURTER_BASE = "https://api.frankfurter.dev/v1";
 
-// Clamp the requested date to today — Frankfurter returns 404 for
+// Clamp the requested date to today - Frankfurter returns 404 for
 // future dates and we don't want to advertise rates we don't have.
 function clampToToday(d: Date): Date {
   const now = new Date();
@@ -69,7 +69,7 @@ export async function getRate(
   const quote = quoteCurrency.toUpperCase();
   const requested = startOfDayUTC(clampToToday(date));
 
-  // 1. Same currency — no conversion needed.
+  // 1. Same currency - no conversion needed.
   if (base === quote) {
     return {
       rate: 1,
@@ -81,7 +81,7 @@ export async function getRate(
     };
   }
 
-  // 2. Cache lookup (across all sources — manual override wins by source priority).
+  // 2. Cache lookup (across all sources - manual override wins by source priority).
   const cachedManual = await prisma.exchangeRate.findUnique({
     where: cacheKey(base, quote, requested, "manual"),
   }).catch(() => null);
@@ -143,7 +143,7 @@ async function fetchFrankfurter(
   try {
     // Frankfurter's URL takes the date in the path and `base`/`symbols`
     // as query params. We ask for `base = quote` and `to = base`, then
-    // invert below — the public API is documented as "base → symbols"
+    // invert below - the public API is documented as "base → symbols"
     // and we want "quote → base". Equivalent: ?base=QUOTE&to=BASE.
     const url = `${FRANKFURTER_BASE}/${ymdUTC(date)}?base=${quote}&symbols=${base}`;
     const ac = new AbortController();
@@ -237,7 +237,7 @@ export async function convertAmount(
   }
   if (lookup.rate == null) {
     return {
-      amount: originalAmount,  // unconverted — caller should treat as needs_review
+      amount: originalAmount,  // unconverted - caller should treat as needs_review
       originalAmount,
       originalCurrency,
       baseCurrency,
@@ -263,7 +263,7 @@ export async function convertAmount(
   };
 }
 
-// Manual override — caller passes an explicit rate, we persist it to
+// Manual override - caller passes an explicit rate, we persist it to
 // the cache as source="manual" so future lookups for the same pair/
 // date pick it up automatically.
 export async function setManualRate(input: {

@@ -7,7 +7,7 @@ import Logo from "@/components/Logo";
 import AccessibilityContent, { ACCESSIBILITY_LAST_UPDATED } from "@/components/AccessibilityContent";
 
 export const metadata = {
-  title: "Accessibility Statement — Tweaxly",
+  title: "Accessibility Statement - Tweaxly",
   description: "Tweaxly's commitment to making our platform accessible to all users, including individuals with disabilities.",
 };
 

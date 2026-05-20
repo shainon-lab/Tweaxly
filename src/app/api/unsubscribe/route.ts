@@ -54,7 +54,7 @@ async function handle(req: NextRequest, token: string | null, channelParam: stri
     },
   });
 
-  // Suppression list — independent of the user's flag so even if they
+  // Suppression list - independent of the user's flag so even if they
   // later re-enable, campaign senders can choose to honour it.
   for (const ch of suppressed) {
     await suppressEmail(prisma, user.email, mailChannelKey(ch), "user_unsubscribe", "one_click");
@@ -89,7 +89,7 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  // RFC 8058 — MUAs send a POST with form-encoded params or no body.
+  // RFC 8058 - MUAs send a POST with form-encoded params or no body.
   // Accept both query-string and form bodies for robustness.
   const sp = req.nextUrl.searchParams;
   let token   = sp.get("token");
@@ -102,7 +102,7 @@ export async function POST(req: NextRequest) {
       token   = String(form.get("token") ?? "") || null;
       channel = String(form.get("channel") ?? "") || null;
       all     = String(form.get("all") ?? "") === "1";
-    } catch { /* no body — leave as null */ }
+    } catch { /* no body - leave as null */ }
   }
   return handle(req, token, channel, all);
 }

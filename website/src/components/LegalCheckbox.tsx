@@ -1,6 +1,6 @@
 "use client";
 
-// Required legal acceptance checkbox — mirrors the product app's
+// Required legal acceptance checkbox - mirrors the product app's
 // registration LegalCheckbox so the contact form's UX matches what
 // users see at signup. Acknowledges both the Terms of Service AND the
 // Privacy Policy in one statement; clicking either name opens the

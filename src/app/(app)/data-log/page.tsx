@@ -18,8 +18,8 @@ export default async function DataLogPage() {
 
   // Data log is a unified activity feed: every UploadBatch (file imports)
   // AND every ManualEntry (single rows the user typed in). Manual entries
-  // don't have an UploadBatch — they materialize directly into Transactions
-  // with source="manual" — so we surface them here as a synthetic row so
+  // don't have an UploadBatch - they materialize directly into Transactions
+  // with source="manual" - so we surface them here as a synthetic row so
   // the user has one place to see/remove every chunk of data feeding the
   // dashboard.
   const [batches, manualEntries] = await Promise.all([
@@ -75,7 +75,7 @@ export default async function DataLogPage() {
     <>
       <PageHeader
         title={t("page.dataLog.title")}
-        subtitle="Data log — every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
+        subtitle="Data log - every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
       />
       <BusinessSettingsTabs />
       <DataLogClient rows={rows} currency={business.currency} />

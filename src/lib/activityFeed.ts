@@ -3,7 +3,7 @@
 // consultations, forecasts, alerts, admin/impersonation, failed
 // logins) and merges them into one chronological feed.
 //
-// No new tables — every event is derived from real product activity.
+// No new tables - every event is derived from real product activity.
 // Billing / support events will appear here once those systems exist;
 // the categories are already wired so the filter UI is ready.
 
@@ -20,7 +20,7 @@ export type ActivityItem = {
   // The actor of the event when it makes sense to surface a user
   // (signups, logins, admin actions). Null for system-level events.
   actorEmail?: string | null;
-  // Target business — null for tenant-spanning events.
+  // Target business - null for tenant-spanning events.
   business?: { id: string; name: string } | null;
   title: string;
   detail?: string | null;

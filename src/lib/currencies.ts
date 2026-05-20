@@ -4,7 +4,7 @@
 //
 // IMPORTANT: every currency surfaced as a picker option must be one we
 // can actually convert. Frankfurter (our historical-rate provider,
-// sourced from ECB reference rates) covers a limited list — see
+// sourced from ECB reference rates) covers a limited list - see
 // FRANKFURTER_SUPPORTED_CODES below. PRIORITY_CURRENCIES and
 // OTHER_CURRENCIES are filtered against that set at export time, so
 // any consumer of these exports only sees supported currencies. The
@@ -15,7 +15,7 @@ export type Currency = { code: string; name: string };
 
 // Currencies for which Frankfurter publishes historical rates (ECB
 // reference rates). Source: https://api.frankfurter.dev/v1/currencies
-// — codes are stable; we re-cache this list manually rather than
+// - codes are stable; we re-cache this list manually rather than
 // hitting the API on every server boot. If the list changes upstream,
 // edit it here.
 export const FRANKFURTER_SUPPORTED_CODES = new Set<string>([
@@ -202,7 +202,7 @@ export const OTHER_CURRENCIES: Currency[] = RAW_OTHER
 // Selectable in pickers (excludes anything Frankfurter can't convert).
 export const ALL_CURRENCIES: Currency[] = [...PRIORITY_CURRENCIES, ...OTHER_CURRENCIES];
 
-// Full ISO 4217 list — used only by currencyName() for displaying
+// Full ISO 4217 list - used only by currencyName() for displaying
 // legacy records that were created before this restriction. Do NOT
 // use as a picker source.
 const ALL_INCLUDING_UNSUPPORTED: Currency[] = [

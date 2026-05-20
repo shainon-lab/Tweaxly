@@ -1,4 +1,4 @@
-// Shared site header — same nav on every public page so users can
+// Shared site header - same nav on every public page so users can
 // move between Home / About / Pricing / FAQ / Testimonials / Contact
 // without falling back to a "← Back to home" link.
 //
@@ -15,7 +15,7 @@ const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
 interface Props {
-  // Highlighted-route hint — currently a no-op visually, kept as a
+  // Highlighted-route hint - currently a no-op visually, kept as a
   // hook for future active-state styling without touching every page.
   active?: "home" | "about" | "pricing" | "faq" | "testimonials" | "contact";
 }
@@ -42,7 +42,7 @@ export default function SiteHeader({ active }: Props) {
           </Link>
         </div>
 
-        {/* Desktop nav — visible md+ only. */}
+        {/* Desktop nav - visible md+ only. */}
         <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
           {NAV.map((n) => (
             <Link
@@ -56,13 +56,13 @@ export default function SiteHeader({ active }: Props) {
           ))}
         </nav>
 
-        {/* Desktop action buttons — visible md+ only. */}
+        {/* Desktop action buttons - visible md+ only. */}
         <div className="hidden md:flex items-center gap-3 shrink-0">
           <a href={LOGIN_URL}  className="btn-ghost text-sm px-4">Log in</a>
           <a href={SIGNUP_URL} className="btn-brand text-sm px-4">Sign up</a>
         </div>
 
-        {/* Mobile — hamburger + drawer. Hidden at md and up. */}
+        {/* Mobile - hamburger + drawer. Hidden at md and up. */}
         <MobileNav active={active} />
       </div>
     </header>

@@ -4,21 +4,21 @@
 // here at runtime.
 //
 // Keys follow 'namespace.key' format. Keep namespaces narrow:
-//   common.*    — generic verbs / nouns (save, cancel, loading)
-//   nav.*       — sidebar nav labels
-//   auth.*      — login / register / forgot / reset
-//   account.*   — Account section and Preferences
-//   settings.*  — Settings section + sub-tab labels
-//   page.*      — page-header titles + subtitles
-//   tabs.*      — internal tab labels per section
-//   dashboard.* — dashboard surface
-//   signals.*   — signals page
-//   advisory.*  — consultation / advisory page
-//   forecast.*  — forecast + scenarios + workforce
-//   reports.*   — reports / charts / trends pages
-//   data.*      — manual data + data log + transactions
-//   consult.*   — global Consult button + panel
-//   errors.*    — validation + error messages
+//   common.*    - generic verbs / nouns (save, cancel, loading)
+//   nav.*       - sidebar nav labels
+//   auth.*      - login / register / forgot / reset
+//   account.*   - Account section and Preferences
+//   settings.*  - Settings section + sub-tab labels
+//   page.*      - page-header titles + subtitles
+//   tabs.*      - internal tab labels per section
+//   dashboard.* - dashboard surface
+//   signals.*   - signals page
+//   advisory.*  - consultation / advisory page
+//   forecast.*  - forecast + scenarios + workforce
+//   reports.*   - reports / charts / trends pages
+//   data.*      - manual data + data log + transactions
+//   consult.*   - global Consult button + panel
+//   errors.*    - validation + error messages
 
 import type { Dictionary } from "../types";
 
@@ -137,14 +137,14 @@ export const en: Dictionary = {
   "page.dashboard.title": "Overview",
   "page.dashboard.subtitle": "The most-important changes in your business, at a glance.",
   "page.signals.title": "Signals",
-  "page.signals.subtitle": "A command-center view of what’s changing in your business — click any card for the full story.",
+  "page.signals.subtitle": "A command-center view of what’s changing in your business - click any card for the full story.",
   "page.advisory.title": "Advisory",
   "page.advisory.subtitle": "Strategic AI recommendations based on your business data.",
   "page.forecast.title": "Forecast",
   "page.forecast.subtitle.overview": "AI outlook for the next months based on what your data is doing today.",
   "page.forecast.subtitle.scenarios": "Layer hires, raises, contracts, and one-time events on top of the baseline.",
   "page.workforce.title": "Forecast",
-  "page.workforce.subtitle": "Workforce planning — real team costs, payroll-to-revenue, and hire affordability.",
+  "page.workforce.subtitle": "Workforce planning - real team costs, payroll-to-revenue, and hire affordability.",
   "page.employees.title": "Forecast",
   "page.employees.subtitle": "Workforce planning · Edit roster.",
   "page.report.title": "P&L Statement",
@@ -215,7 +215,7 @@ export const en: Dictionary = {
 
   // ─── errors ────────────────────────────────────────────────────
   "errors.generic": "Something went wrong. Please try again.",
-  "errors.network": "Network error — check your connection.",
+  "errors.network": "Network error - check your connection.",
 };
 
 export default en;

@@ -3,7 +3,7 @@
 //
 // Sets session.currentBusinessId after verifying the caller has an
 // active membership in the target business. Never trust the client's
-// businessId — the membership check is the security boundary.
+// businessId - the membership check is the security boundary.
 //
 // Side effects:
 //   - If the caller is a super_admin currently impersonating, the

@@ -6,7 +6,7 @@ import { ConsultationMock } from "@/components/mocks/Consultation";
 import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
 import { PreferencesLink } from "@/lib/consent";
 
-// Homepage metadata — uses the `absolute` title key so we set the
+// Homepage metadata - uses the `absolute` title key so we set the
 // full title verbatim (no " | Tweaxly" suffix appended by the
 // root template; the brand already sits at the end of this title).
 export const metadata: Metadata = {
@@ -80,7 +80,7 @@ function Hero() {
   return (
     <section className="container-wide pt-12 pb-20 lg:pt-20 lg:pb-32">
       <div className="grid lg:grid-cols-12 gap-12 lg:gap-12 items-center">
-        {/* Copy — leaner, more whitespace, fewer paragraphs. */}
+        {/* Copy - leaner, more whitespace, fewer paragraphs. */}
         <div className="lg:col-span-5 flex flex-col">
           <div className="eyebrow self-start mb-8">
             <span className="w-1.5 h-1.5 rounded-full bg-good anim-pulse-soft" />
@@ -210,14 +210,14 @@ function ValueCell({ tone, label }: { tone: "bad" | "warn" | "purple" | "good"; 
 function ConsultationSection() {
   return (
     <section id="advisory" className="relative py-24 lg:py-32">
-      {/* Section accent — purple glow behind */}
+      {/* Section accent - purple glow behind */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_50%,rgba(167,139,250,0.12),transparent_70%)] pointer-events-none" aria-hidden="true" />
       <div className="container-wide relative grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         <div className="lg:col-span-6 lg:order-2">
           <SectionHeader
             eyebrow="AI Financial Advisor"
             title={<>An AI financial advisor that understands your <span className="gradient-text">real numbers</span>.</>}
-            body="Tweaxly continuously analyzes your financial activity, identifies trends, surfaces risks, and helps business owners make smarter decisions through AI-powered financial planning — without spreadsheets, dashboards no one opens, or a CFO retainer."
+            body="Tweaxly continuously analyzes your financial activity, identifies trends, surfaces risks, and helps business owners make smarter decisions through AI-powered financial planning - without spreadsheets, dashboards no one opens, or a CFO retainer."
           />
           <ul className="mt-8 flex flex-col gap-2.5 max-w-md">
             {[
@@ -253,7 +253,7 @@ function ForecastSection() {
           <SectionHeader
             eyebrow="Financial Forecasting"
             title={<>Financial forecasting and <span className="gradient-text">cash flow intelligence</span>.</>}
-            body="Project where the business is heading. Tweaxly combines historical actuals, recurring patterns, seasonality, and your own scenarios into explainable cash flow forecasting and revenue forecasting — built for growing SMBs, not enterprise accounting teams."
+            body="Project where the business is heading. Tweaxly combines historical actuals, recurring patterns, seasonality, and your own scenarios into explainable cash flow forecasting and revenue forecasting - built for growing SMBs, not enterprise accounting teams."
           />
           <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-300">
             <ListBullet icon="↗">Baseline vs scenario, side by side</ListBullet>
@@ -295,7 +295,7 @@ function OverviewSection() {
             Clarity in minutes, not <span className="gradient-text">spreadsheets</span>.
           </h2>
           <p className="mt-4 text-lg text-slate-400 leading-relaxed">
-            The first screen every morning — KPIs, deltas, and a single AI takeaway
+            The first screen every morning - KPIs, deltas, and a single AI takeaway
             anchored to what just changed in your numbers.
           </p>
         </div>
@@ -379,7 +379,7 @@ function FinalCTA() {
 // ─────────────────────────────────────────────────────────────────────
 
 // ─────────────────────────────────────────────────────────────────────
-// SEO summary section — sits after the four product sections and
+// SEO summary section - sits after the four product sections and
 // names the platform's positioning explicitly. Keyword cluster:
 // financial intelligence platform / AI-powered financial planning /
 // business forecasting platform / financial dashboard / SMB
@@ -397,7 +397,7 @@ function SeoUnifiedSection() {
         </h2>
         <p className="mt-5 text-base text-slate-300 leading-relaxed">
           Unified dashboard, financial forecasting, business insights, AI
-          advisory, and real-time financial monitoring — in a single
+          advisory, and real-time financial monitoring - in a single
           financial intelligence platform built for SMB owners. Tweaxly
           replaces the gap between accounting software and a fractional CFO
           with an AI-powered financial planning system that actually talks
@@ -415,8 +415,8 @@ function SeoUnifiedSection() {
 function SiteFooter() {
   return (
     // Extra bottom padding on mobile (pb-24) leaves clear space below
-    // the last footer line so the floating accessibility button — at
-    // bottom-left — never overlaps Terms / Privacy / Preferences
+    // the last footer line so the floating accessibility button - at
+    // bottom-left - never overlaps Terms / Privacy / Preferences
     // links. Restores to py-10 at the sm breakpoint.
     <footer className="container-wide pt-10 pb-24 sm:pb-10 border-t border-line text-xs text-slate-500 flex items-center justify-between flex-wrap gap-3">
       {/* Left cluster: copyright + tagline grouped together. */}

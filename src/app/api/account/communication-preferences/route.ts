@@ -2,7 +2,7 @@
 // PATCH /api/account/communication-preferences   → update marketing channels
 //
 // System / transactional emails (billing, security, password reset)
-// are NOT exposed here — they're contractually required for active
+// are NOT exposed here - they're contractually required for active
 // accounts and can't be turned off. Only marketing channels are
 // editable.
 
@@ -53,8 +53,8 @@ export async function PATCH(req: NextRequest) {
   let body: Record<string, unknown>;
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
 
-  // Whitelist — only the four marketing channels are settable here.
-  // Any other key in the body is ignored (silently — these are not
+  // Whitelist - only the four marketing channels are settable here.
+  // Any other key in the body is ignored (silently - these are not
   // user errors, they're forward-compat for future channels).
   const update: MarketingConsentUpdate = {};
   for (const k of MARKETING_CHANNELS) {

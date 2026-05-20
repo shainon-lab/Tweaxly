@@ -84,12 +84,12 @@ export default function EmployeesClient({
     <>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-6">
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Payroll cost — {nowYM}</div>
+          <div className="text-xs uppercase tracking-wide text-slate-400">Payroll cost - {nowYM}</div>
           <div className="mt-2 text-2xl font-semibold">{fmt.format(nowCost.total)}</div>
           <div className="text-xs text-slate-400 mt-1">{nowCost.employeeCount} active · {fmt.format(nowCost.recurring)} recurring{nowCost.oneTime > 0 ? ` + ${fmt.format(nowCost.oneTime)} one-time` : ""}</div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Forecast — {nextYM}</div>
+          <div className="text-xs uppercase tracking-wide text-slate-400">Forecast - {nextYM}</div>
           <div className="mt-2 text-2xl font-semibold">{fmt.format(futureCost.total)}</div>
           <div className="text-xs text-slate-400 mt-1">{futureCost.employeeCount} expected active</div>
         </div>
@@ -157,7 +157,7 @@ export default function EmployeesClient({
           </div>
           <div className="md:col-span-2"><label className="label">Employee</label>
             <select className="input" value={evDraft.employeeId ?? ""} onChange={(e) => setEvDraft({ ...evDraft, employeeId: e.target.value || null })}>
-              <option value="">— None —</option>
+              <option value="">- None -</option>
               {employees.map((emp) => <option key={emp.id} value={emp.id}>{emp.name}</option>)}
             </select>
           </div>
@@ -180,8 +180,8 @@ export default function EmployeesClient({
                 <tr key={ev.id}>
                   <td className="text-slate-300">{ev.effectiveDate}</td>
                   <td><span className="pill">{ev.type}</span></td>
-                  <td>{employees.find((e) => e.id === ev.employeeId)?.name ?? <span className="text-slate-500">—</span>}</td>
-                  <td className="text-right">{ev.amount != null ? fmt.format(ev.amount) : "—"}</td>
+                  <td>{employees.find((e) => e.id === ev.employeeId)?.name ?? <span className="text-slate-500">-</span>}</td>
+                  <td className="text-right">{ev.amount != null ? fmt.format(ev.amount) : "-"}</td>
                   <td className="text-slate-300">{ev.notes}</td>
                 </tr>
               ))}

@@ -90,7 +90,7 @@ export async function generateInsights(businessId: string, ym: string): Promise<
     insights.push({
       level: "warn",
       title: `${openDups} possible duplicate transaction group${openDups === 1 ? "" : "s"} detected`,
-      detail: "Open the Transactions tab and look for the red ! badge — review each one and either ignore the duplicate or dismiss the alert.",
+      detail: "Open the Transactions tab and look for the red ! badge - review each one and either ignore the duplicate or dismiss the alert.",
     });
   }
 

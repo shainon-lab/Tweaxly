@@ -1,7 +1,7 @@
 // Server-side locale helpers. Resolution order:
 //   1. Logged-in User.preferredLanguage (when session exists)
 //   2. tweaxly_locale cookie (so unauthenticated pages still
-//      respect the choice — login, register, forgot, reset)
+//      respect the choice - login, register, forgot, reset)
 //   3. DEFAULT_LOCALE ("en")
 //
 // All callers go through getServerLocale() so the precedence stays
@@ -30,7 +30,7 @@ export async function getServerLocale(): Promise<Locale> {
       }
     }
   } catch {
-    // Session decode failure / missing — fall through to cookie.
+    // Session decode failure / missing - fall through to cookie.
   }
 
   // 2. Cookie (set explicitly by /api/preferences on change).

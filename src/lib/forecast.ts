@@ -80,7 +80,7 @@ export async function buildForecast(
   const baseIncome = avg("income");
   const baseRecurring = avg("recurring");
 
-  // Manual items keyed by monthsAhead — single query.
+  // Manual items keyed by monthsAhead - single query.
   const manuals = await prisma.forecastItem.findMany({
     where: { businessId, monthsAhead: { gte: 1, lte: monthsAhead } },
   });
@@ -250,10 +250,10 @@ export function bucketForHorizon(months: ForecastMonth[]): {
 // Scenario forecast engine (Baseline vs Scenario)
 // ═════════════════════════════════════════════════════════════════════════════
 //
-// loadBaseline()       — averages + trend + recurring base from a historical window
-// runScenario()        — applies an array of assumptions to the baseline projection
-// summarizeForecast()  — totals for the summary cards
-// generateForecastInsights() — plain-English insights comparing the two
+// loadBaseline()       - averages + trend + recurring base from a historical window
+// runScenario()        - applies an array of assumptions to the baseline projection
+// summarizeForecast()  - totals for the summary cards
+// generateForecastInsights() - plain-English insights comparing the two
 //
 // The shapes intentionally match the spec in the product brief: a "baseline"
 // line (business as-is) vs a "scenario" line (with user assumptions on top).
@@ -286,7 +286,7 @@ export const FORECAST_HORIZON_OPTIONS = [
 
 export type ForecastHorizonValue = (typeof FORECAST_HORIZON_OPTIONS)[number]["value"];
 
-// Historical windows always END at the last *completed* month — never the
+// Historical windows always END at the last *completed* month - never the
 // current calendar month, because that month is still in progress and any
 // partial data would skew the averages downward. So in mid-May, the anchor
 // is April; "Last 3 months" = Feb-Apr, "YTD" = Jan-Apr.
@@ -377,7 +377,7 @@ export type Baseline = {
   // fraction, e.g. 0.012 = +1.2%/month). 0 if not enough data.
   revenueGrowthMoM: number;
   expenseGrowthMoM: number;
-  // a "recurring expense base" — the average minus one-time spikes.
+  // a "recurring expense base" - the average minus one-time spikes.
   recurringExpenseBase: number;
 };
 
@@ -708,7 +708,7 @@ export function generateForecastInsights(
   } else if (baseline.avgRevenue > 0) {
     out.push(
       `Based on the last ${baseline.monthCount} month${baseline.monthCount === 1 ? "" : "s"}, ` +
-      `revenue is flat — no meaningful trend detected.`,
+      `revenue is flat - no meaningful trend detected.`,
     );
   }
 
@@ -723,7 +723,7 @@ export function generateForecastInsights(
     );
   }
 
-  // Per-assumption impact — only show the biggest absolute hitters.
+  // Per-assumption impact - only show the biggest absolute hitters.
   const ranked = [...assumptions]
     .map((a) => ({ a, mag: estimateAssumptionAnnualImpact(a) }))
     .filter((x) => Math.abs(x.mag) > 1)
@@ -793,7 +793,7 @@ function estimateAssumptionAnnualImpact(a: Assumption): number {
     case "salary_increase_overall":
       // Both legs of the overall raise hurt profit by `amount × months`.
       // When stored as a percent we don't know the dollar value here
-      // (engine reconstructs it against baseline.avgPayroll) — return 0
+      // (engine reconstructs it against baseline.avgPayroll) - return 0
       // so the ranking falls back to other signals.
       return -a.amount * months;
     case "terminate":

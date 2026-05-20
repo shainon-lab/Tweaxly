@@ -1,7 +1,7 @@
 "use client";
 
 // Currency section for the Business Settings profile tab. Shows the
-// business base currency (read-only — it's edited from the main
+// business base currency (read-only - it's edited from the main
 // profile form) plus the currencies auto-detected from imported and
 // manual transactions, with a count for each. Below the list, the
 // conversion-method picker (only daily_historical is wired today;
@@ -38,7 +38,7 @@ export default function CurrencySection({ baseCurrency }: Props) {
       <div className="text-xs text-slate-400 mb-4 leading-relaxed">
         Reports, forecasts, dashboards, and AI insights are normalized
         to your base currency. Transactions in other currencies are
-        converted at the historical rate from the transaction date —
+        converted at the historical rate from the transaction date -
         you don&apos;t need to define a currency list in advance.
       </div>
 

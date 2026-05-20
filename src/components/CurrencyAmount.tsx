@@ -31,9 +31,9 @@ function sameAsBase(p: CurrencyAmountProps): boolean {
 }
 
 function formatRateDate(d: string | Date | null | undefined): string {
-  if (!d) return "—";
+  if (!d) return "-";
   const dd = typeof d === "string" ? new Date(d) : d;
-  if (Number.isNaN(dd.getTime())) return "—";
+  if (Number.isNaN(dd.getTime())) return "-";
   return dd.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }
 
@@ -48,7 +48,7 @@ const METHOD_LABEL: Record<string, string> = {
   daily_historical: "Daily historical rate",
   monthly_avg:      "Monthly average rate",
   manual_fixed:     "Manual fixed rate",
-  none:             "—",
+  none:             "-",
 };
 
 export default function CurrencyAmount(p: CurrencyAmountProps) {
@@ -58,7 +58,7 @@ export default function CurrencyAmount(p: CurrencyAmountProps) {
     ? (p.amount > 0 ? "+" : p.amount < 0 ? "−" : "") + fmtMoney(Math.abs(p.amount), p.baseCurrency)
     : fmtMoney(p.amount, p.baseCurrency);
 
-  // Same-currency or no FX info — plain text, no badge.
+  // Same-currency or no FX info - plain text, no badge.
   if (same) {
     return <span className={p.className}>{display}</span>;
   }
@@ -101,11 +101,11 @@ export default function CurrencyAmount(p: CurrencyAmountProps) {
             {fmtMoney(p.amount, p.baseCurrency)}
           </Row>
           <Row label="Rate">
-            {p.exchangeRate != null ? p.exchangeRate.toFixed(4) : "—"}
+            {p.exchangeRate != null ? p.exchangeRate.toFixed(4) : "-"}
           </Row>
           <Row label="Rate date">{formatRateDate(p.exchangeRateDate)}</Row>
-          <Row label="Source">{SOURCE_LABEL[p.exchangeRateSource ?? ""] ?? (p.exchangeRateSource ?? "—")}</Row>
-          <Row label="Method">{METHOD_LABEL[p.conversionMethod ?? ""] ?? (p.conversionMethod ?? "—")}</Row>
+          <Row label="Source">{SOURCE_LABEL[p.exchangeRateSource ?? ""] ?? (p.exchangeRateSource ?? "-")}</Row>
+          <Row label="Method">{METHOD_LABEL[p.conversionMethod ?? ""] ?? (p.conversionMethod ?? "-")}</Row>
           {needsReview ? (
             <div className="mt-2 text-[11px] text-bad">
               Rate not available. Set a manual rate from the transaction details.

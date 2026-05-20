@@ -1,7 +1,7 @@
 // Login as a POST Route Handler instead of a Server Action.
 //
 // Why: when we used `"use server"` action + iron-session.save() + redirect()
-// on Vercel, the action intermittently crashed with "Connection closed" —
+// on Vercel, the action intermittently crashed with "Connection closed" -
 // iron-session writes the cookie via `cookies().set()` and Next.js's
 // response stream sometimes races with the synchronous `redirect()`.
 // A Route Handler returns a regular NextResponse with Set-Cookie headers,
@@ -17,7 +17,7 @@ import { ipFromRequest } from "@/lib/rateLimit";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// Records a login attempt regardless of outcome. Best-effort — a write
+// Records a login attempt regardless of outcome. Best-effort - a write
 // failure here must never block the user's login or expose the result.
 async function recordLoginAttempt(args: {
   req: NextRequest;
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
   ]);
 
   const res = NextResponse.redirect(successUrl, { status: 303 });
-  // Bind iron-session to *this* response — Set-Cookie lands on the redirect
+  // Bind iron-session to *this* response - Set-Cookie lands on the redirect
   // we're about to return, no streaming-state surprises.
   const session = await getIronSession<SessionData>(req, res, sessionOptions);
   session.userId = user.id;

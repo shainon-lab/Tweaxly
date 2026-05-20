@@ -1,6 +1,6 @@
 // Shape of the accessibility preferences persisted in localStorage and
 // reflected on <html data-a11y-*="..."> attributes so CSS can pick them
-// up without a re-render. Keep this file tiny and dependency-free —
+// up without a re-render. Keep this file tiny and dependency-free -
 // it's imported by both server and client code.
 
 export type ContrastMode  = "default" | "high" | "dark-high" | "light-high" | "monochrome" | "invert";

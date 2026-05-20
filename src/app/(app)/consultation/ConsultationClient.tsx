@@ -1,6 +1,6 @@
 "use client";
 
-// New Consultation view — the AI business advisor entry point. Layout
+// New Consultation view - the AI business advisor entry point. Layout
 // reads top-to-bottom: intro card → example question pills → input area
 // with gradient "Start Consultation" CTA → the response cards once an
 // answer comes back. No chat bubbles, no sidebar, no clutter.
@@ -59,7 +59,7 @@ function fmtMoney(value: number, currency: string) {
   }
 }
 
-// ResponseBriefing — structured executive briefing built from a
+// ResponseBriefing - structured executive briefing built from a
 // consultation response. Replaces the old single-blob "Advisor
 // analysis" render. Splits the response into:
 //   - Executive Takeaway (top)
@@ -188,7 +188,7 @@ function ResponseBriefing({
   );
 }
 
-// Strategic paths list — single responsive grid so cards sit side
+// Strategic paths list - single responsive grid so cards sit side
 // by side and don't leave empty horizontal space. Tier is still
 // communicated per card via a small pill at the top + a border tone
 // (primary = accent, high-impact = warn, low-impact = neutral). Cards
@@ -254,7 +254,7 @@ function PathCard({
           {o.items.map((it, ii) => (
             <li key={ii}>
               <span className="font-medium">{it.label}</span>
-              <span className="text-slate-400"> — {fmtMoney(it.amount, currency)}/mo{it.note ? <> · {it.note}</> : null}</span>
+              <span className="text-slate-400"> - {fmtMoney(it.amount, currency)}/mo{it.note ? <> · {it.note}</> : null}</span>
             </li>
           ))}
         </ul>
@@ -312,7 +312,7 @@ export default function ConsultationClient({
     if (!message || sending) return;
     setSending(true);
     try {
-      // Every Start Consultation creates a fresh thread — never re-uses
+      // Every Start Consultation creates a fresh thread - never re-uses
       // a previous one. That way each question shows up as its own row
       // in Consultation History.
       const res = await fetch("/api/consultation", {
@@ -331,7 +331,7 @@ export default function ConsultationClient({
       if (typeof window !== "undefined" && window.location.search) {
         router.replace("/consultation");
       }
-      // Don't push ?id= into the URL — the page is "start a new
+      // Don't push ?id= into the URL - the page is "start a new
       // consultation", not "edit consultation X". On reload we'll
       // happily land back on the empty intro screen.
       startTransition(() => router.refresh());
@@ -361,7 +361,7 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Arrival mode — if the user came in with a prefilled question
+      {/* Arrival mode - if the user came in with a prefilled question
           (?q= from Analyze / Investigate / Explain This elsewhere),
           the screen pivots: the freeform conversation leads, and the
           hero is tucked behind a disclosure. The user's intent is the
@@ -396,7 +396,7 @@ export default function ConsultationClient({
         </>
       ) : (
         <>
-          {/* One unified hero — main AI recommendation on the left,
+          {/* One unified hero - main AI recommendation on the left,
               lightweight related directions on the right. Replaces
               the previous stacked Recommended + Suggested sections. */}
           {recommended ? (
@@ -409,7 +409,7 @@ export default function ConsultationClient({
             />
           ) : null}
 
-          {/* Freeform consultation — always-visible major element,
+          {/* Freeform consultation - always-visible major element,
               calm container so it doesn't compete with the hero. */}
           <FreeformConsultation
             textareaRef={textareaRef}
@@ -436,7 +436,7 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Response card — the most recent Q&A. Older Q&As live on the
+      {/* Response card - the most recent Q&A. Older Q&As live on the
           Consultation History tab; this view keeps focus on the latest. */}
       {hasResponse && lastUserMsg && lastAssistantMsg ? (
         <div ref={responseRef} className="space-y-4">
@@ -449,7 +449,7 @@ export default function ConsultationClient({
             </div>
           </div>
 
-          {/* Structured executive briefing — replaces the old
+          {/* Structured executive briefing - replaces the old
               advisor-analysis blob. Builds takeaway + anchors + reasoning
               + paths + risks from the same content + payload, then
               renders each section with its own visual weight. */}
@@ -500,7 +500,7 @@ function RecommendedConsultationCard({
     >
       {/* Two-column hero layout. Left: AI focus + main recommendation
           + CTA. Right: lightweight related directions, vertically
-          stacked, no heavy chrome — the user reads them as supporting
+          stacked, no heavy chrome - the user reads them as supporting
           AI guidance, not as another section of feature cards. */}
       <div
         className={
@@ -510,7 +510,7 @@ function RecommendedConsultationCard({
         }
       >
         <div className={hasSuggestions ? "lg:col-span-8" : ""}>
-          {/* Section anchor — quiet pre-heading that names the block
+          {/* Section anchor - quiet pre-heading that names the block
               instead of describing what's inside it. */}
           <div className="text-xs uppercase tracking-wide text-accent font-semibold mb-2">
             Recommended Consultation
@@ -521,7 +521,7 @@ function RecommendedConsultationCard({
           </h2>
 
           {/* Observation + interpretation form one tight content
-              cluster — the interpretation should read as a direct
+              cluster - the interpretation should read as a direct
               continuation of the metric, not a separate paragraph. */}
           <p className="text-sm md:text-base text-slate-100 leading-relaxed max-w-3xl mb-1.5">
             {rec.observation}
@@ -530,7 +530,7 @@ function RecommendedConsultationCard({
             {rec.interpretation}
           </p>
 
-          {/* CTA sits flush left under the content cluster — close to
+          {/* CTA sits flush left under the content cluster - close to
               the recommendation it acts on, no horizontal vacuum. */}
           <button
             type="button"
@@ -556,7 +556,7 @@ function RecommendedConsultationCard({
   );
 }
 
-// RelatedDirections — the right rail of the hero. Fixed at three
+// RelatedDirections - the right rail of the hero. Fixed at three
 // rows so the section feels curated and predictable; any additional
 // candidates are dropped at the page level.
 function RelatedDirections({
@@ -602,9 +602,9 @@ function RelatedDirections({
   );
 }
 
-// FreeformConsultation — lighter container than before (no heavy
-// gradient bg, no thick padding). Still prominent — it's a core
-// product interaction — but reads as a conversational workspace
+// FreeformConsultation - lighter container than before (no heavy
+// gradient bg, no thick padding). Still prominent - it's a core
+// product interaction - but reads as a conversational workspace
 // rather than a large dashboard widget.
 //
 // arrivalMode = true means the user arrived from elsewhere with a
@@ -629,7 +629,7 @@ function FreeformConsultation({
     ? "Continue this consultation"
     : "Ask the AI advisor";
   return (
-    // Quieter chrome than the hero — neutral background, no gradient,
+    // Quieter chrome than the hero - neutral background, no gradient,
     // smaller section heading. The hero is the AI's lead recommendation
     // (proactive); this is the user-input tool (reactive). Visual
     // hierarchy makes that distinction obvious instead of presenting

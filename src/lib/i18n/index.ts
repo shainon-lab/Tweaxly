@@ -21,7 +21,7 @@ export function t(key: string, locale: Locale = DEFAULT_LOCALE): string {
   return dict[key] ?? DICTIONARIES[DEFAULT_LOCALE][key] ?? key;
 }
 
-// Build a curried translator bound to a single locale — handy when
+// Build a curried translator bound to a single locale - handy when
 // you want `t(key)` without re-passing the locale every call.
 export function translator(locale: Locale) {
   return (key: string) => t(key, locale);

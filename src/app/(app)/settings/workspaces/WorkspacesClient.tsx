@@ -86,7 +86,7 @@ export function WorkspacesClient({ workspaces, currentBusinessId }: {
       `Permanently delete "${name}"?\n\nThis cascade-deletes ${txCount.toLocaleString()} transaction(s), uploads, employees, forecasts, and every member. There is no undo.\n\nType the workspace name to confirm:`
     );
     if (confirmText !== name) {
-      if (confirmText !== null) alert("Name didn't match — deletion cancelled.");
+      if (confirmText !== null) alert("Name didn't match - deletion cancelled.");
       return;
     }
     setError(null);
@@ -202,7 +202,7 @@ export function WorkspacesClient({ workspaces, currentBusinessId }: {
 
       <div className="rounded-xl border border-dashed border-line bg-ink-900/20 p-4 text-xs text-slate-500">
         <div className="text-slate-300 font-medium mb-1">Invitations & ownership transfer</div>
-        Inviting members by email and transferring ownership aren&apos;t wired up yet —
+        Inviting members by email and transferring ownership aren&apos;t wired up yet -
         coming with the next admin/invite milestone. For now, every workspace has
         exactly one owner (its creator), and additional members can be added by the
         super_admin only.

@@ -1,5 +1,5 @@
-// POST   /api/admin/accounts/[id]/notes      — create note
-// DELETE /api/admin/accounts/[id]/notes?noteId=... — delete note
+// POST   /api/admin/accounts/[id]/notes      - create note
+// DELETE /api/admin/accounts/[id]/notes?noteId=... - delete note
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminOrSuperApi } from "@/lib/auth";

@@ -1,5 +1,5 @@
-// Monthly-report period helpers. Supports three granularities — month,
-// quarter, year — each represented by a stable string anchor:
+// Monthly-report period helpers. Supports three granularities - month,
+// quarter, year - each represented by a stable string anchor:
 //
 //   month   → "YYYY-MM"           e.g. "2026-05"
 //   quarter → "YYYY-Q{1..4}"      e.g. "2026-Q2"
@@ -83,7 +83,7 @@ export function shiftPeriod(granularity: Granularity, anchor: string, n: number)
   return String(y - n);
 }
 
-// Today's anchor for each granularity — used as the default.
+// Today's anchor for each granularity - used as the default.
 export function defaultAnchor(granularity: Granularity): string {
   const today = new Date();
   const year = today.getUTCFullYear();

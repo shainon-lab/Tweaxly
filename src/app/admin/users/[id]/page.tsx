@@ -23,7 +23,7 @@ const STATUS_PILL: Record<string, string> = {
 };
 
 function fmtDate(d: Date | null | undefined) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleString();
 }
 function fmtRel(d: Date | null | undefined) {
@@ -70,7 +70,7 @@ export default async function AdminUserDetail({ params }: { params: { id: string
       where: {
         OR: [
           { actorUserId: user.id },
-          // Actions taken against this user — currently only role
+          // Actions taken against this user - currently only role
           // changes carry the userId in metadata, but we surface them
           // by scanning the metadata column.
         ],
@@ -81,7 +81,7 @@ export default async function AdminUserDetail({ params }: { params: { id: string
     }),
   ]);
 
-  // Build the workspace list — owned first, then non-owner memberships.
+  // Build the workspace list - owned first, then non-owner memberships.
   type WS = { id: string; name: string; status: string; plan: string; role: string; isOwner: boolean; lastActivityAt: Date | null };
   const ownedIds = new Set(user.businesses.map((b) => b.id));
   const workspaces: WS[] = user.businesses.map((b) => ({
@@ -219,7 +219,7 @@ export default async function AdminUserDetail({ params }: { params: { id: string
                         <Link href={`/admin/accounts/${a.targetBusiness.id}`} className="hover:text-accent">
                           {a.targetBusiness.name}
                         </Link>
-                      ) : "—"}
+                      ) : "-"}
                       <span className="mx-2 text-slate-700">·</span>
                       {fmtDate(a.createdAt)}
                     </div>

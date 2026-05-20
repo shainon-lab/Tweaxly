@@ -1,4 +1,4 @@
-// POST /api/admin/impersonate/exit — clears impersonation state, logs.
+// POST /api/admin/impersonate/exit - clears impersonation state, logs.
 import { NextResponse } from "next/server";
 import { requireAdminOrSuperApi } from "@/lib/auth";
 import { getSession } from "@/lib/session";

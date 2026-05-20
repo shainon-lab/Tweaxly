@@ -3,7 +3,7 @@
 // Onboarding empty-state for Forecast → Scenarios. Shown only when
 // the user has zero assumptions in play. Centered message + a
 // 'Scenario Builder' CTA. Clicking the CTA expands the builder
-// inline below the message rather than opening the side panel —
+// inline below the message rather than opening the side panel -
 // at this stage there's no existing forecast context worth
 // preserving, so an inline setup reads as more natural onboarding.
 //

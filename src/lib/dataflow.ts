@@ -52,7 +52,7 @@ export function rangeToYMs(
     };
   }
   if (range === "last_quarter") {
-    // Previous calendar quarter — wrap to last year's Q4 when the current
+    // Previous calendar quarter - wrap to last year's Q4 when the current
     // quarter is Q1.
     const q = Math.ceil(m / 3);
     const prevQ = q - 1; // 0 means Q4 of prior year
@@ -375,7 +375,7 @@ export async function buildMonthLineItems(
     }
     if (t.accountingMonth === ym) entry.cur += t.amount;
     else if (t.accountingMonth === prevYM) entry.prev += t.amount;
-    // Other months count as "presence" only — they make the category eligible
+    // Other months count as "presence" only - they make the category eligible
     // to appear in the report row even with 0 values in cur/prev.
   }
 
@@ -418,7 +418,7 @@ export async function buildMonthLineItems(
   });
 
   // Revenue rows first, then outcome rows. Each revenue category appears as
-  // its own line — same shape as outcomes.
+  // its own line - same shape as outcomes.
   const rows: MonthLineItemRow[] = [...revenueRows, ...outcomeRows];
 
   const revenueCur = revenueRows.reduce((s, r) => s + r.cur, 0);
@@ -454,5 +454,5 @@ export const RANGE_LABEL: Record<DataFlowRange, string> = {
   custom: "Custom",
 };
 
-// Avoid unused-import warnings — dateToYM is exported for future use elsewhere
+// Avoid unused-import warnings - dateToYM is exported for future use elsewhere
 void dateToYM;

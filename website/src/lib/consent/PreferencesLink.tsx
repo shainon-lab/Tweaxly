@@ -1,6 +1,6 @@
 "use client";
 
-// Footer trigger — renders an inline link/button styled like the other
+// Footer trigger - renders an inline link/button styled like the other
 // footer entries that opens the preferences modal. Use anywhere the
 // user might want to revisit consent (footers, settings, etc.).
 

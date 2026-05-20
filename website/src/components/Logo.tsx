@@ -1,5 +1,5 @@
 // TWEAXLY wordmark. The X is two chevrons (< purple + > teal) meeting at a
-// shared center vertex — matching the brand mark exactly. The component
+// shared center vertex - matching the brand mark exactly. The component
 // carries its own navy panel so it always sits on the correct background
 // regardless of where it's rendered.
 
@@ -43,7 +43,7 @@ export default function Logo({
         <span>LY</span>
       </div>
       {showTagline ? (
-        // Hidden on narrow screens — the tagline + the Log in / Sign
+        // Hidden on narrow screens - the tagline + the Log in / Sign
         // up buttons overflow on mobile when both are visible.
         // Re-appears at the sm breakpoint where there's room.
         <div

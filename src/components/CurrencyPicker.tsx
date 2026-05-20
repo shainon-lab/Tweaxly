@@ -65,7 +65,7 @@ export default function CurrencyPicker({ value, onChange, name, id, className }:
     ];
   }, [query, value]);
 
-  // Flat list of selectable items in render order — used for keyboard nav.
+  // Flat list of selectable items in render order - used for keyboard nav.
   const flat = useMemo(() => sections.flatMap((s) => s.items), [sections]);
 
   useEffect(() => {

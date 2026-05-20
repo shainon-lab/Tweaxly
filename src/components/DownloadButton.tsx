@@ -8,12 +8,12 @@
 // Where `payload` is the ExportPayload the page builds from the same
 // in-memory data that drives the on-screen render. Client-side
 // generation guarantees the export exactly matches what the user
-// sees — no risk of an export endpoint and the UI drifting.
+// sees - no risk of an export endpoint and the UI drifting.
 //
 // Three formats:
-//   • CSV  — raw rows, lightweight, opens in Excel/Sheets
-//   • XLSX — full workbook with formatting, totals, frozen header
-//   • PDF  — via window.print() with print-friendly CSS in
+//   • CSV  - raw rows, lightweight, opens in Excel/Sheets
+//   • XLSX - full workbook with formatting, totals, frozen header
+//   • PDF  - via window.print() with print-friendly CSS in
 //            globals.css; the user picks "Save as PDF" in the OS
 //            print dialog. Server-side PDF generation is documented
 //            as a follow-up.

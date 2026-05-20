@@ -2,7 +2,7 @@
 //   1. Welcome  (Start setup vs. Explore demo business)
 //   2. Business basics       (name, format, currency, country, industry)
 //   3. Business stage        (new / growing / established)
-//   4. Financial history     (yes/no — skipped on stage='new')
+//   4. Financial history     (yes/no - skipped on stage='new')
 //   5. Payroll structure     (yes/no)
 //   6. Business goals        (multi-select)
 //   7. → /manual-data         (Import Your Business Data)

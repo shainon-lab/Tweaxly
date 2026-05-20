@@ -2,7 +2,7 @@
 // target account (when applicable), structured metadata, and the
 // caller's IP / user agent if available.
 //
-// Best-effort: a failure here never blocks the caller — audit logging
+// Best-effort: a failure here never blocks the caller - audit logging
 // should never break user actions. If logging fails, we swallow.
 //
 // Never include secrets, passwords, tokens, or full bodies. Metadata

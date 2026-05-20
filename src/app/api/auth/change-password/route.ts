@@ -1,6 +1,6 @@
 // Change the current user's password. POST { currentPassword, newPassword }.
 // Verifies the current password against the stored hash, then updates the
-// hash to the new password. No session invalidation — the user stays
+// hash to the new password. No session invalidation - the user stays
 // logged in.
 
 import { NextRequest, NextResponse } from "next/server";

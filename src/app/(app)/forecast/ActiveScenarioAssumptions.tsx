@@ -95,10 +95,10 @@ export default function ActiveScenarioAssumptions({
                 <td className="text-slate-300">{prettyType(a.type)}</td>
                 <td className="font-medium">{a.label}</td>
                 <td className={`text-right ${a.amount >= 0 ? "text-slate-200" : "text-good"}`}>
-                  {a.amount === 0 ? "—" : fmtMoney(a.amount, currency)}
+                  {a.amount === 0 ? "-" : fmtMoney(a.amount, currency)}
                 </td>
                 <td className="text-right text-slate-300">
-                  {a.percentage === 0 ? "—" : `${(a.percentage * 100).toFixed(1)}%`}
+                  {a.percentage === 0 ? "-" : `${(a.percentage * 100).toFixed(1)}%`}
                 </td>
                 <td className="text-slate-300">
                   M{a.startMonth}{a.endMonth ? ` → M${a.endMonth}` : "+"}

@@ -20,7 +20,7 @@ export default function AlertsError({
         We hit a problem loading your alerts
       </div>
       <div className="text-sm text-slate-400 max-w-md mx-auto leading-relaxed mb-4">
-        Nothing is broken with your data — this is usually transient. Try again, or open the notifications page to set up your first rule.
+        Nothing is broken with your data - this is usually transient. Try again, or open the notifications page to set up your first rule.
       </div>
       {error?.digest ? (
         <div className="text-[11px] text-slate-500 mb-4">Reference: {error.digest}</div>

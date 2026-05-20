@@ -152,7 +152,7 @@ export default function BulkUploadCard({ currency }: { currency: string }) {
   const [committingId, setCommittingId] = useState<string | null>(null);
   const [commitError, setCommitError] = useState<string | null>(null);
 
-  // Upload summary tiles are headlines — show whole dollars, no decimals.
+  // Upload summary tiles are headlines - show whole dollars, no decimals.
   const fmt = useMemo(
     () =>
       new Intl.NumberFormat("en-US", {
@@ -330,7 +330,7 @@ export default function BulkUploadCard({ currency }: { currency: string }) {
         </div>
       </div>
 
-      {/* Sections — one per file. */}
+      {/* Sections - one per file. */}
       <div className="space-y-4 mb-4">
         {sections.map((s, i) => (
           <SectionCard
@@ -367,7 +367,7 @@ export default function BulkUploadCard({ currency }: { currency: string }) {
           </div>
         ) : null}
         <div className="flex flex-wrap items-center justify-end gap-2">
-          {/* + Add more — only when last section is confirmed AND under cap. */}
+          {/* + Add more - only when last section is confirmed AND under cap. */}
           {!reachedCap && !hasDraft && confirmed.length > 0 ? (
             <button
               type="button"
@@ -396,7 +396,7 @@ export default function BulkUploadCard({ currency }: { currency: string }) {
         </div>
         {reachedCap ? (
           <div className="text-xs text-slate-500 mt-2 text-right">
-            Reached the {MAX_FILES}-file limit — finish with DONE &amp; UPLOAD.
+            Reached the {MAX_FILES}-file limit - finish with DONE &amp; UPLOAD.
           </div>
         ) : null}
       </div>
@@ -490,7 +490,7 @@ function SectionCard({
         </button>
       </div>
 
-      {/* Inputs — order: file, month, year, confirm. */}
+      {/* Inputs - order: file, month, year, confirm. */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
         <div className="md:col-span-3">
           <label className="label">Upload file (CSV / XLSX)</label>
@@ -508,7 +508,7 @@ function SectionCard({
           {section.preview ? (
             <div className="text-xs text-slate-300 mt-1 truncate">
               <span className="text-slate-500">Loaded: </span>
-              {section.preview.filename} — {section.preview.rows.length} row
+              {section.preview.filename} - {section.preview.rows.length} row
               {section.preview.rows.length === 1 ? "" : "s"}
             </div>
           ) : null}
@@ -566,7 +566,7 @@ function SectionCard({
                 !section.preview
                   ? "Upload a file first"
                   : !autoOK
-                    ? "No Amount column detected — fix the file and re-upload"
+                    ? "No Amount column detected - fix the file and re-upload"
                     : "Lock this file & period"
               }
             >
@@ -585,7 +585,7 @@ function SectionCard({
       {section.preview ? (
         !autoOK ? (
           <div className="text-xs text-warn">
-            ⚠ No Amount column detected — fix the file&apos;s columns and re-upload before
+            ⚠ No Amount column detected - fix the file&apos;s columns and re-upload before
             confirming.
           </div>
         ) : summary ? (
@@ -636,7 +636,7 @@ function SectionCard({
             </div>
             {detectionLooksWrong ? (
               <div className="text-xs text-bad mt-1">
-                ⚠ Both Income and Outcome totals are $0 — the detector probably picked the wrong
+                ⚠ Both Income and Outcome totals are $0 - the detector probably picked the wrong
                 column. Fix the file and re-upload before confirming.
               </div>
             ) : null}

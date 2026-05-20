@@ -44,7 +44,7 @@ export default function ReportsInnerTabs() {
         })}
       </div>
 
-      {/* View Charts — secondary affordance on the right of the same
+      {/* View Charts - secondary affordance on the right of the same
           row. Same height as the tab pills; visually demoted so it
           doesn't compete with the main reports flow. */}
       <Link

@@ -10,14 +10,14 @@ import {
 import { fmtMoney } from "@/lib/format";
 
 // Tooltip formatter that fully spells out a number with comma thousands
-// separators and two decimals — used by all chart hover tooltips so the
+// separators and two decimals - used by all chart hover tooltips so the
 // popup is always readable and matches the rest of the app's money format.
 const tooltipFmt = (value: number) => fmtMoney(value);
 
 // Compact money formatter for inline data labels on charts. Avoids overflowing
 // the bar/point. Caps at 2 decimals to match the rest of the app.
 function fmtCompact(v: number): string {
-  if (!isFinite(v)) return "—";
+  if (!isFinite(v)) return "-";
   const sign = v < 0 ? "−" : "";
   const abs = Math.abs(v);
   if (abs >= 1_000_000) return `${sign}$${trim2(abs / 1_000_000)}M`;

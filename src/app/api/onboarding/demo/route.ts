@@ -1,12 +1,12 @@
 // POST /api/onboarding/demo
 //
-// Explore Demo Business — seeds the caller's current workspace with a
+// Explore Demo Business - seeds the caller's current workspace with a
 // 3.5-year digital-agency dataset so they can explore every product
 // surface immediately without uploading data. Marks the workspace as
 // onboarded + status='demo' so the operator can tell it's not real.
 //
 // Destructive: wipes existing transactions / employees / categories /
-// vendors / etc. on the target business before seeding. (Safe — only
+// vendors / etc. on the target business before seeding. (Safe - only
 // called from the onboarding welcome screen.)
 
 import { NextResponse } from "next/server";

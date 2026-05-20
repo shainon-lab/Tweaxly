@@ -65,7 +65,7 @@ export default async function AdminSettingsPage() {
           <Tile label="Total accounts" value={businessCount.toLocaleString()} />
           <Tile label="Total users"    value={userCount.toLocaleString()} />
           <Tile label="Node"           value={process.version} mono />
-          <Tile label="Environment"    value={process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "—"} mono />
+          <Tile label="Environment"    value={process.env.VERCEL_ENV ?? process.env.NODE_ENV ?? "-"} mono />
         </div>
       </section>
 

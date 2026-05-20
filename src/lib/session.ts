@@ -6,7 +6,7 @@ export type SessionData = {
   email?: string;
   currentBusinessId?: string;
   // ──────────────────────────────────────────────────────────────────
-  // Impersonation — only super_admin users can set these. When set,
+  // Impersonation - only super_admin users can set these. When set,
   // requireBusiness() resolves to impersonatingBusinessId instead of
   // the user's own business; queries scope to the impersonated tenant.
   //

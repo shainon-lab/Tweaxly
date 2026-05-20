@@ -12,7 +12,7 @@
 //   • net = income − expenses  (identity check)
 //   • Σ converted_amounts  ≈  Σ original_amount × exchange_rate  (FX integrity)
 //
-// Reconciliation is a *read* operation — never mutates. It exists to
+// Reconciliation is a *read* operation - never mutates. It exists to
 // catch silent discrepancies before they show up on a customer's
 // dashboard.
 
@@ -78,7 +78,7 @@ export async function reconcileMonth(
     });
   }
 
-  // Check 3: FX integrity — converted amounts should equal
+  // Check 3: FX integrity - converted amounts should equal
   // original × exchangeRate for every row that was converted.
   const fxRows = await prisma.transaction.findMany({
     where: {

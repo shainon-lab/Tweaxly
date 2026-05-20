@@ -39,10 +39,10 @@ export default async function BusinessSignalsPage() {
   const mutedKeys = new Set(mutedRows.map((m) => m.signalKey));
   const eligible = advisorPool.filter((r) => !mutedKeys.has(r.signalKey));
   // Four severity buckets, each its own row in the UI:
-  //   Critical  — level "bad"
-  //   Attention — level "warn"
-  //   Positive  — level "good"
-  //   Insight   — level "info"
+  //   Critical  - level "bad"
+  //   Attention - level "warn"
+  //   Positive  - level "good"
+  //   Insight   - level "info"
   // Within a row, impact descending. Rows with zero items collapse out.
   const byImpact = (a: typeof eligible[number], b: typeof eligible[number]) => b.impact - a.impact;
   const critical  = eligible.filter((r) => r.level === "bad" ).sort(byImpact).slice(0, MAX_PER_GROUP);

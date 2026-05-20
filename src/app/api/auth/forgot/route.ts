@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
     { status: 303 }
   );
 
-  // Rate limit per IP — slows down enumeration / bulk spam.
+  // Rate limit per IP - slows down enumeration / bulk spam.
   const ip = ipFromRequest(req);
   const limited = checkRateLimit({
     key: `forgot:${ip}`,

@@ -27,7 +27,7 @@ export type RosterMember = {
   employmentType: string;     // "employee" | "contractor" | "freelancer"
   status: string;             // "active" | "planned" | "terminated"
   monthlyCost: number;        // fully-loaded
-  grossSalary: number;        // gross monthly — used to compute % raises
+  grossSalary: number;        // gross monthly - used to compute % raises
 };
 
 // Definition of every scenario event card. `fields` decides which inputs
@@ -123,7 +123,7 @@ export default function ScenarioBuilder({
   // Calendar context for the start/end pickers. The forecast horizon
   // starts at the current calendar month (month index 1) and extends
   // `maxMonthsAhead` months forward. We render Start / End as two
-  // dropdowns each — month name + year — and translate them to the
+  // dropdowns each - month name + year - and translate them to the
   // 1-based relative month index the engine actually stores.
   const NOW = new Date();
   const NOW_YEAR  = NOW.getFullYear();
@@ -316,7 +316,7 @@ export default function ScenarioBuilder({
       });
       setOpenKey(null);
       startTransition(() => router.refresh());
-      // The builder now lives in a side panel — the user keeps
+      // The builder now lives in a side panel - the user keeps
       // seeing the forecast chart behind it, so we no longer
       // scroll the page on save (that used to disorient when the
       // builder was inline at the bottom of the page).
@@ -420,10 +420,10 @@ export default function ScenarioBuilder({
                       value={form.employeeId}
                       onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
                     >
-                      <option value="">— pick from roster —</option>
+                      <option value="">- pick from roster -</option>
                       {eligibleRoster.map((r) => (
                         <option key={r.id} value={r.id}>
-                          {r.name}{r.role ? ` · ${r.role}` : ""} — {fmtMoney(r.monthlyCost, currency)}/mo
+                          {r.name}{r.role ? ` · ${r.role}` : ""} - {fmtMoney(r.monthlyCost, currency)}/mo
                         </option>
                       ))}
                     </select>
@@ -436,7 +436,7 @@ export default function ScenarioBuilder({
                 </div>
               ) : null}
 
-              {/* Salary-increase: specific scope — employee picker */}
+              {/* Salary-increase: specific scope - employee picker */}
               {def.type === "salary_increase" && form.raiseScope === "specific" ? (
                 <div className="md:col-span-3">
                   <label className="label">Employee</label>
@@ -450,10 +450,10 @@ export default function ScenarioBuilder({
                       value={form.employeeId}
                       onChange={(e) => setForm({ ...form, employeeId: e.target.value })}
                     >
-                      <option value="">— pick from roster —</option>
+                      <option value="">- pick from roster -</option>
                       {raiseEmployees.map((r) => (
                         <option key={r.id} value={r.id}>
-                          {r.name}{r.role ? ` · ${r.role}` : ""} — gross {fmtMoney(r.grossSalary, currency)}/mo
+                          {r.name}{r.role ? ` · ${r.role}` : ""} - gross {fmtMoney(r.grossSalary, currency)}/mo
                         </option>
                       ))}
                     </select>
@@ -466,7 +466,7 @@ export default function ScenarioBuilder({
                 </div>
               ) : null}
 
-              {/* Salary-increase: overall — global hint */}
+              {/* Salary-increase: overall - global hint */}
               {def.type === "salary_increase" && form.raiseScope === "overall" ? (
                 <div className="md:col-span-3">
                   <label className="label">Scope</label>
@@ -476,7 +476,7 @@ export default function ScenarioBuilder({
                 </div>
               ) : null}
 
-              {/* Label — only needed when there's no roster pick AND no overall scope */}
+              {/* Label - only needed when there's no roster pick AND no overall scope */}
               {!def.pickFromRoster && def.type !== "salary_increase" ? (
                 <div className="md:col-span-2">
                   <label className="label">Label</label>
@@ -489,7 +489,7 @@ export default function ScenarioBuilder({
                 </div>
               ) : null}
 
-              {/* Amount field — shown for all non-roster cards that include it */}
+              {/* Amount field - shown for all non-roster cards that include it */}
               {!def.pickFromRoster && def.fields.includes("amount") ? (
                 <div>
                   <label className="label">
@@ -611,7 +611,7 @@ export default function ScenarioBuilder({
                       }}
                       disabled={form.endMonth === ""}
                     >
-                      <option value="">—</option>
+                      <option value="">-</option>
                       {horizonYears.map((y) => <option key={y} value={y}>{y}</option>)}
                     </select>
                   </div>

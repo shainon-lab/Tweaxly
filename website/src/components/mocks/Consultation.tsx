@@ -15,14 +15,14 @@ export function ConsultationMock() {
         <span className="text-[10px] text-slate-500 tabular-nums">claude-opus-4.7</span>
       </div>
 
-      {/* User message — right aligned */}
+      {/* User message - right aligned */}
       <div className="flex justify-end mb-4">
         <div className="max-w-[85%] rounded-2xl rounded-tr-sm bg-brand-purple/15 border border-brand-purple/30 px-4 py-2.5 text-sm text-slate-100">
           Why did profitability drop in April?
         </div>
       </div>
 
-      {/* AI response — left aligned, structured */}
+      {/* AI response - left aligned, structured */}
       <div className="rounded-2xl rounded-tl-sm border border-line bg-ink-900/60 px-4 py-4 flex flex-col gap-3 text-sm">
         <div>
           <div className="text-[10px] uppercase tracking-wider text-brand-purple font-medium mb-1">Reasoning</div>

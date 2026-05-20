@@ -28,6 +28,6 @@ export function isLocale(s: unknown): s is Locale {
 // of typed nested objects because (a) it lets translators add a new
 // key without a TS rebuild, and (b) the fallback path (missing key →
 // English → key string) stays simple. The Dictionary type is the
-// English dictionary's shape; other locales can be partial — missing
+// English dictionary's shape; other locales can be partial - missing
 // keys fall back to English at runtime.
 export type Dictionary = Record<string, string>;

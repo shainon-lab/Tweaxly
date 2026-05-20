@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
 
-const DESCRIPTION = "Tweaxly pricing for AI financial intelligence, forecasting, business insights, cash flow monitoring, and AI advisory — full plans launching soon.";
+const DESCRIPTION = "Tweaxly pricing for AI financial intelligence, forecasting, business insights, cash flow monitoring, and AI advisory - full plans launching soon.";
 
 export const metadata: Metadata = {
   title: { absolute: "AI Financial Intelligence Pricing | Tweaxly" },
@@ -44,8 +44,8 @@ export default function PricingPage() {
           launch.
         </p>
         <p className="mt-5 text-lg text-slate-300 leading-relaxed">
-          This page will be updated with full plan details — AI financial
-          advisor, forecasting, business signals, and team seats — when
+          This page will be updated with full plan details - AI financial
+          advisor, forecasting, business signals, and team seats - when
           general availability opens.
         </p>
 

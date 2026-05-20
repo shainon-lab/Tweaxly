@@ -1,4 +1,4 @@
-// Tiny in-memory rate limiter — IP-keyed token bucket. Sufficient for
+// Tiny in-memory rate limiter - IP-keyed token bucket. Sufficient for
 // blocking obvious abuse on auth endpoints (forgot password, reset).
 // In a serverless / multi-instance deployment each lambda has its own
 // memory, so this is best-effort rather than airtight. Swap for

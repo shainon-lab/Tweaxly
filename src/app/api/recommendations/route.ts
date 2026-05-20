@@ -12,7 +12,7 @@ const MUTE_DAYS = 7;
 
 function pickRandom<T>(arr: T[], n: number): T[] {
   if (arr.length <= n) return arr.slice();
-  // Fisher-Yates partial shuffle — picks `n` items uniformly without bias.
+  // Fisher-Yates partial shuffle - picks `n` items uniformly without bias.
   const a = arr.slice();
   for (let i = a.length - 1; i > a.length - 1 - n; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -21,7 +21,7 @@ function pickRandom<T>(arr: T[], n: number): T[] {
   return a.slice(a.length - n);
 }
 
-// GET — return the most-recent active batch (no regeneration)
+// GET - return the most-recent active batch (no regeneration)
 export async function GET() {
   const { business } = await requireBusiness();
   const recs = await prisma.recommendation.findMany({
@@ -31,7 +31,7 @@ export async function GET() {
   return NextResponse.json({ recommendations: recs });
 }
 
-// POST — refresh: regenerate the full pool, filter out currently-muted signals,
+// POST - refresh: regenerate the full pool, filter out currently-muted signals,
 // shuffle, take a random sample up to MAX_VISIBLE, and persist as the new
 // active set.
 export async function POST(_req: NextRequest) {
@@ -86,10 +86,10 @@ export async function POST(_req: NextRequest) {
   return NextResponse.json({ recommendations: recs });
 }
 
-// PATCH — per-row action. Supported `action` values:
-//   "dismiss"       (default) — mark active recommendation as dismissed
-//   "applied"                 — mark active recommendation as applied
-//   "mute"                    — suppress this signal kind for MUTE_DAYS;
+// PATCH - per-row action. Supported `action` values:
+//   "dismiss"       (default) - mark active recommendation as dismissed
+//   "applied"                 - mark active recommendation as applied
+//   "mute"                    - suppress this signal kind for MUTE_DAYS;
 //                               also dismisses the current row.
 export async function PATCH(req: NextRequest) {
   const { business } = await requireBusiness();

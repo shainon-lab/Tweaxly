@@ -1,10 +1,10 @@
-// Consultation focus engine — derives the daily AI focus, the single
+// Consultation focus engine - derives the daily AI focus, the single
 // "Recommended Consultation" hero card, and a curated set of
 // "Suggested Strategic Consultations" from the same data the dashboard
 // and Business Signals already analyze.
 //
 // The goal is to make the Consultation screen feel like a continuation
-// of the business analysis already happening elsewhere — not a static
+// of the business analysis already happening elsewhere - not a static
 // prompt library. Every selection here is derived from the current
 // BusinessContext: revenue/expense moves, margin pressure, vendor
 // concentration, payroll burden, forecast risk, and active signals.
@@ -12,7 +12,7 @@
 import type { AdvisorRecommendation, BusinessContext } from "./advisor";
 import { fmtMoney, fmtPct, ymToLabel } from "./format";
 
-// Today's AI focus — one or two short themes summarizing what matters
+// Today's AI focus - one or two short themes summarizing what matters
 // most in the business right now. Rendered as a calm banner above the
 // rest of the consultation surface.
 export type TodaysFocus = {
@@ -24,13 +24,13 @@ export type TodaysFocus = {
 // pre-filled into the consultation textarea when the user picks it.
 export type StrategicSituation = {
   id: string;
-  title: string;       // "Hiring Expansion" — the business theme
+  title: string;       // "Hiring Expansion" - the business theme
   question: string;    // the actual prompt sent to the advisor
   blurb: string;       // short context shown under the title
   tone: "good" | "warn" | "bad" | "neutral";
 };
 
-// The single AI-prioritized Recommended Consultation — the hero.
+// The single AI-prioritized Recommended Consultation - the hero.
 export type RecommendedConsultation = {
   title: string;          // e.g. "Analyze Revenue Decline"
   observation: string;    // what happened (1 sentence)
@@ -51,7 +51,7 @@ export function pickTodaysFocus(
 ): TodaysFocus {
   const themes = new Set<string>();
 
-  // 1) Pull from the highest-severity signals first — those are the
+  // 1) Pull from the highest-severity signals first - those are the
   //    most immediate things the user should pay attention to.
   const ranked = [...signals].sort(
     (a, b) => severityScore(b.level) - severityScore(a.level) || b.impact - a.impact,
@@ -63,7 +63,7 @@ export function pickTodaysFocus(
   }
 
   // 2) If we didn't get two themes from signals, derive from the raw
-  //    snapshot — revenue/expense/margin movements that are big enough
+  //    snapshot - revenue/expense/margin movements that are big enough
   //    to be worth surfacing.
   if (themes.size < 2) {
     const revDelta = pctDelta(ctx.current.income, ctx.prev.income);
@@ -79,7 +79,7 @@ export function pickTodaysFocus(
     if (ctx.forecast[0] && ctx.forecast[0].expectedNet < 0) themes.add("Cash flow risk");
   }
 
-  // 3) Fallback — stable period.
+  // 3) Fallback - stable period.
   if (themes.size === 0) {
     themes.add("Steady operations");
   }
@@ -91,7 +91,7 @@ export function pickRecommendedConsultation(
   ctx: BusinessContext,
   signals: AdvisorRecommendation[],
 ): RecommendedConsultation | null {
-  // Prefer the most severe active signal — that's the AI's
+  // Prefer the most severe active signal - that's the AI's
   // highest-priority recommendation by definition. Fall back to
   // raw-context derived themes if there are no signals.
   const ranked = [...signals].sort(
@@ -100,7 +100,7 @@ export function pickRecommendedConsultation(
   const top = ranked.find((s) => s.level === "bad" || s.level === "warn");
   if (top) return recommendedFromSignal(top, ctx);
 
-  // No urgent signals — surface a strategic-but-not-urgent recommendation
+  // No urgent signals - surface a strategic-but-not-urgent recommendation
   // derived from the raw context (e.g. growth headroom, payroll efficiency).
   const fallback = recommendedFromContext(ctx, signals);
   return fallback;
@@ -114,7 +114,7 @@ export function pickSuggestedConsultations(
   const out: StrategicSituation[] = [];
   const seen = new Set<string>();
 
-  // 1) Mine the signal pool for thematic situations — pick the next 3
+  // 1) Mine the signal pool for thematic situations - pick the next 3
   //    most material signals after the recommended one.
   const ranked = [...signals]
     .filter((s) => !recommendedSignalKey || s.signalKey !== recommendedSignalKey)
@@ -209,13 +209,13 @@ function recommendedFromSignal(
     s.level === "warn" ? "warn" :
     s.level === "good" ? "good" :
     "info";
-  // The hero needs an executive-tight interpretation — the full
+  // The hero needs an executive-tight interpretation - the full
   // Business-Signals interpretation can run long because it carries
   // user notes, peer context, and supporting nuance. Strip those and
   // greedy-fit sentences up to ~140 chars so the hero reads as a
   // confident one- or two-sentence insight.
   const tightInterpretation = tightenInterpretation(s.interpretation);
-  const question = `${s.observation} ${s.interpretation} The recommended action was: ${s.recommendation} Walk me through the diagnosis — is that read correct, and what should I actually do next, in order of priority? Use my recent data (latest month is ${ymToLabel(ctx.ym)}) and be specific.`;
+  const question = `${s.observation} ${s.interpretation} The recommended action was: ${s.recommendation} Walk me through the diagnosis - is that read correct, and what should I actually do next, in order of priority? Use my recent data (latest month is ${ymToLabel(ctx.ym)}) and be specific.`;
   return {
     title: ctaForSignal(),
     observation: s.observation,
@@ -231,7 +231,7 @@ function recommendedFromSignal(
 // 1–2 sentences. Used for the consultation hero where verbosity
 // undermines the confident-AI tone we want.
 function tightenInterpretation(text: string, maxChars = 140): string {
-  // Drop appended user-note quotes — they belong in the deep dive,
+  // Drop appended user-note quotes - they belong in the deep dive,
   // not the hero. Match the exact prefix used by quoteRelevantNote
   // in advisor.ts ("Your own note on this from ...").
   const cleaned = text.split(/\s+Your own note on this from/i)[0].trim();
@@ -253,7 +253,7 @@ function tightenInterpretation(text: string, maxChars = 140): string {
   return out;
 }
 
-// Fallback recommendation when there are no urgent signals — surface a
+// Fallback recommendation when there are no urgent signals - surface a
 // strategic-but-quiet consultation derived from the raw context.
 function recommendedFromContext(
   ctx: BusinessContext,
@@ -263,13 +263,13 @@ function recommendedFromContext(
   const m = ctx.current;
   const curMargin = m.income > 0 ? (m.income - m.expenses) / m.income : null;
 
-  // Healthy with growth headroom — most useful executive prompt.
+  // Healthy with growth headroom - most useful executive prompt.
   if (curMargin != null && curMargin >= 0.20 && ctx.marketingRatio < 0.10 && ctx.avgRevenue > 0) {
     return {
       title: "Explore Growth Opportunity",
       observation: `Margins held at ${fmtPct(curMargin)} while marketing spend is only ${fmtPct(ctx.marketingRatio)} of revenue.`,
-      interpretation: `You have unused growth headroom — the business is generating profit faster than it's reinvesting in acquisition, which tends to plateau revenue over the medium term.`,
-      question: `My current margin is ${fmtPct(curMargin)} and marketing is only ${fmtPct(ctx.marketingRatio)} of revenue. Walk me through a measured approach to deploying ${fmtMoney(ctx.avgRevenue * 0.05, ccy)}/mo of additional acquisition spend — what should I measure, what level of CAC degradation is acceptable, and how would you stage the test? Use my actual numbers.`,
+      interpretation: `You have unused growth headroom - the business is generating profit faster than it's reinvesting in acquisition, which tends to plateau revenue over the medium term.`,
+      question: `My current margin is ${fmtPct(curMargin)} and marketing is only ${fmtPct(ctx.marketingRatio)} of revenue. Walk me through a measured approach to deploying ${fmtMoney(ctx.avgRevenue * 0.05, ccy)}/mo of additional acquisition spend - what should I measure, what level of CAC degradation is acceptable, and how would you stage the test? Use my actual numbers.`,
       cta: "Explore Growth Opportunity",
       tone: "good",
     };
@@ -280,12 +280,12 @@ function recommendedFromContext(
   const softest = [...signals].sort((a, b) => b.impact - a.impact).find((s) => s.level === "info");
   if (softest) return recommendedFromSignal(softest, ctx);
 
-  // Final fallback — a generic strategic prompt.
+  // Final fallback - a generic strategic prompt.
   return {
     title: "Set Strategic Priorities",
-    observation: `${ymToLabel(ctx.ym)} is operating in a stable band — nothing is flagging as urgent.`,
+    observation: `${ymToLabel(ctx.ym)} is operating in a stable band - nothing is flagging as urgent.`,
     interpretation: `Stable periods are the most useful time to make a deliberate strategic bet. The window where the cost of being wrong is lowest is exactly when most owners coast.`,
-    question: `My business is currently operating in a stable band — nothing urgent is flagging. Given my recent numbers, what would be the single highest-leverage strategic bet to consider this quarter — growth investment, cost optimization, hiring, or runway extension? Be specific about which numbers in my data drive your recommendation.`,
+    question: `My business is currently operating in a stable band - nothing urgent is flagging. Given my recent numbers, what would be the single highest-leverage strategic bet to consider this quarter - growth investment, cost optimization, hiring, or runway extension? Be specific about which numbers in my data drive your recommendation.`,
     cta: "Set Strategic Priorities",
     tone: "info",
   };
@@ -293,7 +293,7 @@ function recommendedFromContext(
 
 // Turn an advisor signal into a Suggested Strategic Consultation.
 // Title is a tight business theme, blurb is a one-line interpreted
-// insight — short, scannable, signal-oriented, not a mini paragraph.
+// insight - short, scannable, signal-oriented, not a mini paragraph.
 function situationForSignal(
   s: AdvisorRecommendation,
   ctx: BusinessContext,
@@ -326,12 +326,12 @@ function situationForSignal(
     id: s.signalKey,
     title: m.title,
     blurb: m.blurb,
-    question: `${s.observation} ${s.interpretation} The advisor's recommended action was: ${s.recommendation} Walk me through this in depth — is the diagnosis correct, what would you actually do first, and what should I be tracking after I act? Use my recent data (latest month: ${ymToLabel(ctx.ym)}).`,
+    question: `${s.observation} ${s.interpretation} The advisor's recommended action was: ${s.recommendation} Walk me through this in depth - is the diagnosis correct, what would you actually do first, and what should I be tracking after I act? Use my recent data (latest month: ${ymToLabel(ctx.ym)}).`,
     tone,
   };
 }
 
-// Always-on strategic themes — fill remaining slots so the section
+// Always-on strategic themes - fill remaining slots so the section
 // never feels empty. Each is one-line tight; the long-form question
 // fed into the advisor still carries all the necessary context.
 function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
@@ -359,7 +359,7 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
     id: "evergreen_expense_pressure",
     title: "Expense Pressure",
     blurb: "Where the biggest cost drag is hiding.",
-    question: `Walk me through my current expense base. Identify the 2–3 categories with the highest operational drag relative to revenue, the largest variance vs prior periods, or the most realistic optimization potential. Be specific — name the categories and the dollar amounts.`,
+    question: `Walk me through my current expense base. Identify the 2–3 categories with the highest operational drag relative to revenue, the largest variance vs prior periods, or the most realistic optimization potential. Be specific - name the categories and the dollar amounts.`,
     tone: "neutral",
   });
 

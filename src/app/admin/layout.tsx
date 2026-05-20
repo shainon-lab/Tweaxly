@@ -1,4 +1,4 @@
-// Admin section layout — gates every nested route to super_admin via
+// Admin section layout - gates every nested route to super_admin via
 // requireSuperAdmin(). Server-side enforcement; the UI/sidebar gating
 // elsewhere is convenience only.
 //
@@ -29,7 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
     <div className="min-h-screen flex flex-col bg-ink-950">
       {/* Amber-tinted header makes it instantly obvious you're in the
           admin context. Same convention as AWS assume-role / Stripe
-          Connect — a privilege-elevated bar that visually breaks from
+          Connect - a privilege-elevated bar that visually breaks from
           the standard product chrome. */}
       <header className="border-b-2 border-warn/60 bg-gradient-to-b from-warn/15 to-warn/[0.04] backdrop-blur sticky top-0 z-30 shadow-[0_1px_0_0_rgba(241,176,74,0.20)]">
         <div className="max-w-[1600px] mx-auto px-6 h-12 flex items-center justify-between gap-4">

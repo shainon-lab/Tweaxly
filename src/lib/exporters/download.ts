@@ -13,7 +13,7 @@ export function downloadBlob(blob: Blob, filenamePrefix: string, ext: "csv" | "x
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-  // Give the browser a tick before revoking — some browsers cancel
+  // Give the browser a tick before revoking - some browsers cancel
   // the download if revoke happens too early.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }

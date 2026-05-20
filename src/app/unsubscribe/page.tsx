@@ -7,7 +7,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 
 export const metadata = {
-  title: "Unsubscribed — Tweaxly",
+  title: "Unsubscribed - Tweaxly",
   description: "You've been unsubscribed from Tweaxly marketing communications.",
 };
 
@@ -63,7 +63,7 @@ export default async function UnsubscribePage({
           </div>
           <div className="text-xs text-slate-400 mb-4">
             You may still receive transactional emails (billing, security alerts,
-            password resets) for as long as your account is active — these are
+            password resets) for as long as your account is active - these are
             required to operate the account.
           </div>
           <div className="flex flex-wrap gap-3 text-sm">

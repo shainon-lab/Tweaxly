@@ -1,9 +1,9 @@
-// Email sender — wraps Resend with a graceful console-log fallback so
+// Email sender - wraps Resend with a graceful console-log fallback so
 // the password-reset flow is testable in dev without any env vars.
 //
 // Required env (production):
-//   RESEND_API_KEY  — your Resend API key
-//   EMAIL_FROM      — e.g. "Tweaxly <noreply@tweaxly.com>"
+//   RESEND_API_KEY  - your Resend API key
+//   EMAIL_FROM      - e.g. "Tweaxly <noreply@tweaxly.com>"
 //
 // If either is missing, sendEmail() logs the payload to the server
 // console and returns ok:true so callers can keep operating.
@@ -23,7 +23,7 @@ export async function sendEmail(input: {
 }): Promise<{ ok: boolean; error?: string }> {
   if (!resend) {
     console.log(
-      "\n[email:dev-fallback] RESEND_API_KEY not set — would have sent:\n" +
+      "\n[email:dev-fallback] RESEND_API_KEY not set - would have sent:\n" +
         `  to:      ${input.to}\n` +
         `  subject: ${input.subject}\n` +
         `  text:    ${input.text}\n`

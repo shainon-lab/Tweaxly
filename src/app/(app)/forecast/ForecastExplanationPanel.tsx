@@ -1,4 +1,4 @@
-// "Why this forecast?" — the mandatory explanation panel.
+// "Why this forecast?" - the mandatory explanation panel.
 //
 // Renders the structured engine output so users (and accountants who
 // look over their shoulder) can answer: where did this number come

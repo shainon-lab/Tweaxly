@@ -3,7 +3,7 @@
 // either reject the whole batch, surface row-level errors in an
 // import preview, or 400 a single-row API.
 //
-// Reject corrupted records BEFORE they enter the system —
+// Reject corrupted records BEFORE they enter the system -
 // docs/financial-data-integrity.md §7.
 
 import { isRegionCode } from "./regions";

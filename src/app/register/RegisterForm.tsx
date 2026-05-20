@@ -2,11 +2,11 @@
 
 // Registration form. Two consent inputs sit before the submit button:
 //
-//   1. LegalCheckbox      — REQUIRED. Mandatory acceptance of Terms +
+//   1. LegalCheckbox      - REQUIRED. Mandatory acceptance of Terms +
 //                           Privacy Policy. Both viewable inline.
 //                           Submit stays disabled until checked.
 //
-//   2. MarketingConsentCheckbox — OPTIONAL. Explicit opt-in to
+//   2. MarketingConsentCheckbox - OPTIONAL. Explicit opt-in to
 //                           marketing communications. Defaults to
 //                           unchecked. Does NOT block registration.
 //

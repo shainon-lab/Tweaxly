@@ -1,7 +1,7 @@
 // POST /api/businesses/[id]/leave
 //
 // Removes the caller from a workspace. Owners can't leave their own
-// workspace — they must either transfer ownership (future feature) or
+// workspace - they must either transfer ownership (future feature) or
 // delete the workspace outright.
 
 import { NextRequest, NextResponse } from "next/server";

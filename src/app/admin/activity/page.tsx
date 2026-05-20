@@ -62,7 +62,7 @@ export default async function ActivityFeedPage({
                   ? "bg-accent-soft border-accent/40 text-accent"
                   : "border-line text-slate-400 hover:text-slate-200 hover:border-slate-500"
               } ${c.future ? "opacity-50" : ""}`}
-              title={c.future ? "Reserved — no backing system yet" : undefined}
+              title={c.future ? "Reserved - no backing system yet" : undefined}
             >
               {c.label}
               {c.future ? " · soon" : null}

@@ -7,7 +7,7 @@ import crypto from "node:crypto";
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 // Policy version this consent was given against. Bumped any time the
-// Privacy Policy text materially changes — aligned with the consent
+// Privacy Policy text materially changes - aligned with the consent
 // management platform's POLICY_VERSION on the marketing site.
 export const MARKETING_POLICY_VERSION = "2026-05-19";
 
@@ -34,7 +34,7 @@ export interface MarketingAudit {
 }
 
 // Generate a stable, opaque unsubscribe token. 32 bytes = 64 hex chars
-// — safely fits in a URL and is impractical to brute force.
+// - safely fits in a URL and is impractical to brute force.
 export function generateUnsubscribeToken(): string {
   return crypto.randomBytes(32).toString("hex");
 }
@@ -105,7 +105,7 @@ export function channelStateOf(user: {
   };
 }
 
-// True iff at least one marketing channel is currently enabled — used
+// True iff at least one marketing channel is currently enabled - used
 // to decide whether to issue an unsubscribe token at signup.
 export function hasAnyMarketing(u: ReturnType<typeof channelStateOf>): boolean {
   return Object.values(u).some(Boolean);

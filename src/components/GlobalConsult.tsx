@@ -7,7 +7,7 @@
 // current view's title, a subtitle, and 3–5 suggested questions from
 // the pathname (and any structured context registered by the page
 // itself in the future). The user can type, pick a suggestion, and
-// see the advisor's response inline — without ever leaving the page
+// see the advisor's response inline - without ever leaving the page
 // they're currently looking at. Background stays visible behind a
 // dimmed overlay.
 //
@@ -24,7 +24,7 @@ import { dirFor } from "@/lib/i18n";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Proactive nudge configuration. The values here are tuned to feel
-// rare and intelligent — not engagement-hacky. If the system fires the
+// rare and intelligent - not engagement-hacky. If the system fires the
 // nudge and the user dismisses twice, it goes silent for the rest of
 // the session. If a nudge has just shown anywhere, we wait at least
 // MIN_COOLDOWN before considering another.
@@ -38,7 +38,7 @@ const SS_LAST_SHOWN_AT    = "consult.session.lastShownAt";
 const SS_DISMISS_COUNT    = "consult.session.dismissCount";
 const SS_PERMA_DISMISSED  = "consult.session.permadismissed";
 const SS_DISMISSED_PREFIX = "consult.session.dismissed:";
-// localStorage flag — survives across sessions. Set when the user
+// localStorage flag - survives across sessions. Set when the user
 // picks "Hide forever" from the dismiss menu; the nudge is then
 // silenced permanently until the user clears site data.
 const LS_FOREVER_DISMISSED = "consult.forever.dismissed";
@@ -70,7 +70,7 @@ function isNudgeEligible(pathname: string): boolean {
 }
 
 // Per-view nudge copy. Tighter and more contextual than the panel's
-// suggested prompts — the nudge itself is just a one-liner offer.
+// suggested prompts - the nudge itself is just a one-liner offer.
 function deriveNudgeText(pathname: string): string {
   if (pathname.startsWith("/dashboard"))         return "Want help understanding this period?";
   if (pathname.startsWith("/business-signals"))  return "Want help understanding these signals?";
@@ -215,7 +215,7 @@ function deriveViewMeta(pathname: string): ViewMeta {
   if (pathname.startsWith("/workforce") || pathname.startsWith("/employees")) {
     return {
       title: "Forecast",
-      subtitle: "Workforce Planning — payroll impact on profitability",
+      subtitle: "Workforce Planning - payroll impact on profitability",
       prompts: [
         "Is my payroll heavy relative to revenue?",
         "Can I afford to hire another employee?",
@@ -289,7 +289,7 @@ export default function GlobalConsult() {
   const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
   const [showNudge, setShowNudge] = useState(false);
   const [dismissPicker, setDismissPicker] = useState(false);
-  // Override values dispatched via the CONSULT_OPEN_EVENT — when set,
+  // Override values dispatched via the CONSULT_OPEN_EVENT - when set,
   // they replace the path-derived title/subtitle so the panel reads
   // exactly the way the triggering element intended.
   const [overrideMeta, setOverrideMeta] = useState<{ title?: string; subtitle?: string } | null>(null);
@@ -376,7 +376,7 @@ export default function GlobalConsult() {
     const tick = setInterval(() => {
       const now = Date.now();
       if (now - lastActivityRef.current < NUDGE_DWELL_MS) return;
-      // Time-up — re-check eligibility (state may have changed in
+      // Time-up - re-check eligibility (state may have changed in
       // the meantime if the user opened or dismissed elsewhere) and
       // fire the nudge once.
       if (!isNudgeEligible(pathname)) {
@@ -392,7 +392,7 @@ export default function GlobalConsult() {
     const onActivity = () => {
       lastActivityRef.current = Date.now();
     };
-    // We deliberately don't bind mousemove — it would reset the
+    // We deliberately don't bind mousemove - it would reset the
     // timer too aggressively and the nudge would never fire while a
     // user reads a report.
     window.addEventListener("scroll",  onActivity, { passive: true });
@@ -408,13 +408,13 @@ export default function GlobalConsult() {
   }, [pathname, open]);
 
   // First tap on the close affordance flips the nudge body into a
-  // scope-picker. Nothing is suppressed yet — the user chooses
+  // scope-picker. Nothing is suppressed yet - the user chooses
   // explicitly between "this session" or "forever".
   function startDismiss() {
     setDismissPicker(true);
   }
 
-  // "For this session" — kill nudges for the rest of the current
+  // "For this session" - kill nudges for the rest of the current
   // session only. Next time the user signs in we're back to normal.
   function dismissForSession() {
     setShowNudge(false);
@@ -425,7 +425,7 @@ export default function GlobalConsult() {
     ssSet(SS_PERMA_DISMISSED, "1");
   }
 
-  // "Forever" — write a localStorage flag so subsequent sessions
+  // "Forever" - write a localStorage flag so subsequent sessions
   // never schedule the nudge. The user can re-enable by clearing
   // site data; we don't surface an in-UI re-enable yet.
   function dismissForever() {
@@ -443,7 +443,7 @@ export default function GlobalConsult() {
     setOpen(true);
   }
 
-  // The consultation page itself is the full consultation surface —
+  // The consultation page itself is the full consultation surface -
   // don't double up the experience there.
   if (pathname?.startsWith("/consultation")) return null;
   // Auth/setup screens don't need it either.
@@ -464,7 +464,7 @@ export default function GlobalConsult() {
       // Bundle the current view context into the message so the
       // advisor knows what the user is looking at without the user
       // having to spell it out.
-      const contextualized = `[Current view: ${meta.title} — ${meta.subtitle}]\n\n${message}`;
+      const contextualized = `[Current view: ${meta.title} - ${meta.subtitle}]\n\n${message}`;
       const res = await fetch("/api/consultation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -486,7 +486,7 @@ export default function GlobalConsult() {
 
   return (
     <>
-      {/* Proactive nudge — small floating card pinned just above the
+      {/* Proactive nudge - small floating card pinned just above the
           Consult button. Appears once after ~15s of low activity on a
           page, never on top of the open panel, never repeatedly.
           Also suppressed while a feature-level detail panel (Signals)
@@ -498,7 +498,7 @@ export default function GlobalConsult() {
           aria-live="polite"
         >
           {dismissPicker ? (
-            // Scope picker — shown after the user taps dismiss/X.
+            // Scope picker - shown after the user taps dismiss/X.
             // Explicit choice between session-only and forever
             // suppression, plus a way to back out of the choice.
             <div>
@@ -570,7 +570,7 @@ export default function GlobalConsult() {
         </div>
       ) : null}
 
-      {/* Floating button — anchors bottom-right of every screen, stays
+      {/* Floating button - anchors bottom-right of every screen, stays
           accessible while scrolling. Quiet pill style, never glowing.
           Hidden when a feature-level detail panel (Signals) owns the
           bottom-right corner so the two affordances don't visually
@@ -590,7 +590,7 @@ export default function GlobalConsult() {
 
       {open ? (
         <>
-          {/* Background overlay — subtle dim so the user can still
+          {/* Background overlay - subtle dim so the user can still
               read the page behind the panel. NOT a full blackout. */}
           <div
             className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[2px]"

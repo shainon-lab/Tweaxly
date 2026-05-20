@@ -1,11 +1,11 @@
-// Native SVG mockup of the product's Forecast workspace — a small
+// Native SVG mockup of the product's Forecast workspace - a small
 // revenue curve with a solid history segment, a dashed forecast
 // segment, and a lighter scenario overlay. Designed to read at a
 // glance ("you can see where you're heading") rather than as a real
 // chart.
 
 export function ForecastChart() {
-  // 12 monthly buckets — first 7 are 'actuals', last 5 are 'forecast'
+  // 12 monthly buckets - first 7 are 'actuals', last 5 are 'forecast'
   // with a higher 'scenario' overlay.
   const W = 640;
   const H = 240;
@@ -101,7 +101,7 @@ export function ForecastChart() {
         {/* Actual line */}
         <path d={actualPath} fill="none" stroke="url(#lineStroke)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
 
-        {/* Scenario (teal, dashed) — drawn first so forecast sits on top */}
+        {/* Scenario (teal, dashed) - drawn first so forecast sits on top */}
         <path d={scenarioPath} fill="none" stroke="#22d3ee" strokeWidth="2" strokeDasharray="5 4" strokeLinecap="round" strokeLinejoin="round" opacity="0.85" />
 
         {/* Forecast (purple, dashed) */}

@@ -103,7 +103,7 @@ export async function buildDashboardBreakdowns(
     fees:      breakdownFromTxns(buckets.fees,      baseCurrency, { absolute: true }),
     taxes:     breakdownFromTxns(buckets.taxes,     baseCurrency, { absolute: true }),
     oneTime:   breakdownFromTxns(buckets.oneTime,   baseCurrency, { absolute: true }),
-    // Net is signed — the tile shows income minus expenses, both signs
+    // Net is signed - the tile shows income minus expenses, both signs
     // preserved so the breakdown matches the dashboard tile direction.
     net:       breakdownFromTxns(buckets.net,       baseCurrency),
   };

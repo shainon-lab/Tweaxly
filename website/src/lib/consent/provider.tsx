@@ -43,7 +43,7 @@ const Ctx = createContext<ConsentCtx | null>(null);
 
 interface Props {
   children: React.ReactNode;
-  // Optional — if the server already knows the user's region from a
+  // Optional - if the server already knows the user's region from a
   // CDN header, pass it down so the first persisted record includes it.
   region?: string | null;
 }

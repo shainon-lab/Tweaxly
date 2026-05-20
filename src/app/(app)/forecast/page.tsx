@@ -1,8 +1,8 @@
-// Forecast tab — decision impact engine.
+// Forecast tab - decision impact engine.
 //
 // Two layers:
-//   1. Baseline forecast — extrapolates the chosen historical window forward
-//   2. Scenario forecast — baseline + manual assumptions (hires, marketing
+//   1. Baseline forecast - extrapolates the chosen historical window forward
+//   2. Scenario forecast - baseline + manual assumptions (hires, marketing
 //      cuts, new contracts, one-time hits, etc.)
 //
 // The user picks a historical period and a forecast horizon at the top, then
@@ -62,8 +62,8 @@ export default async function ForecastPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
   // Forecast workspace splits into three internal views:
-  //   "overview"  — passive AI outlook (default)
-  //   "scenarios" — interactive scenario builder
+  //   "overview"  - passive AI outlook (default)
+  //   "scenarios" - interactive scenario builder
   //   Workforce Planning lives on /workforce as its own route
   const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
 
@@ -104,7 +104,7 @@ export default async function ForecastPage({
   ]);
 
   // The Scenario Builder uses this roster to constrain "Terminate employee",
-  // "Remove contractor", and the "Specific employee" salary-increase mode —
+  // "Remove contractor", and the "Specific employee" salary-increase mode -
   // so each picks from the actual roster, not free-text.
   const roster: RosterMember[] = employees.map((e) => {
     const row: EmployeeRow = {
@@ -147,7 +147,7 @@ export default async function ForecastPage({
     notes: r.notes,
   }));
 
-  // Overview is the clean forecast — it ignores Scenario Builder
+  // Overview is the clean forecast - it ignores Scenario Builder
   // assumptions entirely (those live in the Scenarios tab). Feed the
   // engine an empty assumption list when on Overview so every
   // downstream UI element (KPI tiles, chart, month-by-month table,
@@ -199,7 +199,7 @@ export default async function ForecastPage({
               histFrom={sp.hist_from}
               histTo={sp.hist_to}
             />
-            {/* Persistent Scenario Builder entry point — only appears
+            {/* Persistent Scenario Builder entry point - only appears
                 on the Scenarios view AFTER the user has at least one
                 assumption in play. Before that, the onboarding empty
                 state provides the inline entry instead. */}
@@ -214,7 +214,7 @@ export default async function ForecastPage({
       {/* When the engine reports the forecast is unavailable (custom
           range under 90 days, missing dates, empty range, or
           insufficient history), render ONLY the prominent
-          unavailable card and suppress everything else — readiness
+          unavailable card and suppress everything else - readiness
           banner, explanation panel, KPIs, chart, table, insights.
           The user sees one clear message and immediately understands
           they need to pick a different historical period. */}
@@ -234,7 +234,7 @@ export default async function ForecastPage({
         </>
       )}
 
-      {/* Forecast body — tiles, chart, table, insights — only renders
+      {/* Forecast body - tiles, chart, table, insights - only renders
           when the engine has produced a usable forecast. The
           "Forecast unavailable" card above replaces this entire
           section otherwise. */}
@@ -242,7 +242,7 @@ export default async function ForecastPage({
 
       {/* Scenarios view, empty state. Hide everything else (KPIs,
           chart, insights, table) until the user has at least one
-          assumption — the empty state owns the screen and provides
+          assumption - the empty state owns the screen and provides
           its own inline builder entry. */}
       {view === "scenarios" && assumptions.length === 0 ? (
         <ScenariosOnboarding
@@ -281,14 +281,14 @@ export default async function ForecastPage({
         </>
       ) : null}
 
-      {/* Forecast body — KPI cards, insights, chart, table. Hidden
+      {/* Forecast body - KPI cards, insights, chart, table. Hidden
           when the user is in the Scenarios empty state. */}
       {!(view === "scenarios" && assumptions.length === 0) ? (
         <>
       {/* KPI tiles. On Overview `effectiveAssumptions` is empty, so
           `summary.scenarioRevenueTotal` etc. equal the baseline
           totals and the 'baseline:' / 'vs baseline' subtext folds
-          back to the same number — Overview reads clean. */}
+          back to the same number - Overview reads clean. */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
@@ -352,7 +352,7 @@ export default async function ForecastPage({
           <div className="text-sm text-slate-400 py-4 text-center">
             {view === "scenarios"
               ? "Add scenario assumptions to see how each decision moves projected profit."
-              : "Not enough data yet — once a few months of history exist, the baseline outlook will populate here."}
+              : "Not enough data yet - once a few months of history exist, the baseline outlook will populate here."}
           </div>
         ) : (
           <ul className="space-y-2 text-sm text-slate-200">
@@ -367,7 +367,7 @@ export default async function ForecastPage({
         <div className="text-xs text-slate-500 mt-4">
           {view === "scenarios"
             ? "Impact is calculated against the AI baseline outlook. Estimates depend on execution and market conditions."
-            : "Projections are estimates based on your historical activity. They are not guarantees — actual results depend on execution and market conditions."}
+            : "Projections are estimates based on your historical activity. They are not guarantees - actual results depend on execution and market conditions."}
         </div>
       </div>
 
@@ -385,7 +385,7 @@ export default async function ForecastPage({
         showScenario={view === "scenarios"}
       />
 
-      {/* Detailed month-by-month table — collapsed by default on
+      {/* Detailed month-by-month table - collapsed by default on
           Overview so the page reads as insights-first, not a data
           dump. On Scenarios the table is open by default since the
           user is actively investigating the projection. */}
@@ -425,7 +425,7 @@ export default async function ForecastPage({
                   {fmtMoney(p.scenarioNet, ccy)}
                 </td>
                 <td className="text-xs text-slate-400">
-                  {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "—"}
+                  {p.notes.length ? p.notes.slice(0, 3).join(", ") + (p.notes.length > 3 ? "…" : "") : "-"}
                 </td>
               </tr>
             ))}

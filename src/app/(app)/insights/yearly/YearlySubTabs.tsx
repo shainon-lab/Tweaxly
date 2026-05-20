@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 
-// Sub-tabs inside the Yearly Summary view — flips between the textual
+// Sub-tabs inside the Yearly Summary view - flips between the textual
 // insights and the headline numbers. Preserves the ?year= query string
 // so switching tabs keeps the user on the same year.
 export default function YearlySubTabs() {

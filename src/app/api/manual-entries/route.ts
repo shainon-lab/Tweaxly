@@ -11,7 +11,7 @@ import { isSupportedCurrency } from "@/lib/currencies";
 
 export const runtime = "nodejs";
 
-// GET — list all manual entries for the current business (with category + count of materialized txns)
+// GET - list all manual entries for the current business (with category + count of materialized txns)
 export async function GET() {
   const { business } = await requireBusiness();
   const entries = await prisma.manualEntry.findMany({
@@ -25,7 +25,7 @@ export async function GET() {
   return NextResponse.json({ entries });
 }
 
-// POST — create a new manual entry. Body:
+// POST - create a new manual entry. Body:
 // {
 //   type: "income" | "outcome",
 //   categoryId: string OR newCategoryName: string,
@@ -73,7 +73,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "endDate must be on/after startDate" }, { status: 400 });
   }
 
-  // Resolve category — either existing or new
+  // Resolve category - either existing or new
   let categoryId: string | null = null;
   if (typeof body.categoryId === "string" && body.categoryId.length > 0) {
     const owned = await prisma.category.findFirst({
@@ -110,7 +110,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Optional currency override. Defaults to the business base currency
-  // when omitted. Reject anything Frankfurter can't convert — same
+  // when omitted. Reject anything Frankfurter can't convert - same
   // rule as the CSV import path, so unsupported currencies can never
   // enter the system from any source.
   const currency = typeof body.currency === "string" && body.currency.trim().length === 3
@@ -140,7 +140,7 @@ export async function POST(req: NextRequest) {
   });
 }
 
-// DELETE — remove a manual entry. ON DELETE CASCADE on Transaction.manualEntryId
+// DELETE - remove a manual entry. ON DELETE CASCADE on Transaction.manualEntryId
 // removes all materialized transactions automatically.
 export async function DELETE(req: NextRequest) {
   const { business } = await requireBusiness();

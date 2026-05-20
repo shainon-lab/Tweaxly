@@ -1,4 +1,4 @@
-// Testimonials page. Placeholder/demo content for MVP — copy is
+// Testimonials page. Placeholder/demo content for MVP - copy is
 // realistic and believable, not exaggerated marketing. Real names
 // and companies are fictional and clearly framed as illustrative
 // in the page-level disclosure at the bottom.
@@ -43,32 +43,32 @@ interface Testimonial {
 const TESTIMONIALS: Testimonial[] = [
   {
     quote: "Tweaxly helped us spot a cash flow issue nearly two months before it became a real problem. The forecast told us where we were heading; the signals told us why.",
-    name: "Maya Adler", role: "Founder", company: "Northbound — eCommerce",
+    name: "Maya Adler", role: "Founder", company: "Northbound - eCommerce",
     rating: 5,
   },
   {
     quote: "The forecasting tools gave us much more confidence when planning hiring decisions. We modeled three scenarios in an afternoon and chose the one with the cleanest cash runway.",
-    name: "Daniel Reyes", role: "Co-founder & CEO", company: "Verso Labs — SaaS startup",
+    name: "Daniel Reyes", role: "Co-founder & CEO", company: "Verso Labs - SaaS startup",
     rating: 5,
   },
   {
     quote: "For the first time, I actually understand where the business is heading financially. The AI advisor speaks like a finance partner, not a chatbot.",
-    name: "Sara Bensaid", role: "Owner", company: "Maison Anwar — Restaurant",
+    name: "Sara Bensaid", role: "Owner", company: "Maison Anwar - Restaurant",
     rating: 5,
   },
   {
     quote: "The business signals feature immediately highlighted vendor cost increases we completely missed. Two suppliers had quietly raised rates 8–11% over six months.",
-    name: "Ravi Krishnan", role: "Operations Lead", company: "Linecraft — Small manufacturing",
+    name: "Ravi Krishnan", role: "Operations Lead", company: "Linecraft - Small manufacturing",
     rating: 4,
   },
   {
     quote: "It feels like having a financial advisor built directly into the business. I open Tweaxly the way I used to open my accounting software, except I actually learn something.",
-    name: "Elena Falk", role: "Founder", company: "Falk & Co — Marketing agency",
+    name: "Elena Falk", role: "Founder", company: "Falk & Co - Marketing agency",
     rating: 5,
   },
   {
     quote: "Cash flow forecasting on a multi-location retail business is genuinely hard. Tweaxly is the first tool that gave me one number I could trust across all three stores.",
-    name: "Tomás Vega", role: "Owner", company: "Tres Hermanos — Multi-location retail",
+    name: "Tomás Vega", role: "Owner", company: "Tres Hermanos - Multi-location retail",
     rating: 5,
   },
   {
@@ -78,7 +78,7 @@ const TESTIMONIALS: Testimonial[] = [
   },
   {
     quote: "We caught a missed invoice because Tweaxly's signal said expected income hadn't arrived. That signal paid for the next two years of subscription in a single afternoon.",
-    name: "Yusuf Demir", role: "Director", company: "Demir Atelier — Design studio",
+    name: "Yusuf Demir", role: "Director", company: "Demir Atelier - Design studio",
     rating: 5,
   },
 ];
@@ -86,15 +86,15 @@ const TESTIMONIALS: Testimonial[] = [
 const SUPPORTING_SECTIONS = [
   {
     title: "Why businesses use AI financial intelligence",
-    body:  "Business owners running small and medium businesses don't have time to live in spreadsheets — but they need the same clarity a finance team would bring. Tweaxly's AI financial advisor reads your real numbers, surfaces trends and risks, and turns business intelligence into decisions you can act on the same day.",
+    body:  "Business owners running small and medium businesses don't have time to live in spreadsheets - but they need the same clarity a finance team would bring. Tweaxly's AI financial advisor reads your real numbers, surfaces trends and risks, and turns business intelligence into decisions you can act on the same day.",
   },
   {
     title: "Financial forecasting for growing businesses",
-    body:  "Financial forecasting and cash flow forecasting shouldn't require a spreadsheet wizard. Tweaxly combines validated historical actuals, recurring patterns, and your own scenarios into explainable projections — built specifically for SMB owners who need a real forecast, not enterprise-grade complexity.",
+    body:  "Financial forecasting and cash flow forecasting shouldn't require a spreadsheet wizard. Tweaxly combines validated historical actuals, recurring patterns, and your own scenarios into explainable projections - built specifically for SMB owners who need a real forecast, not enterprise-grade complexity.",
   },
   {
     title: "Real-time business insights without complex spreadsheets",
-    body:  "Tweaxly produces a real-time financial dashboard that explains itself. Business signals call out vendor spikes, revenue changes, margin compression, and growth opportunities the moment they appear — no manual analysis, no monthly close ritual, no third-party BI tool.",
+    body:  "Tweaxly produces a real-time financial dashboard that explains itself. Business signals call out vendor spikes, revenue changes, margin compression, and growth opportunities the moment they appear - no manual analysis, no monthly close ritual, no third-party BI tool.",
   },
 ];
 
@@ -112,7 +112,7 @@ export default function TestimonialsPage() {
           </h1>
           <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed">
             See how businesses use Tweaxly to understand trends, forecast
-            growth, and make smarter financial decisions — with AI-powered
+            growth, and make smarter financial decisions - with AI-powered
             financial planning, business signals, and a real-time financial
             dashboard built for SMB owners.
           </p>
@@ -162,7 +162,7 @@ export default function TestimonialsPage() {
         </div>
       </section>
 
-      {/* Supporting SEO sections — keyword-aware copy + light visuals. */}
+      {/* Supporting SEO sections - keyword-aware copy + light visuals. */}
       <section className="container-wide pb-20 lg:pb-28">
         <div className="grid gap-6 lg:grid-cols-3">
           {SUPPORTING_SECTIONS.map((s, i) => (

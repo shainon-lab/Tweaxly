@@ -1,13 +1,13 @@
 // Admin · Customer 360 detail page. Sections:
-//   A. Overview            — business identity + key dates
-//   B. Owner & users       — members with role/status + admin actions
-//   C. Plan & billing      — plan + trial (Stripe stub)
-//   D. Orders / invoices   — Stripe stub
-//   E. Onboarding & data   — computed from real tables
-//   F. Usage & activity    — computed from real tables
-//   G. Support             — stub (no support tool integrated)
-//   H. Security & audit    — login history, failed attempts, admin actions
-//   I. Account actions     — destructive controls with confirmation
+//   A. Overview            - business identity + key dates
+//   B. Owner & users       - members with role/status + admin actions
+//   C. Plan & billing      - plan + trial (Stripe stub)
+//   D. Orders / invoices   - Stripe stub
+//   E. Onboarding & data   - computed from real tables
+//   F. Usage & activity    - computed from real tables
+//   G. Support             - stub (no support tool integrated)
+//   H. Security & audit    - login history, failed attempts, admin actions
+//   I. Account actions     - destructive controls with confirmation
 //   + Internal notes (any section can be referenced from there)
 
 import Link from "next/link";
@@ -22,11 +22,11 @@ import { MembersTable } from "./MembersTable";
 export const dynamic = "force-dynamic";
 
 function fmtDate(d: Date | null | undefined) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleString();
 }
 function fmtDay(d: Date | null | undefined) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 function fmtRel(d: Date | null | undefined) {
@@ -157,7 +157,7 @@ export default async function Customer360({ params }: { params: { id: string } }
     }),
   ]);
 
-  // Other businesses owned by the same user — used to support consultant /
+  // Other businesses owned by the same user - used to support consultant /
   // accountant / portfolio workflows where one human owns several
   // workspaces. Excludes the current one.
   const siblingBusinesses = await prisma.business.findMany({
@@ -252,7 +252,7 @@ export default async function Customer360({ params }: { params: { id: string } }
         />
       </div>
 
-      {/* Owner's other businesses — surfaces consultant / multi-workspace
+      {/* Owner's other businesses - surfaces consultant / multi-workspace
           context inline so the operator can pivot between sibling accounts. */}
       {siblingBusinesses.length > 0 ? (
         <div className="rounded-lg border border-accent/30 bg-accent-soft/10 p-3">
@@ -285,12 +285,12 @@ export default async function Customer360({ params }: { params: { id: string } }
           <Field label="Status"           value={business.status} />
           <Field label="Signup"           value={fmtDay(business.createdAt)} />
           <Field label="Last activity"    value={fmtRel(business.lastActivityAt)} />
-          <Field label="Trial ends"       value={business.trialEndsAt ? fmtDay(business.trialEndsAt) : "—"} />
+          <Field label="Trial ends"       value={business.trialEndsAt ? fmtDay(business.trialEndsAt) : "-"} />
           <Field label="Members"          value={business.memberships.length.toString()} />
           <Field label="Currency"         value={business.currency} />
-          <Field label="Country"          value={business.country ?? "—"} />
-          <Field label="Industry"         value={business.industry ?? "—"} />
-          <Field label="Timezone"         value={business.timezone ?? "—"} />
+          <Field label="Country"          value={business.country ?? "-"} />
+          <Field label="Industry"         value={business.industry ?? "-"} />
+          <Field label="Timezone"         value={business.timezone ?? "-"} />
           <Field label="Last login (owner)" value={fmtRel(business.owner.lastLoginAt)} />
           <Field label="Onboarding"       value={`${onboardingDone}/${onboardingSteps.length} steps`} />
         </div>
@@ -332,7 +332,7 @@ export default async function Customer360({ params }: { params: { id: string } }
         </div>
       </Section>
 
-      {/* D. Orders / invoices / payments — stub */}
+      {/* D. Orders / invoices / payments - stub */}
       <Section id="orders" title="D. Orders, invoices & payments">
         <Stub
           title="No payments provider connected"
@@ -381,11 +381,11 @@ export default async function Customer360({ params }: { params: { id: string } }
           <Field label="Alert rules"     value={business._count.notificationRules.toString()} />
           <Field label="Scenarios"       value={business._count.forecastAssumptions.toString()} />
           <Field label="Last activity"   value={fmtRel(business.lastActivityAt)} />
-          <Field label="Inactive since"  value={business.lastActivityAt ? fmtDay(business.lastActivityAt) : "—"} />
+          <Field label="Inactive since"  value={business.lastActivityAt ? fmtDay(business.lastActivityAt) : "-"} />
         </div>
       </Section>
 
-      {/* G. Support — stub */}
+      {/* G. Support - stub */}
       <Section id="support" title="G. Support">
         <Stub
           title="No support tool connected"
@@ -444,7 +444,7 @@ export default async function Customer360({ params }: { params: { id: string } }
                       {t.user.email}
                       {t.usedAt ? <span className="text-good ml-1">· used</span> : t.expiresAt.getTime() < Date.now() ? <span className="text-slate-500 ml-1">· expired</span> : <span className="text-accent ml-1">· active</span>}
                     </div>
-                    <div className="text-slate-500">requested {fmtRel(t.createdAt)} from {t.ipAddress ?? "—"}</div>
+                    <div className="text-slate-500">requested {fmtRel(t.createdAt)} from {t.ipAddress ?? "-"}</div>
                   </li>
                 ))}
               </ul>

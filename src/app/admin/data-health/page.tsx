@@ -5,7 +5,7 @@
 //   • reconciliation findings (sums that don't match)
 //   • global health counters across all businesses
 //
-// Admin-only — gated by the /admin/layout.tsx requireAdminOrSuper.
+// Admin-only - gated by the /admin/layout.tsx requireAdminOrSuper.
 
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
@@ -230,7 +230,7 @@ function DetailCard({
                       {f.level}
                     </span>
                   </td>
-                  <td className="font-mono text-xs">{f.ym ?? "—"}</td>
+                  <td className="font-mono text-xs">{f.ym ?? "-"}</td>
                   <td className="text-xs text-slate-300">{f.check}</td>
                   <td className="text-xs text-slate-400">{f.message}</td>
                   <td className="text-right text-xs tabular-nums">

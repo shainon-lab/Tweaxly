@@ -3,7 +3,7 @@
 // whether the rule fires, and return one TriggeredAlert per match.
 //
 // "Period" anchors to the latest month with data, NOT today's calendar month
-// — so a rule keeps firing against the user's most recent data even if a
+// - so a rule keeps firing against the user's most recent data even if a
 // month or two has gone by without uploads.
 
 import { prisma } from "./db";
@@ -165,7 +165,7 @@ export async function evaluateNotificationRules(
 //   - stamps firstFiredAt on rules that are currently firing without a
 //     timestamp (so the Alerts UI can say "appeared X ago").
 //   - clears firstFiredAt + acknowledgedAt on rules that have stopped
-//     firing — if the alert ever fires again it gets a fresh "appeared"
+//     firing - if the alert ever fires again it gets a fresh "appeared"
 //     timestamp and a fresh chance to be marked-as-read.
 // Side effects are confined to this function so read-only consumers (the
 // sidebar badge, the dashboard mini-card) don't accidentally mutate state.
@@ -190,7 +190,7 @@ export async function evaluateAndStampNotificationRules(
   }
 
   // 2. Clear stamps on rules that have a firstFiredAt but no longer fire.
-  //    Acknowledged "Previous" notifications go away here — which matches
+  //    Acknowledged "Previous" notifications go away here - which matches
   //    the user's expectation that a rule that stopped firing is no longer
   //    in the Alerts view.
   await prisma.notificationRule.updateMany({

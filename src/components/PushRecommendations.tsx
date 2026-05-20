@@ -27,7 +27,7 @@ export type PushRec = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Badge mapping — the five user-facing chips on every card. Driven by
+// Badge mapping - the five user-facing chips on every card. Driven by
 // severity, with a category nudge for the Opportunity lane.
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,7 @@ const CATEGORY_LABEL: Record<string, string> = {
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Compact display — 2-4 word title + one key metric per signal, so the
+// Compact display - 2-4 word title + one key metric per signal, so the
 // grid reads as a command center instead of a feed. Pattern-matches
 // signalKey prefix; the metric is pulled from the existing observation
 // string so the source of truth stays in advisor.ts.
@@ -61,7 +61,7 @@ type CompactDisplay = {
   title: string;
   metric?: string;
   direction?: "up" | "down" | "flat";
-  // One short contextual sentence — the only prose on a collapsed
+  // One short contextual sentence - the only prose on a collapsed
   // card. Kept under ~8 words so the card stays scannable.
   subtitle?: string;
 };
@@ -144,7 +144,7 @@ function compactDisplay(r: PushRec): CompactDisplay {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Lifecycle — 'new' / 'ongoing' / 'escalating' / 'improving' / 'resolved'.
+// Lifecycle - 'new' / 'ongoing' / 'escalating' / 'improving' / 'resolved'.
 // Tracks every signal's first-seen + last-seen severity in localStorage so
 // the same dashboard reads as 'what changed since you last looked'.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -187,7 +187,7 @@ function writeLifecycleStore(s: LifecycleStore) {
   try {
     window.localStorage.setItem(LIFECYCLE_LS_KEY, JSON.stringify(s));
   } catch {
-    /* full or disabled — ignore */
+    /* full or disabled - ignore */
   }
 }
 
@@ -219,7 +219,7 @@ const LIFECYCLE_LABEL: Record<Lifecycle, string> = {
   resolved:   "Resolved",
 };
 // Text-only lifecycle tone for inline placement in the compact meta
-// row — no border/pill chrome, just a colored word.
+// row - no border/pill chrome, just a colored word.
 const LIFECYCLE_TEXT: Record<Lifecycle, string> = {
   new:        "text-accent font-medium",
   escalating: "text-bad font-medium",
@@ -270,7 +270,7 @@ export default function PushRecommendations({
   const [refreshing, setRefreshing] = useState(false);
   const [lifecycles, setLifecycles] = useState<Record<string, Lifecycle>>({});
   const [resolved, setResolvedState] = useState<Set<string>>(new Set());
-  // Selected signal — drives the slide-in detail panel. Null = closed.
+  // Selected signal - drives the slide-in detail panel. Null = closed.
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const prevInitialRef = useRef(initial);
 
@@ -345,7 +345,7 @@ export default function PushRecommendations({
     setSelectedId(null);
   }
 
-  // ESC closes the panel — standard SaaS panel behavior.
+  // ESC closes the panel - standard SaaS panel behavior.
   useEffect(() => {
     if (selectedId == null) return;
     function onKey(e: KeyboardEvent) {
@@ -455,7 +455,7 @@ export default function PushRecommendations({
 // Three-layer signal layout
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Signal Deck — uniform compact-height cards, mixed widths so critical
+// Signal Deck - uniform compact-height cards, mixed widths so critical
 // signals dominate visually. `grid-auto-flow: dense` packs the grid
 // so wide cards don't leave gaps.
 function SignalDeck({
@@ -525,7 +525,7 @@ function SignalDeck({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Signal Deck card — compact, scannable, click-to-open. Renders only
+// Signal Deck card - compact, scannable, click-to-open. Renders only
 // the hero (meta · title · metric · subtitle). Detail lives in the
 // slide-in panel. Critical cards span 2 columns at lg+ so they
 // dominate the deck.
@@ -578,7 +578,7 @@ function SignalCard({
       aria-label={`Open details for ${display.title}`}
       className={`${colSpan} h-48 rounded-2xl border ${borderColor} bg-ink-900/50 ${glowShadow} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
     >
-      {/* Meta line — severity dot + badge + category + lifecycle */}
+      {/* Meta line - severity dot + badge + category + lifecycle */}
       <div className="flex items-center gap-2 text-[11px] text-slate-400">
         <span
           className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? "animate-pulse" : ""}`}
@@ -615,11 +615,11 @@ function SignalCard({
         </div>
       ) : null}
 
-      {/* Click affordance — a pill button pinned at the bottom of every
+      {/* Click affordance - a pill button pinned at the bottom of every
           card. Always visible (not hover-only) so the card never reads
           as 'static info', and it lifts/brightens on hover. The button
-          is non-interactive markup — the whole card is the click
-          target — but it gives the eye a clear 'open this' signal. */}
+          is non-interactive markup - the whole card is the click
+          target - but it gives the eye a clear 'open this' signal. */}
       <div className="mt-auto flex items-center justify-end">
         <span
           className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border border-accent/40 bg-accent-soft/30 text-accent group-hover:bg-accent-soft group-hover:border-accent group-hover:text-white group-hover:translate-x-0.5 transition duration-200"
@@ -634,7 +634,7 @@ function SignalCard({
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Slide-in detail panel — non-blocking, ~38% desktop width. The deck
+// Slide-in detail panel - non-blocking, ~38% desktop width. The deck
 // stays visible behind it so users can pivot between signals without
 // closing the panel. Consult action lives here, contextual to the
 // selected signal.
@@ -653,7 +653,7 @@ function SignalDetailPanel({
   onClose: () => void;
   onResolve: () => void;
 }) {
-  // When the user closes the panel, unmount it immediately — no exit
+  // When the user closes the panel, unmount it immediately - no exit
   // slide, no stale snapshot lingering on the side of the screen.
   // (The entry animation still plays via the slideInRight keyframe
   // applied on mount.)
@@ -674,12 +674,12 @@ function SignalDetailPanel({
       : display.direction === "down"
       ? "text-bad"
       : "";
-  const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth — is the diagnosis right, and what should I actually do?`;
+  const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth - is the diagnosis right, and what should I actually do?`;
 
   return (
     <aside
       role="dialog"
-      aria-label={`Signal details — ${display.title}`}
+      aria-label={`Signal details - ${display.title}`}
       // Panel sizes to its content: when content is short, the box
       // ends right under the action buttons (no empty area below).
       // `max-h-screen` caps at viewport height so taller content
@@ -722,7 +722,7 @@ function SignalDetailPanel({
         </button>
       </div>
 
-      {/* Body — natural height so the action buttons below sit
+      {/* Body - natural height so the action buttons below sit
           immediately under the text instead of being pushed to the
           bottom of the viewport with empty space in between. */}
       <div className="p-5 flex flex-col gap-5">
@@ -742,7 +742,7 @@ function SignalDetailPanel({
         ) : null}
       </div>
 
-      {/* Footer — immediately under the body content. No flex pinning;
+      {/* Footer - immediately under the body content. No flex pinning;
           when content is short the buttons sit tight under the text,
           when content is long the user scrolls to reach them. */}
       <div className="border-t border-line p-4 flex items-center justify-between gap-2 bg-ink-900">
@@ -750,7 +750,7 @@ function SignalDetailPanel({
           type="button"
           onClick={onResolve}
           className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
-          title="Hide from this view — restore from the header to bring back"
+          title="Hide from this view - restore from the header to bring back"
         >
           Mark resolved
         </button>

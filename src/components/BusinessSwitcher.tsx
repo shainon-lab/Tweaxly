@@ -2,7 +2,7 @@
 
 // Workspace switcher rendered in the sidebar header. Lists every
 // business the user has an active membership in. Picking one POSTs to
-// /api/businesses/switch and reloads — that's the only correct way to
+// /api/businesses/switch and reloads - that's the only correct way to
 // switch context because the server has to verify membership and
 // rewrite session.currentBusinessId.
 //

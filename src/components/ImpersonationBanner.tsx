@@ -75,7 +75,7 @@ export default function ImpersonationBanner({
               : "border-line text-slate-300 hover:text-white hover:border-slate-500"
           } disabled:opacity-50`}
           title={allowWrites
-            ? "Writes are currently ENABLED — destructive actions are not blocked. Click to switch to read-only."
+            ? "Writes are currently ENABLED - destructive actions are not blocked. Click to switch to read-only."
             : "Writes are blocked. Enable only if you must mutate customer data."}
         >
           {allowWrites ? "Writes enabled" : "Read-only"}

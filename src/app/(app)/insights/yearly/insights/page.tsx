@@ -28,7 +28,7 @@ export default async function YearlyInsightsTextPage({
       <>
         <PageHeader
           title="Insights"
-          subtitle="Yearly retrospective — drill into a completed year's full picture."
+          subtitle="Yearly retrospective - drill into a completed year's full picture."
         />
         <ReportsInnerTabs />
         <div className="card text-center py-12">

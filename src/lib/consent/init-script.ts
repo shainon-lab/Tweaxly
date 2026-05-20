@@ -1,7 +1,7 @@
 // Inline pre-paint script that:
 //
 // 1. Installs window.dataLayer and a window.gtag shim BEFORE any
-//    tracking script can load. This is the GCM v2 contract — the
+//    tracking script can load. This is the GCM v2 contract - the
 //    default consent must be set before gtag.js initializes, or GA
 //    will start with implicit "granted" on first hit.
 //
@@ -20,7 +20,7 @@ export const CONSENT_INIT_SCRIPT = `
   window.dataLayer = window.dataLayer || [];
   function gtag(){ window.dataLayer.push(arguments); }
   window.gtag = window.gtag || gtag;
-  // GCM v2 default — denied for everything except security.
+  // GCM v2 default - denied for everything except security.
   // wait_for_update lets any GA tag pause briefly to receive the
   // 'update' once the user makes their choice on this page load.
   gtag('consent', 'default', {

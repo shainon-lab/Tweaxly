@@ -1,4 +1,4 @@
-// File parsing — handles CSV and XLSX uniformly via SheetJS.
+// File parsing - handles CSV and XLSX uniformly via SheetJS.
 // Returns { headers, rows } where rows are { [header]: cellValue }.
 import * as XLSX from "xlsx";
 
@@ -45,7 +45,7 @@ export function parseFileBuffer(filename: string, buf: Buffer): ParsedFile {
       const inflow  = parseAmount(r[inflowH]);
       const outflow = parseAmount(r[outflowH]);
       // Inflows are positive; outflows are negative. The user's outflow values
-      // may already be negative in the file — abs-then-negate so we end up
+      // may already be negative in the file - abs-then-negate so we end up
       // with consistent signs regardless of how the source represented them.
       const synthesized = Math.abs(inflow) - Math.abs(outflow);
       return { ...r, [SYNTH]: synthesized };
@@ -80,7 +80,7 @@ const FIELD_HINTS: Record<string, string[]> = {
   ],
   amount: [
     // The synthesized column from parseFileBuffer when a file has split
-    // Debit/Credit (or Income/Expense) columns — listed first so the
+    // Debit/Credit (or Income/Expense) columns - listed first so the
     // exact-match phase picks it before falling through to alternatives.
     "amount (auto)",
     "amount",
@@ -246,7 +246,7 @@ export function parseAmount(raw: unknown): number {
   if (s.includes(",") && s.includes(".")) {
     s = s.replace(/,/g, "");
   } else if (s.includes(",") && !s.includes(".")) {
-    // Could be European decimal — only convert if exactly one comma with 1-2 trailing digits.
+    // Could be European decimal - only convert if exactly one comma with 1-2 trailing digits.
     const parts = s.split(",");
     if (parts.length === 2 && parts[1].length <= 2) s = parts.join(".");
     else s = s.replace(/,/g, "");
@@ -256,7 +256,7 @@ export function parseAmount(raw: unknown): number {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Monthly summary parser — multi-sheet workbook
+// Monthly summary parser - multi-sheet workbook
 //
 // File shape per sheet: header row = category names; data row(s) = amounts.
 // Multiple data rows are summed per column so a "totals" row at the bottom or
@@ -309,7 +309,7 @@ export function parseSheetNameToYM(name: string): string | null {
       return `${m[2]}-${String(month).padStart(2, "0")}`;
     }
   }
-  // MonthName(+Year) — "January 2026", "jan2026", "jan-2026", "jan-26"
+  // MonthName(+Year) - "January 2026", "jan2026", "jan-2026", "jan-26"
   for (let i = 0; i < MONTH_ABBR.length; i++) {
     const mn = MONTH_ABBR[i];
     const re = new RegExp(`^${mn}[a-z]*[\\s\\-./_]*(\\d{2,4})?$`);
@@ -320,7 +320,7 @@ export function parseSheetNameToYM(name: string): string | null {
       return `${yy}-${String(i + 1).padStart(2, "0")}`;
     }
   }
-  // Year + MonthName — "2026 January", "2026-jan"
+  // Year + MonthName - "2026 January", "2026-jan"
   for (let i = 0; i < MONTH_ABBR.length; i++) {
     const mn = MONTH_ABBR[i];
     const re = new RegExp(`^(\\d{4})[\\s\\-./_]*${mn}[a-z]*$`);
@@ -333,7 +333,7 @@ export function parseSheetNameToYM(name: string): string | null {
 }
 
 // Aggregate one sheet's rows into category totals. Skips columns that look like
-// time/label fields ("Month", "Date", "Period", "Year") — those usually carry
+// time/label fields ("Month", "Date", "Period", "Year") - those usually carry
 // the month label, not numeric data.
 function aggregateSheet(
   sheetName: string,
@@ -388,7 +388,7 @@ export function parseMonthlyWorkbook(
 }
 
 // Heuristic: classify a category name into one of the dashboard kinds.
-// Returns "other" if no pattern matches — never throws.
+// Returns "other" if no pattern matches - never throws.
 //
 // The "income/revenue" pattern set is intentionally generous because miscategorizing
 // an income column as expense produces visibly wrong P&L numbers. If you find a
@@ -399,7 +399,7 @@ export function kindFromName(name: string): {
   isOneTime: boolean;
 } {
   const n = name.toLowerCase().trim();
-  // Revenue / income — English + Hebrew (הכנס/מכירות/מחזור) + common business terms
+  // Revenue / income - English + Hebrew (הכנס/מכירות/מחזור) + common business terms
   if (
     /(revenue|income|sales|invoic|receivable|consult|service\s*fee|earning|receipt|billing|royalt|grant|donation|contribution|fund\s*received|deposit\s*received|gross\s*(income|receipts|sales)|turnover|mrr|arr|recurring\s*revenue|monthly\s*recurring|annual\s*recurring|commission|interest\s*earned|dividend|rebate|cashback|refund\s*received|reimbursement)/i.test(
       n,
@@ -463,7 +463,7 @@ export function parseDate(raw: unknown): Date | null {
     let mo: number, da: number;
     if (aN > 12) { da = aN; mo = bN; }
     else if (bN > 12) { mo = aN; da = bN; }
-    else { mo = aN; da = bN; } // ambiguous — assume mm/dd (US default)
+    else { mo = aN; da = bN; } // ambiguous - assume mm/dd (US default)
     const dt = new Date(Date.UTC(yy, mo - 1, da));
     return Number.isNaN(dt.getTime()) ? null : dt;
   }

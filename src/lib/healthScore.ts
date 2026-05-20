@@ -2,7 +2,7 @@
 // engaged a workspace is with the product. Used by the admin
 // dashboard, accounts table, and the customer 360.
 //
-// The score is intentionally simple — it sums weighted signals
+// The score is intentionally simple - it sums weighted signals
 // from already-tracked data. As new signals exist (billing
 // payments, support tickets, etc.) plug them in here without
 // changing any callers.
@@ -67,13 +67,13 @@ export function computeHealthScore(s: HealthSignals, now = Date.now()): HealthVe
     reasons.push("No data uploaded yet");
   }
 
-  // 3. AI engagement — consultations (15 points). Caps at 5 consultations.
+  // 3. AI engagement - consultations (15 points). Caps at 5 consultations.
   const consultScore = 15 * clamp01(s.consultationsCount / 5);
   if (s.consultationsCount === 0 && s.ageDays > 7) {
     reasons.push("No AI consultations started");
   }
 
-  // 4. Forward-looking usage — forecast assumptions + alert rules (15 points).
+  // 4. Forward-looking usage - forecast assumptions + alert rules (15 points).
   let forwardScore = 0;
   if (s.forecastAssumptionsCount > 0) forwardScore += 7.5;
   if (s.notificationRulesCount > 0)   forwardScore += 7.5;

@@ -6,7 +6,7 @@
 // over the Transaction table.
 //
 // The functions themselves live in their own modules (period.ts,
-// metrics.ts, etc.) — this file is the discoverable barrel + the
+// metrics.ts, etc.) - this file is the discoverable barrel + the
 // place to document the contract.
 //
 // Filtering contract (single rule):
@@ -23,7 +23,7 @@ export {
 } from "./metrics";
 
 export {
-  buildPeriodAggregate,     // sum a YM range — the workhorse for
+  buildPeriodAggregate,     // sum a YM range - the workhorse for
                             // dashboard tiles + reports
   resolveDashboardRange,    // YM resolution for dashboard / report
   resolveCompareRange,

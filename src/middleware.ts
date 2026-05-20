@@ -3,7 +3,7 @@
 // Whenever the session has impersonatingBusinessId set but
 // impersonationAllowWrites is NOT true, any state-changing request to
 // /api/* is rejected with a 403. This is a defense-in-depth layer on
-// top of per-route blockWriteDuringImpersonation() — it covers every
+// top of per-route blockWriteDuringImpersonation() - it covers every
 // mutation by default so a future route added by an engineer who
 // forgets to add the per-route check still respects the read-only
 // posture.
@@ -11,7 +11,7 @@
 // Allowed during impersonation regardless of write mode:
 //   - GET / HEAD / OPTIONS (read-only)
 //   - /api/admin/* (impersonation control surface itself)
-//   - /api/auth/* (login/logout/register — not customer data)
+//   - /api/auth/* (login/logout/register - not customer data)
 
 import { NextResponse, type NextRequest } from "next/server";
 import { getIronSession } from "iron-session";
@@ -45,6 +45,6 @@ export async function middleware(req: NextRequest) {
 }
 
 export const config = {
-  // Only run on API routes — page rendering is read-only by definition.
+  // Only run on API routes - page rendering is read-only by definition.
   matcher: ["/api/:path*"],
 };

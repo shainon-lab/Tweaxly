@@ -1,4 +1,4 @@
-// Workforce financial helpers — cost breakdown per employee, roster
+// Workforce financial helpers - cost breakdown per employee, roster
 // aggregation, payroll trend & forecast. Used by the /workforce page and any
 // consumer that needs payroll intelligence beyond the simple total
 // `activeEmployeeCost()` already exposes.
@@ -7,7 +7,7 @@ import { prisma } from "./db";
 import { shiftYM, todayYM, ymToLabel } from "./format";
 import { buildMonthSnapshot } from "./metrics";
 
-// Shape we operate on internally — flexible enough to swallow Prisma's
+// Shape we operate on internally - flexible enough to swallow Prisma's
 // EmployeeGetPayload without naming it (so callers don't need to import a
 // generated type).
 export type EmployeeRow = {
@@ -272,7 +272,7 @@ export function buildWorkforceInsights(
     if (share > 0.4) {
       out.push({
         level: "info",
-        text: `${(share * 100).toFixed(0)}% of the active workforce is contractors or freelancers — variable cost weighted.`,
+        text: `${(share * 100).toFixed(0)}% of the active workforce is contractors or freelancers - variable cost weighted.`,
       });
     }
   }
@@ -286,7 +286,7 @@ export function buildWorkforceInsights(
   if (summary.plannedCount > 0) {
     out.push({
       level: "info",
-      text: `${summary.plannedCount} planned hire${summary.plannedCount === 1 ? "" : "s"} on the roster — projected payroll already reflects ${summary.plannedCount === 1 ? "this" : "these"} once ${summary.plannedCount === 1 ? "it" : "they"} start.`,
+      text: `${summary.plannedCount} planned hire${summary.plannedCount === 1 ? "" : "s"} on the roster - projected payroll already reflects ${summary.plannedCount === 1 ? "this" : "these"} once ${summary.plannedCount === 1 ? "it" : "they"} start.`,
     });
   }
   return out;

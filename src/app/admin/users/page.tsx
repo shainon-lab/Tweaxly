@@ -1,4 +1,4 @@
-// Admin · Users. The User is the primary entity here — each row is
+// Admin · Users. The User is the primary entity here - each row is
 // one login identity with all the workspaces they own or belong to
 // inline. From here a super_admin can promote / demote between
 // 'user' and 'admin'. Super-admin rows are read-only (no role change
@@ -12,7 +12,7 @@ import { UserRoleEditor } from "./UserRoleEditor";
 export const dynamic = "force-dynamic";
 
 function fmtDate(d: Date | null | undefined) {
-  if (!d) return "—";
+  if (!d) return "-";
   return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 }
 function fmtRel(d: Date | null | undefined) {
@@ -150,7 +150,7 @@ export default async function AdminUsersPage({
                 </td>
               </tr>
             ) : users.map((u) => {
-              // Workspaces the user can access — combine owned + active memberships.
+              // Workspaces the user can access - combine owned + active memberships.
               const ownedIds = new Set(u.businesses.map((b) => b.id));
               const allWs: { id: string; name: string; status: string; isOwner: boolean }[] = [];
               for (const b of u.businesses) {

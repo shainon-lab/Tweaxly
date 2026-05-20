@@ -26,7 +26,7 @@ export default async function SettingsPage() {
       orderBy: { name: "asc" },
     }),
   ]);
-  // Revenue (income) categories first, then outcome categories — applied
+  // Revenue (income) categories first, then outcome categories - applied
   // everywhere a category list is rendered.
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
   const { t } = await getServerT();

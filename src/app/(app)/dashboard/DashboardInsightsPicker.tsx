@@ -90,7 +90,7 @@ export default function DashboardInsightsPicker({
     const y = d.getUTCFullYear();
     const m = d.getUTCMonth() + 1;
     if (g === "custom") {
-      // Don't navigate yet — wait for the user to set both dates and click Apply.
+      // Don't navigate yet - wait for the user to set both dates and click Apply.
       update({
         insights_gran: "custom",
         insights_period: undefined,

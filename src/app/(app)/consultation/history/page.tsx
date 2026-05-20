@@ -1,4 +1,4 @@
-// Consultation History — split-screen: list of past questions on the
+// Consultation History - split-screen: list of past questions on the
 // left, the selected question's response on the right. Selection is
 // driven by ?id= (consultation-message id, not consultation id) so
 // every question shows up as its own row even when several were asked

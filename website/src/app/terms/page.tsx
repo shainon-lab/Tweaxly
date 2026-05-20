@@ -3,7 +3,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import TermsContent, { TERMS_LAST_UPDATED } from "@/components/TermsContent";
 
-const DESCRIPTION = "The Tweaxly Terms of Service govern your use of the Tweaxly AI financial intelligence platform — forecasting, business signals, and AI advisory.";
+const DESCRIPTION = "The Tweaxly Terms of Service govern your use of the Tweaxly AI financial intelligence platform - forecasting, business signals, and AI advisory.";
 
 export const metadata: Metadata = {
   title: { absolute: "Terms of Service | Tweaxly" },

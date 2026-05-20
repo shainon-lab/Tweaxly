@@ -5,7 +5,7 @@
 // Profile, Categories & Vendors, Integration) and the Data section
 // owned its own 3-tab switcher (Import data, Transactions, Data log).
 // Both groups now collapse into one 6-tab row anchored to this
-// component — the Data sidebar entry is gone and these views live
+// component - the Data sidebar entry is gone and these views live
 // under Business Settings.
 //
 // /settings holds three of the six tabs via a ?tab= query (profile is

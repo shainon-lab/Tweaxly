@@ -285,7 +285,7 @@ export default function NotificationsClient({
                 </button>
               ) : (
                 <span className="text-[11px] text-slate-500">
-                  Auto-suggested — edit if you want a different name
+                  Auto-suggested - edit if you want a different name
                 </span>
               )}
             </div>
@@ -312,7 +312,7 @@ export default function NotificationsClient({
         <div className="font-medium mb-3">Your notifications</div>
         {rules.length === 0 ? (
           <div className="text-sm text-slate-400 py-6 text-center">
-            No rules yet. Add one above — they&apos;ll fire on the dashboard whenever the threshold is crossed.
+            No rules yet. Add one above - they&apos;ll fire on the dashboard whenever the threshold is crossed.
           </div>
         ) : (
           <table className="table-base">

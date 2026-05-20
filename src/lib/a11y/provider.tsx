@@ -7,7 +7,7 @@
 //
 // The reason we set data attributes on <html> (not className) is that
 // it composes cleanly with the existing data-theme="light|dark" toggle
-// — both can coexist and CSS can target them together.
+// - both can coexist and CSS can target them together.
 
 import {
   createContext, useCallback, useContext, useEffect, useMemo, useRef, useState,
@@ -47,7 +47,7 @@ function applyToHtml(prefs: A11yPrefs) {
 
 export function AccessibilityProvider({ children }: { children: React.ReactNode }) {
   // Start from defaults; hydrate from storage on mount. The brief flash
-  // is unavoidable without an inline pre-paint script — we add one in
+  // is unavoidable without an inline pre-paint script - we add one in
   // RootLayout to handle the most disruptive prefs (contrast + font).
   const [prefs, setPrefs] = useState<A11yPrefs>(DEFAULT_PREFS);
   const hydrated = useRef(false);
@@ -68,7 +68,7 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
     applyToHtml(prefs);
     if (!hydrated.current) return;  // skip the initial defaults write
     try { localStorage.setItem(A11Y_STORAGE_KEY, JSON.stringify(prefs)); }
-    catch { /* quota/private mode — non-fatal */ }
+    catch { /* quota/private mode - non-fatal */ }
   }, [prefs]);
 
   const set = useCallback<A11yCtx["set"]>((key, value) => {

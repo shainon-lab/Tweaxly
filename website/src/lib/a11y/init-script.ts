@@ -1,6 +1,6 @@
 // Inline script run before first paint so contrast/font preferences
 // don't flash. Mirrors the subset of preferences that have the biggest
-// FOUC impact — full state syncs once the React provider mounts.
+// FOUC impact - full state syncs once the React provider mounts.
 
 export const A11Y_INIT_SCRIPT = `
 (function(){try{
