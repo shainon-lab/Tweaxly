@@ -452,6 +452,14 @@ async function computeConfidence(
     warnings.push("More than 3 scenario assumptions stacked — projection complexity reduces confidence.");
   }
   score = Math.max(0, Math.min(100, Math.round(score)));
+  // Display cap: forecasts are inherently uncertain, so we never
+  // surface a perfect 100/100. Two rules per product intent:
+  //   • Continuous cap at 98 — any score above that displays as 98.
+  //   • Step-of-5 cap at 95 — when the raw score lands at exactly
+  //     100, snap to 95 (the next multiple of 5 below) so the score
+  //     stays consistent with bands that step in fives.
+  if (score >= 100) score = 95;
+  else if (score > 98) score = 98;
   const confidence: Confidence =
     score >= 75 ? "high" : score >= 50 ? "medium" : "low";
   return { confidence, score, warnings };
