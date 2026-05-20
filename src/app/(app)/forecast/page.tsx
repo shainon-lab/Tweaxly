@@ -230,7 +230,7 @@ export default async function ForecastPage({
       ) : (
         <>
           <ForecastReadinessBanner readiness={readiness} />
-          <ForecastExplanationPanel result={engineResult} />
+          <ForecastExplanationPanel result={engineResult} currency={ccy} />
         </>
       )}
 

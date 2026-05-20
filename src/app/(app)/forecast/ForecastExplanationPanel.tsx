@@ -16,7 +16,8 @@ const CONF_TONE: Record<ForecastResult["confidence"], string> = {
 
 export default function ForecastExplanationPanel({
   result,
-}: { result: ForecastResult }) {
+  currency,
+}: { result: ForecastResult; currency: string }) {
   const tone = CONF_TONE[result.confidence];
   return (
     <div className="card mb-6">
@@ -49,7 +50,7 @@ export default function ForecastExplanationPanel({
             {result.recurringDetected.slice(0, 6).map((r, i) => (
               <li key={i} className="flex items-baseline justify-between gap-3">
                 <span>{r.description}</span>
-                <span className="text-slate-500 tabular-nums">≈{fmtMoney(r.monthlyAmount, result.baseline ? "USD" : "USD")} / mo</span>
+                <span className="text-slate-500 tabular-nums">≈{fmtMoney(r.monthlyAmount, currency)} / mo</span>
               </li>
             ))}
           </ul>

@@ -372,6 +372,21 @@ async function detectRecurring(
   baselineFromYM: string,
   baselineToYM: string,
 ): Promise<ForecastResult["recurringDetected"]> {
+  // (0) Payroll consolidation. Every active employee + every payroll-
+  // tagged transaction (type === "payroll" or category.kind ===
+  // "payroll") collapses into a SINGLE "Payroll" entry rather than
+  // showing each person/vendor individually. The single line surfaces
+  // the total monthly payroll the forecast projects forward.
+  const employees = await prisma.employee.findMany({
+    where: { businessId, OR: [{ endDate: null }, { endDate: { gte: new Date() } }] },
+    select: { name: true, grossMonthlySalary: true, employerCostMultiplier: true },
+  });
+  const rosterMonthlyCost = employees.reduce(
+    (sum, e) => sum + e.grossMonthlySalary * (e.employerCostMultiplier ?? 1),
+    0,
+  );
+  const employeeNames = new Set(employees.map((e) => e.name.toLowerCase()));
+
   // (1) Explicit recurring manual entries.
   const entries = await prisma.manualEntry.findMany({
     where: {
@@ -380,19 +395,27 @@ async function detectRecurring(
     },
     include: { category: { select: { name: true, kind: true } } },
   });
-  const explicit: ForecastResult["recurringDetected"] = entries.map((e) => ({
-    kind: e.type === "income" ? "income" : "expense",
-    description: `${e.category?.name ?? "Manual entry"} (${e.frequency})`,
-    monthlyAmount:
+  const explicit: ForecastResult["recurringDetected"] = [];
+  let manualPayrollMonthly = 0;
+  for (const e of entries) {
+    const monthlyAmount =
       e.frequency === "monthly"   ? e.amount :
       e.frequency === "quarterly" ? e.amount / 3 :
-      e.frequency === "yearly"    ? e.amount / 12 : 0,
-  }));
+      e.frequency === "yearly"    ? e.amount / 12 : 0;
+    // Fold payroll-kind manual entries into the consolidated payroll
+    // total instead of listing them separately.
+    if (e.category?.kind === "payroll") {
+      manualPayrollMonthly += monthlyAmount;
+      continue;
+    }
+    explicit.push({
+      kind: e.type === "income" ? "income" : "expense",
+      description: `${e.category?.name ?? "Manual entry"} (${e.frequency})`,
+      monthlyAmount,
+    });
+  }
 
   // (2) Inferred recurring from transactions in the baseline window.
-  // We only consider vendor-tagged rows — untagged rows can't be
-  // clustered. Source = "manual" rows are excluded because they
-  // already appear via explicit entries.
   const txns = await prisma.transaction.findMany({
     where: {
       businessId,
@@ -401,31 +424,37 @@ async function detectRecurring(
       vendor: { not: null },
       source: { not: "manual" },
     },
-    select: { vendor: true, amount: true, transactionDate: true, type: true },
+    select: {
+      vendor: true, amount: true, transactionDate: true, type: true,
+      category: { select: { kind: true } },
+    },
   });
 
-  type Group = { amounts: number[]; dates: Date[]; type: string };
+  type Group = { amounts: number[]; dates: Date[]; type: string; isPayroll: boolean };
   const byVendor = new Map<string, Group>();
   for (const t of txns) {
     if (!t.vendor) continue;
-    const g = byVendor.get(t.vendor) ?? { amounts: [], dates: [], type: t.type };
+    const isPayroll = t.type === "payroll" || t.category?.kind === "payroll" || employeeNames.has(t.vendor.toLowerCase());
+    const g = byVendor.get(t.vendor) ?? { amounts: [], dates: [], type: t.type, isPayroll };
     g.amounts.push(t.amount);
     g.dates.push(t.transactionDate);
+    g.isPayroll = g.isPayroll || isPayroll;
     byVendor.set(t.vendor, g);
   }
 
   const inferred: ForecastResult["recurringDetected"] = [];
+  // Collect payroll-like vendor groups' monthly contribution so we can
+  // fold them into the single consolidated Payroll line at the end.
+  let inferredPayrollMonthly = 0;
   for (const [vendor, g] of byVendor) {
     if (g.amounts.length < 3) continue;
-    // Amount tightness: ratio of stdev to mean must be < 15%.
     const absAmounts = g.amounts.map((a) => Math.abs(a));
     const mean = absAmounts.reduce((s, v) => s + v, 0) / absAmounts.length;
-    if (mean < 10) continue;  // ignore vendors with sub-$10 averages
+    if (mean < 10) continue;
     const variance = absAmounts.reduce((s, v) => s + (v - mean) ** 2, 0) / absAmounts.length;
     const cv = Math.sqrt(variance) / mean;
     if (cv > 0.15) continue;
 
-    // Cadence: median day-gap between consecutive sorted dates.
     const sorted = [...g.dates].sort((a, b) => a.getTime() - b.getTime());
     const gaps: number[] = [];
     for (let i = 1; i < sorted.length; i++) {
@@ -440,14 +469,21 @@ async function detectRecurring(
       medianGap >= 350 && medianGap <= 380 ? "yearly"   : null;
     if (!cadence) continue;
 
+    const monthlyAmount =
+      cadence === "monthly"   ? mean :
+      cadence === "quarterly" ? mean / 3 :
+                                mean / 12;
+
+    if (g.isPayroll) {
+      inferredPayrollMonthly += monthlyAmount;
+      continue;
+    }
+
     const sign = g.amounts.reduce((s, v) => s + v, 0) >= 0 ? "income" : "expense";
     inferred.push({
       kind: sign,
       description: `${vendor} (${cadence}, detected)`,
-      monthlyAmount:
-        cadence === "monthly"   ? mean :
-        cadence === "quarterly" ? mean / 3 :
-                                  mean / 12,
+      monthlyAmount,
     });
   }
 
@@ -455,7 +491,26 @@ async function detectRecurring(
   const explicitKeys = new Set(explicit.map((e) => e.description.toLowerCase().split(" (")[0]));
   const filteredInferred = inferred.filter((i) => !explicitKeys.has(i.description.toLowerCase().split(" (")[0]));
 
-  return [...explicit, ...filteredInferred].sort((a, b) => b.monthlyAmount - a.monthlyAmount);
+  // Consolidated payroll line — single entry combining the active
+  // roster's fully-loaded cost AND any payroll-tagged manual entries
+  // or detected payroll vendors not already on the roster. Prefer the
+  // larger of (roster + manual) vs (inferred-from-transactions) so
+  // missing payroll uploads don't understate the line.
+  const out: ForecastResult["recurringDetected"] = [...explicit, ...filteredInferred];
+  const payrollFromRosterAndManual = rosterMonthlyCost + manualPayrollMonthly;
+  const consolidatedPayroll = Math.max(payrollFromRosterAndManual, inferredPayrollMonthly);
+  if (consolidatedPayroll > 0) {
+    const headcountLabel = employees.length > 0
+      ? `${employees.length} employee${employees.length === 1 ? "" : "s"}`
+      : "from payroll transactions";
+    out.unshift({
+      kind: "expense",
+      description: `Payroll (${headcountLabel})`,
+      monthlyAmount: consolidatedPayroll,
+    });
+  }
+
+  return out.sort((a, b) => b.monthlyAmount - a.monthlyAmount);
 }
 
 // ── Confidence scoring ───────────────────────────────────────────────
