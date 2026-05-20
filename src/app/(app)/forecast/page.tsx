@@ -211,20 +211,31 @@ export default async function ForecastPage({
       />
       <ForecastTabs />
 
-      {/* Readiness gate — if the engine reports disabled (< 90 days
-          of validated data) or the caller's baseline is blocked, we
-          replace the whole forecast body with an educational empty
-          state. Otherwise we render the explanation panel above the
-          existing tiles/chart/table. */}
       <ForecastReadinessBanner readiness={readiness} />
-      {engineResult.ok ? (
-        <ForecastExplanationPanel result={engineResult} />
-      ) : (
-        <div className="card mb-6 border-warn/30 bg-warn/5">
-          <div className="font-medium text-warn mb-1">Forecast unavailable</div>
-          <div className="text-sm text-slate-300 leading-relaxed">{engineResult.message}</div>
+      {/* When the engine reports the forecast is unavailable (custom
+          range under 90 days, missing dates, empty range, or
+          insufficient history), render ONLY the prominent
+          unavailable card and hide every downstream tile / chart /
+          table so the user isn't confused by stale data sitting
+          underneath the error. */}
+      {!engineResult.ok ? (
+        <div className="card mb-6 border-warn/40 bg-warn/10 px-6 py-8">
+          <div className="text-base font-semibold text-warn mb-2 uppercase tracking-wide">
+            Forecast unavailable
+          </div>
+          <div className="text-sm text-slate-200 leading-relaxed">
+            {engineResult.message}
+          </div>
         </div>
+      ) : (
+        <ForecastExplanationPanel result={engineResult} />
       )}
+
+      {/* Forecast body — tiles, chart, table, insights — only renders
+          when the engine has produced a usable forecast. The
+          "Forecast unavailable" card above replaces this entire
+          section otherwise. */}
+      {engineResult.ok ? <>
 
       {/* Scenarios view, empty state. Hide everything else (KPIs,
           chart, insights, table) until the user has at least one
@@ -420,6 +431,8 @@ export default async function ForecastPage({
       </details>
         </>
       ) : null}
+
+      </> : null}
 
     </>
   );

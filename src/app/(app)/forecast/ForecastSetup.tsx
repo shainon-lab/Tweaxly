@@ -65,14 +65,10 @@ function isoToYM(iso: string): string {
   return iso.slice(0, 7);
 }
 
-function diffDays(fromISO: string, toISO: string): number {
-  const a = new Date(fromISO).getTime();
-  const b = new Date(toISO).getTime();
-  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
-  return Math.round((b - a) / 86_400_000) + 1;
-}
-
-const MIN_DAYS = 90;
+// Validation now lives in the engine: it returns "Forecast unavailable"
+// when the resolved range is < 90 days, and the page hides the body
+// in that state. Removing the client-side 90-day check here keeps the
+// rules single-sourced.
 
 export default function ForecastSetup({
   historical,
@@ -99,8 +95,6 @@ export default function ForecastSetup({
   const [draftToISO,   setDraftToISO]   = useState(
     histTo   ? `${histTo}-28`   : todayISO(),
   );
-  const days = diffDays(draftFromISO, draftToISO);
-  const rangeOk = !!draftFromISO && !!draftToISO && draftFromISO <= draftToISO && days >= MIN_DAYS;
 
   function update(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(sp.toString());
@@ -111,10 +105,15 @@ export default function ForecastSetup({
     startTransition(() => router.push(`${pathname}?${params.toString()}`));
   }
 
-  function applyCustom() {
-    if (!rangeOk) return;
-    const a = draftFromISO <= draftToISO ? draftFromISO : draftToISO;
-    const b = draftFromISO <= draftToISO ? draftToISO : draftFromISO;
+  // Auto-apply on every date change. The page's SSR engine sees the
+  // new range, validates the 90-day rule, and either renders the
+  // forecast or surfaces the "Forecast unavailable" card. Removing
+  // the explicit Apply button keeps state consistent — there's no
+  // "inline warning + stale forecast underneath" confusion.
+  function applyDates(fromISO: string, toISO: string) {
+    if (!fromISO || !toISO) return;
+    const a = fromISO <= toISO ? fromISO : toISO;
+    const b = fromISO <= toISO ? toISO : fromISO;
     update({ historical: "custom", hist_from: isoToYM(a), hist_to: isoToYM(b) });
   }
 
@@ -163,7 +162,11 @@ export default function ForecastSetup({
               className="input"
               value={draftFromISO}
               max={draftToISO || todayISO()}
-              onChange={(e) => setDraftFromISO(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setDraftFromISO(next);
+                applyDates(next, draftToISO);
+              }}
               disabled={pending}
             />
           </div>
@@ -175,31 +178,14 @@ export default function ForecastSetup({
               value={draftToISO}
               min={draftFromISO || undefined}
               max={todayISO()}
-              onChange={(e) => setDraftToISO(e.target.value)}
+              onChange={(e) => {
+                const next = e.target.value;
+                setDraftToISO(next);
+                applyDates(draftFromISO, next);
+              }}
               disabled={pending}
             />
           </div>
-          <div>
-            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1 opacity-0">Apply</label>
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={applyCustom}
-              disabled={pending || !rangeOk}
-              title={!rangeOk ? `Pick at least ${MIN_DAYS} days (currently ${Math.max(0, days)} day${days === 1 ? "" : "s"}).` : undefined}
-            >
-              Apply
-            </button>
-          </div>
-          {!rangeOk ? (
-            <div className="w-full -mt-1">
-              <div className="rounded-md border border-warn/30 bg-warn/10 px-3 py-1.5 text-[11px] text-warn leading-snug">
-                {days <= 0
-                  ? "Pick a valid start and end date."
-                  : `Selected range is ${days} day${days === 1 ? "" : "s"} — forecasts require at least ${MIN_DAYS} days.`}
-              </div>
-            </div>
-          ) : null}
         </>
       ) : null}
 
