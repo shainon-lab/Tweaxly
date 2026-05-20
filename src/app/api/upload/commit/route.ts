@@ -6,6 +6,7 @@ import { findApplicableRule } from "@/lib/categorize";
 import { findDuplicateCandidates } from "@/lib/duplicates";
 import { kindFromName, parseDate } from "@/lib/parsers";
 import { convertAmount } from "@/lib/fx";
+import { isSupportedCurrency } from "@/lib/currencies";
 
 export const runtime = "nodejs";
 
@@ -91,6 +92,40 @@ export async function POST(req: NextRequest) {
     if (!body.mapping.date) {
       body.mapping = { ...body.mapping, date: dateCol };
     }
+  }
+
+  // Currency pre-validation. Block the entire upload (no rows
+  // written, no UploadBatch created) if ANY row carries a currency
+  // we can't convert via Frankfurter. The user gets a clear, single
+  // error listing exactly which codes were unsupported so they can
+  // fix the source file and re-upload.
+  //
+  // Same rule applies regardless of base currency — Frankfurter
+  // exposes bilateral pairs between every currency in its supported
+  // list, so a non-USD business (e.g. EUR base) inherits the same
+  // supported set.
+  if (!isSupportedCurrency(business.currency)) {
+    return NextResponse.json({
+      error: `Business base currency ${business.currency} is not supported by our exchange-rate provider. Please update your base currency in Settings before uploading.`,
+    }, { status: 400 });
+  }
+  const unsupportedCodes = new Set<string>();
+  const mappedCurrencyCol = body.mapping.currency;
+  if (mappedCurrencyCol) {
+    for (const row of body.rows) {
+      const raw = row[mappedCurrencyCol];
+      if (raw == null || raw === "") continue;
+      const code = String(raw).trim().toUpperCase();
+      if (code.length !== 3) continue;
+      if (!isSupportedCurrency(code)) unsupportedCodes.add(code);
+    }
+  }
+  if (unsupportedCodes.size > 0) {
+    const list = Array.from(unsupportedCodes).sort().join(", ");
+    return NextResponse.json({
+      error: `This file includes a currency that is not supported and therefore it is not possible to upload the file. Unsupported currency code${unsupportedCodes.size === 1 ? "" : "s"}: ${list}. Please adjust the file with a supported currency and try uploading again.`,
+      unsupportedCurrencies: Array.from(unsupportedCodes),
+    }, { status: 400 });
   }
 
   const batch = await prisma.uploadBatch.create({

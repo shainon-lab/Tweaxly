@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isSupportedCurrency } from "@/lib/currencies";
 
 export const runtime = "nodejs";
 
@@ -36,7 +37,13 @@ export async function PATCH(req: NextRequest) {
     data.name = b.name.trim();
   }
   if ("currency" in b && typeof b.currency === "string" && b.currency.trim().length > 0) {
-    data.currency = b.currency.toUpperCase().trim();
+    const next = b.currency.toUpperCase().trim();
+    if (!isSupportedCurrency(next)) {
+      return NextResponse.json({
+        error: `Currency ${next} is not supported by our exchange-rate provider. Please pick a supported currency.`,
+      }, { status: 400 });
+    }
+    data.currency = next;
   }
   if ("fiscalStartMonth" in b && b.fiscalStartMonth != null) {
     const n = Number(b.fiscalStartMonth);

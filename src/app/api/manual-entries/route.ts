@@ -7,6 +7,7 @@ import {
   type Frequency,
 } from "@/lib/manualEntries";
 import { kindFromName } from "@/lib/parsers";
+import { isSupportedCurrency } from "@/lib/currencies";
 
 export const runtime = "nodejs";
 
@@ -109,12 +110,17 @@ export async function POST(req: NextRequest) {
   }
 
   // Optional currency override. Defaults to the business base currency
-  // when omitted. We accept any ISO-ish 3-letter string and the
-  // materializer hands it to the FX service — same path the CSV
-  // importer uses, so cache + lookup behaviour is identical.
+  // when omitted. Reject anything Frankfurter can't convert — same
+  // rule as the CSV import path, so unsupported currencies can never
+  // enter the system from any source.
   const currency = typeof body.currency === "string" && body.currency.trim().length === 3
     ? body.currency.trim().toUpperCase()
     : business.currency;
+  if (!isSupportedCurrency(currency)) {
+    return NextResponse.json({
+      error: `Currency ${currency} is not supported. Please pick a supported currency and try again.`,
+    }, { status: 400 });
+  }
 
   const result = await createManualEntryAndMaterialize({
     businessId: business.id,

@@ -1,8 +1,33 @@
 // ISO 4217 active currency codes. Each entry: { code, name }.
 // Use `PRIORITY_CURRENCIES` to pin the most-likely picks (USD, EUR, GBP) at
 // the top of the picker, then `OTHER_CURRENCIES` (alphabetical) below.
+//
+// IMPORTANT: every currency surfaced as a picker option must be one we
+// can actually convert. Frankfurter (our historical-rate provider,
+// sourced from ECB reference rates) covers a limited list — see
+// FRANKFURTER_SUPPORTED_CODES below. PRIORITY_CURRENCIES and
+// OTHER_CURRENCIES are filtered against that set at export time, so
+// any consumer of these exports only sees supported currencies. The
+// raw RAW_OTHER list is kept for `currencyName()` lookups (so legacy
+// records with unsupported codes still get a readable name).
 
 export type Currency = { code: string; name: string };
+
+// Currencies for which Frankfurter publishes historical rates (ECB
+// reference rates). Source: https://api.frankfurter.dev/v1/currencies
+// — codes are stable; we re-cache this list manually rather than
+// hitting the API on every server boot. If the list changes upstream,
+// edit it here.
+export const FRANKFURTER_SUPPORTED_CODES = new Set<string>([
+  "AUD", "BGN", "BRL", "CAD", "CHF", "CNY", "CZK", "DKK", "EUR", "GBP",
+  "HKD", "HUF", "IDR", "ILS", "INR", "ISK", "JPY", "KRW", "MXN", "MYR",
+  "NOK", "NZD", "PHP", "PLN", "RON", "SEK", "SGD", "THB", "TRY", "USD",
+  "ZAR",
+]);
+
+export function isSupportedCurrency(code: string): boolean {
+  return FRANKFURTER_SUPPORTED_CODES.has(code.toUpperCase());
+}
 
 export const PRIORITY_CURRENCIES: Currency[] = [
   { code: "USD", name: "US Dollar" },
@@ -166,14 +191,29 @@ const RAW_OTHER: Currency[] = [
   { code: "ZWL", name: "Zimbabwean Dollar" },
 ];
 
+// Picker-facing list: only currencies Frankfurter can convert.
+// Everything else stays in RAW_OTHER for name lookups but never
+// surfaces as a selectable option in CurrencyPicker / Settings.
 export const OTHER_CURRENCIES: Currency[] = RAW_OTHER
   .filter((c) => !PRIORITY_CURRENCIES.some((p) => p.code === c.code))
+  .filter((c) => FRANKFURTER_SUPPORTED_CODES.has(c.code))
   .sort((a, b) => a.code.localeCompare(b.code));
 
+// Selectable in pickers (excludes anything Frankfurter can't convert).
 export const ALL_CURRENCIES: Currency[] = [...PRIORITY_CURRENCIES, ...OTHER_CURRENCIES];
+
+// Full ISO 4217 list — used only by currencyName() for displaying
+// legacy records that were created before this restriction. Do NOT
+// use as a picker source.
+const ALL_INCLUDING_UNSUPPORTED: Currency[] = [
+  ...PRIORITY_CURRENCIES,
+  ...RAW_OTHER.filter((c) => !PRIORITY_CURRENCIES.some((p) => p.code === c.code)),
+];
 
 // Resolve a code to its display name. Falls back to the raw code if unknown
 // (e.g. the user has a previously-saved code we don't know about).
+// Uses the FULL ISO list so legacy records render with their name even
+// when the currency isn't selectable for new entries.
 export function currencyName(code: string): string {
-  return ALL_CURRENCIES.find((c) => c.code === code)?.name ?? code;
+  return ALL_INCLUDING_UNSUPPORTED.find((c) => c.code === code)?.name ?? code;
 }
