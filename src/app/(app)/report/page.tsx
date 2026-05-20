@@ -286,7 +286,10 @@ export default async function ReportPage({
               {allPeriods.map((p, i) => (
                 <th
                   key={p.anchor}
-                  className={`!normal-case !text-base !text-slate-100 text-right whitespace-nowrap ${
+                  // !text-right because .table-base thead th applies
+                  // text-left via @apply — without the bang the period
+                  // labels mis-align over the right-aligned numbers.
+                  className={`!normal-case !text-base !text-slate-100 !text-right whitespace-nowrap ${
                     i === 0 ? "!font-bold underline decoration-accent decoration-2 underline-offset-[6px]" : "!font-semibold"
                   }`}
                 >
