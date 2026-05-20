@@ -13,7 +13,7 @@ export default async function LoginPage({
   const { err, reset } = await searchParams;
   const { t } = await getServerT();
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="auth-shell">
       <div className="card w-full max-w-md">
         <div className="flex flex-col items-center mb-6">
           <Logo size="lg" showTagline />
