@@ -153,6 +153,18 @@ function monthsBetween(fromYM: string, toYM: string): number {
   return Math.max(0, (ty - fy) * 12 + (tm - fm) + 1);
 }
 
+// Clamp an ISO-ish date to the last day of the previous calendar
+// month. Returns the date as "YYYY-MM-DD". The engine uses this on
+// every custom-range "To" date so the forecast baseline never
+// includes an in-progress month.
+function clampToLastDayPrevMonth(toISO: string): string {
+  const now = new Date();
+  const last = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 0));
+  const lastISO = last.toISOString().slice(0, 10);
+  const candidate = toISO.length === 10 ? toISO : `${toISO.slice(0, 7)}-28`;
+  return candidate > lastISO ? lastISO : candidate;
+}
+
 // Exact inclusive day count between two ISO-ish dates. Accepts either
 // "YYYY-MM" (snapped to 1st-of for from, 28th-of for to as a safe
 // approximation) or full "YYYY-MM-DD". Returned count is what the
@@ -267,11 +279,16 @@ export function resolveBaseline(
     }
     // Accept either YM ("YYYY-MM") or full ISO ("YYYY-MM-DD"). The
     // engine works on accountingMonth so we collapse to YM for
-    // bucketing — but we count exact selected days for the error
-    // message so the user sees their actual selection ("Selected
-    // range is 89 days…") instead of a month-rounded count.
+    // bucketing.
     const aRaw = customFromYM <= customToYM ? customFromYM : customToYM;
-    const bRaw = customFromYM <= customToYM ? customToYM   : customFromYM;
+    const bRawInput = customFromYM <= customToYM ? customToYM   : customFromYM;
+    // Hard rule: forecast baselines must end at the last day of the
+    // previous calendar month. Current month is in progress, and
+    // including it would distort the trend. We clamp the user's
+    // selected end-date to that boundary BEFORE counting days, so
+    // the "Selected range is N days" number reflects what actually
+    // feeds the baseline — not what the user thought they picked.
+    const bRaw = clampToLastDayPrevMonth(bRawInput);
     const a = aRaw.slice(0, 7);
     let   b = bRaw.slice(0, 7);
     if (b > anchor) b = anchor;

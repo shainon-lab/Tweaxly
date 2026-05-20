@@ -43,19 +43,25 @@ function thisYM() {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
+// Last day of the previous calendar month — used as the maximum
+// allowed "To" date in the custom picker. Forecasts must never
+// include an in-progress month because incomplete data would
+// distort the baseline trend.
+function lastDayPrevMonthISO() {
+  const d = new Date();
+  // Day 0 of current month = last day of previous month in UTC.
+  const last = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), 0));
+  return last.toISOString().slice(0, 10);
 }
 
-// Default custom From = 12 months back from today's first-of-month,
-// To = today. Produces a ~365-day window that comfortably passes the
-// engine's 90-day guard, so picking "Custom" never lands the user in
-// an invalid state by default.
+// Default custom From = first day of (lastFullMonth - 11) so the
+// default window spans 12 complete months ending at the last full
+// month. To = last day of the previous month (current month never
+// participates).
 function defaultCustomFromISO() {
   const d = new Date();
-  d.setUTCFullYear(d.getUTCFullYear() - 1);
-  d.setUTCDate(1);
-  return d.toISOString().slice(0, 10);
+  const first = new Date(Date.UTC(d.getUTCFullYear() - 1, d.getUTCMonth(), 1));
+  return first.toISOString().slice(0, 10);
 }
 
 // Engine accepts either YM (YYYY-MM) or full ISO (YYYY-MM-DD). We
@@ -87,10 +93,10 @@ export default function ForecastSetup({
   // we also accept legacy YYYY-MM and snap to 1st-of / 28th-of for
   // backward compatibility with old bookmarks.
   const hydrateISO = (s: string | undefined, mode: "from" | "to") => {
-    if (!s) return mode === "from" ? defaultCustomFromISO() : todayISO();
+    if (!s) return mode === "from" ? defaultCustomFromISO() : lastDayPrevMonthISO();
     if (s.length === 10) return s;                         // already YYYY-MM-DD
     if (s.length === 7)  return mode === "from" ? `${s}-01` : `${s}-28`;
-    return mode === "from" ? defaultCustomFromISO() : todayISO();
+    return mode === "from" ? defaultCustomFromISO() : lastDayPrevMonthISO();
   };
   const [draftFromISO, setDraftFromISO] = useState(hydrateISO(histFrom, "from"));
   const [draftToISO,   setDraftToISO]   = useState(hydrateISO(histTo,   "to"));
@@ -160,7 +166,7 @@ export default function ForecastSetup({
               type="date"
               className="input"
               value={draftFromISO}
-              max={draftToISO || todayISO()}
+              max={draftToISO || lastDayPrevMonthISO()}
               onChange={(e) => {
                 const next = e.target.value;
                 setDraftFromISO(next);
@@ -176,7 +182,7 @@ export default function ForecastSetup({
               className="input"
               value={draftToISO}
               min={draftFromISO || undefined}
-              max={todayISO()}
+              max={lastDayPrevMonthISO()}
               onChange={(e) => {
                 const next = e.target.value;
                 setDraftToISO(next);
