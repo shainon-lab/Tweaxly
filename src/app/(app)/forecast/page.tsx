@@ -174,10 +174,12 @@ export default async function ForecastPage({
   // assumptions the legacy path uses on the Scenarios view so the
   // engine's `scenariosApplied` matches what the user sees.
   const engineResult = await buildForecastEngine({
-    businessId: business.id,
-    baselineId: engineBaselineId,
-    horizonId:  engineHorizonId,
-    assumptions: effectiveAssumptions,
+    businessId:   business.id,
+    baselineId:   engineBaselineId,
+    horizonId:    engineHorizonId,
+    customFromYM: sp.hist_from,
+    customToYM:   sp.hist_to,
+    assumptions:  effectiveAssumptions,
   });
 
   return (

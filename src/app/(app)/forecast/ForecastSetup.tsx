@@ -39,6 +39,37 @@ function thisYM() {
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+function todayISO() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+// Default custom From = 12 months back from today's first-of-month,
+// To = today. Produces a ~365-day window that comfortably passes the
+// engine's 90-day guard, so picking "Custom" never lands the user in
+// an invalid state by default.
+function defaultCustomFromISO() {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() - 1);
+  d.setUTCDate(1);
+  return d.toISOString().slice(0, 10);
+}
+
+// Engine works on accountingMonth (YYYY-MM). Day-level dates are
+// projected onto their containing month — for date-picker UX the user
+// thinks in days, but the underlying buckets are still months.
+function isoToYM(iso: string): string {
+  return iso.slice(0, 7);
+}
+
+function diffDays(fromISO: string, toISO: string): number {
+  const a = new Date(fromISO).getTime();
+  const b = new Date(toISO).getTime();
+  if (!Number.isFinite(a) || !Number.isFinite(b)) return 0;
+  return Math.round((b - a) / 86_400_000) + 1;
+}
+
+const MIN_DAYS = 90;
+
 export default function ForecastSetup({
   historical,
   horizon,
@@ -54,8 +85,18 @@ export default function ForecastSetup({
   const sp = useSearchParams();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
-  const [draftFrom, setDraftFrom] = useState(histFrom || thisYM());
-  const [draftTo, setDraftTo] = useState(histTo || thisYM());
+  // Day-level pickers. URL still carries YM granularity for the
+  // engine; we hydrate the day defaults from the URL (snapping to
+  // the 1st of the month for From and the last day for To when
+  // arriving from a YM-only URL).
+  const [draftFromISO, setDraftFromISO] = useState(
+    histFrom ? `${histFrom}-01` : defaultCustomFromISO(),
+  );
+  const [draftToISO,   setDraftToISO]   = useState(
+    histTo   ? `${histTo}-28`   : todayISO(),
+  );
+  const days = diffDays(draftFromISO, draftToISO);
+  const rangeOk = !!draftFromISO && !!draftToISO && draftFromISO <= draftToISO && days >= MIN_DAYS;
 
   function update(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(sp.toString());
@@ -67,10 +108,10 @@ export default function ForecastSetup({
   }
 
   function applyCustom() {
-    if (!draftFrom || !draftTo) return;
-    const a = draftFrom <= draftTo ? draftFrom : draftTo;
-    const b = draftFrom <= draftTo ? draftTo : draftFrom;
-    update({ historical: "custom", hist_from: a, hist_to: b });
+    if (!rangeOk) return;
+    const a = draftFromISO <= draftToISO ? draftFromISO : draftToISO;
+    const b = draftFromISO <= draftToISO ? draftToISO : draftFromISO;
+    update({ historical: "custom", hist_from: isoToYM(a), hist_to: isoToYM(b) });
   }
 
   return (
@@ -89,7 +130,14 @@ export default function ForecastSetup({
           onChange={(e) => {
             const v = e.target.value;
             if (v === "custom") {
-              update({ historical: "custom", hist_from: draftFrom, hist_to: draftTo });
+              // Seed the URL with the day-defaults' YMs so the first
+              // render of "Custom" produces a valid 12-month window
+              // — no flicker through an invalid state.
+              update({
+                historical: "custom",
+                hist_from:  isoToYM(draftFromISO),
+                hist_to:    isoToYM(draftToISO),
+              });
             } else {
               update({ historical: v, hist_from: undefined, hist_to: undefined });
             }
@@ -107,22 +155,23 @@ export default function ForecastSetup({
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
             <input
-              type="month"
+              type="date"
               className="input"
-              value={draftFrom}
-              max={draftTo || undefined}
-              onChange={(e) => setDraftFrom(e.target.value)}
+              value={draftFromISO}
+              max={draftToISO || todayISO()}
+              onChange={(e) => setDraftFromISO(e.target.value)}
               disabled={pending}
             />
           </div>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">To</label>
             <input
-              type="month"
+              type="date"
               className="input"
-              value={draftTo}
-              min={draftFrom || undefined}
-              onChange={(e) => setDraftTo(e.target.value)}
+              value={draftToISO}
+              min={draftFromISO || undefined}
+              max={todayISO()}
+              onChange={(e) => setDraftToISO(e.target.value)}
               disabled={pending}
             />
           </div>
@@ -132,11 +181,21 @@ export default function ForecastSetup({
               type="button"
               className="btn-primary"
               onClick={applyCustom}
-              disabled={pending || !draftFrom || !draftTo}
+              disabled={pending || !rangeOk}
+              title={!rangeOk ? `Pick at least ${MIN_DAYS} days (currently ${Math.max(0, days)} day${days === 1 ? "" : "s"}).` : undefined}
             >
               Apply
             </button>
           </div>
+          {!rangeOk ? (
+            <div className="w-full -mt-1">
+              <div className="rounded-md border border-warn/30 bg-warn/10 px-3 py-1.5 text-[11px] text-warn leading-snug">
+                {days <= 0
+                  ? "Pick a valid start and end date."
+                  : `Selected range is ${days} day${days === 1 ? "" : "s"} — forecasts require at least ${MIN_DAYS} days.`}
+              </div>
+            </div>
+          ) : null}
         </>
       ) : null}
 
