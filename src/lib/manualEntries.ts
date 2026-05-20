@@ -92,6 +92,7 @@ export async function createManualEntryAndMaterialize(
       type: input.type,
       categoryId: input.categoryId,
       amount: Math.abs(input.amount),
+      currency: (input.currency ?? business.currency).toUpperCase(),
       frequency: input.frequency,
       startDate: input.startDate,
       endDate: input.endDate ?? null,

@@ -618,6 +618,11 @@ model ManualEntry {
   category    Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   // Always stored as a positive number; sign applied at materialization based on type
   amount      Float
+  // ISO 4217 currency the user entered the amount in. Defaults to the
+  // business base currency. Each materialized Transaction snapshots
+  // its own per-occurrence exchange rate; this field is the source of
+  // truth for "what did the user actually type".
+  currency    String?
   // frequency: one_time | monthly | quarterly | yearly
   frequency   String
   startDate   DateTime

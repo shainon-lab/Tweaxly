@@ -4,6 +4,13 @@ import { useRouter } from "next/navigation";
 import BulkUploadCard from "./BulkUploadCard";
 import DatedUploadCard from "./DatedUploadCard";
 import CurrencyPicker from "@/components/CurrencyPicker";
+import { fmtMoney } from "@/lib/format";
+
+// Per-currency formatter for the "original entered" amount shown in
+// parens after the base-currency converted value.
+function fmtOriginal(amount: number, currency: string): string {
+  return fmtMoney(Math.abs(amount), currency);
+}
 
 type UploadMode = "dated" | "monthly";
 
@@ -12,7 +19,14 @@ type Category = { id: string; name: string; kind: string };
 type Entry = {
   id: string;
   type: string;
+  // Amount the user typed, in their chosen currency.
   amount: number;
+  currency: string;
+  // Converted to the business base currency. Equal to `amount` for
+  // same-currency entries; for non-base, taken from the latest
+  // materialized occurrence's rate.
+  convertedAmount: number;
+  convertedCurrency: string;
   frequency: string;
   startDate: string;
   endDate: string | null;
@@ -469,7 +483,12 @@ export default function ManualDataClient({
                     className={`text-right font-medium whitespace-nowrap ${e.type === "income" ? "text-good" : "text-bad"}`}
                   >
                     {e.type === "income" ? "+" : "−"}
-                    {fmt.format(e.amount)}
+                    {fmt.format(e.convertedAmount)}
+                    {e.currency !== e.convertedCurrency ? (
+                      <span className="ml-1 text-xs text-slate-400 font-normal">
+                        ({fmtOriginal(e.amount, e.currency)})
+                      </span>
+                    ) : null}
                   </td>
                   <td className="text-slate-300 whitespace-nowrap">
                     {e.startDate.slice(0, 10)}
@@ -527,7 +546,12 @@ export default function ManualDataClient({
               </li>
               <li>
                 <span className="text-slate-400">Amount:</span>{" "}
-                {confirmDelete.type === "income" ? "+" : "−"}{fmt.format(confirmDelete.amount)}
+                {confirmDelete.type === "income" ? "+" : "−"}{fmt.format(confirmDelete.convertedAmount)}
+                {confirmDelete.currency !== confirmDelete.convertedCurrency ? (
+                  <span className="ml-1 text-xs text-slate-400">
+                    ({fmtOriginal(confirmDelete.amount, confirmDelete.currency)})
+                  </span>
+                ) : null}
               </li>
               <li>
                 <span className="text-slate-400">Will delete:</span>{" "}
