@@ -12,6 +12,8 @@ import {
 import DataFlowFilters from "./DataFlowFilters";
 import SummaryTable from "./SummaryTable";
 import { fmtMoney, fmtPct, ymToLabel } from "@/lib/format";
+import { breakdownFromDb } from "@/lib/currencyBreakdown";
+import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 
 const VALID_RANGES: DataFlowRange[] = [
   "this_month",
@@ -123,6 +125,25 @@ async function SummaryView({
     customEnd,
   );
 
+  // Currency breakdowns for the three headline tiles. We re-filter
+  // by accountingMonth using the summary's resolved window so the
+  // breakdown is exactly the same row set the summary already
+  // bucketed. Income txns for Revenue, non-revenue non-transfer for
+  // Outcome, the union (signed) for P&L.
+  const fromYM = summary.fromYM;
+  const toYM   = summary.toYM;
+  const periodWhere = {
+    businessId,
+    accountingMonth: { gte: fromYM, lte: toYM },
+    isExcludedFromPnl: false,
+    type: { not: "transfer" },
+  } as const;
+  const [revFx, outFx, pnlFx] = await Promise.all([
+    breakdownFromDb({ ...periodWhere, category: { kind: "revenue" } }, ccy, { absolute: true }),
+    breakdownFromDb({ ...periodWhere, NOT: { category: { kind: "revenue" } } }, ccy, { absolute: true }),
+    breakdownFromDb(periodWhere, ccy),
+  ]);
+
   if (
     summary.revenue === 0 &&
     summary.outcomes.length === 0
@@ -154,13 +175,27 @@ async function SummaryView({
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Revenue</div>
           <div className="mt-2 text-xl font-semibold text-good">
-            +{fmtMoney(summary.revenue, ccy)}
+            +<MoneyAmountWithCurrencyBreakdown
+              convertedTotal={summary.revenue}
+              baseCurrency={ccy}
+              currencyBreakdown={revFx.currencyBreakdown}
+              hasMultipleCurrencies={revFx.hasMultipleCurrencies}
+              conversionMethod={revFx.conversionMethod}
+              dateRange={{ from: `${fromYM}-01`, to: `${toYM}-01` }}
+            />
           </div>
         </div>
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Total outcome</div>
           <div className="mt-2 text-xl font-semibold text-bad">
-            −{fmtMoney(summary.totalOutcome, ccy)}
+            −<MoneyAmountWithCurrencyBreakdown
+              convertedTotal={summary.totalOutcome}
+              baseCurrency={ccy}
+              currencyBreakdown={outFx.currencyBreakdown}
+              hasMultipleCurrencies={outFx.hasMultipleCurrencies}
+              conversionMethod={outFx.conversionMethod}
+              dateRange={{ from: `${fromYM}-01`, to: `${toYM}-01` }}
+            />
           </div>
           <div className="text-xs text-slate-400 mt-1">
             {summary.outcomes.length} categor{summary.outcomes.length === 1 ? "y" : "ies"}
@@ -171,7 +206,15 @@ async function SummaryView({
           <div
             className={`mt-2 text-xl font-semibold ${summary.pnl >= 0 ? "text-good" : "text-bad"}`}
           >
-            {fmtMoney(summary.pnl, ccy)}
+            <MoneyAmountWithCurrencyBreakdown
+              convertedTotal={summary.pnl}
+              baseCurrency={ccy}
+              currencyBreakdown={pnlFx.currencyBreakdown}
+              hasMultipleCurrencies={pnlFx.hasMultipleCurrencies}
+              conversionMethod={pnlFx.conversionMethod}
+              dateRange={{ from: `${fromYM}-01`, to: `${toYM}-01` }}
+              signed
+            />
           </div>
           <div
             className={`text-xs mt-1 ${

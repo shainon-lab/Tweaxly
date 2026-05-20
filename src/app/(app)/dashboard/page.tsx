@@ -20,7 +20,7 @@ import {
 } from "@/lib/executiveSummary";
 import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
 import { prisma } from "@/lib/db";
-import { breakdownFromDb } from "@/lib/currencyBreakdown";
+import { buildDashboardBreakdowns } from "@/lib/dashboardBreakdowns";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 import Link from "next/link";
 
@@ -104,19 +104,13 @@ export default async function DashboardPage({
     trailingMonthsSummary(business.id, 6, resolved.toYM),
   ]);
 
-  // Currency composition breakdowns for the three headline tiles. Each
-  // tile shows a small info chip when the underlying transactions
-  // span more than one original currency; hovering opens the per-
-  // currency disclosure. Same range / same business as the tiles.
-  const periodRange = {
-    accountingMonth: { gte: resolved.fromYM, lte: resolved.toYM },
-    businessId:      business.id,
-  } as const;
-  const [revBreakdown, expBreakdown, netBreakdown] = await Promise.all([
-    breakdownFromDb({ ...periodRange, type: "income" }, business.currency, { absolute: true }),
-    breakdownFromDb({ ...periodRange, type: { in: ["expense", "payroll", "fee", "tax"] } }, business.currency, { absolute: true }),
-    breakdownFromDb(periodRange, business.currency),
-  ]);
+  // Per-bucket currency composition breakdowns for every tile. One
+  // DB query (in dashboardBreakdowns) using the same classifier as
+  // metrics.ts so each tile's chip mirrors exactly what the displayed
+  // number includes.
+  const fx = await buildDashboardBreakdowns(
+    business.id, resolved.fromYM, resolved.toYM, business.currency,
+  );
 
   const ccy = business.currency;
   const incomeDelta =
@@ -215,9 +209,9 @@ export default async function DashboardPage({
                 <MoneyAmountWithCurrencyBreakdown
                   convertedTotal={current.income}
                   baseCurrency={ccy}
-                  currencyBreakdown={revBreakdown.currencyBreakdown}
-                  hasMultipleCurrencies={revBreakdown.hasMultipleCurrencies}
-                  conversionMethod={revBreakdown.conversionMethod}
+                  currencyBreakdown={fx.revenue.currencyBreakdown}
+                  hasMultipleCurrencies={fx.revenue.hasMultipleCurrencies}
+                  conversionMethod={fx.revenue.conversionMethod}
                 />
               }
               tone="good"
@@ -250,9 +244,9 @@ export default async function DashboardPage({
                 <MoneyAmountWithCurrencyBreakdown
                   convertedTotal={current.expenses}
                   baseCurrency={ccy}
-                  currencyBreakdown={expBreakdown.currencyBreakdown}
-                  hasMultipleCurrencies={expBreakdown.hasMultipleCurrencies}
-                  conversionMethod={expBreakdown.conversionMethod}
+                  currencyBreakdown={fx.expenses.currencyBreakdown}
+                  hasMultipleCurrencies={fx.expenses.hasMultipleCurrencies}
+                  conversionMethod={fx.expenses.conversionMethod}
                 />
               }
               tone="bad"
@@ -285,9 +279,9 @@ export default async function DashboardPage({
                 <MoneyAmountWithCurrencyBreakdown
                   convertedTotal={current.netProfit}
                   baseCurrency={ccy}
-                  currencyBreakdown={netBreakdown.currencyBreakdown}
-                  hasMultipleCurrencies={netBreakdown.hasMultipleCurrencies}
-                  conversionMethod={netBreakdown.conversionMethod}
+                  currencyBreakdown={fx.net.currencyBreakdown}
+                  hasMultipleCurrencies={fx.net.hasMultipleCurrencies}
+                  conversionMethod={fx.net.conversionMethod}
                   signed
                 />
               }
@@ -317,7 +311,16 @@ export default async function DashboardPage({
             />
             <Stat
               label="Normalized profit"
-              value={fmtMoneyWhole(current.normalizedProfit, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.normalizedProfit}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.net.currencyBreakdown}
+                  hasMultipleCurrencies={fx.net.hasMultipleCurrencies}
+                  conversionMethod={fx.net.conversionMethod}
+                  signed
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.normalizedProfit, ccy),
                 pct: pctDelta(current.normalizedProfit, prev.normalizedProfit),
@@ -345,7 +348,15 @@ export default async function DashboardPage({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <Stat
               label="Fixed expenses"
-              value={fmtMoneyWhole(current.fixed, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.fixed}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.fixed.currencyBreakdown}
+                  hasMultipleCurrencies={fx.fixed.hasMultipleCurrencies}
+                  conversionMethod={fx.fixed.conversionMethod}
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.fixed, ccy),
                 pct: pctDelta(current.fixed, prev.fixed),
@@ -370,7 +381,15 @@ export default async function DashboardPage({
             />
             <Stat
               label="Variable expenses"
-              value={fmtMoneyWhole(current.variable, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.variable}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.variable.currencyBreakdown}
+                  hasMultipleCurrencies={fx.variable.hasMultipleCurrencies}
+                  conversionMethod={fx.variable.conversionMethod}
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.variable, ccy),
                 pct: pctDelta(current.variable, prev.variable),
@@ -395,10 +414,15 @@ export default async function DashboardPage({
             />
             <Stat
               label="Payroll (txns + roster)"
-              value={fmtMoneyWhole(
-                Math.max(current.payroll, employeeCost.recurring),
-                ccy,
-              )}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={Math.max(current.payroll, employeeCost.recurring)}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.payroll.currencyBreakdown}
+                  hasMultipleCurrencies={fx.payroll.hasMultipleCurrencies}
+                  conversionMethod={fx.payroll.conversionMethod}
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.payroll, ccy),
                 pct: pctDelta(current.payroll, prev.payroll),
@@ -423,7 +447,15 @@ export default async function DashboardPage({
             />
             <Stat
               label="Marketing"
-              value={fmtMoneyWhole(current.marketing, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.marketing}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.marketing.currencyBreakdown}
+                  hasMultipleCurrencies={fx.marketing.hasMultipleCurrencies}
+                  conversionMethod={fx.marketing.conversionMethod}
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.marketing, ccy),
                 pct: pctDelta(current.marketing, prev.marketing),
@@ -450,7 +482,15 @@ export default async function DashboardPage({
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
             <Stat
               label="Processing fees"
-              value={fmtMoneyWhole(current.fees, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.fees}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.fees.currencyBreakdown}
+                  hasMultipleCurrencies={fx.fees.hasMultipleCurrencies}
+                  conversionMethod={fx.fees.conversionMethod}
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.fees, ccy),
                 pct: pctDelta(current.fees, prev.fees),
@@ -475,7 +515,15 @@ export default async function DashboardPage({
             />
             <Stat
               label="Taxes"
-              value={fmtMoneyWhole(current.taxes, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.taxes}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.taxes.currencyBreakdown}
+                  hasMultipleCurrencies={fx.taxes.hasMultipleCurrencies}
+                  conversionMethod={fx.taxes.conversionMethod}
+                />
+              }
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.taxes, ccy),
                 pct: pctDelta(current.taxes, prev.taxes),
@@ -500,7 +548,15 @@ export default async function DashboardPage({
             />
             <Stat
               label="One-time costs"
-              value={fmtMoneyWhole(current.oneTime, ccy)}
+              value={
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={current.oneTime}
+                  baseCurrency={ccy}
+                  currencyBreakdown={fx.oneTime.currencyBreakdown}
+                  hasMultipleCurrencies={fx.oneTime.hasMultipleCurrencies}
+                  conversionMethod={fx.oneTime.conversionMethod}
+                />
+              }
               tone={current.oneTime > 0 ? "warn" : "default"}
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.oneTime, ccy),

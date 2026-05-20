@@ -53,44 +53,55 @@ Both return:
 
 ## Wired in this release
 
-- Dashboard / Quick Overview: **Revenue**, **Expenses**, **Net profit** tiles in [src/app/(app)/dashboard/page.tsx](../src/app/(app)/dashboard/page.tsx). Each tile passes the breakdown computed via three parallel `breakdownFromDb` calls for the visible range.
+### Dashboard / Quick Overview ([page](../src/app/(app)/dashboard/page.tsx))
+Every headline tile now passes its breakdown:
+- Revenue
+- Expenses
+- Net profit
+- Normalized profit (shares the net bucket)
+- Fixed expenses
+- Variable expenses
+- Payroll (txns + roster)
+- Marketing
+- Processing fees
+- Taxes
+- One-time costs
 
-## Sweep — sites that still need it
+Breakdowns are computed in one pass via [`buildDashboardBreakdowns`](../src/lib/dashboardBreakdowns.ts) — a single DB query, then in-memory bucketing that mirrors the classifier in `metrics.ts`. Each tile gets the per-bucket breakdown matching the same membership rules the displayed total uses.
 
-These call sites currently render aggregated money via `fmtMoneyWhole()` directly and should be migrated to `MoneyAmountWithCurrencyBreakdown` in follow-up PRs. None of them break today — they just don't disclose multi-currency composition.
+### Data Flow → Summary view ([page](../src/app/(app)/data-flow/page.tsx))
+Headline tiles in the resolved window:
+- Revenue
+- Total outcome
+- P&L
 
-### Dashboard (`src/app/(app)/dashboard/page.tsx`)
-- Normalized profit tile
-- Fixed / Variable / Payroll / Marketing / Fees / Taxes / One-time tiles
-- P&L breakdown comparison column
+Each passes the date range explicitly so the tooltip shows the window the totals cover.
+
+## Intentionally not wired
+
+The following are documented as "no aggregate disclosure to make" rather than pending work:
 
 ### Forecast (`src/app/(app)/forecast/`)
-- Forecast overview KPIs
-- Month-by-month projection totals
-- Scenario impact totals
-- ForecastChart series (chart axes show converted base values; the per-month tooltips should disclose composition when applicable)
-
-### Data Flow (`src/app/(app)/data-flow/`)
-- Per-category row totals
-- Per-month column totals
-- Grand total cell
+Forecast values are forward projections extrapolated from base-currency aggregates. They have no underlying multi-currency composition to disclose — the projection itself is base-currency by construction. Per-month projection tooltips, scenario impact totals, and chart series fall in this category.
 
 ### Transactions (`src/app/(app)/transactions/`)
-- Period totals at the top of the table
-- Group-by-category subtotals
+The transactions list renders per-row values. There is no aggregate header total on this page to retrofit. Per-row currency disclosure is the job of [`<CurrencyAmount>`](../src/components/CurrencyAmount.tsx) (a separate, already-built primitive). Wiring it row-by-row into the table is a row-level migration, not an aggregate-disclosure one.
 
 ### Workforce (`src/app/(app)/workforce/`)
-- Total payroll cost
-- Per-employee loaded cost
-- Payroll chart series
+Workforce totals are derived from the Employee roster (`grossMonthlySalary` × loaded-cost multiplier), not from transactions. The Employee model has no per-employee currency field — salaries are assumed to be in the business base currency. There is no multi-currency composition to disclose here. If the data model later grows a per-employee currency, this page would need wiring; today it does not.
+
+## Pending — finer-grain (not yet wired)
+
+These have an underlying multi-currency composition but rendering it requires either a deeper page refactor or a finer-grain breakdown:
+
+### Data Flow → SummaryTable per-category subtotals ([component](../src/app/(app)/data-flow/SummaryTable.tsx))
+The table shows per-category subtotals (one row per revenue category, one row per outcome category). Wiring each requires extending `buildDataFlowSummary` to return per-category breakdowns. The window-level totals are already wired in the headline tiles.
 
 ### Insights / Signals
-- Any signal that quotes an aggregated number ("Marketing spend up $4,200")
-- Recommendations referencing totals
+Signal messages that embed an aggregated figure ("Marketing spend up $4,200") — the figure is hardcoded into the prose. To disclose composition, signals would need to emit a separate amount field instead of pre-formatted text. A larger refactor.
 
 ### Reports / Exports
-- P&L export
-- Category-detail drill-downs
+P&L export and category drill-downs. Most are CSV exports where a tooltip wouldn't render — the breakdown could be added as additional columns in the export instead. Decide UX before wiring.
 
 ## Pattern for adding a new site
 
