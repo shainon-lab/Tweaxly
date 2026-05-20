@@ -43,8 +43,11 @@ export default function Logo({
         <span>LY</span>
       </div>
       {showTagline ? (
+        // Hidden on narrow screens — the tagline + the Log in / Sign
+        // up buttons overflow on mobile when both are visible.
+        // Re-appears at the sm breakpoint where there's room.
         <div
-          className={`uppercase font-medium whitespace-nowrap ${s.gap}`}
+          className={`hidden sm:block uppercase font-medium whitespace-nowrap ${s.gap}`}
           style={{ fontSize: s.taglinePx, letterSpacing: "0.25em", color: "#cbd5e1" }}
         >
           AI Financial Intelligence

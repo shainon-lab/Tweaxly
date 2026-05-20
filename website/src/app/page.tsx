@@ -76,8 +76,12 @@ export default function Home() {
 
 function SiteHeader() {
   return (
-    <header className="container-wide pt-8 pb-4 flex items-center justify-between gap-3">
-      <Logo size="md" showTagline />
+    <header className="container-wide pt-6 sm:pt-8 pb-4 flex items-center justify-between gap-2 sm:gap-3">
+      {/* `min-w-0` lets the logo shrink rather than pushing the
+          action buttons off-screen on narrow viewports. */}
+      <div className="min-w-0">
+        <Logo size="md" showTagline />
+      </div>
       <nav className="hidden md:flex items-center gap-7 text-sm text-slate-300">
         <a href="#signals"      className="hover:text-white transition">Signals</a>
         <a href="#advisory"     className="hover:text-white transition">Advisory</a>
@@ -85,9 +89,9 @@ function SiteHeader() {
         <a href="#how-it-works" className="hover:text-white transition">How it works</a>
         <a href="#faq"          className="hover:text-white transition">FAQ</a>
       </nav>
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
-        <a href={LOGIN_URL} className="btn-ghost text-sm">Log in</a>
-        <a href={SIGNUP_URL} className="btn-brand text-sm">Sign up</a>
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+        <a href={LOGIN_URL}  className="btn-ghost text-xs sm:text-sm px-3 sm:px-4">Log in</a>
+        <a href={SIGNUP_URL} className="btn-brand text-xs sm:text-sm px-3 sm:px-4">Sign up</a>
       </div>
     </header>
   );
