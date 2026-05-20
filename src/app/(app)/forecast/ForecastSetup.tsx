@@ -13,16 +13,20 @@ import { useRouter, useSearchParams, usePathname } from "next/navigation";
 //     data for a reliable forecast.
 //   - 18m / 24m are available; recommended default stays 12m even with
 //     24+ months of history (per spec, older data may be less relevant).
+// "Last 12 months" carries the (recommended) tag in the picker — it's
+// the readiness-engine's default for any business with 12+ months of
+// validated data. The dropdown no longer has a separate "Recommended"
+// entry; the page maps a missing/legacy `recommended` URL value back
+// to "12m" so prior links keep working.
 const HISTORICAL_OPTIONS = [
-  { value: "recommended", label: "Recommended" },
-  { value: "3m",          label: "Last Quarter (3 months)" },
-  { value: "6m",          label: "Last 6 months" },
-  { value: "12m",         label: "Last 12 months" },
-  { value: "18m",         label: "Last 18 months" },
-  { value: "24m",         label: "Last 24 months" },
-  { value: "ytd",         label: "Year to date" },
-  { value: "last_year",   label: "Last year" },
-  { value: "custom",      label: "Custom range" },
+  { value: "3m",        label: "Last Quarter (3 months)" },
+  { value: "6m",        label: "Last 6 months" },
+  { value: "12m",       label: "Last 12 months (recommended)" },
+  { value: "18m",       label: "Last 18 months" },
+  { value: "24m",       label: "Last 24 months" },
+  { value: "ytd",       label: "Year to date" },
+  { value: "last_year", label: "Last year" },
+  { value: "custom",    label: "Custom range" },
 ] as const;
 
 const HORIZON_OPTIONS = [

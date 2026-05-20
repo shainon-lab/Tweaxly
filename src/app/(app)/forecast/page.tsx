@@ -67,7 +67,7 @@ export default async function ForecastPage({
   //   Workforce Planning lives on /workforce as its own route
   const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
 
-  const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "recommended";
+  const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "12m";
   const horizon = horizonByForecastValue(sp.horizon ?? "12m");
   const range = resolveHistoricalRange(historical, sp.hist_from, sp.hist_to);
 
