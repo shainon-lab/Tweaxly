@@ -1,6 +1,8 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
+import type { BreakdownResult } from "@/lib/currencyBreakdown";
 
 type SummaryRowOutcome = {
   name: string;
@@ -30,6 +32,13 @@ export type SummaryProps = {
   // Heuristic: if there are zero income transactions in the period, show a
   // banner offering to flip the largest outcome to income.
   noRevenueDetected: boolean;
+  // Currency-composition breakdowns for the disclosure chips. The page
+  // computes these once for the window and passes them in. Each
+  // category subtotal looks itself up via categoryBreakdowns[catId].
+  revenueFx: BreakdownResult;
+  outcomeFx: BreakdownResult;
+  pnlFx: BreakdownResult;
+  categoryBreakdowns: Record<string, BreakdownResult>;
 };
 
 // Data-flow rows live in a table so cells line up nicely with `.00`.
@@ -58,6 +67,10 @@ export default function SummaryTable(props: SummaryProps) {
     revenue,
     revenues,
     outcomes,
+    revenueFx,
+    outcomeFx,
+    pnlFx,
+    categoryBreakdowns,
     totalOutcome,
     pnl,
     marginPct,
@@ -140,7 +153,18 @@ export default function SummaryTable(props: SummaryProps) {
                     <span className="pill-good">Income</span>
                   </td>
                   <td className="text-right font-semibold text-good">
-                    +{fmtMoney(r.total, ccy)}
+                    {(() => {
+                      const fx = categoryBreakdowns[r.categoryId];
+                      return fx ? (
+                        <>+<MoneyAmountWithCurrencyBreakdown
+                          convertedTotal={r.total}
+                          baseCurrency={ccy}
+                          currencyBreakdown={fx.currencyBreakdown}
+                          hasMultipleCurrencies={fx.hasMultipleCurrencies}
+                          conversionMethod={fx.conversionMethod}
+                        /></>
+                      ) : <>+{fmtMoney(r.total, ccy)}</>;
+                    })()}
                   </td>
                   <td className="text-right text-slate-500">—</td>
                   <td className="text-right">
@@ -163,7 +187,13 @@ export default function SummaryTable(props: SummaryProps) {
                   Total revenue
                 </td>
                 <td className="text-right font-bold text-good">
-                  +{fmtMoney(revenue, ccy)}
+                  +<MoneyAmountWithCurrencyBreakdown
+                    convertedTotal={revenue}
+                    baseCurrency={ccy}
+                    currencyBreakdown={revenueFx.currencyBreakdown}
+                    hasMultipleCurrencies={revenueFx.hasMultipleCurrencies}
+                    conversionMethod={revenueFx.conversionMethod}
+                  />
                 </td>
                 <td className="text-right text-slate-500">—</td>
                 <td></td>
@@ -181,7 +211,18 @@ export default function SummaryTable(props: SummaryProps) {
                     <span className="pill-bad">Outcome</span>
                   </td>
                   <td className="text-right text-bad">
-                    −{fmtMoney(o.total, ccy)}
+                    {(() => {
+                      const fx = categoryBreakdowns[o.categoryId];
+                      return fx ? (
+                        <>−<MoneyAmountWithCurrencyBreakdown
+                          convertedTotal={o.total}
+                          baseCurrency={ccy}
+                          currencyBreakdown={fx.currencyBreakdown}
+                          hasMultipleCurrencies={fx.hasMultipleCurrencies}
+                          conversionMethod={fx.conversionMethod}
+                        /></>
+                      ) : <>−{fmtMoney(o.total, ccy)}</>;
+                    })()}
                   </td>
                   <td className="text-right text-slate-300">
                     {pct == null ? "—" : `${(pct * 100).toFixed(1)}%`}
@@ -204,7 +245,13 @@ export default function SummaryTable(props: SummaryProps) {
                 Total outcome
               </td>
               <td className="text-right font-semibold text-bad">
-                −{fmtMoney(totalOutcome, ccy)}
+                −<MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={totalOutcome}
+                  baseCurrency={ccy}
+                  currencyBreakdown={outcomeFx.currencyBreakdown}
+                  hasMultipleCurrencies={outcomeFx.hasMultipleCurrencies}
+                  conversionMethod={outcomeFx.conversionMethod}
+                />
               </td>
               <td className="text-right font-semibold text-slate-200">
                 {totalOutcome > 0 ? "100.0%" : "—"}
@@ -221,7 +268,14 @@ export default function SummaryTable(props: SummaryProps) {
               <td
                 className={`text-right font-bold text-base ${pnl >= 0 ? "text-good" : "text-bad"}`}
               >
-                {fmtMoney(pnl, ccy)}
+                <MoneyAmountWithCurrencyBreakdown
+                  convertedTotal={pnl}
+                  baseCurrency={ccy}
+                  currencyBreakdown={pnlFx.currencyBreakdown}
+                  hasMultipleCurrencies={pnlFx.hasMultipleCurrencies}
+                  conversionMethod={pnlFx.conversionMethod}
+                  signed
+                />
               </td>
               <td className="text-right text-slate-500">—</td>
               <td></td>

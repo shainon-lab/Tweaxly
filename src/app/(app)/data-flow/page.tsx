@@ -12,7 +12,8 @@ import {
 import DataFlowFilters from "./DataFlowFilters";
 import SummaryTable from "./SummaryTable";
 import { fmtMoney, fmtPct, ymToLabel } from "@/lib/format";
-import { breakdownFromDb } from "@/lib/currencyBreakdown";
+import { prisma } from "@/lib/db";
+import { breakdownFromDb, breakdownFromTxns, type BreakdownResult } from "@/lib/currencyBreakdown";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 
 const VALID_RANGES: DataFlowRange[] = [
@@ -144,6 +145,36 @@ async function SummaryView({
     breakdownFromDb(periodWhere, ccy),
   ]);
 
+  // Per-category breakdown lookup for the SummaryTable rows. One DB
+  // query, then in-memory groupBy categoryId. We pull every txn in
+  // the window with its currency snapshot and bucket each one by its
+  // categoryId. Uncategorized rows are bucketed under "__uncat__".
+  const categoryTxns = await prisma.transaction.findMany({
+    where: periodWhere,
+    select: {
+      amount: true, currency: true,
+      originalAmount: true, originalCurrency: true,
+      baseCurrency: true, exchangeRate: true,
+      conversionMethod: true, categoryId: true,
+      category: { select: { kind: true } },
+    },
+  });
+  const byCatId = new Map<string, typeof categoryTxns>();
+  for (const t of categoryTxns) {
+    const key = t.categoryId ?? "__uncat__";
+    const arr = byCatId.get(key) ?? [];
+    arr.push(t);
+    byCatId.set(key, arr);
+  }
+  const categoryBreakdowns: Record<string, BreakdownResult> = {};
+  for (const [catId, txns] of byCatId) {
+    // Revenue rows use signed sums (already positive), outcome rows
+    // use magnitudes — match the absolute/signed convention the
+    // SummaryTable shows.
+    const isRevenue = txns[0]?.category?.kind === "revenue";
+    categoryBreakdowns[catId] = breakdownFromTxns(txns, ccy, { absolute: !isRevenue });
+  }
+
   if (
     summary.revenue === 0 &&
     summary.outcomes.length === 0
@@ -244,6 +275,10 @@ async function SummaryView({
         fromYM={summary.fromYM}
         toYM={summary.toYM}
         noRevenueDetected={summary.revenue <= 0 && summary.outcomes.length > 0}
+        revenueFx={revFx}
+        outcomeFx={outFx}
+        pnlFx={pnlFx}
+        categoryBreakdowns={categoryBreakdowns}
       />
     </>
   );
