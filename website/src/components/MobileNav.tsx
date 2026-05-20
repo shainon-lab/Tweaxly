@@ -4,6 +4,13 @@
 // on viewports below the md breakpoint; the desktop nav (visible at
 // md and up) keeps working unchanged.
 //
+// The drawer must render via a portal to document.body. SiteHeader
+// uses `backdrop-filter: blur(...)` which establishes a CSS
+// containing block — that traps `position: fixed` descendants
+// inside the header instead of the viewport, so a drawer rendered
+// inline would appear (or disappear) inside the tiny header bar.
+// Portal escapes the containing block entirely.
+//
 // UX:
 //   • Hamburger toggles a right-side drawer.
 //   • Backdrop behind drawer dims + blurs the page.
@@ -15,6 +22,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
@@ -45,8 +53,13 @@ interface Props {
 
 export default function MobileNav({ active }: Props) {
   const [open, setOpen] = useState(false);
+  // `mounted` guards against SSR — createPortal needs the document
+  // node which isn't available during the server render pass.
+  const [mounted, setMounted] = useState(false);
   const drawerRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  useEffect(() => { setMounted(true); }, []);
 
   // Body scroll lock + focus management.
   useEffect(() => {
@@ -91,7 +104,7 @@ export default function MobileNav({ active }: Props) {
         <BurgerGlyph />
       </button>
 
-      {open ? (
+      {open && mounted ? createPortal(
         <>
           {/* Z-indexes have to sit ABOVE the existing global floating
               UI to avoid a mess on mobile:
@@ -191,7 +204,8 @@ export default function MobileNav({ active }: Props) {
               </a>
             </div>
           </div>
-        </>
+        </>,
+        document.body,
       ) : null}
     </div>
   );
