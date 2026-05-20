@@ -9,6 +9,7 @@
 
 import { prisma } from "./db";
 import { dateToYM, todayYM } from "./format";
+import { convertAmount } from "./fx";
 
 export type Frequency = "one_time" | "monthly" | "quarterly" | "yearly";
 
@@ -60,6 +61,11 @@ export type CreateManualEntryInput = {
   type: "income" | "outcome";
   categoryId: string;
   amount: number;
+  // ISO 4217 the user entered the amount in. Defaults to the business
+  // base currency at the API boundary. Each occurrence gets its own
+  // historical-rate conversion so a recurring entry that spans
+  // multiple months reflects rate movement between occurrences.
+  currency?: string;
   frequency: Frequency;
   startDate: Date;
   endDate?: Date | null;
@@ -107,13 +113,16 @@ export async function createManualEntryAndMaterialize(
   );
 
   const sign = input.type === "income" ? 1 : -1;
-  // Manual entries are entered in the business base currency by
-  // construction — the form has no currency picker. We still populate
-  // the multi-currency snapshot fields so reports + AI prompts see a
-  // consistent shape across manual and imported transactions.
+  // If the user entered the amount in a non-base currency, convert
+  // per occurrence so a recurring entry reflects rate movement over
+  // time (rather than locking in the start-date rate for every
+  // future month). The FX service handles cache + Frankfurter +
+  // weekend roll-back uniformly with the CSV importer.
+  const enteredCurrency = (input.currency ?? business.currency).toUpperCase();
   const txnRows: { id: string }[] = [];
   for (const d of dates) {
     const signed = sign * Math.abs(input.amount);
+    const conv = await convertAmount(signed, enteredCurrency, business.currency, d);
     const t = await prisma.transaction.create({
       data: {
         businessId: input.businessId,
@@ -122,17 +131,17 @@ export async function createManualEntryAndMaterialize(
         originalSourceFile: null,
         transactionDate: d,
         accountingMonth: dateToYM(d),
-        amount: signed,
-        currency: business.currency,
-        originalAmount: signed,
-        originalCurrency: business.currency,
-        baseCurrency: business.currency,
-        exchangeRate: 1,
-        exchangeRateDate: d,
-        exchangeRateSource: "same_currency",
-        conversionMethod: "none",
-        isConverted: false,
-        rateFetchStatus: "same_currency",
+        amount: conv.amount,
+        currency: enteredCurrency,
+        originalAmount: conv.originalAmount,
+        originalCurrency: conv.originalCurrency,
+        baseCurrency: conv.baseCurrency,
+        exchangeRate: conv.exchangeRate,
+        exchangeRateDate: conv.exchangeRateDate,
+        exchangeRateSource: conv.exchangeRateSource,
+        conversionMethod: conv.conversionMethod,
+        isConverted: conv.isConverted,
+        rateFetchStatus: conv.rateFetchStatus,
         type: input.type === "income" ? "income" : "expense",
         categoryId: input.categoryId,
         description: cat.name,

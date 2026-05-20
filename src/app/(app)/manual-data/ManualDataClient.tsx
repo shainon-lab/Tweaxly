@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BulkUploadCard from "./BulkUploadCard";
 import DatedUploadCard from "./DatedUploadCard";
+import CurrencyPicker from "@/components/CurrencyPicker";
 
 type UploadMode = "dated" | "monthly";
 
@@ -70,6 +71,10 @@ export default function ManualDataClient({
   const [categoryId, setCategoryId] = useState<string>("");
   const [newCategoryName, setNewCategoryName] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
+  // Currency the user typed the amount in. Defaults to the business
+  // base currency; if the user picks something else, the server
+  // converts at the historical rate from the start date.
+  const [entryCurrency, setEntryCurrency] = useState<string>(currency);
   const [frequency, setFrequency] = useState<string>("monthly");
   const [startDate, setStartDate] = useState<string>(todayISO());
   const [endDate, setEndDate] = useState<string>("");
@@ -98,6 +103,7 @@ export default function ManualDataClient({
     setCategoryId("");
     setNewCategoryName("");
     setAmount("");
+    setEntryCurrency(currency);
     setFrequency("monthly");
     setStartDate(todayISO());
     setEndDate("");
@@ -124,6 +130,9 @@ export default function ManualDataClient({
       const body: Record<string, unknown> = {
         type,
         amount: amt,
+        // Only send when it differs from base — keeps the wire format
+        // backward-compatible with anything that ignores it.
+        currency: entryCurrency.toUpperCase(),
         frequency,
         startDate,
         endDate: endDate || undefined,
@@ -286,15 +295,28 @@ export default function ManualDataClient({
           </div>
           <div>
             <label className="label">Amount</label>
-            <input
-              className="input"
-              type="number"
-              step="0.01"
-              min={0}
-              placeholder="e.g. 5000"
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
-            />
+            <div className="flex items-stretch gap-2">
+              <input
+                className="input flex-1 min-w-0"
+                type="number"
+                step="0.01"
+                min={0}
+                placeholder="e.g. 5000"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+              />
+              <div className="w-28 shrink-0">
+                <CurrencyPicker
+                  value={entryCurrency}
+                  onChange={setEntryCurrency}
+                />
+              </div>
+            </div>
+            {entryCurrency.toUpperCase() !== currency.toUpperCase() ? (
+              <div className="text-[11px] text-slate-400 mt-1 leading-snug">
+                Converted to {currency} at the historical rate from the start date. The original {entryCurrency} amount is preserved on every transaction.
+              </div>
+            ) : null}
           </div>
         </div>
 

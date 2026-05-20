@@ -108,11 +108,20 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Optional currency override. Defaults to the business base currency
+  // when omitted. We accept any ISO-ish 3-letter string and the
+  // materializer hands it to the FX service — same path the CSV
+  // importer uses, so cache + lookup behaviour is identical.
+  const currency = typeof body.currency === "string" && body.currency.trim().length === 3
+    ? body.currency.trim().toUpperCase()
+    : business.currency;
+
   const result = await createManualEntryAndMaterialize({
     businessId: business.id,
     type,
     categoryId,
     amount,
+    currency,
     frequency,
     startDate,
     endDate,
