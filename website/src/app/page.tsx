@@ -424,7 +424,11 @@ function FinalCTA() {
 
 function SiteFooter() {
   return (
-    <footer className="container-wide py-10 border-t border-line text-xs text-slate-500 flex items-center justify-between flex-wrap gap-3">
+    // Extra bottom padding on mobile (pb-24) leaves clear space below
+    // the last footer line so the floating accessibility button — at
+    // bottom-left — never overlaps Terms / Privacy / Preferences
+    // links. Restores to py-10 at the sm breakpoint.
+    <footer className="container-wide pt-10 pb-24 sm:pb-10 border-t border-line text-xs text-slate-500 flex items-center justify-between flex-wrap gap-3">
       {/* Left cluster: copyright + tagline grouped together. */}
       <div className="flex items-center gap-4 flex-wrap">
         <span>© {new Date().getFullYear()} TWEAXLY</span>
