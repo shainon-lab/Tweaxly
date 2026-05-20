@@ -38,7 +38,7 @@ export default function SiteHeader({ active }: Props) {
     // Sticky on mobile so the hamburger stays reachable while
     // scrolling. Backdrop-blur keeps the page background visible
     // through the header for a modern SaaS feel.
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-ink-950/60 border-b border-line/40 supports-[backdrop-filter]:bg-ink-950/40">
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-brand-navy/70 border-b border-line/40 supports-[backdrop-filter]:bg-brand-navy/50">
       <div className="container-wide pt-4 sm:pt-6 pb-3 sm:pb-4 flex items-center justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
           <Link href="/" aria-label="Tweaxly home">

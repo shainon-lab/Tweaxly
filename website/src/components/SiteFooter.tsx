@@ -46,7 +46,7 @@ const LINK_CLS =
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-ink-900 mt-20">
+    <footer className="border-t border-line bg-brand-navy mt-20">
       <div className="container-wide pt-14 pb-24 sm:pb-14">
         {/* Top band - brand block + link columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
