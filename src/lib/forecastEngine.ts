@@ -105,7 +105,8 @@ export interface ForecastResult {
     id: BaselineOptionId;
     fromYM: string;
     toYM: string;
-    monthsResolved: number;
+    monthsResolved: number;   // calendar months in the window
+    monthsWithData: number;   // months that actually contain transactions — drives confidence
     label: string;
   };
   forecastHorizon: { id: HorizonId; months: number };
@@ -444,23 +445,29 @@ async function detectRecurring(
 
 async function computeConfidence(
   businessId: string,
-  monthsResolved: number,
+  monthsWithData: number,
   outlierCount: number,
   scenarioCount: number,
 ): Promise<{ confidence: Confidence; score: number; warnings: string[] }> {
   const dq = await buildDataConfidence(businessId);
   const warnings: string[] = [...dq.warnings];
 
-  // Start from data-quality score and adjust for forecast-specific
-  // signals. Each modifier is small so any single factor can't crash
-  // confidence by itself.
-  let score = dq.score;
-
-  // History depth modifier — already baked into dq.score but
-  // re-weighted here for the forecast lens (a forecast over 3 months
-  // of data isn't the same as over 18).
-  if (monthsResolved < 6)  score = Math.min(score, 55);
-  if (monthsResolved < 12) score = Math.min(score, 75);
+  // Months-with-data is the primary determinant of forecast
+  // confidence — same rule across every baseline path (predefined,
+  // YTD, last_year, custom). The data-quality components from
+  // dataConfidence still contribute warnings, but the score itself
+  // anchors on the band the user's selected baseline lands in:
+  //
+  //   ≤ 6 months  → low    (50/100)
+  //   7-8 months  → medium (70/100)
+  //   ≥ 9 months  → high   (90/100)
+  //
+  // Outlier and scenario penalties apply on top of the band score so
+  // a noisy baseline can still drop further inside its band.
+  let score =
+    monthsWithData >= 9 ? 90 :
+    monthsWithData >= 7 ? 70 :
+                          50;
 
   if (outlierCount > 0) {
     score -= 5 * Math.min(3, outlierCount);
@@ -479,8 +486,12 @@ async function computeConfidence(
   //     stays consistent with bands that step in fives.
   if (score >= 100) score = 95;
   else if (score > 98) score = 98;
+  // Thresholds aligned with the months-with-data bands so the
+  // canonical 50/70/90 values land in low/medium/high exactly.
+  // Outlier / scenario penalties may drop a score into a lower band
+  // (e.g. 90 → 75 after 3 outliers becomes medium), which is intended.
   const confidence: Confidence =
-    score >= 75 ? "high" : score >= 50 ? "medium" : "low";
+    score >= 80 ? "high" : score >= 60 ? "medium" : "low";
   return { confidence, score, warnings };
 }
 
@@ -658,9 +669,15 @@ export async function buildForecastEngine(
     }
   }
 
-  // Confidence.
+  // Confidence is anchored on months WITH actual data inside the
+  // selected baseline window — not the calendar span. A YTD baseline
+  // that resolves to 5 calendar months but only has 3 months of
+  // uploaded transactions counts as 3 for confidence purposes.
+  const monthsWithData = monthlyHistory.filter(
+    (m) => Math.abs(m.income) > 0 || Math.abs(m.expenses) > 0,
+  ).length;
   const { confidence, score, warnings } = await computeConfidence(
-    businessId, resolved.monthsResolved, outliers.length, assumptions.length,
+    businessId, monthsWithData, outliers.length, assumptions.length,
   );
 
   // Excluded-records audit: count txns we deliberately filtered out
@@ -696,7 +713,7 @@ export async function buildForecastEngine(
     assumptions.length > 0
       ? `${assumptions.length} scenario assumption${assumptions.length === 1 ? "" : "s"} added on top of the baseline.`
       : "No scenarios are applied — this is the baseline forecast.",
-    `Forecast confidence: ${confidence.toUpperCase()} (${score}/100).`,
+    `Forecast confidence: ${confidence.toUpperCase()} (${score}/100), based on ${monthsWithData} month${monthsWithData === 1 ? "" : "s"} of validated data inside the selected window.`,
   ];
   const explanationText = explanationLines.join(" ");
 
@@ -711,6 +728,7 @@ export async function buildForecastEngine(
       fromYM: resolved.fromYM,
       toYM: resolved.toYM,
       monthsResolved: resolved.monthsResolved,
+      monthsWithData,
       label: resolved.label,
     },
     forecastHorizon: { id: horizonId, months: horizonOpt.months },

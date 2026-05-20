@@ -36,6 +36,7 @@ export default function ForecastExplanationPanel({
         <Row label="Baseline period"   value={result.baselinePeriod.label} />
         <Row label="Range"             value={`${result.baselinePeriod.fromYM} → ${result.baselinePeriod.toYM}`} />
         <Row label="Months resolved"   value={String(result.baselinePeriod.monthsResolved)} />
+        <Row label="Months with data"  value={String(result.baselinePeriod.monthsWithData)} />
         <Row label="Forecast horizon"  value={`Next ${result.forecastHorizon.months} months`} />
         <Row label="Actuals used"      value={`${result.actualsUsed.toLocaleString("en-US")} transactions`} />
         <Row label="Scenarios applied" value={String(result.scenariosApplied)} />
