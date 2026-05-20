@@ -19,7 +19,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TWEAXLY — AI-Powered Business Intelligence",
+  title: "TWEAXLY — AI Financial Intelligence",
   description:
     "TWEAXLY gives small business owners financial clarity in plain English: dashboards, forecasts, alerts, and a built-in AI advisor that knows your numbers.",
 };

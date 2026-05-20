@@ -50,10 +50,10 @@ export default function Logo({
       </div>
       {showTagline ? (
         <div
-          className={`uppercase font-medium ${s.gap}`}
+          className={`uppercase font-medium whitespace-nowrap ${s.gap}`}
           style={{ fontSize: s.taglinePx, letterSpacing: "0.25em", color: "#cbd5e1" }}
         >
-          AI-Powered Business Intelligence
+          AI Financial Intelligence
         </div>
       ) : null}
     </div>

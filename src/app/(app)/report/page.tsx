@@ -18,6 +18,8 @@ import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import { breakdownFromDb, breakdownFromTxns, type BreakdownResult } from "@/lib/currencyBreakdown";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
+import DownloadButton from "@/components/DownloadButton";
+import type { ExportPayload, ExportColumn } from "@/lib/exporters/types";
 
 const MAX_COMPARE = 3;
 
@@ -179,6 +181,64 @@ export default async function ReportPage({
     ? deltaInfo(aggregates[0].netProfit, prevForStats.netProfit)
     : null;
 
+  // Build the export payload from the same in-memory data the on-
+  // screen table uses. Columns mirror the visible table: Line, Type,
+  // then one column per period. Sections mirror the visible groups:
+  // income rows, optional "Total revenue" subtotal, outcome rows,
+  // and the trailing Total outcome / P&L rows.
+  const periodColumns: ExportColumn[] = allPeriods.map((p) => ({
+    key: `p_${p.anchor}`,
+    label: p.label,
+    kind: "currency",
+    width: 16,
+  }));
+  const exportColumns: ExportColumn[] = [
+    { key: "name", label: "Line", kind: "text", width: 30 },
+    { key: "type", label: "Type", kind: "text", width: 10 },
+    ...periodColumns,
+  ];
+  const rowToExport = (r: typeof rows[number]) => {
+    const out: Record<string, string | number | null> = {
+      name: r.name,
+      type: r.isIncome ? "Income" : "Outcome",
+    };
+    r.perPeriod.forEach((v, i) => {
+      const key = periodColumns[i]!.key;
+      out[key] = r.isIncome ? v : -v;
+    });
+    return out;
+  };
+  const incomeRows  = rows.filter((r) => r.isIncome).map(rowToExport);
+  const outcomeRows = rows.filter((r) => !r.isIncome).map(rowToExport);
+  const subtotalRow = (label: string, values: number[], invert: boolean) => {
+    const out: Record<string, string | number | null> = { name: label, type: "" };
+    values.forEach((v, i) => {
+      out[periodColumns[i]!.key] = invert ? -v : v;
+    });
+    return out;
+  };
+  const exportPayload: ExportPayload = {
+    filename:    `Tweaxly_PnL_Statement_${primary.anchor}`,
+    title:       `P&L Statement — ${primary.label}`,
+    subtitle:    compare > 0 ? `vs ${compareSpecs.map((p) => p.label).join(" vs ")}` : undefined,
+    businessName: business.name,
+    baseCurrency: ccy,
+    filters: {
+      "Granularity": granularity,
+      "Period": primary.label,
+      ...(compare > 0 ? { "Comparisons": String(compare) } : {}),
+    },
+    columns: exportColumns,
+    sections: [
+      { rows: incomeRows },
+      { title: "Total revenue",  rows: [subtotalRow("Total revenue",  revenueByPeriod, false)], bold: true },
+      { rows: outcomeRows },
+      { title: "Total outcome",  rows: [subtotalRow("Total outcome",  outcomeByPeriod, true )], bold: true },
+      { title: "P&L",            rows: [subtotalRow("P&L",            netByPeriod,     false)], bold: true },
+    ],
+    footnote: "Amounts shown in business base currency. Multi-currency totals are converted at the historical rate from each transaction's date.",
+  };
+
   // Render
   return (
     <>
@@ -186,11 +246,14 @@ export default async function ReportPage({
         title={`P&L Statement — ${primary.label}`}
         subtitle={business.name}
         right={
-          <ReportPeriodPicker
-            granularity={granularity}
-            anchor={primary.anchor}
-            compare={compare}
-          />
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            <ReportPeriodPicker
+              granularity={granularity}
+              anchor={primary.anchor}
+              compare={compare}
+            />
+            <DownloadButton payload={exportPayload} />
+          </div>
         }
       />
       <ReportsInnerTabs />

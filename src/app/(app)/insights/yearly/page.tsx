@@ -11,6 +11,8 @@ import {
 } from "@/lib/yearlySummary";
 import YearSelect from "./YearSelect";
 import YearlySubTabs from "./YearlySubTabs";
+import DownloadButton from "@/components/DownloadButton";
+import type { ExportPayload } from "@/lib/exporters/types";
 
 const TONE_CLASS: Record<string, string> = {
   good: "text-good",
@@ -63,6 +65,31 @@ export default async function YearlyNumbersPage({
       <YearlySubTabs />
       <div className="flex items-end justify-end mb-4 flex-wrap gap-3">
         <YearSelect selected={selected} years={years} />
+        <DownloadButton
+          payload={{
+            filename:     `Tweaxly_Yearly_Summary_${selected}`,
+            title:        `Yearly Summary — ${selected}`,
+            subtitle:     stats.coverage.partialNote ?? undefined,
+            businessName: business.name,
+            baseCurrency: ccy,
+            filters: { "Year": String(selected) },
+            columns: [
+              { key: "metric", label: "Metric", kind: "text",     width: 36 },
+              { key: "value",  label: "Value",  kind: "text",     width: 20 },
+              { key: "hint",   label: "Notes",  kind: "text",     width: 40 },
+            ],
+            sections: [
+              {
+                rows: boxes.map((b) => ({
+                  metric: b.label,
+                  value:  b.value,
+                  hint:   b.hint ?? "",
+                })),
+              },
+            ],
+            footnote: "Yearly stats computed from full-year actuals. Multi-currency totals are converted at the historical rate from each transaction's date.",
+          }}
+        />
       </div>
 
       {stats.coverage.isPartial && stats.coverage.partialNote ? (

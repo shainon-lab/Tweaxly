@@ -15,6 +15,8 @@ import { fmtMoney, fmtPct, ymToLabel } from "@/lib/format";
 import { prisma } from "@/lib/db";
 import { breakdownFromDb, breakdownFromTxns, type BreakdownResult } from "@/lib/currencyBreakdown";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
+import DownloadButton from "@/components/DownloadButton";
+import type { ExportPayload } from "@/lib/exporters/types";
 
 const VALID_RANGES: DataFlowRange[] = [
   "this_month",
@@ -193,8 +195,66 @@ async function SummaryView({
   const monthsLabel =
     summary.monthCount === 1 ? "1 month" : `${summary.monthCount} months`;
 
+  // Build the export payload from the on-screen summary so the
+  // exported file is what the user sees.
+  const exportPayload: ExportPayload = {
+    filename:     `Tweaxly_Category_Trends_${summary.fromYM}_to_${summary.toYM}`,
+    title:        "Category Trends — Summary",
+    subtitle:     `${ymToLabel(summary.fromYM)} → ${ymToLabel(summary.toYM)} · ${monthsLabel}`,
+    baseCurrency: ccy,
+    filters: {
+      "Range": RANGE_LABEL[range],
+      ...(categoryFilter ? { "Category": categoryFilter } : {}),
+    },
+    columns: [
+      { key: "name",  label: "Category", kind: "text",     width: 32 },
+      { key: "type",  label: "Type",     kind: "text",     width: 10 },
+      { key: "total", label: "Total",    kind: "currency", width: 16 },
+      { key: "pct",   label: "% of outcome", kind: "percent", width: 14 },
+    ],
+    sections: [
+      {
+        title: "Revenue",
+        rows: summary.revenues.map((r) => ({
+          name:  r.name,
+          type:  "Income",
+          total: r.total,
+          pct:   null,
+        })),
+      },
+      ...(summary.revenues.length > 1 ? [{
+        title: "Total revenue",
+        bold: true,
+        rows: [{ name: "Total revenue", type: "", total: summary.revenue, pct: null }],
+      }] : []),
+      {
+        title: "Outcome",
+        rows: summary.outcomes.map((o) => ({
+          name:  o.name,
+          type:  "Outcome",
+          total: -o.total,
+          pct:   summary.totalOutcome > 0 ? o.total / summary.totalOutcome : null,
+        })),
+      },
+      {
+        title: "Total outcome",
+        bold: true,
+        rows: [{ name: "Total outcome", type: "", total: -summary.totalOutcome, pct: summary.totalOutcome > 0 ? 1 : null }],
+      },
+      {
+        title: "P&L",
+        bold: true,
+        rows: [{ name: "P&L", type: summary.pnl >= 0 ? "Profit" : "Loss", total: summary.pnl, pct: summary.marginPct }],
+      },
+    ],
+    footnote: "Amounts in business base currency. Multi-currency totals are converted at the historical rate from each transaction's date.",
+  };
+
   return (
     <>
+      <div className="flex justify-end mb-3">
+        <DownloadButton payload={exportPayload} />
+      </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
           <div className="text-xs uppercase tracking-wide text-slate-400">Window</div>

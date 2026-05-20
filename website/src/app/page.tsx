@@ -105,7 +105,7 @@ function Hero() {
         <div className="lg:col-span-5 flex flex-col gap-6">
           <div className="eyebrow self-start">
             <span className="w-1.5 h-1.5 rounded-full bg-good anim-pulse-soft" />
-            AI-native business intelligence
+            AI Financial Intelligence
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
             Your business already has <span className="gradient-text">signals</span>. Tweaxly helps you see them.
@@ -432,7 +432,7 @@ function SiteFooter() {
       </nav>
       <div className="flex items-center gap-2">
         <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
-        AI-native business intelligence
+        AI Financial Intelligence
       </div>
     </footer>
   );
