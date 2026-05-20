@@ -275,16 +275,7 @@ export default async function DashboardPage({
             />
             <Stat
               label="Net profit"
-              value={
-                <MoneyAmountWithCurrencyBreakdown
-                  convertedTotal={current.netProfit}
-                  baseCurrency={ccy}
-                  currencyBreakdown={fx.net.currencyBreakdown}
-                  hasMultipleCurrencies={fx.net.hasMultipleCurrencies}
-                  conversionMethod={fx.net.conversionMethod}
-                  signed
-                />
-              }
+              value={fmtMoneyWhole(current.netProfit, ccy)}
               tone={current.netProfit >= 0 ? "good" : "bad"}
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.netProfit, ccy),
@@ -311,16 +302,7 @@ export default async function DashboardPage({
             />
             <Stat
               label="Normalized profit"
-              value={
-                <MoneyAmountWithCurrencyBreakdown
-                  convertedTotal={current.normalizedProfit}
-                  baseCurrency={ccy}
-                  currencyBreakdown={fx.net.currencyBreakdown}
-                  hasMultipleCurrencies={fx.net.hasMultipleCurrencies}
-                  conversionMethod={fx.net.conversionMethod}
-                  signed
-                />
-              }
+              value={fmtMoneyWhole(current.normalizedProfit, ccy)}
               comparison={comparing ? {
                 prevValue: fmtMoneyWhole(prev.normalizedProfit, ccy),
                 pct: pctDelta(current.normalizedProfit, prev.normalizedProfit),
