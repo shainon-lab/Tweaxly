@@ -421,19 +421,26 @@ function FinalCTA() {
 function SiteFooter() {
   return (
     <footer className="container-wide py-10 border-t border-line text-xs text-slate-500 flex items-center justify-between flex-wrap gap-3">
-      <div>© {new Date().getFullYear()} TWEAXLY</div>
+      {/* Left cluster: copyright + tagline grouped together. */}
+      <div className="flex items-center gap-4 flex-wrap">
+        <span>© {new Date().getFullYear()} TWEAXLY</span>
+        <span className="flex items-center gap-2">
+          <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
+          AI Financial Intelligence
+        </span>
+      </div>
+      {/* Right cluster: legal nav. Privacy Policy and Privacy
+          Preferences sit adjacent on purpose so the user can move
+          from reading the policy to changing their consent in a
+          single visual hop. */}
       <nav className="flex items-center gap-5">
-        <a href="/terms" className="hover:text-slate-200 transition">Terms of Service</a>
-        <a href="/privacy" className="hover:text-slate-200 transition">Privacy Policy</a>
-        <a href="/accessibility" className="hover:text-slate-200 transition">Accessibility</a>
+        <a href="/terms"         className="hover:text-slate-200 transition">Terms of Service</a>
+        <a href="/privacy"       className="hover:text-slate-200 transition">Privacy Policy</a>
         <PreferencesLink className="consent-footer-link hover:text-slate-200 transition">
           Privacy Preferences
         </PreferencesLink>
+        <a href="/accessibility" className="hover:text-slate-200 transition">Accessibility</a>
       </nav>
-      <div className="flex items-center gap-2">
-        <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
-        AI Financial Intelligence
-      </div>
     </footer>
   );
 }
