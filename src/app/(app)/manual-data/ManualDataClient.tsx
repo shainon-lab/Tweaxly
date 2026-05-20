@@ -1,5 +1,5 @@
 "use client";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BulkUploadCard from "./BulkUploadCard";
 import DatedUploadCard from "./DatedUploadCard";
@@ -67,6 +67,11 @@ export default function ManualDataClient({
 }) {
   const router = useRouter();
   const [entries, setEntries] = useState(initial);
+  // `initial` only seeds local state on first mount, so router.refresh()
+  // after Add Entry would otherwise leave the table stale. Re-sync
+  // every time the server-rendered prop changes so the new row appears
+  // without a full reload.
+  useEffect(() => { setEntries(initial); }, [initial]);
   const [pending, startTransition] = useTransition();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
