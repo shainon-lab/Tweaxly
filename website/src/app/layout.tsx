@@ -7,6 +7,7 @@ import { AccessibilityProvider, AccessibilityWidget, A11Y_INIT_SCRIPT } from "@/
 import {
   ConsentProvider, ConsentBanner, PreferencesModal, CONSENT_INIT_SCRIPT,
 } from "@/lib/consent";
+import SiteFooter from "@/components/SiteFooter";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -93,7 +94,12 @@ export default function RootLayout({
         <a href="#main-content" className="skip-link">Skip to main content</a>
         <ConsentProvider>
           <AccessibilityProvider>
+            {/* Every page renders its own <main id="main-content">.
+                The shared SiteFooter sits as a sibling below so it
+                appears on every public route automatically - no need
+                to remember to mount it per-page. */}
             {children}
+            <SiteFooter />
             <AccessibilityWidget />
             <ConsentBanner />
             <PreferencesModal />

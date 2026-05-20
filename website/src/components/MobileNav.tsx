@@ -28,11 +28,13 @@ const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
+// Resources intentionally lives in the footer only - it doesn't
+// appear in the top nav or the mobile drawer. Keeps the primary nav
+// short and focused on conversion-relevant pages.
 const PAGES: { href: string; label: string }[] = [
   { href: "/",             label: "Home" },
   { href: "/about",        label: "About" },
   { href: "/pricing",      label: "Pricing" },
-  { href: "/resources",    label: "Resources" },
   { href: "/faq",          label: "FAQ" },
   { href: "/testimonials", label: "Testimonials" },
   { href: "/contact",      label: "Contact" },

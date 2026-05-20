@@ -17,6 +17,9 @@ const LOGIN_URL   = `${PRODUCT_URL}/login`;
 interface Props {
   // Highlighted-route hint - currently a no-op visually, kept as a
   // hook for future active-state styling without touching every page.
+  // "resources" stays as a valid value so resources sub-pages can
+  // still pass an active hint, even though the header no longer
+  // exposes that nav entry (Resources lives in the footer now).
   active?: "home" | "about" | "pricing" | "faq" | "testimonials" | "contact" | "resources";
 }
 
@@ -24,7 +27,6 @@ const NAV: { id: NonNullable<Props["active"]>; href: string; label: string }[] =
   { id: "home",         href: "/",             label: "Home" },
   { id: "about",        href: "/about",        label: "About" },
   { id: "pricing",      href: "/pricing",      label: "Pricing" },
-  { id: "resources",    href: "/resources",    label: "Resources" },
   { id: "faq",          href: "/faq",          label: "FAQ" },
   { id: "testimonials", href: "/testimonials", label: "Testimonials" },
   { id: "contact",      href: "/contact",      label: "Contact" },
