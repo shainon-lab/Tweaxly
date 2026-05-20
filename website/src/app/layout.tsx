@@ -19,9 +19,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "TWEAXLY — AI Financial Intelligence",
+  title: "Tweaxly — AI Financial Intelligence & Forecasting for Businesses",
   description:
-    "TWEAXLY gives small business owners financial clarity in plain English: dashboards, forecasts, alerts, and a built-in AI advisor that knows your numbers.",
+    "Tweaxly is an AI-powered financial intelligence platform for business owners. Get financial forecasting, cash flow insights, business signals, and AI advisory in real time.",
 };
 
 export default function RootLayout({
