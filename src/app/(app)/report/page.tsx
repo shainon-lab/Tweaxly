@@ -16,7 +16,7 @@ import {
 } from "@/lib/reportPeriod";
 import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
-import { breakdownFromDb, type BreakdownResult } from "@/lib/currencyBreakdown";
+import { breakdownFromDb, breakdownFromTxns, type BreakdownResult } from "@/lib/currencyBreakdown";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 
 const MAX_COMPARE = 3;
@@ -80,12 +80,39 @@ export default async function ReportPage({
           isExcludedFromPnl: false,
           type: { not: "transfer" },
         } as const;
-        const [revFx, outFx, netFx] = await Promise.all([
+        const [revFx, outFx, netFx, perCatRows] = await Promise.all([
           breakdownFromDb({ ...where, category: { kind: "revenue" } }, ccy, { absolute: true }),
           breakdownFromDb({ ...where, NOT: { category: { kind: "revenue" } } }, ccy, { absolute: true }),
           breakdownFromDb(where, ccy),
+          // Pull every transaction in the period along with its
+          // category name + currency snapshot so we can build a per-
+          // category breakdown in memory. Single query per period.
+          prisma.transaction.findMany({
+            where,
+            select: {
+              amount: true, currency: true,
+              originalAmount: true, originalCurrency: true,
+              baseCurrency: true, exchangeRate: true,
+              conversionMethod: true,
+              category: { select: { name: true, kind: true } },
+            },
+          }),
         ]);
-        return { revFx, outFx, netFx, fromYM: p.fromYM, toYM: p.toYM };
+        // Group by category name; income rows use signed sums, outcome
+        // rows use absolute values — matches the table's display rule.
+        const byName = new Map<string, typeof perCatRows>();
+        for (const r of perCatRows) {
+          const name = r.category?.name ?? "Uncategorized";
+          const arr = byName.get(name) ?? [];
+          arr.push(r);
+          byName.set(name, arr);
+        }
+        const byCategory: Record<string, BreakdownResult> = {};
+        for (const [name, rows] of byName) {
+          const isRevenue = rows[0]?.category?.kind === "revenue";
+          byCategory[name] = breakdownFromTxns(rows, ccy, { absolute: !isRevenue });
+        }
+        return { revFx, outFx, netFx, byCategory, fromYM: p.fromYM, toYM: p.toYM };
       }),
     ),
   ]);
@@ -325,12 +352,12 @@ export default async function ReportPage({
                     </td>
                     {r.perPeriod.map((value, i) => {
                       const isPrimary = i === 0;
-                      const display = r.isIncome
-                        ? value > 0 ? `+${fmtMoneyExact(value, ccy)}` : "—"
-                        : value > 0 ? `−${fmtMoneyExact(value, ccy)}` : "—";
                       const tone = r.isIncome
                         ? "text-good"
                         : value > 0 ? "text-bad" : "text-slate-500";
+                      const pb = periodBreakdowns[i];
+                      const catFx = pb.byCategory[r.name];
+                      const sign = r.isIncome ? "+" : "−";
                       return (
                         <td
                           key={i}
@@ -338,7 +365,25 @@ export default async function ReportPage({
                             isPrimary ? `font-semibold ${tone}` : "text-slate-400"
                           }`}
                         >
-                          {display}
+                          {value > 0 ? (
+                            catFx ? (
+                              <>
+                                {sign}
+                                <MoneyAmountWithCurrencyBreakdown
+                                  convertedTotal={value}
+                                  baseCurrency={ccy}
+                                  currencyBreakdown={catFx.currencyBreakdown}
+                                  hasMultipleCurrencies={catFx.hasMultipleCurrencies}
+                                  conversionMethod={catFx.conversionMethod}
+                                  dateRange={{ from: `${pb.fromYM}-01`, to: `${pb.toYM}-01` }}
+                                />
+                              </>
+                            ) : (
+                              <>{sign}{fmtMoneyExact(value, ccy)}</>
+                            )
+                          ) : (
+                            "—"
+                          )}
                           {!isPrimary && value > 0 ? (
                             <DeltaPct
                               cur={r.perPeriod[0]}
