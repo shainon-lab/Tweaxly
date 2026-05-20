@@ -6,6 +6,7 @@
 
 import type { MetadataRoute } from "next";
 import { ARTICLES } from "@/content/resources";
+import { SUBPAGES as FEATURE_SUBPAGES } from "@/content/features";
 
 const SITE_URL = "https://tweaxly.com";
 
@@ -46,5 +47,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority:        0.7,
   }));
 
-  return [...staticEntries, ...articleEntries];
+  // Per-feature deep-dive pages - high-priority product surface.
+  const featureSubpageEntries: MetadataRoute.Sitemap = FEATURE_SUBPAGES.map((sp) => ({
+    url:            `${SITE_URL}/features/${sp.slug}`,
+    lastModified:   now,
+    changeFrequency: "monthly",
+    priority:        0.85,
+  }));
+
+  return [...staticEntries, ...articleEntries, ...featureSubpageEntries];
 }
