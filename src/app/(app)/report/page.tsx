@@ -244,17 +244,7 @@ export default async function ReportPage({
         />
         <Stat
           label="P&L"
-          value={
-            <MoneyAmountWithCurrencyBreakdown
-              convertedTotal={aggregates[0].netProfit}
-              baseCurrency={ccy}
-              currencyBreakdown={primaryNetFx.currencyBreakdown}
-              hasMultipleCurrencies={primaryNetFx.hasMultipleCurrencies}
-              conversionMethod={primaryNetFx.conversionMethod}
-              dateRange={{ from: `${primary.fromYM}-01`, to: `${primary.toYM}-01` }}
-              signed
-            />
-          }
+          value={fmtMoneyWhole(aggregates[0].netProfit, ccy)}
           tone={aggregates[0].netProfit >= 0 ? "good" : "bad"}
           sub={
             pnlDelta && prevLabel
@@ -332,6 +322,7 @@ export default async function ReportPage({
                               hasMultipleCurrencies={pb.revFx.hasMultipleCurrencies}
                               conversionMethod={pb.revFx.conversionMethod}
                               dateRange={{ from: `${pb.fromYM}-01`, to: `${pb.toYM}-01` }}
+                              placement="top-right"
                             />
                             {i > 0 ? (
                               <DeltaPct cur={revenueByPeriod[0]} prev={v} isImprovementWhenUp={true} />
@@ -376,6 +367,7 @@ export default async function ReportPage({
                                   hasMultipleCurrencies={catFx.hasMultipleCurrencies}
                                   conversionMethod={catFx.conversionMethod}
                                   dateRange={{ from: `${pb.fromYM}-01`, to: `${pb.toYM}-01` }}
+                                  placement="top-right"
                                 />
                               </>
                             ) : (
@@ -418,6 +410,7 @@ export default async function ReportPage({
                       hasMultipleCurrencies={pb.outFx.hasMultipleCurrencies}
                       conversionMethod={pb.outFx.conversionMethod}
                       dateRange={{ from: `${pb.fromYM}-01`, to: `${pb.toYM}-01` }}
+                      placement="top-right"
                     />
                     {i > 0 ? (
                       <DeltaPct cur={outcomeByPeriod[0]} prev={v} isImprovementWhenUp={false} />
@@ -435,28 +428,17 @@ export default async function ReportPage({
                   {netByPeriod[0] >= 0 ? "Profit" : "Loss"}
                 </span>
               </td>
-              {netByPeriod.map((v, i) => {
-                const pb = periodBreakdowns[i];
-                return (
-                  <td
-                    key={i}
-                    className={`text-right whitespace-nowrap ${i === 0 ? "font-bold" : ""} ${v >= 0 ? "text-good" : "text-bad"}`}
-                  >
-                    <MoneyAmountWithCurrencyBreakdown
-                      convertedTotal={v}
-                      baseCurrency={ccy}
-                      currencyBreakdown={pb.netFx.currencyBreakdown}
-                      hasMultipleCurrencies={pb.netFx.hasMultipleCurrencies}
-                      conversionMethod={pb.netFx.conversionMethod}
-                      dateRange={{ from: `${pb.fromYM}-01`, to: `${pb.toYM}-01` }}
-                      signed
-                    />
-                    {i > 0 ? (
-                      <DeltaPct cur={netByPeriod[0]} prev={v} isImprovementWhenUp={true} />
-                    ) : null}
-                  </td>
-                );
-              })}
+              {netByPeriod.map((v, i) => (
+                <td
+                  key={i}
+                  className={`text-right whitespace-nowrap ${i === 0 ? "font-bold" : ""} ${v >= 0 ? "text-good" : "text-bad"}`}
+                >
+                  {fmtMoneyExact(v, ccy)}
+                  {i > 0 ? (
+                    <DeltaPct cur={netByPeriod[0]} prev={v} isImprovementWhenUp={true} />
+                  ) : null}
+                </td>
+              ))}
             </tr>
 
             {/* Margin row */}

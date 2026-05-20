@@ -30,6 +30,16 @@ export interface CurrencyBreakdownItem {
   conversionMethod?:     string;  // "daily_historical" | "monthly_avg" | "manual_fixed"
 }
 
+// Where the tooltip opens relative to the info chip. Useful for
+// right-aligned table cells where the default bottom-left opens past
+// the viewport edge — set "top-right" so it opens upward and anchored
+// to the chip's right edge.
+export type BreakdownTooltipPlacement =
+  | "bottom-left"   // default — tooltip's top-left at chip's bottom-left
+  | "bottom-right"  // tooltip's top-right at chip's bottom-right
+  | "top-left"      // tooltip's bottom-left at chip's top-left
+  | "top-right";    // tooltip's bottom-right at chip's top-right
+
 export interface MoneyAmountWithCurrencyBreakdownProps {
   convertedTotal:        number;
   baseCurrency:          string;
@@ -41,11 +51,19 @@ export interface MoneyAmountWithCurrencyBreakdownProps {
   dateRange?:            { from?: string | Date | null; to?: string | Date | null } | null;
   signed?:               boolean; // show + for positives
   className?:            string;
+  placement?:            BreakdownTooltipPlacement;
   // Optional override of the tooltip lead sentence (defaults to a
   // generic "Converted using historical daily rates based on each
   // transaction date.").
   rateMethodNote?:       string;
 }
+
+const PLACEMENT_CLASSES: Record<BreakdownTooltipPlacement, string> = {
+  "bottom-left":  "left-0 top-full mt-1",
+  "bottom-right": "right-0 top-full mt-1",
+  "top-left":     "left-0 bottom-full mb-1",
+  "top-right":    "right-0 bottom-full mb-1",
+};
 
 function isMixed(breakdown: CurrencyBreakdownItem[], base: string): boolean {
   if (!breakdown || breakdown.length === 0) return false;
@@ -112,7 +130,7 @@ export default function MoneyAmountWithCurrencyBreakdown(p: MoneyAmountWithCurre
       {open ? (
         <span
           role="tooltip"
-          className="absolute z-50 left-0 top-full mt-1 w-80 rounded-lg border border-line bg-ink-900 shadow-2xl shadow-black/50 text-xs text-slate-200 p-3 leading-normal"
+          className={`absolute z-50 ${PLACEMENT_CLASSES[p.placement ?? "bottom-left"]} w-80 rounded-lg border border-line bg-ink-900 shadow-2xl shadow-black/50 text-xs text-slate-200 p-3 leading-normal`}
           onMouseEnter={() => setOpen(true)}
           onMouseLeave={() => setOpen(false)}
         >
