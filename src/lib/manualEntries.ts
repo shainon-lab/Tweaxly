@@ -1,11 +1,25 @@
 // ManualEntry materialization.
 //
-// When a user creates a manual entry the system generates Transaction rows for
-// each occurrence from startDate up to (and including) the current month.
-// Future months are NOT pre-materialized — the forecast engine projects them
-// from the trailing-month average automatically once enough history is recorded.
-// (Yearly entries materialized only at their anniversary still get caught by
-// the forecast since `buildForecast` factors in trailing 3-month averages.)
+// Financial-date rule (single source of truth):
+//
+//   - One-time entries → exactly one Transaction at startDate.
+//   - Recurring entries (monthly/quarterly/yearly):
+//       • With an explicit endDate  → one Transaction per occurrence
+//         from startDate to MIN(endDate, today).
+//       • WITHOUT an endDate        → one Transaction at startDate only.
+//
+// The "no endDate → backfill to today" auto-fan-out behaviour was
+// removed because it produced surprising results: a single historical
+// expense entered as monthly with no end date would silently
+// materialize as N transactions across N months, including the
+// current month. The user's mental model is "Start Date is the date
+// the entry applies to" — so we honor that literally and require an
+// explicit endDate when a user really wants the gap filled.
+//
+// The forecast engine still projects recurring entries forward from
+// trailing-month averages, so ongoing recurring expenses still show
+// up in the projection even when only the start occurrence is
+// materialized.
 
 import { prisma } from "./db";
 import { dateToYM, todayYM } from "./format";
@@ -100,18 +114,31 @@ export async function createManualEntryAndMaterialize(
     },
   });
 
-  // Determine upper bound: end of current month (so this month is included).
+  // Determine the materialization window per the financial-date rule
+  // documented at the top of this file. For non-one_time frequencies
+  // we still cap at today's end-of-month so we never write Transaction
+  // rows dated in the future; the forecast engine projects forward
+  // separately.
   const now = new Date();
-  const upper = new Date(
+  const todayEom = new Date(
     Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59),
   );
 
-  const dates = occurrenceDates(
-    input.startDate,
-    input.frequency,
-    upper,
-    input.endDate ?? null,
-  );
+  let dates: Date[];
+  if (input.frequency === "one_time") {
+    // Always single transaction at startDate.
+    dates = [new Date(input.startDate)];
+  } else if (input.endDate) {
+    // Recurring with explicit end → fill the user's stated window
+    // (capped at today so we don't write future-dated rows).
+    const upper = input.endDate < todayEom ? input.endDate : todayEom;
+    dates = occurrenceDates(input.startDate, input.frequency, upper, input.endDate);
+  } else {
+    // Recurring without an end → honour Start Date as the financial
+    // date, materialize only that one occurrence. The forecast engine
+    // continues to project recurring expenses forward.
+    dates = [new Date(input.startDate)];
+  }
 
   const sign = input.type === "income" ? 1 : -1;
   // If the user entered the amount in a non-base currency, convert

@@ -94,7 +94,12 @@ export default function ManualDataClient({
   // base currency; if the user picks something else, the server
   // converts at the historical rate from the start date.
   const [entryCurrency, setEntryCurrency] = useState<string>(currency);
-  const [frequency, setFrequency] = useState<string>("monthly");
+  // Default to one_time. This matches the most common use case — a
+  // single historical or current expense/income — and avoids the
+  // common UX trap where users picked monthly without an end date
+  // and the system silently materialized many transactions through
+  // the current month.
+  const [frequency, setFrequency] = useState<string>("one_time");
   const [startDate, setStartDate] = useState<string>(todayISO());
   const [endDate, setEndDate] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
@@ -123,7 +128,7 @@ export default function ManualDataClient({
     setNewCategoryName("");
     setAmount("");
     setEntryCurrency(currency);
-    setFrequency("monthly");
+    setFrequency("one_time");
     setStartDate(todayISO());
     setEndDate("");
     setNotes("");
@@ -414,15 +419,19 @@ export default function ManualDataClient({
         {frequency !== "one_time" ? (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
-              <label className="label">End date (optional)</label>
+              <label className="label">End date {endDate ? "" : "(optional)"}</label>
               <input
                 className="input"
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
               />
-              <div className="text-xs text-slate-400 mt-1">
-                Leave empty to keep recurring indefinitely.
+              <div className="text-xs text-slate-400 mt-1 leading-snug">
+                {endDate ? (
+                  <>One transaction will be created per occurrence from <strong>{startDate}</strong> to <strong>{endDate}</strong> (or today, whichever is earlier).</>
+                ) : (
+                  <>Without an end date, only the start-date occurrence is recorded. Add an end date to repeat through that date.</>
+                )}
               </div>
             </div>
           </div>
