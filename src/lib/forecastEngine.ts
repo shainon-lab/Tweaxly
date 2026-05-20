@@ -147,9 +147,22 @@ function diffDaysInclusive(fromYM: string, toYM: string): number {
 }
 
 function monthsBetween(fromYM: string, toYM: string): number {
-  const [fy, fm] = fromYM.split("-").map(Number);
-  const [ty, tm] = toYM.split("-").map(Number);
+  const [fy, fm] = fromYM.slice(0, 7).split("-").map(Number);
+  const [ty, tm] = toYM.slice(0, 7).split("-").map(Number);
   return Math.max(0, (ty - fy) * 12 + (tm - fm) + 1);
+}
+
+// Exact inclusive day count between two ISO-ish dates. Accepts either
+// "YYYY-MM" (snapped to 1st-of for from, 28th-of for to as a safe
+// approximation) or full "YYYY-MM-DD". Returned count is what the
+// user sees in the "Selected range is N days" error message.
+function countDaysExact(fromISO: string, toISO: string): number {
+  const a = fromISO.length === 10 ? new Date(`${fromISO}T00:00:00Z`)
+          : new Date(`${fromISO.slice(0, 7)}-01T00:00:00Z`);
+  const b = toISO.length === 10   ? new Date(`${toISO}T00:00:00Z`)
+          : new Date(`${toISO.slice(0, 7)}-28T00:00:00Z`);
+  if (Number.isNaN(a.getTime()) || Number.isNaN(b.getTime())) return 0;
+  return Math.max(0, Math.round((b.getTime() - a.getTime()) / 86_400_000) + 1);
 }
 
 export async function evaluateReadiness(businessId: string): Promise<ReadinessReport> {
@@ -251,15 +264,21 @@ export function resolveBaseline(
     if (!customFromYM || !customToYM) {
       return { error: "custom_range_invalid", message: "Custom range requires a start and end month." };
     }
-    const a = customFromYM <= customToYM ? customFromYM : customToYM;
-    let b = customFromYM <= customToYM ? customToYM : customFromYM;
-    // Refuse future-dated baselines — incomplete data.
+    // Accept either YM ("YYYY-MM") or full ISO ("YYYY-MM-DD"). The
+    // engine works on accountingMonth so we collapse to YM for
+    // bucketing — but we count exact selected days for the error
+    // message so the user sees their actual selection ("Selected
+    // range is 89 days…") instead of a month-rounded count.
+    const aRaw = customFromYM <= customToYM ? customFromYM : customToYM;
+    const bRaw = customFromYM <= customToYM ? customToYM   : customFromYM;
+    const a = aRaw.slice(0, 7);
+    let   b = bRaw.slice(0, 7);
     if (b > anchor) b = anchor;
-    const days = diffDaysInclusive(a, b);
-    if (days < 90) {
+    const selectedDays = countDaysExact(aRaw, bRaw);
+    if (selectedDays < 90) {
       return {
         error: "custom_range_too_short",
-        message: "Forecasts require at least 90 days of historical data. Please select a longer period to create a reliable forecast.",
+        message: `Selected range is ${selectedDays} day${selectedDays === 1 ? "" : "s"} — forecasts require at least 90 days of historical data. Please select a longer period to create a reliable forecast.`,
       };
     }
     return {
@@ -267,7 +286,7 @@ export function resolveBaseline(
       fromYM: a,
       toYM: b,
       monthsResolved: monthsBetween(a, b),
-      label: `Custom Range — ${a} to ${b}`,
+      label: `Custom Range — ${aRaw} to ${bRaw}`,
     };
   }
 

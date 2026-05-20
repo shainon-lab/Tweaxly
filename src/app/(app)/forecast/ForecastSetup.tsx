@@ -58,12 +58,10 @@ function defaultCustomFromISO() {
   return d.toISOString().slice(0, 10);
 }
 
-// Engine works on accountingMonth (YYYY-MM). Day-level dates are
-// projected onto their containing month — for date-picker UX the user
-// thinks in days, but the underlying buckets are still months.
-function isoToYM(iso: string): string {
-  return iso.slice(0, 7);
-}
+// Engine accepts either YM (YYYY-MM) or full ISO (YYYY-MM-DD). We
+// push full ISO so the engine can count actual days selected and
+// include the number in its error message — keeps the message
+// consistent with what the user just picked.
 
 // Validation now lives in the engine: it returns "Forecast unavailable"
 // when the resolved range is < 90 days, and the page hides the body
@@ -85,16 +83,17 @@ export default function ForecastSetup({
   const sp = useSearchParams();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
-  // Day-level pickers. URL still carries YM granularity for the
-  // engine; we hydrate the day defaults from the URL (snapping to
-  // the 1st of the month for From and the last day for To when
-  // arriving from a YM-only URL).
-  const [draftFromISO, setDraftFromISO] = useState(
-    histFrom ? `${histFrom}-01` : defaultCustomFromISO(),
-  );
-  const [draftToISO,   setDraftToISO]   = useState(
-    histTo   ? `${histTo}-28`   : todayISO(),
-  );
+  // Day-level pickers. URL now carries full ISO dates (YYYY-MM-DD);
+  // we also accept legacy YYYY-MM and snap to 1st-of / 28th-of for
+  // backward compatibility with old bookmarks.
+  const hydrateISO = (s: string | undefined, mode: "from" | "to") => {
+    if (!s) return mode === "from" ? defaultCustomFromISO() : todayISO();
+    if (s.length === 10) return s;                         // already YYYY-MM-DD
+    if (s.length === 7)  return mode === "from" ? `${s}-01` : `${s}-28`;
+    return mode === "from" ? defaultCustomFromISO() : todayISO();
+  };
+  const [draftFromISO, setDraftFromISO] = useState(hydrateISO(histFrom, "from"));
+  const [draftToISO,   setDraftToISO]   = useState(hydrateISO(histTo,   "to"));
 
   function update(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(sp.toString());
@@ -114,7 +113,7 @@ export default function ForecastSetup({
     if (!fromISO || !toISO) return;
     const a = fromISO <= toISO ? fromISO : toISO;
     const b = fromISO <= toISO ? toISO : fromISO;
-    update({ historical: "custom", hist_from: isoToYM(a), hist_to: isoToYM(b) });
+    update({ historical: "custom", hist_from: a, hist_to: b });
   }
 
   return (
@@ -133,13 +132,13 @@ export default function ForecastSetup({
           onChange={(e) => {
             const v = e.target.value;
             if (v === "custom") {
-              // Seed the URL with the day-defaults' YMs so the first
+              // Seed the URL with the day-level defaults so the first
               // render of "Custom" produces a valid 12-month window
               // — no flicker through an invalid state.
               update({
                 historical: "custom",
-                hist_from:  isoToYM(draftFromISO),
-                hist_to:    isoToYM(draftToISO),
+                hist_from:  draftFromISO,
+                hist_to:    draftToISO,
               });
             } else {
               update({ historical: v, hist_from: undefined, hist_to: undefined });
