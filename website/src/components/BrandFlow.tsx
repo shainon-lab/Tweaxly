@@ -22,7 +22,7 @@ interface Step {
 }
 
 const STEPS: Step[] = [
-  { word: "Track",    sub: "Monitor your business in real time" },
+  { word: "Track",    sub: "Monitor your business live" },
   { word: "Evaluate", sub: "Understand what changed" },
   { word: "Analyze",  sub: "Reveal hidden patterns" },
   { word: "eXecute",  sub: "Take action faster", hlIndex: 1 },
