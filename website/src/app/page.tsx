@@ -89,9 +89,27 @@ function Hero() {
       <div className="grid lg:grid-cols-12 gap-12 lg:gap-12 items-center">
         {/* Copy - leaner, more whitespace, fewer paragraphs. */}
         <div className="lg:col-span-5 flex flex-col">
-          <div className="eyebrow self-start mb-8">
-            <span className="w-1.5 h-1.5 rounded-full bg-good anim-pulse-soft" />
-            Your AI Business Pulse
+          {/* Methodology hint above the H1. The slogan ('Your AI
+              Business Pulse') already lives under the logo in the
+              header, so we don't repeat it here - the six-step
+              framework gets the slot instead. Inline + flex-wrap
+              so it stays on one line on lg+ and breaks cleanly on
+              narrow viewports. */}
+          <div
+            aria-label="The Tweaxly methodology"
+            className="self-start mb-8 flex items-center flex-wrap gap-x-2 gap-y-1 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-slate-400"
+          >
+            <span className="text-brand-purple">Track</span>
+            <span className="text-slate-600" aria-hidden="true">→</span>
+            <span>Evaluate</span>
+            <span className="text-slate-600" aria-hidden="true">→</span>
+            <span>Analyze</span>
+            <span className="text-slate-600" aria-hidden="true">→</span>
+            <span>e<span className="gradient-text">X</span>ecute</span>
+            <span className="text-slate-600" aria-hidden="true">→</span>
+            <span>Lead</span>
+            <span className="text-slate-600" aria-hidden="true">→</span>
+            <span className="text-brand-teal">Yield</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
             <span className="gradient-text">AI Financial Advisor</span> for Business Owners
