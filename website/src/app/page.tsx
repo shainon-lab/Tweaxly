@@ -43,12 +43,15 @@ const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
+// Four items so the strip sits on a single clean row at every
+// width - five was orphaning the last pill onto its own line.
+// \"Signals you can act on\" overlapped thematically with \"Trends
+// detected in real time\", so that was the safe one to drop.
 const POSITIONING = [
   "Built for modern SMB owners",
   "AI-native financial intelligence",
   "Trends detected in real time",
   "Forecast business impact",
-  "Signals you can act on",
 ];
 
 
