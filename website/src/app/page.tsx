@@ -68,6 +68,7 @@ export default function Home() {
       <OverviewSection />
       <SeoUnifiedSection />
       <HowItWorks />
+      <ConnectYourDataBanner />
       <BrandPhilosophy />
       <FinalCTA />
     </main>
@@ -117,12 +118,15 @@ function Hero() {
             Financial planning, forecasting, and AI-powered business insights
             in one real-time platform.
           </p>
-          <div className="mt-10 flex items-center gap-3 flex-wrap">
-            <a href={SIGNUP_URL} className="btn-brand text-base px-6 py-3">
-              Start Free
-            </a>
-            <a href="#signals" className="btn-ghost text-base px-6 py-3">
-              Connect Your Business →
+          {/* Single primary CTA - the secondary \"Connect Your Business\"
+              button was creating decision paralysis at the top of the
+              page (users still evaluating the product, not ready to
+              connect data yet). The connect-your-data narrative now
+              lives in <ConnectYourDataBanner /> further down the page,
+              after the user has seen what the product actually does. */}
+          <div className="mt-10">
+            <a href={SIGNUP_URL} className="btn-brand text-base px-7 py-3.5 inline-flex items-center gap-2">
+              Start Free — No Credit Card Required
             </a>
           </div>
           <div className="mt-8 text-xs text-slate-500 leading-relaxed max-w-xl">
@@ -464,6 +468,165 @@ function HowItWorks() {
 // FAQ has its own dedicated /faq page now; the source list lives in
 // src/lib/faq.ts. The homepage's old inline FAQ section was removed
 // to keep the marketing page focused and improve nav-driven crawls.
+
+// ─────────────────────────────────────────────────────────────────────
+// Connect-your-data banner
+// ─────────────────────────────────────────────────────────────────────
+// Full-bleed conversion section that sits AFTER the user has scrolled
+// through demos + HowItWorks. The hero CTA is intentionally minimal
+// ("Start Free"); this one earns the "connect your data" framing by
+// landing only after the value prop has been demonstrated.
+//
+// Visual: dark navy gradient with two soft radial blobs (purple +
+// teal), six floating data-source chip cards on the left that
+// shimmer subtly, and a clear headline + supporting paragraph + one
+// big CTA on the right. Mobile collapses to a stack with the chips
+// above the copy.
+
+function ConnectYourDataBanner() {
+  const SOURCES: { name: string; tag: string }[] = [
+    { name: "Bank accounts", tag: "Checking · Savings" },
+    { name: "Credit & debit cards", tag: "Visa · Mastercard · Amex" },
+    { name: "PayPal",              tag: "Business" },
+    { name: "Stripe",              tag: "Payouts · Fees" },
+    { name: "Invoices",            tag: "Manual or CSV" },
+    { name: "Bookkeeping exports", tag: "QuickBooks · Xero" },
+  ];
+
+  return (
+    <section
+      aria-labelledby="connect-data-heading"
+      className="relative overflow-hidden mt-8 mb-16"
+    >
+      {/* Full-bleed dark backdrop. The site body sits on a near-black
+          base; this stretches to viewport edges via negative margins
+          so the section reads as a distinct band, not just another
+          card. */}
+      <div className="relative">
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10"
+          style={{
+            backgroundColor: "#0a1428",
+            backgroundImage:
+              "radial-gradient(ellipse 70% 60% at 20% 30%, rgba(167,139,250,0.22), transparent 65%)," +
+              "radial-gradient(ellipse 60% 50% at 85% 80%, rgba(34,211,238,0.18), transparent 65%)",
+          }}
+        />
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 grid-bg opacity-40"
+        />
+
+        <div className="container-wide py-20 lg:py-28">
+          <div className="grid lg:grid-cols-12 gap-10 lg:gap-16 items-center">
+            {/* Floating data-source chips */}
+            <div className="lg:col-span-5 order-2 lg:order-1">
+              <div className="relative">
+                <div className="grid grid-cols-2 gap-3 sm:gap-4 max-w-md mx-auto lg:mx-0">
+                  {SOURCES.map((s, i) => (
+                    <div
+                      key={s.name}
+                      className="rounded-xl border border-line/60 bg-ink-900/70 backdrop-blur px-3 py-3 shadow-lg hover:border-brand-purple/40 hover:bg-ink-900/85 transition will-change-transform"
+                      style={{
+                        transform: `translateY(${(i % 2 === 0 ? -4 : 4)}px)`,
+                        animation: `float ${5 + (i % 3)}s ease-in-out ${i * 0.4}s infinite`,
+                      }}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-xs font-semibold text-white leading-tight truncate">
+                            {s.name}
+                          </div>
+                          <div className="text-[10px] text-slate-500 mt-0.5 truncate">
+                            {s.tag}
+                          </div>
+                        </div>
+                        <span
+                          aria-hidden="true"
+                          className="shrink-0 inline-flex items-center justify-center w-5 h-5 rounded-full bg-good/15 text-good"
+                        >
+                          <svg width="11" height="11" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 8.5l3 3 7-8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                          </svg>
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {/* "→ Tweaxly" badge under the chips on lg+ to suggest
+                    the data flows into the platform. */}
+                <div className="mt-6 hidden lg:flex items-center gap-2 text-xs uppercase tracking-[0.18em] text-slate-500">
+                  <span className="w-6 h-px bg-gradient-to-r from-transparent to-brand-purple" />
+                  <span>Flows into Tweaxly</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-brand-purple anim-pulse-soft" />
+                </div>
+              </div>
+            </div>
+
+            {/* Headline + copy + CTA */}
+            <div className="lg:col-span-7 order-1 lg:order-2">
+              <div className="eyebrow mb-5">
+                <span className="w-1.5 h-1.5 rounded-full bg-brand-purple" />
+                Connect your data
+              </div>
+              <h2
+                id="connect-data-heading"
+                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] text-white"
+              >
+                Your business data.{" "}
+                <span className="gradient-text">Finally understandable.</span>
+              </h2>
+              <p className="mt-5 text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
+                Connect your bank accounts, cards, PayPal, invoices, and
+                business data in minutes — and let Tweaxly turn them into
+                real-time business signals, forecasts, and AI-powered
+                recommendations.
+              </p>
+
+              <ul className="mt-7 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-300 max-w-xl">
+                {[
+                  "5-minute setup",
+                  "No credit card required",
+                  "Multi-currency by default",
+                  "Your data stays yours",
+                ].map((l) => (
+                  <li key={l} className="flex items-center gap-2">
+                    <span
+                      aria-hidden="true"
+                      className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-good/15 text-good shrink-0"
+                    >
+                      <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
+                        <path d="M3 8.5l3 3 7-8" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                    {l}
+                  </li>
+                ))}
+              </ul>
+
+              <div className="mt-9">
+                <a
+                  href={SIGNUP_URL}
+                  className="btn-brand text-base px-7 py-3.5 inline-flex items-center gap-2 group"
+                >
+                  Create Free Account
+                  <span
+                    aria-hidden="true"
+                    className="transition-transform group-hover:translate-x-0.5"
+                  >→</span>
+                </a>
+                <div className="mt-3 text-xs text-slate-500">
+                  Free forever for one business · upgrade only when you need more.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
 
 // ─────────────────────────────────────────────────────────────────────
 // Final CTA
