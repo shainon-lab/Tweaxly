@@ -17,6 +17,7 @@ import { breakdownFromDb, breakdownFromTxns, type BreakdownResult } from "@/lib/
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 import DownloadButton from "@/components/DownloadButton";
 import type { ExportPayload } from "@/lib/exporters/types";
+import { hasFeature } from "@/lib/billing";
 
 const VALID_RANGES: DataFlowRange[] = [
   "this_month",
@@ -250,10 +251,12 @@ async function SummaryView({
     footnote: "Amounts in business base currency. Multi-currency totals are converted at the historical rate from each transaction's date.",
   };
 
+  const canExport = await hasFeature(businessId, "exportExcel");
+
   return (
     <>
       <div className="flex justify-end mb-3">
-        <DownloadButton payload={exportPayload} />
+        <DownloadButton payload={exportPayload} entitled={canExport} />
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">

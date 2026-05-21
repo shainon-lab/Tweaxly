@@ -13,6 +13,7 @@ import YearSelect from "./YearSelect";
 import YearlySubTabs from "./YearlySubTabs";
 import DownloadButton from "@/components/DownloadButton";
 import type { ExportPayload } from "@/lib/exporters/types";
+import { hasFeature } from "@/lib/billing";
 
 const TONE_CLASS: Record<string, string> = {
   good: "text-good",
@@ -54,6 +55,7 @@ export default async function YearlyNumbersPage({
 
   const stats = await computeYearlyStats(business.id, selected);
   const boxes = statBoxes(stats, ccy);
+  const canExport = await hasFeature(business.id, "exportExcel");
 
   return (
     <>
@@ -89,6 +91,7 @@ export default async function YearlyNumbersPage({
             ],
             footnote: "Yearly stats computed from full-year actuals. Multi-currency totals are converted at the historical rate from each transaction's date.",
           }}
+          entitled={canExport}
         />
       </div>
 

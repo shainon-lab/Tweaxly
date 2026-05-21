@@ -31,6 +31,8 @@ import {
   isForecastReady,
 } from "@/lib/forecastEngine";
 import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/workforce";
+import { hasFeature } from "@/lib/billing";
+import ScenarioBuilderUpsell from "./ScenarioBuilderUpsell";
 import ForecastReadinessBanner from "./ForecastReadinessBanner";
 import ForecastExplanationPanel from "./ForecastExplanationPanel";
 import ForecastSetup from "./ForecastSetup";
@@ -60,6 +62,7 @@ export default async function ForecastPage({
   }>;
 }) {
   const { business } = await requireBusiness();
+  const canScenarios = await hasFeature(business.id, "scenarioBuilder");
   const sp = await searchParams;
   // Forecast workspace splits into three internal views:
   //   "overview"  - passive AI outlook (default)
@@ -203,7 +206,7 @@ export default async function ForecastPage({
                 on the Scenarios view AFTER the user has at least one
                 assumption in play. Before that, the onboarding empty
                 state provides the inline entry instead. */}
-            {view === "scenarios" && assumptions.length > 0 ? (
+            {view === "scenarios" && assumptions.length > 0 && canScenarios ? (
               <ScenarioBuilderTrigger />
             ) : null}
           </div>
@@ -245,12 +248,16 @@ export default async function ForecastPage({
           assumption - the empty state owns the screen and provides
           its own inline builder entry. */}
       {view === "scenarios" && assumptions.length === 0 ? (
-        <ScenariosOnboarding
-          roster={roster}
-          activePayrollSum={activePayrollSum}
-          maxMonthsAhead={horizon.months}
-          currency={ccy}
-        />
+        canScenarios ? (
+          <ScenariosOnboarding
+            roster={roster}
+            activePayrollSum={activePayrollSum}
+            maxMonthsAhead={horizon.months}
+            currency={ccy}
+          />
+        ) : (
+          <ScenarioBuilderUpsell />
+        )
       ) : null}
 
       {/* Scenarios view, populated. Show active-assumption chips and
@@ -272,12 +279,16 @@ export default async function ForecastPage({
             }))}
             currency={ccy}
           />
-          <ScenarioBuilderPanel
-            roster={roster}
-            activePayrollSum={activePayrollSum}
-            maxMonthsAhead={horizon.months}
-            currency={ccy}
-          />
+          {canScenarios ? (
+            <ScenarioBuilderPanel
+              roster={roster}
+              activePayrollSum={activePayrollSum}
+              maxMonthsAhead={horizon.months}
+              currency={ccy}
+            />
+          ) : (
+            <ScenarioBuilderUpsell />
+          )}
         </>
       ) : null}
 

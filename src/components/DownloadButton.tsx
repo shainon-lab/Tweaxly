@@ -25,9 +25,38 @@ interface Props {
   payload?: ExportPayload | null;   // null/undefined when the report is empty
   // Optional override of the "no data" tooltip on the disabled button.
   emptyMessage?: string;
+  // Plan gate. When false, the button is replaced by a small upgrade
+  // CTA - export is a Pro/Business feature in the freemium model.
+  // Default true so existing callers don't have to opt in.
+  entitled?: boolean;
+  // Optional override of the upgrade-CTA label / href when locked.
+  lockedLabel?: string;
+  lockedHref?:  string;
 }
 
-export default function DownloadButton({ payload, emptyMessage }: Props) {
+export default function DownloadButton({
+  payload, emptyMessage,
+  entitled = true,
+  lockedLabel = "Upgrade to export",
+  lockedHref  = "/settings/billing",
+}: Props) {
+  // Plan-gate first: when the workspace's plan doesn't include
+  // exports we replace the button entirely with an upgrade CTA so
+  // the user can't get to the dropdown at all. No 402 needed because
+  // the whole export pipeline is client-side (xlsx/csv built in the
+  // browser, PDF via window.print).
+  if (!entitled) {
+    return (
+      <a
+        href={lockedHref}
+        className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
+        title="Excel / CSV / PDF export is available on Pro and Business plans"
+      >
+        <LockGlyph />
+        {lockedLabel}
+      </a>
+    );
+  }
   const [open, setOpen]       = useState(false);
   const [busy, setBusy]       = useState<"csv" | "xlsx" | "pdf" | null>(null);
   const [error, setError]     = useState<string | null>(null);
@@ -184,6 +213,15 @@ function DownloadGlyph() {
   return (
     <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none">
       <path d="M8 2v8m0 0l3-3m-3 3L5 7M3 13h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
+function LockGlyph() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true" fill="none">
+      <rect x="3" y="7" width="10" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
     </svg>
   );
 }

@@ -20,6 +20,7 @@ import { breakdownFromDb, breakdownFromTxns, type BreakdownResult } from "@/lib/
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 import DownloadButton from "@/components/DownloadButton";
 import type { ExportPayload, ExportColumn } from "@/lib/exporters/types";
+import { hasFeature } from "@/lib/billing";
 
 const MAX_COMPARE = 3;
 
@@ -239,6 +240,12 @@ export default async function ReportPage({
     footnote: "Amounts shown in business base currency. Multi-currency totals are converted at the historical rate from each transaction's date.",
   };
 
+  // Plan gate. Export (Excel/CSV/PDF) is a Pro+ feature in the
+  // freemium model - Free users see an Upgrade CTA in place of the
+  // Download button. We check exportExcel as the canonical entitlement
+  // (all three formats share the same gate on Pro/Business plans).
+  const canExport = await hasFeature(business.id, "exportExcel");
+
   // Render
   return (
     <>
@@ -252,7 +259,7 @@ export default async function ReportPage({
               anchor={primary.anchor}
               compare={compare}
             />
-            <DownloadButton payload={exportPayload} />
+            <DownloadButton payload={exportPayload} entitled={canExport} />
           </div>
         }
       />
