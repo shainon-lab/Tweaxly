@@ -241,10 +241,10 @@ function deriveViewMeta(pathname: string): ViewMeta {
       title: "Account",
       subtitle: "Billing, password, security, and account closure",
       prompts: [
-        "What can I do with the Tweaxly preview plan today?",
+        "What's the difference between the Free, Pro and Business plans?",
         "How should I think about security best practices for my account?",
         "What's the right cadence for reviewing my account settings?",
-        "What should I prepare before paid plans launch?",
+        "When does it make sense to upgrade from Free to Pro?",
       ],
     };
   }
