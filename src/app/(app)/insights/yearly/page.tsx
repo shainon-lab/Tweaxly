@@ -13,7 +13,8 @@ import YearSelect from "./YearSelect";
 import YearlySubTabs from "./YearlySubTabs";
 import DownloadButton from "@/components/DownloadButton";
 import type { ExportPayload } from "@/lib/exporters/types";
-import { hasFeature } from "@/lib/billing";
+import { hasFeature, getPlanFor } from "@/lib/billing";
+import LockedOverlay from "@/components/billing/LockedOverlay";
 
 const TONE_CLASS: Record<string, string> = {
   good: "text-good",
@@ -55,7 +56,9 @@ export default async function YearlyNumbersPage({
 
   const stats = await computeYearlyStats(business.id, selected);
   const boxes = statBoxes(stats, ccy);
-  const canExport = await hasFeature(business.id, "exportExcel");
+  const canExport      = await hasFeature(business.id, "exportExcel");
+  const canYearly      = await hasFeature(business.id, "yearlyReports");
+  const currentPlan    = await getPlanFor(business.id);
 
   return (
     <>
@@ -63,6 +66,74 @@ export default async function YearlyNumbersPage({
         title={`Insights · ${selected} Summary`}
         subtitle="Headline numbers across financials, workforce, and cost composition for the chosen year."
       />
+      {!canYearly ? (
+        <LockedOverlay
+          locked
+          feature="Yearly Insights"
+          plan={currentPlan}
+          blurb="Free plans can see this layout as a preview. Upgrade to Pro to unlock yearly summaries, headline-metric grids and exports."
+          benefits={[
+            "Full-year P&L, payroll, and cost-composition summaries",
+            "Per-year drill-down + Insights subtabs",
+            "Export the whole year to Excel, CSV, PDF",
+            "Plus everything else on Pro: full forecasting + Scenario Builder + unlimited signals",
+          ]}
+          blur="md"
+        >
+          <YearlyContentPreview boxes={boxes} selected={selected} />
+        </LockedOverlay>
+      ) : (
+        <YearlyContent
+          selected={selected}
+          years={years}
+          stats={stats}
+          boxes={boxes}
+          ccy={ccy}
+          businessName={business.name}
+          canExport={canExport}
+        />
+      )}
+    </>
+  );
+}
+
+// Pulled out so we can render either the full content (Pro+) or a
+// minimal blurred preview (Free, wrapped by LockedOverlay). Both
+// reuse the same Stat tiles so the visual identity matches.
+
+function YearlyContentPreview({
+  boxes, selected,
+}: { boxes: ReturnType<typeof statBoxes>; selected: number }) {
+  return (
+    <div className="mt-2">
+      <div className="card mb-6">
+        <div className="font-medium mb-3">Key numbers · {selected}</div>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {boxes.slice(0, 8).map((b, i) => (
+            <div key={i} className="card-tight">
+              <div className="text-xs uppercase tracking-wide text-slate-400">{b.label}</div>
+              <div className={`mt-2 text-lg font-semibold ${b.tone ? TONE_CLASS[b.tone] : ""}`}>{b.value}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function YearlyContent({
+  selected, years, stats, boxes, ccy, businessName, canExport,
+}: {
+  selected: number;
+  years: number[];
+  stats: Awaited<ReturnType<typeof computeYearlyStats>>;
+  boxes: ReturnType<typeof statBoxes>;
+  ccy: string;
+  businessName: string;
+  canExport: boolean;
+}) {
+  return (
+    <>
       <ReportsInnerTabs />
       <YearlySubTabs />
       <div className="flex items-end justify-end mb-4 flex-wrap gap-3">
@@ -72,7 +143,7 @@ export default async function YearlyNumbersPage({
             filename:     `Tweaxly_Yearly_Summary_${selected}`,
             title:        `Yearly Summary - ${selected}`,
             subtitle:     stats.coverage.partialNote ?? undefined,
-            businessName: business.name,
+            businessName: businessName,
             baseCurrency: ccy,
             filters: { "Year": String(selected) },
             columns: [

@@ -10,6 +10,8 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
 import { evaluateNotificationRules } from "@/lib/notificationsEval";
+import { getQuota, getPlanFor } from "@/lib/billing";
+import LockedOverlay from "@/components/billing/LockedOverlay";
 import BusinessSignalsTabs from "./BusinessSignalsTabs";
 
 export const dynamic = "force-dynamic";
@@ -64,6 +66,16 @@ export default async function BusinessSignalsPage() {
     createdAt: nowISO,
   }));
 
+  // Plan gate: Free users see the top N signals only; everything
+  // beyond that renders blurred behind a LockedOverlay so they can
+  // see HOW MUCH more is waiting on Pro without being able to read
+  // it. Pro/Business get the full list (signalsPerMonth = "unlimited").
+  const signalsQuota = await getQuota(business.id, "signalsPerMonth");
+  const currentPlan  = await getPlanFor(business.id);
+  const limited      = signalsQuota !== "unlimited";
+  const visibleRecs  = limited ? pushRecs.slice(0, signalsQuota) : pushRecs;
+  const lockedRecs   = limited ? pushRecs.slice(signalsQuota)    : [];
+
   const { t } = await getServerT();
   return (
     <>
@@ -74,7 +86,29 @@ export default async function BusinessSignalsPage() {
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}
       />
-      <PushRecommendations initial={pushRecs} currency={ccy} />
+      <PushRecommendations initial={visibleRecs} currency={ccy} />
+      {lockedRecs.length > 0 ? (
+        <div className="mt-8">
+          <div className="mb-3 flex items-center gap-2 text-[10px] uppercase tracking-[0.22em] text-slate-500 font-semibold">
+            <span className="w-1.5 h-1.5 rounded-full bg-accent" />
+            {lockedRecs.length} more signal{lockedRecs.length === 1 ? "" : "s"} waiting on Pro
+          </div>
+          <LockedOverlay
+            locked
+            feature="Unlimited AI Business Signals"
+            plan={currentPlan}
+            blurb={`Free plans show ${typeof signalsQuota === "number" ? signalsQuota : ""} signals per month. Upgrade to unlock every signal Tweaxly detects.`}
+            benefits={[
+              "Every business signal Tweaxly detects, unblurred",
+              "Smart alerts on top of the signal stream",
+              "Action-oriented recommendations on every signal",
+              "Plus full forecasting, exports, and 500 AI Credits / month",
+            ]}
+          >
+            <PushRecommendations initial={lockedRecs} currency={ccy} />
+          </LockedOverlay>
+        </div>
+      ) : null}
     </>
   );
 }

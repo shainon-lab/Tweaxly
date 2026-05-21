@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getQuota } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -33,6 +34,26 @@ export async function POST(req: NextRequest) {
   if (!body.period || !PERIODS.has(body.period)) return bad("Invalid period");
   if (body.thresholdValue == null || !isFinite(Number(body.thresholdValue)) || Number(body.thresholdValue) <= 0) {
     return bad("thresholdValue must be a positive number");
+  }
+
+  // Plan gate: enforce the maxNotificationRules quota server-side so
+  // the UI gate is convenience, not security. Free = 1 rule;
+  // Pro/Business = unlimited. Returns 402 with a structured body so
+  // the client can render an upgrade prompt rather than a generic
+  // error.
+  const rulesQuota = await getQuota(business.id, "maxNotificationRules");
+  if (rulesQuota !== "unlimited") {
+    const existingCount = await prisma.notificationRule.count({
+      where: { businessId: business.id },
+    });
+    if (existingCount >= rulesQuota) {
+      return NextResponse.json({
+        error:   "rule_limit_reached",
+        message: `Your plan allows ${rulesQuota} monitoring rule${rulesQuota === 1 ? "" : "s"}. Upgrade to Pro for unlimited.`,
+        limit:   rulesQuota,
+        used:    existingCount,
+      }, { status: 402 });
+    }
   }
 
   let categoryId: string | null = null;

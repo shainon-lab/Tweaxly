@@ -78,7 +78,7 @@ const PLANS: Plan[] = [
       "1 business, 1 user",
       "1 data source (CSV, bank or card)",
       "90 days of visible history",
-      "Up to 5 business signals per month",
+      "Up to 3 business signals per month",
       "Forecast up to 3 months ahead",
       "On-screen reports (no export)",
     ],
@@ -155,7 +155,7 @@ const MATRIX: MatrixGroup[] = [
     label: "AI & intelligence",
     rows: [
       { dimension: "Included AI Credits / month", free: "30",        pro: "500",         business: "2,000" },
-      { dimension: "Business signals / month",    free: "Up to 5",   pro: "Unlimited",   business: "Unlimited" },
+      { dimension: "Business signals / month",    free: "Up to 3",   pro: "Unlimited",   business: "Unlimited" },
       { dimension: "Smart alerts",                free: "—",         pro: "✓",           business: "✓" },
       { dimension: "AI consultation",             free: "Basic",     pro: "Full",        business: "Priority processing" },
       { dimension: "Action-oriented recommendations", free: "—",     pro: "✓",           business: "✓" },

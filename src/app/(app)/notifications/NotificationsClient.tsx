@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import LockedOverlay from "@/components/billing/LockedOverlay";
 
 type Rule = {
   id: string;
@@ -49,7 +50,18 @@ export default function NotificationsClient({
   currency,
   initialRules,
   categories,
-}: { currency: string; initialRules: Rule[]; categories: Category[] }) {
+  quotaMax,
+  plan,
+}: {
+  currency:    string;
+  initialRules: Rule[];
+  categories:  Category[];
+  // Max number of NotificationRules the plan allows. Pass null for
+  // "unlimited" (Pro/Business). Finite number → Free tier: lock the
+  // Add-rule card once existing count meets the quota.
+  quotaMax?:   number | null;
+  plan?:       string;
+}) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [rules, setRules] = useState<Rule[]>(initialRules);
@@ -189,10 +201,25 @@ export default function NotificationsClient({
     startTransition(() => router.refresh());
   }
 
-  return (
-    <>
-      <div className="card mb-6">
-        <div className="font-medium mb-3">Add rule</div>
+  // Plan gate: Free tier caps notification rules at quotaMax. When
+  // the user is at or above the cap we wrap the Add-rule form in a
+  // LockedOverlay so the form is still visible (preview UX) but
+  // can't be submitted; the overlay's button opens the UpgradeModal.
+  const atRuleCap = typeof quotaMax === "number" && rules.length >= quotaMax;
+  const usageLabel = typeof quotaMax === "number"
+    ? `${rules.length} of ${quotaMax} rule${quotaMax === 1 ? "" : "s"} used`
+    : `${rules.length} rule${rules.length === 1 ? "" : "s"} configured`;
+
+  // The Add-rule form rendered inline. Either rendered directly
+  // (under-cap) or wrapped in a LockedOverlay (at-cap).
+  const addRuleForm = (
+    <div className="card mb-6">
+      <div className="flex items-baseline justify-between gap-3 flex-wrap mb-3">
+        <div className="font-medium">Add rule</div>
+        <div className="text-[11px] uppercase tracking-wider text-slate-500">
+          {usageLabel}
+        </div>
+      </div>
         <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
           <div className="md:col-span-3">
             <label className="label">When</label>
@@ -307,6 +334,26 @@ export default function NotificationsClient({
         </div>
         {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
       </div>
+  );
+
+  return (
+    <>
+      {atRuleCap ? (
+        <LockedOverlay
+          locked
+          feature="Custom monitoring rules"
+          plan={plan}
+          blurb={`Free plans allow ${quotaMax} monitoring rule${quotaMax === 1 ? "" : "s"}. Upgrade to Pro for unlimited cash floor, expense ceiling, vendor-spike and revenue-drop alerts.`}
+          benefits={[
+            "Unlimited threshold rules across revenue, expenses, vendors and categories",
+            "Smart alerts on top of the standard signal stream",
+            "Priority delivery to email + in-app",
+            "Plus everything else on Pro: full forecasting + Scenario Builder + unlimited signals",
+          ]}
+        >
+          {addRuleForm}
+        </LockedOverlay>
+      ) : addRuleForm}
 
       <div className="card">
         <div className="font-medium mb-3">Your notifications</div>

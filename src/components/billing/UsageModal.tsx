@@ -29,7 +29,7 @@ const LIMITS = {
     members:           "1",
     dataSources:       "1",
     historyDays:       "90 days",
-    signalsPerMonth:   "5",
+    signalsPerMonth:   "3",
     forecastMonths:    "3 months",
     aiCredits:         30,
     scenarioBuilder:   false,

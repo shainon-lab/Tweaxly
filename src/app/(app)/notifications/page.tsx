@@ -3,11 +3,15 @@ import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
+import { getQuota, getPlanFor } from "@/lib/billing";
 import NotificationsClient from "./NotificationsClient";
 
 export default async function NotificationsPage() {
   const { business } = await requireBusiness();
   const { t } = await getServerT();
+  const rulesQuota  = await getQuota(business.id, "maxNotificationRules");
+  const currentPlan = await getPlanFor(business.id);
+  const quotaMax    = rulesQuota === "unlimited" ? null : rulesQuota;
   const [rules, categoriesRaw] = await Promise.all([
     prisma.notificationRule.findMany({
       where: { businessId: business.id },
@@ -42,6 +46,8 @@ export default async function NotificationsPage() {
           createdAt: r.createdAt.toISOString(),
         }))}
         categories={categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind }))}
+        quotaMax={quotaMax}
+        plan={currentPlan}
       />
     </>
   );

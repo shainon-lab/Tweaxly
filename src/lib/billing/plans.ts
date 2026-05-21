@@ -30,6 +30,9 @@ export interface PlanFeatures {
   exportCsv:             boolean;
   exportPdf:             boolean;
   whitelabelReports:     boolean;
+  // Yearly insights / summaries. Free users see the page exists but
+  // the data is hidden behind an upgrade overlay; Pro+ see it in full.
+  yearlyReports:         boolean;
   // Workspace.
   multiBusiness:         boolean;
   multiUser:             boolean;
@@ -52,6 +55,10 @@ export interface PlanLimits {
   historyDays:     Quota;
   signalsPerMonth: Quota;
   forecastMonths:  Quota;
+  // Threshold-alert rules (NotificationRule) the user can create at
+  // once. Free is intentionally tight (1 rule) to encourage upgrade
+  // for owners running multiple guardrails.
+  maxNotificationRules: Quota;
   // Monthly AI credit allowance. Always finite; "unlimited" is granted
   // via AdminPlanOverride.kind = "unlimited_credits" rather than via a
   // sentinel in the plan itself.
@@ -79,8 +86,9 @@ export const PLANS: Plan[] = [
       members:          1,
       dataSources:      1,
       historyDays:      90,
-      signalsPerMonth:  5,
+      signalsPerMonth:  3,
       forecastMonths:   3,
+      maxNotificationRules: 1,
       monthlyAICredits: 30,
       features: {
         smartAlerts:            false,
@@ -92,6 +100,7 @@ export const PLANS: Plan[] = [
         exportCsv:              false,
         exportPdf:              false,
         whitelabelReports:      false,
+        yearlyReports:          false,
         multiBusiness:          false,
         multiUser:              false,
         teamRoles:              false,
@@ -115,6 +124,7 @@ export const PLANS: Plan[] = [
       historyDays:      "unlimited",
       signalsPerMonth:  "unlimited",
       forecastMonths:   "unlimited",
+      maxNotificationRules: "unlimited",
       monthlyAICredits: 500,
       features: {
         smartAlerts:            true,
@@ -126,6 +136,7 @@ export const PLANS: Plan[] = [
         exportCsv:              true,
         exportPdf:              true,
         whitelabelReports:      false,
+        yearlyReports:          true,
         multiBusiness:          true,
         multiUser:              true,
         teamRoles:              false,
@@ -149,6 +160,7 @@ export const PLANS: Plan[] = [
       historyDays:      "unlimited",
       signalsPerMonth:  "unlimited",
       forecastMonths:   "unlimited",
+      maxNotificationRules: "unlimited",
       monthlyAICredits: 2000,
       features: {
         smartAlerts:            true,
@@ -160,6 +172,7 @@ export const PLANS: Plan[] = [
         exportCsv:              true,
         exportPdf:              true,
         whitelabelReports:      true,
+        yearlyReports:          true,
         multiBusiness:          true,
         multiUser:              true,
         teamRoles:              true,
