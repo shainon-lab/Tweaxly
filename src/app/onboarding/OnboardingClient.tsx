@@ -6,7 +6,7 @@
 // the user to /manual-data (Import Your Business Data).
 
 import { useState } from "react";
-import { ArrowRight, Sparkles, Building2, TrendingUp, Target, FileSpreadsheet, Database } from "lucide-react";
+import { ArrowRight, Sparkles, Building2, TrendingUp, Target, FileSpreadsheet } from "lucide-react";
 import Logo from "@/components/Logo";
 import { REGIONS } from "@/lib/regions";
 
@@ -113,19 +113,6 @@ export function OnboardingClient({
     }));
   }
 
-  async function startDemo() {
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/onboarding/demo", { method: "POST" });
-      if (!res.ok) { setError("Couldn't load the demo dataset. Try again."); setBusy(false); return; }
-      window.location.assign("/dashboard");
-    } catch {
-      setError("Network error - check your connection.");
-      setBusy(false);
-    }
-  }
-
   async function finish() {
     setBusy(true);
     setError(null);
@@ -191,7 +178,7 @@ export function OnboardingClient({
             <div className="mb-4 rounded-md border border-bad/40 bg-bad/10 text-bad text-sm px-3 py-2">{error}</div>
           ) : null}
 
-          {step === 0 ? <Welcome onStart={() => setStep(1)} onDemo={startDemo} busy={busy} /> : null}
+          {step === 0 ? <Welcome onStart={() => setStep(1)} busy={busy} /> : null}
 
           {step === 1 ? (
             <StepShell
@@ -381,7 +368,7 @@ export function OnboardingClient({
   );
 }
 
-function Welcome({ onStart, onDemo, busy }: { onStart: () => void; onDemo: () => void; busy: boolean }) {
+function Welcome({ onStart, busy }: { onStart: () => void; busy: boolean }) {
   return (
     <div className="text-center">
       <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-accent-soft/30 border border-brand-purple/30 mb-6">
@@ -396,7 +383,7 @@ function Welcome({ onStart, onDemo, busy }: { onStart: () => void; onDemo: () =>
         forecasts, and AI-powered consultation.
       </p>
 
-      <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3">
+      <div className="mt-8 flex items-center justify-center">
         <button
           type="button"
           onClick={onStart}
@@ -406,20 +393,11 @@ function Welcome({ onStart, onDemo, busy }: { onStart: () => void; onDemo: () =>
           Start setup
           <ArrowRight size={16} strokeWidth={2} />
         </button>
-        <button
-          type="button"
-          onClick={onDemo}
-          disabled={busy}
-          className="text-base px-6 py-3 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition inline-flex items-center justify-center gap-2 disabled:opacity-50"
-        >
-          <Database size={16} strokeWidth={1.75} />
-          {busy ? "Loading demo…" : "Explore Demo Business"}
-        </button>
       </div>
 
       <div className="mt-6 text-xs text-slate-500 max-w-sm mx-auto">
-        Demo Business loads a realistic 3.5-year digital-agency dataset into your
-        workspace so you can explore every screen instantly. You can clear it later.
+        Takes about 5 minutes. No credit card required - the Free plan is
+        forever; upgrade only when you need more.
       </div>
     </div>
   );
