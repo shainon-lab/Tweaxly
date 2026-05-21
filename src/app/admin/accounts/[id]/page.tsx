@@ -16,8 +16,10 @@ import { prisma } from "@/lib/db";
 import { computeHealthScore, HEALTH_BAND_COLOR, HEALTH_BAND_LABEL } from "@/lib/healthScore";
 import { AccountActions } from "./AccountActions";
 import { PlanEditor } from "./PlanEditor";
+import { SubscriptionPanel } from "./SubscriptionPanel";
 import { AdminNotes } from "./AdminNotes";
 import { MembersTable } from "./MembersTable";
+import { getEffectivePlan, ensureMonthlyAllowance } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -165,6 +167,44 @@ export default async function Customer360({ params }: { params: { id: string } }
     orderBy: { createdAt: "asc" },
     select: { id: true, name: true, status: true, plan: true, lastActivityAt: true },
   });
+
+  // ── Billing & AI Credits ──────────────────────────────────────────
+  // Ensure the wallet exists (lazy bootstrap for businesses created
+  // before the billing layer landed), then load everything the
+  // Subscription panel needs in one round.
+  await ensureMonthlyAllowance(business.id);
+  const [effective, wallet, overrideRows] = await Promise.all([
+    getEffectivePlan(business.id),
+    prisma.aiCreditWallet.findUnique({ where: { businessId: business.id } }),
+    prisma.adminPlanOverride.findMany({
+      where:   { businessId: business.id },
+      orderBy: { createdAt: "desc" },
+      take:    25,
+      include: {
+        assignedBy: { select: { name: true, email: true } },
+        revokedBy:  { select: { name: true, email: true } },
+      },
+    }),
+  ]);
+  const overridesForPanel = overrideRows.map((o) => ({
+    id:             o.id,
+    plan:           o.plan,
+    kind:           o.kind,
+    effectiveFrom:  o.effectiveFrom.toISOString(),
+    effectiveUntil: o.effectiveUntil?.toISOString() ?? null,
+    creditsGranted: o.creditsGranted,
+    note:           o.note,
+    assignedByName: o.assignedBy?.name ?? o.assignedBy?.email ?? null,
+    revokedAt:      o.revokedAt?.toISOString() ?? null,
+    revokedByName:  o.revokedBy?.name ?? o.revokedBy?.email ?? null,
+  }));
+  const now = new Date();
+  const activeOverride = overridesForPanel.find((o) =>
+    o.revokedAt == null &&
+    new Date(o.effectiveFrom) <= now &&
+    (o.effectiveUntil == null || new Date(o.effectiveUntil) >= now),
+  ) ?? null;
+  const overrideHistory = overridesForPanel.filter((o) => o.id !== activeOverride?.id);
 
   const totalTx = business._count.transactions;
   const categorizationPct = totalTx > 0 ? Math.round((categorizedCount / totalTx) * 100) : 0;
@@ -324,10 +364,17 @@ export default async function Customer360({ params }: { params: { id: string } }
             plan={business.plan}
             trialEndsAt={business.trialEndsAt ? business.trialEndsAt.toISOString() : null}
           />
-          <Stub
-            title="Billing details"
-            blurb="MRR, payment status, billing cycle, payment method, and failed payments will appear here once Stripe (or another payments provider) is wired up."
-            cta="Connect Stripe"
+          <SubscriptionPanel
+            businessId={business.id}
+            effectivePlan={effective.plan}
+            effectiveSource={effective.source}
+            legacyPlan={business.plan}
+            walletBalance={wallet?.balance ?? 0}
+            monthlyAllowance={wallet?.monthlyAllowance ?? 0}
+            lifetimeGranted={wallet?.lifetimeGranted ?? 0}
+            lifetimeConsumed={wallet?.lifetimeConsumed ?? 0}
+            activeOverride={activeOverride}
+            overrideHistory={overrideHistory}
           />
         </div>
       </Section>
