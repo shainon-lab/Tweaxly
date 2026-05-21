@@ -23,7 +23,12 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 const TARGET_EMAIL    = "shainon+767356@gmail.com";
-const BUSINESS_NAME   = "Mock Studio";
+// Default name used only when the user has zero businesses AND no
+// override was passed. Pass BUSINESS_NAME=... to target an existing
+// workspace by name (case-insensitive), or BUSINESS_ID=... to target
+// by id. With no env override the script falls back to the user's
+// FIRST business (oldest by createdAt).
+const DEFAULT_BUSINESS_NAME = "Mock Studio";
 const BUSINESS_CCY    = "USD";
 const START_YM        = "2025-06";
 const END_YM          = "2026-04";
@@ -149,19 +154,46 @@ async function main() {
   }
   console.log(`  ✓ user id ${user.id}`);
 
-  // Find or create the business. Prefer the user's first existing
-  // business (so re-runs don't proliferate workspaces); create one
-  // if they have none.
-  let business = await prisma.business.findFirst({
-    where:   { ownerId: user.id },
-    orderBy: { createdAt: "asc" },
-  });
+  // Pick the target business. Resolution order:
+  //   1. BUSINESS_ID env var   - exact id match (most precise)
+  //   2. BUSINESS_NAME env var - case-insensitive name match
+  //   3. Default               - the user's FIRST business by createdAt
+  //   4. If none exist         - create DEFAULT_BUSINESS_NAME
+  let business: Awaited<ReturnType<typeof prisma.business.findFirst>> = null;
+  const overrideId   = process.env.BUSINESS_ID?.trim();
+  const overrideName = process.env.BUSINESS_NAME?.trim();
+  if (overrideId) {
+    business = await prisma.business.findFirst({
+      where: { id: overrideId, ownerId: user.id },
+    });
+    if (!business) throw new Error(`BUSINESS_ID=${overrideId} not found (or not owned by ${TARGET_EMAIL})`);
+  } else if (overrideName) {
+    business = await prisma.business.findFirst({
+      where: { ownerId: user.id, name: { equals: overrideName, mode: "insensitive" } },
+    });
+    if (!business) {
+      // List what they have so it's easy to fix the typo.
+      const owned = await prisma.business.findMany({
+        where:  { ownerId: user.id },
+        select: { name: true },
+        orderBy: { createdAt: "asc" },
+      });
+      throw new Error(
+        `BUSINESS_NAME="${overrideName}" not found. Owned businesses: ${owned.map((b) => `"${b.name}"`).join(", ") || "(none)"}.`,
+      );
+    }
+  } else {
+    business = await prisma.business.findFirst({
+      where:   { ownerId: user.id },
+      orderBy: { createdAt: "asc" },
+    });
+  }
   if (!business) {
-    console.log(`  No business found - creating "${BUSINESS_NAME}"`);
+    console.log(`  No business found - creating "${DEFAULT_BUSINESS_NAME}"`);
     business = await prisma.business.create({
       data: {
         ownerId:    user.id,
-        name:       BUSINESS_NAME,
+        name:       DEFAULT_BUSINESS_NAME,
         currency:   BUSINESS_CCY,
         status:     "active",
         plan:       "free",
