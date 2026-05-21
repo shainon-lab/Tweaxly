@@ -157,7 +157,7 @@ export default function FaqPage() {
           <div className="mt-5 flex flex-wrap gap-3 justify-center">
             <Link href="/contact" className="btn-brand text-sm px-5 py-2.5">Contact us</Link>
             <a href="https://app.tweaxly.com/register" className="btn-ghost text-sm px-5 py-2.5">
-              Start in early access →
+              Start Free →
             </a>
           </div>
         </div>

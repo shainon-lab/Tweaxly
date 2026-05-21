@@ -193,7 +193,7 @@ export default async function ArticlePage(
             signals, forecasts, and advice - in real time, using AI.
           </p>
           <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
-            <a href="https://app.tweaxly.com/register" className="btn-brand text-base px-6 py-3">Start in early access</a>
+            <a href="https://app.tweaxly.com/register" className="btn-brand text-base px-6 py-3">Start Free</a>
             <Link href="/resources" className="btn-ghost text-base px-6 py-3">Browse all resources →</Link>
           </div>
         </div>

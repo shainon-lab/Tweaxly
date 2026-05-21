@@ -41,7 +41,6 @@ export const metadata: Metadata = {
 
 const PRODUCT_URL = "https://app.tweaxly.com";
 const SIGNUP_URL  = `${PRODUCT_URL}/register`;
-const LOGIN_URL   = `${PRODUCT_URL}/login`;
 
 // Four items so the strip sits on a single clean row at every
 // width - five was orphaning the last pill onto its own line.
@@ -120,10 +119,10 @@ function Hero() {
           </p>
           <div className="mt-10 flex items-center gap-3 flex-wrap">
             <a href={SIGNUP_URL} className="btn-brand text-base px-6 py-3">
-              See the Platform
+              Start Free
             </a>
             <a href="#signals" className="btn-ghost text-base px-6 py-3">
-              Explore Insights →
+              Connect Your Business →
             </a>
           </div>
           <div className="mt-8 text-xs text-slate-500 leading-relaxed max-w-xl">
@@ -477,18 +476,22 @@ function FinalCTA() {
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_left,rgba(167,139,250,0.18),transparent_60%),radial-gradient(ellipse_at_bottom_right,rgba(34,211,238,0.15),transparent_60%)]" aria-hidden="true" />
         <div className="relative p-10 lg:p-16 text-center">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
-            Stop wondering. <span className="gradient-text">Start understanding.</span>
+            Get your first <span className="gradient-text">AI business signals</span> today.
           </h2>
           <p className="mt-4 text-lg text-slate-300 max-w-xl mx-auto">
-            Open Tweaxly and see your business the way a finance team would.
+            Upload a CSV, see your business the way a finance team would.
+            Free forever - upgrade only when you&apos;re ready.
           </p>
           <div className="mt-8 flex items-center justify-center gap-3 flex-wrap">
             <a href={SIGNUP_URL} className="btn-brand text-base px-6 py-3">
-              See the platform
+              Start Free
             </a>
-            <a href={LOGIN_URL} className="btn-ghost text-base px-6 py-3">
-              Log in
+            <a href="/pricing" className="btn-ghost text-base px-6 py-3">
+              See pricing →
             </a>
+          </div>
+          <div className="mt-5 text-xs text-slate-500">
+            No credit card · 5-minute setup · 30 AI Credits included
           </div>
         </div>
       </div>

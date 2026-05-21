@@ -153,7 +153,7 @@ export default function ResourcesIndexPage() {
           </p>
           <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
             <Link href="/contact" className="btn-brand text-base px-6 py-3">Subscribe via contact form</Link>
-            <a href="https://app.tweaxly.com/register" className="btn-ghost text-base px-6 py-3">Start in early access</a>
+            <a href="https://app.tweaxly.com/register" className="btn-ghost text-base px-6 py-3">Start Free</a>
           </div>
         </div>
       </section>
