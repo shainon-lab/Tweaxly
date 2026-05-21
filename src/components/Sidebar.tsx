@@ -44,6 +44,12 @@ const NAV: { href: string; tKey: string; Icon: LucideIcon; alertKey?: AlertKey }
 
 export type SidebarAlerts = { transactions?: number; insights?: number; businessSignals?: number };
 
+export interface SidebarBilling {
+  plan:             string;   // "free" | "pro" | "business"
+  balance:          number;
+  monthlyAllowance: number;
+}
+
 export default function Sidebar({
   businessName,
   businessId,
@@ -51,6 +57,7 @@ export default function Sidebar({
   alerts,
   systemRole,
   workspaces,
+  billing,
 }: {
   businessName: string;
   businessId?: string;
@@ -58,6 +65,7 @@ export default function Sidebar({
   alerts?: SidebarAlerts;
   systemRole?: string;
   workspaces?: SwitcherWorkspace[];
+  billing?: SidebarBilling;
 }) {
   const isSuperAdmin = systemRole === "super_admin";
   const isAdminOrSuper = systemRole === "admin" || systemRole === "super_admin";
@@ -141,6 +149,10 @@ export default function Sidebar({
               {businessName}
             </div>
           )}
+          {/* Credit balance pill - subtle, link to billing settings.
+              Hidden when billing data isn't loaded (e.g. during the
+              very first render before ensureMonthlyAllowance has run). */}
+          {billing ? <SidebarCreditsPill billing={billing} /> : null}
           {/* Mobile-only close button inside the drawer header */}
           <button
             type="button"
@@ -227,5 +239,41 @@ export default function Sidebar({
         </form>
       </aside>
     </>
+  );
+}
+
+// Small credit-balance pill that sits below the workspace switcher.
+// Tones (text + bar colour) follow the same rules as the consultation
+// CreditsWidget: gradient when healthy, warn under 5, bad at 0.
+function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
+  const { balance, monthlyAllowance, plan } = billing;
+  const low   = balance > 0 && balance < 5;
+  const empty = balance <= 0;
+  const pct   = monthlyAllowance > 0
+    ? Math.max(0, Math.min(100, Math.round((balance / monthlyAllowance) * 100)))
+    : 0;
+  const planLabel = plan === "pro" ? "Pro" : plan === "business" ? "Business" : "Free";
+
+  return (
+    <Link
+      href="/settings/billing"
+      className="mt-3 block rounded-md border border-line/60 bg-ink-900/40 hover:border-accent/40 hover:bg-ink-900 transition px-3 py-2"
+    >
+      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+        <span>{planLabel} · AI Credits</span>
+        <span className={empty ? "text-bad" : low ? "text-warn" : "text-slate-300"}>
+          {balance.toLocaleString()}
+        </span>
+      </div>
+      <div className="mt-1.5 h-1 rounded-full bg-ink-700/80 overflow-hidden">
+        <div
+          className={`h-full rounded-full ${
+            empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"
+          }`}
+          style={{ width: `${pct}%` }}
+          aria-hidden="true"
+        />
+      </div>
+    </Link>
   );
 }
