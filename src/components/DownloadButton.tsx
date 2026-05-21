@@ -20,6 +20,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { ExportPayload } from "@/lib/exporters/types";
+import UpgradeModal from "./billing/UpgradeModal";
 
 interface Props {
   payload?: ExportPayload | null;   // null/undefined when the report is empty
@@ -37,24 +38,40 @@ interface Props {
 export default function DownloadButton({
   payload, emptyMessage,
   entitled = true,
-  lockedLabel = "Upgrade to export",
-  lockedHref  = "/settings/billing",
+  lockedLabel = "Download",
+  lockedHref: _lockedHref, // kept for API compat; no longer used
 }: Props) {
-  // Plan-gate first: when the workspace's plan doesn't include
-  // exports we replace the button entirely with an upgrade CTA so
-  // the user can't get to the dropdown at all. No 402 needed because
-  // the whole export pipeline is client-side (xlsx/csv built in the
-  // browser, PDF via window.print).
+  void _lockedHref;
+  // Plan-gate: when the workspace's plan doesn't include exports we
+  // keep the Download button visually present (with a small lock
+  // glyph) but click opens the shared UpgradeModal instead of the
+  // format dropdown. This matches the spec's "keep buttons visible,
+  // open modal" pattern rather than hiding the affordance.
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   if (!entitled) {
     return (
-      <a
-        href={lockedHref}
-        className="text-sm inline-flex items-center gap-2 px-3 py-1.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
-        title="Excel / CSV / PDF export is available on Pro and Business plans"
-      >
-        <LockGlyph />
-        {lockedLabel}
-      </a>
+      <>
+        <button
+          type="button"
+          onClick={() => setUpgradeOpen(true)}
+          className="btn-primary text-sm inline-flex items-center gap-2"
+          title="Excel / CSV / PDF export is available on Pro and Business plans"
+        >
+          <LockGlyph />
+          {lockedLabel}
+        </button>
+        <UpgradeModal
+          open={upgradeOpen}
+          onClose={() => setUpgradeOpen(false)}
+          feature="Excel / CSV / PDF export"
+          benefits={[
+            "Export every report to Excel, CSV, PDF",
+            "Send accountant-ready files with one click",
+            "White-label exports (Business plan)",
+            "Plus everything else on Pro: full forecasting + Scenario Builder + unlimited signals",
+          ]}
+        />
+      </>
     );
   }
   const [open, setOpen]       = useState(false);

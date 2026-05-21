@@ -16,6 +16,7 @@ import {
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import BusinessSwitcher, { type SwitcherWorkspace } from "./BusinessSwitcher";
+import UsageModal from "./billing/UsageModal";
 import { useT } from "@/lib/i18n/client";
 
 type AlertKey = "transactions" | "insights" | "businessSignals";
@@ -243,10 +244,12 @@ export default function Sidebar({
 }
 
 // Small credit-balance pill that sits below the workspace switcher.
-// Tones (text + bar colour) follow the same rules as the consultation
-// CreditsWidget: gradient when healthy, warn under 5, bad at 0.
+// Click opens the UsageModal (current plan + side-by-side comparison
+// with the next tier + Upgrade CTA). The pill itself is purely
+// presentational; all upgrade plumbing lives in the modal.
 function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
   const { balance, monthlyAllowance, plan } = billing;
+  const [usageOpen, setUsageOpen] = useState(false);
   const low   = balance > 0 && balance < 5;
   const empty = balance <= 0;
   const pct   = monthlyAllowance > 0
@@ -255,25 +258,36 @@ function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
   const planLabel = plan === "pro" ? "Pro" : plan === "business" ? "Business" : "Free";
 
   return (
-    <Link
-      href="/settings/billing"
-      className="mt-3 block rounded-md border border-line/60 bg-ink-900/40 hover:border-accent/40 hover:bg-ink-900 transition px-3 py-2"
-    >
-      <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-        <span>{planLabel} · AI Credits</span>
-        <span className={empty ? "text-bad" : low ? "text-warn" : "text-slate-300"}>
-          {balance.toLocaleString()}
-        </span>
-      </div>
-      <div className="mt-1.5 h-1 rounded-full bg-ink-700/80 overflow-hidden">
-        <div
-          className={`h-full rounded-full ${
-            empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"
-          }`}
-          style={{ width: `${pct}%` }}
-          aria-hidden="true"
-        />
-      </div>
-    </Link>
+    <>
+      <button
+        type="button"
+        onClick={() => setUsageOpen(true)}
+        aria-haspopup="dialog"
+        className="mt-3 w-full block text-left rounded-md border border-line/60 bg-ink-900/40 hover:border-accent/40 hover:bg-ink-900 transition px-3 py-2 cursor-pointer"
+      >
+        <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+          <span>{planLabel} · AI Credits</span>
+          <span className={empty ? "text-bad" : low ? "text-warn" : "text-slate-300"}>
+            {balance.toLocaleString()}
+          </span>
+        </div>
+        <div className="mt-1.5 h-1 rounded-full bg-ink-700/80 overflow-hidden">
+          <div
+            className={`h-full rounded-full ${
+              empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"
+            }`}
+            style={{ width: `${pct}%` }}
+            aria-hidden="true"
+          />
+        </div>
+      </button>
+      <UsageModal
+        open={usageOpen}
+        onClose={() => setUsageOpen(false)}
+        plan={plan}
+        balance={balance}
+        monthlyAllowance={monthlyAllowance}
+      />
+    </>
   );
 }

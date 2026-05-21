@@ -31,8 +31,8 @@ import {
   isForecastReady,
 } from "@/lib/forecastEngine";
 import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/workforce";
-import { hasFeature } from "@/lib/billing";
-import ScenarioBuilderUpsell from "./ScenarioBuilderUpsell";
+import { hasFeature, getPlanFor } from "@/lib/billing";
+import LockedOverlay from "@/components/billing/LockedOverlay";
 import ForecastReadinessBanner from "./ForecastReadinessBanner";
 import ForecastExplanationPanel from "./ForecastExplanationPanel";
 import ForecastSetup from "./ForecastSetup";
@@ -63,7 +63,17 @@ export default async function ForecastPage({
 }) {
   const { business } = await requireBusiness();
   const canScenarios = await hasFeature(business.id, "scenarioBuilder");
+  const currentPlan  = await getPlanFor(business.id);
   const sp = await searchParams;
+
+  // Shared benefit list for the scenario-builder upgrade prompts -
+  // used in both the empty-state and populated-state LockedOverlay.
+  const scenarioBenefits = [
+    "Model hires, cuts, contracts, marketing shifts side by side",
+    "Stack multiple scenarios + compare against baseline",
+    "Long-term forecasting horizons + confidence bands",
+    "Full export to Excel, CSV, PDF",
+  ];
   // Forecast workspace splits into three internal views:
   //   "overview"  - passive AI outlook (default)
   //   "scenarios" - interactive scenario builder
@@ -248,16 +258,20 @@ export default async function ForecastPage({
           assumption - the empty state owns the screen and provides
           its own inline builder entry. */}
       {view === "scenarios" && assumptions.length === 0 ? (
-        canScenarios ? (
+        <LockedOverlay
+          locked={!canScenarios}
+          feature="Scenario Builder"
+          plan={currentPlan}
+          benefits={scenarioBenefits}
+          blurb="The full Scenario Builder onboarding is shown above as a preview. Upgrade to Pro to start modelling hires, contracts, marketing changes and one-offs against baseline."
+        >
           <ScenariosOnboarding
             roster={roster}
             activePayrollSum={activePayrollSum}
             maxMonthsAhead={horizon.months}
             currency={ccy}
           />
-        ) : (
-          <ScenarioBuilderUpsell />
-        )
+        </LockedOverlay>
       ) : null}
 
       {/* Scenarios view, populated. Show active-assumption chips and
@@ -279,16 +293,19 @@ export default async function ForecastPage({
             }))}
             currency={ccy}
           />
-          {canScenarios ? (
+          <LockedOverlay
+            locked={!canScenarios}
+            feature="Scenario Builder"
+            plan={currentPlan}
+            benefits={scenarioBenefits}
+          >
             <ScenarioBuilderPanel
               roster={roster}
               activePayrollSum={activePayrollSum}
               maxMonthsAhead={horizon.months}
               currency={ccy}
             />
-          ) : (
-            <ScenarioBuilderUpsell />
-          )}
+          </LockedOverlay>
         </>
       ) : null}
 
