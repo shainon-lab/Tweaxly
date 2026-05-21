@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git commit -m ' *)",
+      "Bash(vercel --prod --yes)",
+      "Bash(curl -s \"https://tweaxly.com/faq?v=$\\(date +%s\\)\")",
+      "Bash(curl -s \"https://tweaxly.com/?v=$\\(date +%s\\)\")",
+      "Read(//tmp/**)",
+      "Bash(grep -nA1 \"See the Platform\\\\|Explore Insights\" /Users/shai-mac/ai-cfo-mvp/website/src/app/page.tsx)",
+      "Bash(grep -nA15 \"^function FinalCTA\" /Users/shai-mac/ai-cfo-mvp/website/src/app/page.tsx)",
+      "Bash(npx next *)",
+      "Bash(DATABASE_URL=\"postgresql://placeholder@localhost/placeholder\" npx prisma generate)"
+    ]
+  }
+}

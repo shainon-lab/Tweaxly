@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx --yes vercel@latest storage --help)",
+      "Bash(npx --yes vercel@latest integration --help)",
+      "Bash(npx --yes vercel@latest integration add neon --yes)",
+      "Bash(npx --yes vercel@latest integration add neon)",
+      "Bash(npx --yes vercel@latest integration accept-terms neon --yes)",
+      "Bash(npx --yes vercel@latest integration list)",
+      "Bash(npx --yes vercel@latest integration list tweaxly)",
+      "Bash(npx --yes vercel@latest integration guide neon)",
+      "Bash(npx --yes vercel@latest env ls)"
+    ]
+  }
+}

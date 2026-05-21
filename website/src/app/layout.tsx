@@ -162,6 +162,13 @@ export default function RootLayout({
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      // The consent + a11y init scripts run before React hydrates
+      // and stamp data-consent / data-a11y-* attributes + the
+      // --a11y-font-scale CSS var onto <html> so styling applies
+      // without a flash. Tell React to ignore the diff on this one
+      // node - the mismatch is intentional, isolated, and never
+      // applies to children.
+      suppressHydrationWarning
     >
       <head>
         {/* Both init scripts must run before first paint. Consent
