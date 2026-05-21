@@ -288,6 +288,37 @@ export default function ConsultationClient({
   const responseRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
+  // Billing state - populated by /api/billing/credits on mount and
+  // by /api/consultation on every successful send (the response
+  // carries the post-deduct balance so we don't need a second
+  // roundtrip). `outOfCredits` shorts the send path with a proper
+  // upgrade card instead of an alert().
+  const [credits, setCredits] = useState<{
+    balance: number;
+    monthlyAllowance: number;
+    plan: string;
+    costPerMessage: number;
+  } | null>(null);
+  const [outOfCredits, setOutOfCredits] = useState<{
+    balance: number; needed: number; plan: string;
+  } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetch("/api/billing/credits")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d) => {
+        if (cancelled || !d) return;
+        setCredits({
+          balance:          d.balance,
+          monthlyAllowance: d.monthlyAllowance,
+          plan:             d.plan,
+          costPerMessage:   d.creditCosts?.consultationMessage ?? 1,
+        });
+      })
+      .catch(() => { /* widget is best-effort; ignore */ });
+    return () => { cancelled = true };
+  }, []);
+
   // If we landed via ?q= (a "Consult AI" link from a Business Signal),
   // focus the textarea so the user can edit immediately.
   useEffect(() => {
@@ -320,11 +351,32 @@ export default function ConsultationClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ message }),
       });
+      // 402: out of credits OR workspace is read-only. Surface the
+      // upgrade card instead of an alert().
+      if (res.status === 402) {
+        const data = await res.json().catch(() => null);
+        setOutOfCredits({
+          balance: data?.balance ?? 0,
+          needed:  data?.needed  ?? 1,
+          plan:    data?.plan    ?? "free",
+        });
+        return;
+      }
       if (!res.ok) { alert(await res.text()); return; }
       const data = await res.json();
       const fresh = data.consultation as Active;
       setActive(fresh);
       setDraft("");
+      // Update the credit widget from the response so we stay in
+      // sync without a separate fetch.
+      if (data.credits && credits) {
+        setCredits({
+          ...credits,
+          balance: data.credits.balance,
+          plan:    data.credits.plan ?? credits.plan,
+        });
+      }
+      setOutOfCredits(null);
       // After a submit we drop any ?q= that came from a Business Signal
       // link so a reload doesn't re-prefill the textarea with the same
       // question. Replace (not push) keeps Back behavior sane.
@@ -347,6 +399,21 @@ export default function ConsultationClient({
 
   return (
     <div className="space-y-6">
+      {/* AI Credit balance widget. Shows current balance + monthly
+          allowance + cost-per-message, plus the Out-of-credits card
+          when the user has burnt through their plan allowance.
+          Lives above any other content so the user always knows what
+          they have available. */}
+      {credits ? (
+        <CreditsWidget
+          balance={credits.balance}
+          monthlyAllowance={credits.monthlyAllowance}
+          plan={credits.plan}
+          costPerMessage={credits.costPerMessage}
+          outOfCredits={outOfCredits}
+        />
+      ) : null}
+
       {!claudeEnabled ? (
         <div className="card border-warn/40 bg-warn/5">
           <div className="flex items-start gap-3">
@@ -684,6 +751,69 @@ function FreeformConsultation({
         </button>
       </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// CreditsWidget - balance pill + Out-of-credits upgrade card
+// ─────────────────────────────────────────────────────────────────────
+
+const PLAN_LABEL: Record<string, string> = {
+  free:     "Free",
+  pro:      "Pro",
+  business: "Business",
+};
+
+function CreditsWidget({
+  balance, monthlyAllowance, plan, costPerMessage, outOfCredits,
+}: {
+  balance: number;
+  monthlyAllowance: number;
+  plan: string;
+  costPerMessage: number;
+  outOfCredits: { balance: number; needed: number; plan: string } | null;
+}) {
+  const pct = monthlyAllowance > 0
+    ? Math.max(0, Math.min(100, Math.round((balance / monthlyAllowance) * 100)))
+    : 0;
+  const low = balance > 0 && balance < Math.max(5, costPerMessage * 2);
+  const empty = outOfCredits != null || balance < costPerMessage;
+
+  return (
+    <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400 font-semibold">
+          <span className="pill text-[10px]">{PLAN_LABEL[plan] ?? plan}</span>
+          <span>AI Credits</span>
+        </div>
+        <div className="mt-2 flex items-baseline gap-3">
+          <span className={`text-2xl font-semibold ${empty ? "text-bad" : low ? "text-warn" : "text-white"}`}>
+            {balance.toLocaleString()}
+          </span>
+          <span className="text-xs text-slate-500">
+            of {monthlyAllowance.toLocaleString()} this month
+            {" · "}
+            {costPerMessage} credit{costPerMessage === 1 ? "" : "s"} per question
+          </span>
+        </div>
+        <div className="mt-2 h-1 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
+          <div
+            className={`h-full rounded-full ${empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"}`}
+            style={{ width: `${pct}%` }}
+            aria-hidden="true"
+          />
+        </div>
+      </div>
+      {empty ? (
+        <a href="/pricing" className="btn-brand text-sm px-4 py-2 shrink-0 whitespace-nowrap">
+          Upgrade for more credits
+        </a>
+      ) : low ? (
+        <a href="/pricing" className="btn-ghost text-sm px-4 py-2 shrink-0 whitespace-nowrap">
+          See plans →
+        </a>
+      ) : null}
+    </div>
   );
 }
 

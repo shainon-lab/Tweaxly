@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, answerQuestion, deriveTitle } from "@/lib/advisor";
+import {
+  consumeCredits, ensureMonthlyAllowance, getEffectivePlan,
+  grantCredits, CREDIT_COSTS,
+} from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -26,6 +30,31 @@ export async function POST(req: NextRequest) {
   const body = await req.json();
   const message = String(body.message ?? "").trim();
   if (!message) return NextResponse.json({ error: "message required" }, { status: 400 });
+
+  // Bootstrap or refresh the monthly AI Credit allowance for this
+  // business, then attempt to consume one credit BEFORE we spend
+  // money on the LLM call. consumeCredits is atomic, so two
+  // simultaneous requests can't double-spend the last credit.
+  const eff = await getEffectivePlan(business.id);
+  if (eff.readOnly) {
+    return NextResponse.json({
+      error:        "read_only",
+      message:      "This workspace is in read-only mode. Reactivate the subscription to use AI consultation.",
+      plan:         eff.plan,
+    }, { status: 402 });
+  }
+  await ensureMonthlyAllowance(business.id);
+  const cost = CREDIT_COSTS.consultationMessage;
+  const spent = await consumeCredits(business.id, cost, "AI consultation", { source: "consultation_api" });
+  if (!spent.ok) {
+    return NextResponse.json({
+      error:    "insufficient_credits",
+      message:  "You've run out of AI Credits this month. Upgrade your plan or buy a credit pack to keep consulting.",
+      balance:  spent.balance,
+      needed:   cost,
+      plan:     eff.plan,
+    }, { status: 402 });
+  }
 
   let consultationId = body.consultationId as string | undefined;
   if (consultationId) {
@@ -54,15 +83,30 @@ export async function POST(req: NextRequest) {
     data: { consultationId, role: "user", content: message },
   });
 
-  const ctx = await buildBusinessContext(business.id);
-  const { answer, mode } = await answerQuestion(
-    ctx,
-    message,
-    priorMessages.map((m) => ({
-      role: m.role === "assistant" ? "assistant" : "user",
-      content: m.content,
-    })),
-  );
+  // Wrap the LLM call so we can refund credits if the model errors -
+  // we already deducted optimistically above to avoid double-spend
+  // under concurrency.
+  let answer, mode;
+  try {
+    const ctx = await buildBusinessContext(business.id);
+    const result = await answerQuestion(
+      ctx,
+      message,
+      priorMessages.map((m) => ({
+        role: m.role === "assistant" ? "assistant" : "user",
+        content: m.content,
+      })),
+    );
+    answer = result.answer;
+    mode   = result.mode;
+  } catch (err) {
+    // Refund the credit we deducted - the user got nothing in return.
+    await grantCredits(business.id, cost, "adjustment", {
+      reason: "Refund: AI consultation failed",
+      meta:   { consultationId, source: "consultation_api_refund" },
+    }).catch(() => { /* best-effort refund; never block error response */ });
+    throw err;
+  }
 
   await prisma.consultationMessage.create({
     data: {
@@ -81,7 +125,11 @@ export async function POST(req: NextRequest) {
     where: { id: consultationId },
     include: { messages: { orderBy: { createdAt: "asc" } } },
   });
-  return NextResponse.json({ consultation: fresh, mode });
+  return NextResponse.json({
+    consultation: fresh,
+    mode,
+    credits: { balance: spent.balance, spent: cost, plan: eff.plan },
+  });
 }
 
 // DELETE - remove a thread

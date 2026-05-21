@@ -167,6 +167,37 @@ export async function applyMonthlyAllowance(businessId: string): Promise<{ balan
   return { balance, granted: allowance };
 }
 
+// Lazy bootstrap + monthly refresh. Idempotent - safe to call on
+// every request that's about to consume credits.
+//
+//   • If the wallet doesn't exist yet, create it AND grant the
+//     current plan's monthly allowance (so brand-new Free users get
+//     their 30 credits the first time they touch any AI surface).
+//   • If the wallet exists but periodStart is in a prior calendar
+//     month, grant the monthly allowance and stamp periodStart.
+//   • Otherwise do nothing.
+//
+// Calendar-month rollover is used rather than a fixed 30-day window
+// so the UI can show "Plan credits reset on the 1st" cleanly.
+export async function ensureMonthlyAllowance(
+  businessId: string,
+  now: Date = new Date(),
+): Promise<{ balance: number; granted: number; reset: boolean }> {
+  const wallet = await prisma.aiCreditWallet.findUnique({ where: { businessId } });
+  if (!wallet) {
+    const { granted, balance } = await applyMonthlyAllowance(businessId);
+    return { balance, granted, reset: true };
+  }
+  const prev = wallet.periodStart;
+  const sameMonth =
+    prev.getUTCFullYear() === now.getUTCFullYear() &&
+    prev.getUTCMonth()    === now.getUTCMonth();
+  if (sameMonth) return { balance: wallet.balance, granted: 0, reset: false };
+  // Period rolled - grant the allowance again.
+  const { granted, balance } = await applyMonthlyAllowance(businessId);
+  return { balance, granted, reset: true };
+}
+
 // Sweep expired purchase grants. Intended to run as a daily cron.
 // Emits a single negative "expiry" transaction per expired pack so
 // the ledger stays auditable.
