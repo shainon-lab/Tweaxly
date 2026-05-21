@@ -11,58 +11,64 @@ datasource db {
 }
 
 model User {
-  id           String     @id @default(cuid())
-  email        String     @unique
-  passwordHash String
-  name         String?
+  id                        String               @id @default(cuid())
+  email                     String               @unique
+  passwordHash              String
+  name                      String?
   // System-level role. Most users are "user". A small set of internal
   // operators are flagged "super_admin" and can see the /admin panel +
   // impersonate any business account. This is the ONLY tenant-spanning
   // permission; per-account permissions live on BusinessMembership.role.
-  systemRole   String     @default("user")
+  systemRole                String               @default("user")
   // Stamped on every successful /api/auth/login. Drives 'last login'
   // columns in the admin Customer 360.
-  lastLoginAt  DateTime?
+  lastLoginAt               DateTime?
   // BCP-47 / two-letter language code for the UI. 'en' = English,
   // 'he' = Hebrew (RTL). Falls back to 'en' for any locale missing
   // from the dictionary.
-  preferredLanguage String @default("en")
+  preferredLanguage         String               @default("en")
   // ISO 3166-1 alpha-2 country code for the user's region. Auto-
   // detected from the IP on first signup / first visit to the
   // preferences page when null; the user can override it from
   // Account → Language & Region. Nullable so we never block on
   // detection failing.
-  region       String?
+  region                    String?
   // ── Communication preferences ─────────────────────────────────────
   // Transactional / system emails (billing, security, password reset)
   // are governed by `systemEmails` and CANNOT be turned off while the
   // account is active — they're contractually required. Marketing
   // channels each have their own flag and default to OFF (explicit
   // opt-in only).
-  systemEmails              Boolean   @default(true)
-  marketingEmails           Boolean   @default(false)
-  marketingSMS              Boolean   @default(false)
-  productAnnouncements      Boolean   @default(false)
-  newsletter                Boolean   @default(false)
+  systemEmails              Boolean              @default(true)
+  marketingEmails           Boolean              @default(false)
+  marketingSMS              Boolean              @default(false)
+  productAnnouncements      Boolean              @default(false)
+  newsletter                Boolean              @default(false)
   // Audit fields for the marketing consent record itself. Stamped at
   // the moment the user grants or revokes any marketing channel — the
   // most recent change overwrites previous values; full history lives
   // in AuditLog.
   marketingConsentTimestamp DateTime?
-  marketingConsentSource    String?   // "signup" | "settings" | "import"
-  marketingConsentIp        String?   // captured for the consent record
-  marketingPolicyVersion    String?   // /privacy version at consent time
+  marketingConsentSource    String? // "signup" | "settings" | "import"
+  marketingConsentIp        String? // captured for the consent record
+  marketingPolicyVersion    String? // /privacy version at consent time
   // Per-user opaque token used to verify one-click unsubscribe links
   // without requiring a session. Lazily populated on first marketing
   // grant so accounts that never opt in don't generate one.
-  unsubscribeToken          String?   @unique
-  createdAt    DateTime   @default(now())
-  businesses   Business[]
-  memberships  BusinessMembership[]
-  auditLogs    AuditLog[] @relation("ActorAuditLogs")
-  passwordResetTokens PasswordResetToken[]
-  loginAttempts LoginAttempt[]
-  authoredAdminNotes AdminNote[] @relation("AdminNoteAuthor")
+  unsubscribeToken          String?              @unique
+  createdAt                 DateTime             @default(now())
+  businesses                Business[]
+  memberships               BusinessMembership[]
+  auditLogs                 AuditLog[]           @relation("ActorAuditLogs")
+  passwordResetTokens       PasswordResetToken[]
+  loginAttempts             LoginAttempt[]
+  authoredAdminNotes        AdminNote[]          @relation("AdminNoteAuthor")
+  // Billing back-relations (see Billing models at the bottom of this file).
+  assignedPlanOverrides     AdminPlanOverride[]  @relation("AdminPlanOverrideAssignedBy")
+  revokedPlanOverrides      AdminPlanOverride[]  @relation("AdminPlanOverrideRevokedBy")
+  createdCoupons            Coupon[]             @relation("CouponCreatedBy")
+  targetedCoupons           Coupon[]             @relation("CouponTargetUser")
+  couponRedemptions         CouponRedemption[]
 }
 
 // Suppression list for sent campaigns. Even if a user has the matching
@@ -77,7 +83,7 @@ model EmailSuppression {
   channel   String
   // "user_unsubscribe" | "bounce" | "complaint" | "admin"
   reason    String
-  source    String?  // free-form context — campaign id, IP, etc.
+  source    String? // free-form context — campaign id, IP, etc.
   createdAt DateTime @default(now())
 
   @@unique([email, channel])
@@ -88,16 +94,16 @@ model EmailSuppression {
 // 'last login' + login-history surfaces; failure rows surface 'failed
 // attempts' in the security tab and feed brute-force monitoring.
 model LoginAttempt {
-  id          String   @id @default(cuid())
-  userId      String?
-  user        User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  id        String   @id @default(cuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
   // Always recorded — even when the user can't be resolved (unknown
   // email) — so we can surface enumeration attempts.
-  email       String
-  success     Boolean  @default(false)
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime @default(now())
+  email     String
+  success   Boolean  @default(false)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime @default(now())
 
   @@index([userId, createdAt])
   @@index([email, createdAt])
@@ -107,17 +113,17 @@ model LoginAttempt {
 // Internal note attached to an account. Visible only inside the
 // admin panel; never exposed to the customer.
 model AdminNote {
-  id              String   @id @default(cuid())
+  id               String   @id @default(cuid())
   targetBusinessId String
   targetBusiness   Business @relation(fields: [targetBusinessId], references: [id], onDelete: Cascade)
   authorUserId     String
   author           User     @relation("AdminNoteAuthor", fields: [authorUserId], references: [id], onDelete: Cascade)
-  body            String
+  body             String
   // Free-form comma-joined tags: "onboarding,billing,bug,sales,
   // churn_risk,vip". Kept as a single string so we don't need a
   // tag table; the admin UI parses on commas.
-  tags            String?
-  createdAt       DateTime @default(now())
+  tags             String?
+  createdAt        DateTime @default(now())
 
   @@index([targetBusinessId, createdAt])
 }
@@ -127,15 +133,15 @@ model AdminNote {
 // turned into account takeovers. Token is invalidated on first use
 // (usedAt set) and ignored after expiresAt.
 model PasswordResetToken {
-  id          String    @id @default(cuid())
-  userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tokenHash   String    @unique
-  expiresAt   DateTime
-  usedAt      DateTime?
-  ipAddress   String?
-  userAgent   String?
-  createdAt   DateTime  @default(now())
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime  @default(now())
 
   @@index([userId, createdAt])
   @@index([expiresAt])
@@ -146,22 +152,22 @@ model PasswordResetToken {
 // account_admin), but the model supports inviting collaborators later
 // without another migration.
 model BusinessMembership {
-  id         String   @id @default(cuid())
+  id         String    @id @default(cuid())
   userId     String
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // Per-account role: "account_admin" | "user" | "viewer" | "accountant".
   // Account admins can change account settings, invite, and run
   // destructive ops. Other roles are reserved for the future invite
   // system; today only account_admin is created.
-  role       String   @default("user")
+  role       String    @default("user")
   // Membership lifecycle. "active" once accepted; "invited" before
   // the user joins; "disabled" if an admin suspended the member.
-  status     String   @default("active")
+  status     String    @default("active")
   invitedAt  DateTime?
   joinedAt   DateTime?
-  createdAt  DateTime @default(now())
+  createdAt  DateTime  @default(now())
 
   @@unique([userId, businessId])
   @@index([businessId])
@@ -171,58 +177,58 @@ model BusinessMembership {
 // touches a customer account (impersonation enter/exit, status change,
 // etc.). Never store secrets here.
 model AuditLog {
-  id              String   @id @default(cuid())
-  actorUserId     String
-  actor           User     @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: Cascade)
+  id               String    @id @default(cuid())
+  actorUserId      String
+  actor            User      @relation("ActorAuditLogs", fields: [actorUserId], references: [id], onDelete: Cascade)
   // Target business (nullable for actions that aren't account-scoped).
   targetBusinessId String?
   targetBusiness   Business? @relation("AuditLogs", fields: [targetBusinessId], references: [id], onDelete: SetNull)
   // Free-form action key, e.g. "impersonation.enter", "impersonation.exit",
   // "account.status_change", "account.allow_writes".
-  action          String
+  action           String
   // Structured detail (JSON-encoded string). Anything sensitive should be
   // hashed / redacted before being stored here.
-  metadata        String?
-  ipAddress       String?
-  userAgent       String?
-  createdAt       DateTime @default(now())
+  metadata         String?
+  ipAddress        String?
+  userAgent        String?
+  createdAt        DateTime  @default(now())
 
   @@index([actorUserId, createdAt])
   @@index([targetBusinessId, createdAt])
 }
 
 model Business {
-  id              String              @id @default(cuid())
-  ownerId         String
-  owner           User                @relation(fields: [ownerId], references: [id], onDelete: Cascade)
-  name            String
-  currency        String              @default("USD")
-  fiscalStartMonth Int                @default(1)
-  vatEnabled      Boolean             @default(false)
-  vatRate         Float?              @default(0)
+  id               String    @id @default(cuid())
+  ownerId          String
+  owner            User      @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  name             String
+  currency         String    @default("USD")
+  fiscalStartMonth Int       @default(1)
+  vatEnabled       Boolean   @default(false)
+  vatRate          Float?    @default(0)
   // Optional business branding. Both stored as data URLs (base64-encoded) so
   // they can be rendered directly into <img src> / <link rel="icon"> without
   // a separate file-serving layer.
-  logoData        String?
-  faviconData     String?
+  logoData         String?
+  faviconData      String?
   // Account-level lifecycle: "active" | "suspended" | "demo" | "test".
   // Suspended accounts are blocked from API access (login still works
   // so the user can see the suspension message). Demo/test accounts
   // are surfaced separately in the admin panel.
-  status          String              @default("active")
+  status           String    @default("active")
   // Stamped on every authenticated request that hits this business
   // (via the requireBusiness middleware). Used for 'last activity'
   // sorting in the admin panel.
-  lastActivityAt  DateTime?
+  lastActivityAt   DateTime?
   // Commercial metadata. None are billing-grade — they describe what
   // plan/trial the operator has manually assigned. Wire to Stripe
   // when payments land.
-  plan            String              @default("free")    // free | starter | pro | enterprise | custom
-  trialEndsAt     DateTime?
+  plan             String    @default("free") // free | starter | pro | enterprise | custom
+  trialEndsAt      DateTime?
   // Self-reported / operator-set profile.
-  industry        String?
-  country         String?
-  timezone        String?
+  industry         String?
+  country          String?
+  timezone         String?
   // Adaptive-onboarding answers. Drive how signals, forecast
   // messaging, and dashboard recommendations adapt to the
   // business's maturity + priorities.
@@ -243,27 +249,34 @@ model Business {
   paysSalaries     Boolean?
   goals            String?
   onboardedAt      DateTime?
-  createdAt       DateTime            @default(now())
+  createdAt        DateTime  @default(now())
 
-  memberships     BusinessMembership[]
-  auditLogs       AuditLog[]          @relation("AuditLogs")
-  adminNotes      AdminNote[]
-  categories      Category[]
-  uploads         UploadBatch[]
-  transactions    Transaction[]
-  rules           CategorizationRule[]
-  duplicateGroups DuplicateGroup[]
-  employees       Employee[]
-  employeeEvents  EmployeeEvent[]
-  forecastItems   ForecastItem[]
+  memberships         BusinessMembership[]
+  auditLogs           AuditLog[]            @relation("AuditLogs")
+  adminNotes          AdminNote[]
+  categories          Category[]
+  uploads             UploadBatch[]
+  transactions        Transaction[]
+  rules               CategorizationRule[]
+  duplicateGroups     DuplicateGroup[]
+  employees           Employee[]
+  employeeEvents      EmployeeEvent[]
+  forecastItems       ForecastItem[]
   forecastAssumptions ForecastAssumption[]
-  mutedSignals    MutedSignal[]
-  mappingTemplates MappingTemplate[]
-  recommendations Recommendation[]
-  consultations   Consultation[]
-  manualEntries   ManualEntry[]
-  notificationRules NotificationRule[]
-  vendors         Vendor[]
+  mutedSignals        MutedSignal[]
+  mappingTemplates    MappingTemplate[]
+  recommendations     Recommendation[]
+  consultations       Consultation[]
+  manualEntries       ManualEntry[]
+  notificationRules   NotificationRule[]
+  vendors             Vendor[]
+  // Billing back-relations.
+  subscriptions       Subscription[]
+  planOverrides       AdminPlanOverride[]
+  creditWallet        AiCreditWallet?
+  creditTransactions  AiCreditTransaction[]
+  targetedCoupons     Coupon[]              @relation("CouponTargetBusiness")
+  couponRedemptions   CouponRedemption[]
 }
 
 model NotificationRule {
@@ -300,23 +313,23 @@ model NotificationRule {
 }
 
 model Category {
-  id         String        @id @default(cuid())
-  businessId String
-  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name       String
+  id                String             @id @default(cuid())
+  businessId        String
+  business          Business           @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name              String
   // kind: revenue, fixed, variable, payroll, marketing, fee, tax, transfer, other
-  kind       String
-  isOneTime  Boolean       @default(false)
-  createdAt  DateTime      @default(now())
-  transactions Transaction[]
-  manualEntries ManualEntry[]
+  kind              String
+  isOneTime         Boolean            @default(false)
+  createdAt         DateTime           @default(now())
+  transactions      Transaction[]
+  manualEntries     ManualEntry[]
   notificationRules NotificationRule[]
-  vendors      Vendor[]  @relation("VendorCategory")
+  vendors           Vendor[]           @relation("VendorCategory")
 
   // Optional "primary" vendor for the category. Surfaced in the Settings
   // categories table as the headline vendor (defaults to GENERAL when null).
   primaryVendorId String?
-  primaryVendor   Vendor?  @relation("CategoryPrimaryVendor", fields: [primaryVendorId], references: [id], onDelete: SetNull)
+  primaryVendor   Vendor? @relation("CategoryPrimaryVendor", fields: [primaryVendorId], references: [id], onDelete: SetNull)
 
   @@unique([businessId, name])
 }
@@ -345,7 +358,7 @@ model MappingTemplate {
   businessId String
   business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   name       String
-  source     String   // bank | credit_card | paypal | stripe | invoicing | payroll | other
+  source     String // bank | credit_card | paypal | stripe | invoicing | payroll | other
   // JSON string: { date, amount, description, currency, txnId, source, category, notes }
   mapping    String
   createdAt  DateTime @default(now())
@@ -354,68 +367,68 @@ model MappingTemplate {
 }
 
 model UploadBatch {
-  id          String        @id @default(cuid())
-  businessId  String
-  business    Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  source      String        // bank | credit_card | paypal | stripe | invoicing | payroll | other | monthly_summary
+  id              String        @id @default(cuid())
+  businessId      String
+  business        Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  source          String // bank | credit_card | paypal | stripe | invoicing | payroll | other | monthly_summary
   // mode: transactions (per-row activity) | monthly_summary (single-month totals per category)
-  mode        String        @default("transactions")
-  filename    String
-  rowCount    Int           @default(0)
+  mode            String        @default("transactions")
+  filename        String
+  rowCount        Int           @default(0)
   // For monthly_summary uploads: the YYYY-MM the data represents (derived from the calendar date)
   representsMonth String?
-  createdAt   DateTime      @default(now())
-  transactions Transaction[]
+  createdAt       DateTime      @default(now())
+  transactions    Transaction[]
 }
 
 model Transaction {
-  id                   String       @id @default(cuid())
+  id                   String          @id @default(cuid())
   businessId           String
-  business             Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  business             Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
   uploadBatchId        String?
-  uploadBatch          UploadBatch? @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
+  uploadBatch          UploadBatch?    @relation(fields: [uploadBatchId], references: [id], onDelete: SetNull)
   source               String
   originalSourceFile   String?
   externalId           String?
   transactionDate      DateTime
-  accountingMonth      String       // YYYY-MM
+  accountingMonth      String // YYYY-MM
   // `amount` is the canonical value in the business base currency.
   // Reports, dashboards, forecasts, AI insights all read this. For
   // transactions that originated in a different currency, the
   // pre-conversion value is preserved in `originalAmount` /
   // `originalCurrency` and is never recalculated automatically.
-  amount               Float        // signed; in business base currency
+  amount               Float // signed; in business base currency
   // `currency` is the *original* currency of the transaction at the
   // time it was imported. For backward compat with pre-multi-currency
   // rows, this may equal the base currency if no conversion was done.
-  currency             String       @default("USD")
+  currency             String          @default("USD")
   // ── Multi-currency snapshot fields ────────────────────────────────
   // Captured once at import/creation time and treated as a permanent
   // historical record. Do not back-fill rates onto existing
   // transactions when the rate provider changes — the original
   // conversion remains authoritative for accounting purposes.
-  originalAmount       Float?       // pre-conversion amount (signed)
-  originalCurrency     String?      // ISO 4217 of the source data
-  baseCurrency         String?      // business base currency at import
-  exchangeRate         Float?       // multiplier from original → base
-  exchangeRateDate     DateTime?    // date the rate applies to
-  exchangeRateSource   String?      // "frankfurter" | "ecb" | "manual" | "same_currency"
-  conversionMethod     String?      // "daily_historical" | "monthly_avg" | "manual_fixed" | "none"
-  isConverted          Boolean      @default(false)
-  manualRateOverride   Boolean      @default(false)
+  originalAmount       Float? // pre-conversion amount (signed)
+  originalCurrency     String? // ISO 4217 of the source data
+  baseCurrency         String? // business base currency at import
+  exchangeRate         Float? // multiplier from original → base
+  exchangeRateDate     DateTime? // date the rate applies to
+  exchangeRateSource   String? // "frankfurter" | "ecb" | "manual" | "same_currency"
+  conversionMethod     String? // "daily_historical" | "monthly_avg" | "manual_fixed" | "none"
+  isConverted          Boolean         @default(false)
+  manualRateOverride   Boolean         @default(false)
   manualRateNote       String?
   // "success" | "missing" | "failed" | "manual" | "same_currency" | "needs_review"
   rateFetchStatus      String?
-  type                 String       // income | expense | transfer | fee | payroll | tax | other
+  type                 String // income | expense | transfer | fee | payroll | tax | other
   categoryId           String?
-  category             Category?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  category             Category?       @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   subcategory          String?
   vendor               String?
-  description          String       @default("")
-  isRecurring          Boolean      @default(false)
-  isOneTime            Boolean      @default(false)
-  isDuplicateCandidate Boolean      @default(false)
-  isExcludedFromPnl    Boolean      @default(false)
+  description          String          @default("")
+  isRecurring          Boolean         @default(false)
+  isOneTime            Boolean         @default(false)
+  isDuplicateCandidate Boolean         @default(false)
+  isExcludedFromPnl    Boolean         @default(false)
   // Free-form note explaining WHY this transaction is excluded (e.g. "personal
   // purchase on shared bank account"). Shown as a hover tooltip on the
   // "not calculated" pill in the Transactions table.
@@ -424,8 +437,8 @@ model Transaction {
   duplicateGroupId     String?
   duplicateGroup       DuplicateGroup? @relation(fields: [duplicateGroupId], references: [id], onDelete: SetNull)
   manualEntryId        String?
-  manualEntry          ManualEntry? @relation(fields: [manualEntryId], references: [id], onDelete: Cascade)
-  createdAt            DateTime     @default(now())
+  manualEntry          ManualEntry?    @relation(fields: [manualEntryId], references: [id], onDelete: Cascade)
+  createdAt            DateTime        @default(now())
 
   @@index([businessId, accountingMonth])
   @@index([businessId, type])
@@ -433,85 +446,85 @@ model Transaction {
 }
 
 model CategorizationRule {
-  id         String   @id @default(cuid())
-  businessId String
-  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // matchField: description | vendor | source
-  matchField String
+  matchField   String
   // matchType: contains | equals | startsWith | regex
-  matchType  String
-  pattern    String
-  categoryId String
+  matchType    String
+  pattern      String
+  categoryId   String
   // optional flags
-  setRecurring Boolean @default(false)
-  setOneTime   Boolean @default(false)
-  priority   Int      @default(0)
-  createdAt  DateTime @default(now())
+  setRecurring Boolean  @default(false)
+  setOneTime   Boolean  @default(false)
+  priority     Int      @default(0)
+  createdAt    DateTime @default(now())
 }
 
 model DuplicateGroup {
-  id         String        @id @default(cuid())
-  businessId String
-  business   Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  reason     String        // e.g. "amount+date+|<=2 days| & sources differ"
-  status     String        @default("open") // open | merged | dismissed
-  createdAt  DateTime      @default(now())
+  id           String        @id @default(cuid())
+  businessId   String
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  reason       String // e.g. "amount+date+|<=2 days| & sources differ"
+  status       String        @default("open") // open | merged | dismissed
+  createdAt    DateTime      @default(now())
   transactions Transaction[]
 }
 
 model Employee {
-  id          String          @id @default(cuid())
-  businessId  String
-  business    Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  name        String
-  role        String?
+  id                     String          @id @default(cuid())
+  businessId             String
+  business               Business        @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  name                   String
+  role                   String?
   // Cost breakdown — new fields. When any of these are set, total monthly
   // cost = gross + sum(breakdown). When all are null, we fall back to the
   // legacy gross * employerCostMultiplier calculation so older records
   // continue to work.
-  employmentType  String?   @default("employee")   // employee | contractor | freelancer
-  department      String?
-  employerTaxes   Float?    // monthly $
-  pension         Float?
-  benefits        Float?
-  additionalCosts Float?
+  employmentType         String?         @default("employee") // employee | contractor | freelancer
+  department             String?
+  employerTaxes          Float? // monthly $
+  pension                Float?
+  benefits               Float?
+  additionalCosts        Float?
   // status: active | planned | terminated. Inferred from start/end dates if
   // not set explicitly (legacy rows).
-  status          String?   @default("active")
-  grossMonthlySalary Float
-  employerCostMultiplier Float @default(1.25)
-  startDate   DateTime
-  endDate     DateTime?
-  notes       String?
-  createdAt   DateTime        @default(now())
-  events      EmployeeEvent[]
+  status                 String?         @default("active")
+  grossMonthlySalary     Float
+  employerCostMultiplier Float           @default(1.25)
+  startDate              DateTime
+  endDate                DateTime?
+  notes                  String?
+  createdAt              DateTime        @default(now())
+  events                 EmployeeEvent[]
 }
 
 model EmployeeEvent {
-  id          String   @id @default(cuid())
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  employeeId  String?
-  employee    Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
+  id            String    @id @default(cuid())
+  businessId    String
+  business      Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  employeeId    String?
+  employee      Employee? @relation(fields: [employeeId], references: [id], onDelete: SetNull)
   // type: hire | termination | salary_change | bonus | one_time
-  type        String
+  type          String
   effectiveDate DateTime
-  amount      Float?    // for bonus / one_time / salary_change new salary
-  notes       String?
-  createdAt   DateTime  @default(now())
+  amount        Float? // for bonus / one_time / salary_change new salary
+  notes         String?
+  createdAt     DateTime  @default(now())
 }
 
 model ForecastItem {
-  id           String   @id @default(cuid())
-  businessId   String
-  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  label        String
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  label       String
   // kind: income | expense
-  kind         String
-  amount       Float
-  monthsAhead  Int       // 1, 2, 3
-  notes        String?
-  createdAt    DateTime  @default(now())
+  kind        String
+  amount      Float
+  monthsAhead Int // 1, 2, 3
+  notes       String?
+  createdAt   DateTime @default(now())
 }
 
 // Scenario assumption on top of the baseline forecast. Each row is a single
@@ -519,32 +532,32 @@ model ForecastItem {
 // cut, etc.). The forecast engine reads these and produces a "scenario" line
 // alongside the baseline.
 model ForecastAssumption {
-  id           String   @id @default(cuid())
-  businessId   String
-  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // family: revenue | expense | payroll
-  family       String
+  family      String
   // type — discriminates which fields are meaningful. e.g. hire, terminate,
   // salary_increase, bonus, contractor_add, contractor_remove,
   // revenue_growth, revenue_decline, new_recurring_revenue,
   // one_time_revenue, lose_recurring_revenue, expense_growth,
   // expense_decline, marketing_change, software_change, rent_increase,
   // one_time_expense, remove_recurring, custom.
-  type         String
-  label        String
-  category     String?
+  type        String
+  label       String
+  category    String?
   // amount in $ — interpretation depends on type (monthly cost, one-time
   // hit, etc.). 0 means "not used".
-  amount       Float    @default(0)
+  amount      Float    @default(0)
   // percentage — 0..1 (so 0.05 = 5%). 0 means "not used".
-  percentage   Float    @default(0)
+  percentage  Float    @default(0)
   // forecast-relative month index (1 = first projected month).
-  startMonth   Int      @default(1)
+  startMonth  Int      @default(1)
   // null = open-ended (runs until end of forecast horizon).
-  endMonth     Int?
-  isRecurring  Boolean  @default(true)
-  notes        String?
-  createdAt    DateTime @default(now())
+  endMonth    Int?
+  isRecurring Boolean  @default(true)
+  notes       String?
+  createdAt   DateTime @default(now())
 
   @@index([businessId, createdAt])
 }
@@ -579,12 +592,12 @@ model Recommendation {
 // out. The generator filters anything whose key is currently muted; once
 // mutedUntil passes, the signal becomes eligible again.
 model MutedSignal {
-  id          String   @id @default(cuid())
-  businessId  String
-  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  signalKey   String
-  mutedUntil  DateTime
-  createdAt   DateTime @default(now())
+  id         String   @id @default(cuid())
+  businessId String
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  signalKey  String
+  mutedUntil DateTime
+  createdAt  DateTime @default(now())
 
   @@unique([businessId, signalKey])
   @@index([businessId, mutedUntil])
@@ -609,26 +622,26 @@ model Consultation {
 // dedicated forecast logic. Deleting a ManualEntry cascade-deletes all
 // Transactions it created.
 model ManualEntry {
-  id          String       @id @default(cuid())
-  businessId  String
-  business    Business     @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  id           String        @id @default(cuid())
+  businessId   String
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // type: income | outcome
-  type        String
-  categoryId  String
-  category    Category     @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  type         String
+  categoryId   String
+  category     Category      @relation(fields: [categoryId], references: [id], onDelete: Cascade)
   // Always stored as a positive number; sign applied at materialization based on type
-  amount      Float
+  amount       Float
   // ISO 4217 currency the user entered the amount in. Defaults to the
   // business base currency. Each materialized Transaction snapshots
   // its own per-occurrence exchange rate; this field is the source of
   // truth for "what did the user actually type".
-  currency    String?
+  currency     String?
   // frequency: one_time | monthly | quarterly | yearly
-  frequency   String
-  startDate   DateTime
-  endDate     DateTime?
-  notes       String?
-  createdAt   DateTime     @default(now())
+  frequency    String
+  startDate    DateTime
+  endDate      DateTime?
+  notes        String?
+  createdAt    DateTime      @default(now())
   transactions Transaction[]
 
   @@index([businessId, createdAt])
@@ -654,18 +667,217 @@ model ConsultationMessage {
 // audit record for which rate was in effect on a given day.
 model ExchangeRate {
   id            String   @id @default(cuid())
-  baseCurrency  String   // ISO 4217 — currency the rate converts INTO
-  quoteCurrency String   // ISO 4217 — currency the rate converts FROM
-  rate          Float    // 1 unit of quoteCurrency = `rate` units of baseCurrency
+  baseCurrency  String // ISO 4217 — currency the rate converts INTO
+  quoteCurrency String // ISO 4217 — currency the rate converts FROM
+  rate          Float // 1 unit of quoteCurrency = `rate` units of baseCurrency
   rateDate      DateTime // date the rate applies to (UTC midnight)
   // Date the rate provider actually returned. May differ from rateDate
   // when we requested a non-trading day and got the previous trading
   // day back ("rolled" rate).
   effectiveDate DateTime
-  source        String   // "frankfurter" | "ecb" | "manual"
+  source        String // "frankfurter" | "ecb" | "manual"
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
   @@unique([baseCurrency, quoteCurrency, rateDate, source])
   @@index([baseCurrency, quoteCurrency, rateDate])
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Billing: Subscription, AdminPlanOverride, AI Credits, Coupons
+// ─────────────────────────────────────────────────────────────────────
+// Provider-agnostic schema - `externalCustomerId` / `externalSubscriptionId`
+// / `externalPriceId` are populated by whichever billing provider gets
+// wired in (Stripe, Paddle, Lemon Squeezy, etc). Until that lands, the
+// admin override path is enough to assign paid access manually.
+//
+// Plan values are kept as strings rather than a Prisma enum to match the
+// existing schema convention (no enums anywhere else in the file). Valid
+// values: "free" | "pro" | "business".
+//
+// The pre-existing Business.plan String field is kept as a legacy display
+// hint - the new source of truth is getEffectivePlan() in src/lib/billing
+// which composes AdminPlanOverride > Subscription > "free" default.
+
+model Subscription {
+  id                     String    @id @default(cuid())
+  businessId             String
+  business               Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  plan                   String // "free" | "pro" | "business"
+  // "active" | "trialing" | "past_due" | "canceled" | "incomplete"
+  status                 String    @default("active")
+  currentPeriodStart     DateTime  @default(now())
+  currentPeriodEnd       DateTime
+  cancelAtPeriodEnd      Boolean   @default(false)
+  // Set when the subscription is cancelled mid-period or at period end.
+  // null until cancel is requested.
+  cancelledAt            DateTime?
+  // Billing-provider identifiers. Populated only when a provider is wired
+  // up; kept generic so we're not locked to one provider.
+  externalProvider       String? // "stripe" | "paddle" | "lemon" | null
+  externalCustomerId     String?
+  externalSubscriptionId String?
+  externalPriceId        String?
+  // Optional coupon snapshot applied at the start of this subscription
+  // - kept here so a redemption history persists even if the coupon row
+  // is later disabled or deleted.
+  appliedCouponCode      String?
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  @@index([businessId, status])
+  @@index([externalSubscriptionId])
+}
+
+// Super-admin can manually assign paid access to any business without
+// going through the billing system. Override wins over Subscription
+// while active. Audited via AuditLog.
+model AdminPlanOverride {
+  id             String    @id @default(cuid())
+  businessId     String
+  business       Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // The admin user who applied the override.
+  assignedById   String
+  assignedBy     User      @relation("AdminPlanOverrideAssignedBy", fields: [assignedById], references: [id])
+  // Plan to apply for the duration of the override.
+  plan           String // "free" | "pro" | "business"
+  // Type: "full_paid" | "trial_extension" | "unlimited_credits" | "custom"
+  kind           String    @default("full_paid")
+  effectiveFrom  DateTime  @default(now())
+  // Null = indefinite.
+  effectiveUntil DateTime?
+  // Optional one-time credit grant attached to the override (used for
+  // "trial extension with 200 bonus credits" style grants).
+  creditsGranted Int?
+  // Free-form internal note from the admin (why was this granted?).
+  note           String?
+  // Set when override is manually revoked before effectiveUntil.
+  revokedAt      DateTime?
+  revokedById    String?
+  revokedBy      User?     @relation("AdminPlanOverrideRevokedBy", fields: [revokedById], references: [id])
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  @@index([businessId, effectiveFrom, effectiveUntil])
+}
+
+// Denormalised running balance per business. Updated on every grant /
+// consume via the billing library; transactions are the audit ledger.
+model AiCreditWallet {
+  id               String   @id @default(cuid())
+  businessId       String   @unique
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Current available credits (sum of all unexpired transactions).
+  balance          Int      @default(0)
+  // The plan's monthly allowance at the start of the current period.
+  // Used so we can detect plan changes mid-period and pro-rate grants.
+  monthlyAllowance Int      @default(0)
+  // Start of the current monthly window (used for monthly reset logic).
+  periodStart      DateTime @default(now())
+  // Lifetime counters for reporting / analytics. Never reset.
+  lifetimeGranted  Int      @default(0)
+  lifetimeConsumed Int      @default(0)
+  updatedAt        DateTime @updatedAt
+
+  @@index([periodStart])
+}
+
+// Ledger of every credit movement. Source of truth; the wallet is a
+// cache.
+model AiCreditTransaction {
+  id           String    @id @default(cuid())
+  businessId   String
+  business     Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Positive = grant, negative = spend.
+  delta        Int
+  // "monthly_grant" | "consume" | "purchase" | "admin_grant"
+  // | "coupon" | "expiry" | "adjustment"
+  kind         String
+  // Free-form context, eg "AI consultation #abc" or "Pro monthly allowance".
+  reason       String?
+  // Snapshot of wallet.balance immediately after this transaction was
+  // applied. Lets you reconstruct a balance timeline without summing the
+  // whole ledger.
+  balanceAfter Int
+  // For purchase grants. Credits expire on this date; the monthly job
+  // creates a negative "expiry" transaction when the deadline passes.
+  expiresAt    DateTime?
+  // Reference data (consultation id, coupon id, override id, etc.).
+  meta         Json?
+  createdAt    DateTime  @default(now())
+
+  @@index([businessId, createdAt])
+  @@index([businessId, kind])
+  @@index([expiresAt])
+}
+
+// Coupon definition. Codes are matched case-insensitively in the
+// billing library; admins can store them in any case.
+model Coupon {
+  id               String    @id @default(cuid())
+  code             String    @unique
+  // "percentage" | "fixed_amount" | "credits" | "trial_extension"
+  kind             String
+  // Interpretation depends on kind:
+  //   percentage         -> 0-100 (percent off)
+  //   fixed_amount       -> cents off (USD)
+  //   credits            -> credit count to grant on redemption
+  //   trial_extension    -> days of trial to add
+  value            Int
+  // Usage caps. Null = unlimited.
+  maxRedemptions   Int?
+  maxPerUser       Int?
+  usedCount        Int       @default(0)
+  // Validity window.
+  startsAt         DateTime?
+  expiresAt        DateTime?
+  // Plan restrictions. Empty arrays = no restriction.
+  applicablePlans  String[]  @default([])
+  excludedPlans    String[]  @default([])
+  // Billing-cycle behaviour for percentage / fixed_amount coupons.
+  // "first_payment" | "recurring_forever" | "limited_cycles" | null.
+  billingCycle     String?
+  // For "limited_cycles" only - number of cycles the discount applies.
+  cycleCount       Int?
+  // Targeting. Set any of these to restrict redemption.
+  targetEmail      String?
+  targetUserId     String?
+  targetUser       User?     @relation("CouponTargetUser", fields: [targetUserId], references: [id])
+  targetBusinessId String?
+  targetBusiness   Business? @relation("CouponTargetBusiness", fields: [targetBusinessId], references: [id])
+  // Admin metadata.
+  internalNote     String?
+  createdById      String
+  createdBy        User      @relation("CouponCreatedBy", fields: [createdById], references: [id])
+  // Soft-disable flag.
+  disabled         Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  redemptions CouponRedemption[]
+
+  @@index([code])
+  @@index([disabled, expiresAt])
+}
+
+model CouponRedemption {
+  id               String   @id @default(cuid())
+  couponId         String
+  coupon           Coupon   @relation(fields: [couponId], references: [id], onDelete: Cascade)
+  userId           String
+  user             User     @relation(fields: [userId], references: [id])
+  businessId       String
+  business         Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Snapshot of the redemption effect (so the audit trail survives the
+  // coupon being modified later).
+  discountAmount   Int? // cents - only set for percentage/fixed_amount
+  creditsGranted   Int? // only set for credits coupons
+  trialDaysGranted Int? // only set for trial_extension coupons
+  // Optional reference to the subscription this redemption applied to.
+  subscriptionId   String?
+  redeemedAt       DateTime @default(now())
+
+  @@unique([couponId, userId, businessId])
+  @@index([userId])
+  @@index([businessId])
 }
