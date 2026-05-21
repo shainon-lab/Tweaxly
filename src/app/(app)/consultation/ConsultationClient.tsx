@@ -411,6 +411,10 @@ export default function ConsultationClient({
           plan={credits.plan}
           costPerMessage={credits.costPerMessage}
           outOfCredits={outOfCredits}
+          onCreditsUpdated={(newBalance) => {
+            setCredits({ ...credits, balance: newBalance });
+            setOutOfCredits(null);
+          }}
         />
       ) : null}
 
@@ -765,13 +769,14 @@ const PLAN_LABEL: Record<string, string> = {
 };
 
 function CreditsWidget({
-  balance, monthlyAllowance, plan, costPerMessage, outOfCredits,
+  balance, monthlyAllowance, plan, costPerMessage, outOfCredits, onCreditsUpdated,
 }: {
   balance: number;
   monthlyAllowance: number;
   plan: string;
   costPerMessage: number;
   outOfCredits: { balance: number; needed: number; plan: string } | null;
+  onCreditsUpdated?: (newBalance: number) => void;
 }) {
   const pct = monthlyAllowance > 0
     ? Math.max(0, Math.min(100, Math.round((balance / monthlyAllowance) * 100)))
@@ -779,39 +784,115 @@ function CreditsWidget({
   const low = balance > 0 && balance < Math.max(5, costPerMessage * 2);
   const empty = outOfCredits != null || balance < costPerMessage;
 
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [code, setCode]             = useState("");
+  const [redeeming, setRedeeming]   = useState(false);
+  const [redeemMsg, setRedeemMsg]   = useState<{ ok: boolean; text: string } | null>(null);
+
+  async function submitCode() {
+    if (!code.trim()) return;
+    setRedeeming(true);
+    setRedeemMsg(null);
+    try {
+      const res = await fetch("/api/billing/coupons/redeem", {
+        method:  "POST",
+        headers: { "content-type": "application/json" },
+        body:    JSON.stringify({ code: code.trim() }),
+      });
+      const data = await res.json().catch(() => ({} as { message?: string; summary?: string; effect?: { creditsGranted?: number } }));
+      if (!res.ok || !data.ok) {
+        setRedeemMsg({ ok: false, text: data.message ?? "Couldn't apply that code." });
+        return;
+      }
+      setRedeemMsg({ ok: true, text: `${data.summary ?? "Coupon applied"} ✓` });
+      setCode("");
+      // For credit coupons, refresh the balance via the same endpoint
+      // the page uses on mount. Discount + trial coupons leave balance
+      // unchanged but the success message is still shown.
+      if (data.effect?.creditsGranted && onCreditsUpdated) {
+        const cr = await fetch("/api/billing/credits").then((r) => r.ok ? r.json() : null);
+        if (cr) onCreditsUpdated(cr.balance);
+      }
+    } finally {
+      setRedeeming(false);
+    }
+  }
+
   return (
-    <div className="card flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div className="min-w-0">
-        <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400 font-semibold">
-          <span className="pill text-[10px]">{PLAN_LABEL[plan] ?? plan}</span>
-          <span>AI Credits</span>
+    <div className="card">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
+          <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400 font-semibold">
+            <span className="pill text-[10px]">{PLAN_LABEL[plan] ?? plan}</span>
+            <span>AI Credits</span>
+          </div>
+          <div className="mt-2 flex items-baseline gap-3">
+            <span className={`text-2xl font-semibold ${empty ? "text-bad" : low ? "text-warn" : "text-white"}`}>
+              {balance.toLocaleString()}
+            </span>
+            <span className="text-xs text-slate-500">
+              of {monthlyAllowance.toLocaleString()} this month
+              {" · "}
+              {costPerMessage} credit{costPerMessage === 1 ? "" : "s"} per question
+            </span>
+          </div>
+          <div className="mt-2 h-1 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
+            <div
+              className={`h-full rounded-full ${empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"}`}
+              style={{ width: `${pct}%` }}
+              aria-hidden="true"
+            />
+          </div>
         </div>
-        <div className="mt-2 flex items-baseline gap-3">
-          <span className={`text-2xl font-semibold ${empty ? "text-bad" : low ? "text-warn" : "text-white"}`}>
-            {balance.toLocaleString()}
-          </span>
-          <span className="text-xs text-slate-500">
-            of {monthlyAllowance.toLocaleString()} this month
-            {" · "}
-            {costPerMessage} credit{costPerMessage === 1 ? "" : "s"} per question
-          </span>
-        </div>
-        <div className="mt-2 h-1 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
-          <div
-            className={`h-full rounded-full ${empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"}`}
-            style={{ width: `${pct}%` }}
-            aria-hidden="true"
-          />
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => { setRedeemOpen((v) => !v); setRedeemMsg(null) }}
+            className="text-xs text-slate-400 hover:text-slate-100 transition underline-offset-2 hover:underline"
+          >
+            Have a code?
+          </button>
+          {empty ? (
+            <a href="/pricing" className="btn-brand text-sm px-4 py-2 whitespace-nowrap">
+              Upgrade
+            </a>
+          ) : low ? (
+            <a href="/pricing" className="btn-ghost text-sm px-4 py-2 whitespace-nowrap">
+              See plans →
+            </a>
+          ) : null}
         </div>
       </div>
-      {empty ? (
-        <a href="/pricing" className="btn-brand text-sm px-4 py-2 shrink-0 whitespace-nowrap">
-          Upgrade for more credits
-        </a>
-      ) : low ? (
-        <a href="/pricing" className="btn-ghost text-sm px-4 py-2 shrink-0 whitespace-nowrap">
-          See plans →
-        </a>
+
+      {/* Redeem-code drawer. Inline so the user doesn't context-switch. */}
+      {redeemOpen ? (
+        <div className="mt-4 pt-4 border-t border-line/50">
+          <div className="flex items-center gap-2 flex-wrap">
+            <input
+              type="text"
+              className="input font-mono uppercase max-w-xs"
+              value={code}
+              onChange={(e) => setCode(e.target.value.toUpperCase())}
+              placeholder="ENTER PROMO CODE"
+              disabled={redeeming}
+              maxLength={64}
+              onKeyDown={(e) => { if (e.key === "Enter") submitCode() }}
+            />
+            <button
+              type="button"
+              onClick={submitCode}
+              disabled={redeeming || !code.trim()}
+              className="btn-primary text-sm px-4 py-2 rounded-md disabled:opacity-50"
+            >
+              {redeeming ? "Applying…" : "Apply"}
+            </button>
+            {redeemMsg ? (
+              <span className={`text-xs ${redeemMsg.ok ? "text-good" : "text-bad"}`}>
+                {redeemMsg.text}
+              </span>
+            ) : null}
+          </div>
+        </div>
       ) : null}
     </div>
   );

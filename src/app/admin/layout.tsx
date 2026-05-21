@@ -17,6 +17,7 @@ const NAV: { href: string; label: string }[] = [
   { href: "/admin/accounts",    label: "Accounts" },
   { href: "/admin/activity",    label: "Activity" },
   { href: "/admin/billing",     label: "Billing" },
+  { href: "/admin/coupons",     label: "Coupons" },
   { href: "/admin/support",     label: "Support" },
   { href: "/admin/data-health", label: "Data health" },
   { href: "/admin/system-logs", label: "System logs" },

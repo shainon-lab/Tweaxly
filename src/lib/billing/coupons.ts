@@ -124,8 +124,17 @@ export interface RedeemEffect {
   trialDaysGranted?: number;
 }
 
+export interface RedeemedCouponSnapshot {
+  id:            string;
+  code:          string;
+  kind:          string;
+  value:         number;
+  billingCycle:  string | null;
+  cycleCount:    number | null;
+}
+
 export type RedeemResult =
-  | { ok: true;  effect: RedeemEffect; redemptionId: string }
+  | { ok: true;  effect: RedeemEffect; redemptionId: string; coupon: RedeemedCouponSnapshot }
   | { ok: false; reason: CouponInvalidReason };
 
 export async function redeemCoupon(code: string, ctx: RedeemCouponContext): Promise<RedeemResult> {
@@ -174,7 +183,19 @@ export async function redeemCoupon(code: string, ctx: RedeemCouponContext): Prom
     return r;
   });
 
-  return { ok: true, effect, redemptionId: redemption.id };
+  return {
+    ok:           true,
+    effect,
+    redemptionId: redemption.id,
+    coupon: {
+      id:           coupon.id,
+      code:         coupon.code,
+      kind:         coupon.kind,
+      value:        coupon.value,
+      billingCycle: coupon.billingCycle ?? null,
+      cycleCount:   coupon.cycleCount   ?? null,
+    },
+  };
 }
 
 // Helper: format the human-readable summary of a coupon (used in
