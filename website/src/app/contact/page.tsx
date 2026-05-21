@@ -49,8 +49,8 @@ export default function ContactPage() {
 
         <div className="mt-8 text-xs text-slate-500 leading-relaxed">
           Prefer email? Write to{" "}
-          <a href="mailto:hello@tweaxly.com" className="text-brand-purple hover:underline">
-            hello@tweaxly.com
+          <a href="mailto:info@tweaxly.com" className="text-brand-purple hover:underline">
+            info@tweaxly.com
           </a>
           .
         </div>

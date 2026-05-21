@@ -238,7 +238,7 @@ const PRICING_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Is there an annual plan?",
-    a: "Annual billing is coming - typically saves around 20% on the monthly rate. If you'd like to start on annual today, email hello@tweaxly.com and we'll set it up manually.",
+    a: "Annual billing is coming - typically saves around 20% on the monthly rate. If you'd like to start on annual today, email info@tweaxly.com and we'll set it up manually.",
   },
   {
     q: "Can I try Pro or Business before paying?",

@@ -13,7 +13,10 @@ import { NextRequest, NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const TO_ADDRESS   = process.env.CONTACT_TO_EMAIL   ?? "hello@tweaxly.com";
+// info@tweaxly.com is the live operator inbox; set CONTACT_TO_EMAIL
+// in the Vercel env if you ever need to route contact form mail
+// somewhere else without a code change.
+const TO_ADDRESS   = process.env.CONTACT_TO_EMAIL   ?? "info@tweaxly.com";
 const FROM_ADDRESS = process.env.CONTACT_FROM_EMAIL ?? "no-reply@tweaxly.com";
 
 interface ContactBody {

@@ -147,7 +147,7 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
     items: [
       {
         q: "How much does Tweaxly cost?",
-        a: "Tweaxly is free during early access while we onboard the first cohort of business owners. Public pricing will be announced ahead of general availability and early-access users will have the option to lock in early-access terms. Email hello@tweaxly.com or sign up to be notified when plans go live.",
+        a: "Tweaxly is free during early access while we onboard the first cohort of business owners. Public pricing will be announced ahead of general availability and early-access users will have the option to lock in early-access terms. Email info@tweaxly.com or sign up to be notified when plans go live.",
       },
       {
         q: "Is my data secure in Tweaxly?",
