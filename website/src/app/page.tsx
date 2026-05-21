@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import BrandFlow from "@/components/BrandFlow";
+import BrandPhilosophy from "@/components/BrandPhilosophy";
 import { SignalDeckFull, SignalDeckHero } from "@/components/mocks/SignalDeck";
 import { ForecastChart } from "@/components/mocks/ForecastChart";
 import { ConsultationMock } from "@/components/mocks/Consultation";
@@ -57,12 +59,14 @@ export default function Home() {
       <Hero />
       <PositioningStrip />
       <PlainEnglishExplainer />
+      <BrandFlow />
       <SignalsSection />
       <ConsultationSection />
       <ForecastSection />
       <OverviewSection />
       <SeoUnifiedSection />
       <HowItWorks />
+      <BrandPhilosophy />
       <FinalCTA />
     </main>
   );
@@ -259,8 +263,9 @@ function SectionHeader({
 
 function SignalsSection() {
   return (
-    <section id="signals" className="container-wide py-24 lg:py-32">
-      <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+    <section id="signals" className="container-wide relative overflow-hidden py-24 lg:py-32">
+      <span aria-hidden="true" className="brand-backdrop-word">Evaluate</span>
+      <div className="relative z-10 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         <div className="lg:col-span-5">
           <SectionHeader
             eyebrow="Business Insights"
@@ -302,10 +307,11 @@ function ValueCell({ tone, label }: { tone: "bad" | "warn" | "purple" | "good"; 
 
 function ConsultationSection() {
   return (
-    <section id="advisory" className="relative py-24 lg:py-32">
+    <section id="advisory" className="relative overflow-hidden py-24 lg:py-32">
       {/* Section accent - purple glow behind */}
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_20%_50%,rgba(167,139,250,0.12),transparent_70%)] pointer-events-none" aria-hidden="true" />
-      <div className="container-wide relative grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+      <span aria-hidden="true" className="brand-backdrop-word">Lead</span>
+      <div className="container-wide relative z-10 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         <div className="lg:col-span-6 lg:order-2">
           <SectionHeader
             eyebrow="AI Financial Advisor"
@@ -340,8 +346,9 @@ function ConsultationSection() {
 
 function ForecastSection() {
   return (
-    <section id="forecast" className="container-wide py-24 lg:py-32">
-      <div className="grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+    <section id="forecast" className="container-wide relative overflow-hidden py-24 lg:py-32">
+      <span aria-hidden="true" className="brand-backdrop-word">Analyze</span>
+      <div className="relative z-10 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
         <div className="lg:col-span-5">
           <SectionHeader
             eyebrow="Financial Forecasting"
@@ -379,9 +386,10 @@ function ListBullet({ icon, children }: { icon: string; children: React.ReactNod
 
 function OverviewSection() {
   return (
-    <section id="overview" className="relative py-24 lg:py-32">
+    <section id="overview" className="relative overflow-hidden py-24 lg:py-32">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_40%_at_80%_50%,rgba(34,211,238,0.10),transparent_70%)] pointer-events-none" aria-hidden="true" />
-      <div className="container-wide relative">
+      <span aria-hidden="true" className="brand-backdrop-word">Track</span>
+      <div className="container-wide relative z-10">
         <div className="text-center max-w-2xl mx-auto mb-12">
           <div className="eyebrow mb-4">Executive Overview</div>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">

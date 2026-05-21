@@ -12,6 +12,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import BrandFlow from "@/components/BrandFlow";
 import { SignalDeckFull } from "@/components/mocks/SignalDeck";
 import { ForecastChart } from "@/components/mocks/ForecastChart";
 import { ConsultationMock } from "@/components/mocks/Consultation";
@@ -145,6 +146,11 @@ export default function FeaturesPage() {
       {CATEGORIES.map((c) => (
         <CategorySection key={c.id} category={c} />
       ))}
+
+      <BrandFlow
+        eyebrow="The methodology behind every feature"
+        headline="Six steps from raw financial data to better business outcomes."
+      />
 
       <FaqSection />
       <ComparisonLinks />
