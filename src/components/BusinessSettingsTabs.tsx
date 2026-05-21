@@ -52,6 +52,11 @@ const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: st
     tKey: "settings.tab.workspaces",
     activeWhen: (path) => path === "/settings/workspaces" || path.startsWith("/settings/workspaces/"),
   },
+  {
+    href: "/settings/billing",
+    tKey: "settings.tab.billing",
+    activeWhen: (path) => path === "/settings/billing" || path.startsWith("/settings/billing/"),
+  },
 ];
 
 export default function BusinessSettingsTabs() {

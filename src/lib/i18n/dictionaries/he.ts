@@ -113,6 +113,7 @@ export const he: Dictionary = {
   "settings.tab.transactions": "עסקאות",
   "settings.tab.dataLog": "יומן נתונים",
   "settings.tab.workspaces": "סביבות עבודה",
+  "settings.tab.billing":    "חיוב וקרדיטים",
 
   // ─── page headers ──────────────────────────────────────────────
   "page.dashboard.title": "סקירה",

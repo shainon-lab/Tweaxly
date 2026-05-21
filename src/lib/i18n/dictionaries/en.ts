@@ -132,6 +132,7 @@ export const en: Dictionary = {
   "settings.tab.transactions": "Transactions",
   "settings.tab.dataLog": "Data Log",
   "settings.tab.workspaces": "Workspaces",
+  "settings.tab.billing":    "Billing & Credits",
 
   // ─── page headers (per route) ──────────────────────────────────
   "page.dashboard.title": "Overview",
