@@ -152,6 +152,13 @@ export default function BusinessSwitcher({
                 Create new workspace
               </button>
               <Link
+                href="/workspaces"
+                onClick={() => setOpen(false)}
+                className="block w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-ink-700 hover:text-white transition border-t border-line"
+              >
+                All workspaces overview →
+              </Link>
+              <Link
                 href="/settings/workspaces"
                 onClick={() => setOpen(false)}
                 className="block w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-ink-700 hover:text-slate-100 transition border-t border-line"
