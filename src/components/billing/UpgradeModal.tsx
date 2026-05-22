@@ -35,7 +35,9 @@ interface UpgradeModalProps {
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro", business: "Business",
+  free: "Free", pro: "Pro",
+  // Legacy "business" rows roll up to Pro in the entitlements layer.
+  business: "Pro",
 };
 
 const DEFAULT_BENEFITS = [
@@ -43,7 +45,7 @@ const DEFAULT_BENEFITS = [
   "Full forecasting + Scenario Builder",
   "Export to Excel, CSV, PDF",
   "Multi-business, multi-user, team roles",
-  "500 AI Credits / month (Pro) · 2,000 (Business)",
+  "500 AI Credits / month - buy more anytime",
 ];
 
 export default function UpgradeModal({
@@ -154,7 +156,7 @@ export default function UpgradeModal({
             </Link>
           </div>
           <div className="mt-3 text-[11px] text-slate-500">
-            Business plan ($149/mo) adds teams, API access, priority AI processing + 2,000 credits/month.
+            Need more AI power? Buy credit packs anytime from Billing &amp; Credits - they add instantly.
           </div>
         </div>
       </div>

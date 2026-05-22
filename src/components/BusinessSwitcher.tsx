@@ -29,9 +29,12 @@ export type SwitcherWorkspace = {
 };
 
 const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
-  free:     { label: "Free",     cls: "border-line/60 text-slate-400 bg-ink-700/60" },
-  pro:      { label: "Pro",      cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
-  business: { label: "Business", cls: "border-brand-teal/40 text-brand-teal bg-brand-teal/10" },
+  free: { label: "Free", cls: "border-line/60 text-slate-400 bg-ink-700/60" },
+  pro:  { label: "Pro",  cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
+  // Legacy: any stored "business" plan rolls up to Pro in the
+  // entitlements layer; rendering it as Pro here keeps the UI in
+  // sync if a stale row hits the switcher before re-sync.
+  business: { label: "Pro", cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
 };
 
 export default function BusinessSwitcher({

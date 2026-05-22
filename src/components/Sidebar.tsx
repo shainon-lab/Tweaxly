@@ -255,7 +255,7 @@ function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
   const pct   = monthlyAllowance > 0
     ? Math.max(0, Math.min(100, Math.round((balance / monthlyAllowance) * 100)))
     : 0;
-  const planLabel = plan === "pro" ? "Pro" : plan === "business" ? "Business" : "Free";
+  const planLabel = plan === "pro" || plan === "business" ? "Pro" : "Free";
 
   return (
     <>

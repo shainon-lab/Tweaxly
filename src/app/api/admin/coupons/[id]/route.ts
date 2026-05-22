@@ -13,7 +13,7 @@ import { prisma } from "@/lib/db";
 import { requireAdminOrSuperApi } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
 
-const VALID_PLANS = ["free", "pro", "business"] as const;
+const VALID_PLANS = ["free", "pro"] as const;
 const VALID_CYCLES = ["first_payment", "recurring_forever", "limited_cycles"] as const;
 
 function asPlanArray(v: unknown): string[] {

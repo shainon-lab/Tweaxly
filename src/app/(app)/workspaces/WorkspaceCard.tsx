@@ -26,9 +26,10 @@ export interface WorkspaceCardData {
 }
 
 const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
-  free:     { label: "Free",     cls: "border-line/60 text-slate-400 bg-ink-700/60" },
-  pro:      { label: "Pro",      cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
-  business: { label: "Business", cls: "border-brand-teal/40 text-brand-teal bg-brand-teal/10" },
+  free: { label: "Free", cls: "border-line/60 text-slate-400 bg-ink-700/60" },
+  pro:  { label: "Pro",  cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
+  // Legacy: collapsed into Pro in the entitlements layer.
+  business: { label: "Pro", cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
 };
 
 export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {

@@ -4,11 +4,22 @@
 // and the admin UI all read from here - so changing a limit is a
 // one-line edit, not a sweep.
 
-export type PlanKey = "free" | "pro" | "business";
+export type PlanKey = "free" | "pro";
 
-export const PLAN_KEYS: readonly PlanKey[] = ["free", "pro", "business"] as const;
+export const PLAN_KEYS: readonly PlanKey[] = ["free", "pro"] as const;
 export function isPlanKey(v: unknown): v is PlanKey {
   return typeof v === "string" && (PLAN_KEYS as readonly string[]).includes(v);
+}
+
+// Legacy normalisation. The previous architecture had a third tier
+// ("business") that we collapsed into Pro - this helper maps any
+// stored "business" string on legacy Subscription / AdminPlanOverride
+// rows up to "pro" so the entitlements layer never sees a stale value.
+// Anything else unknown falls back to "free".
+export function normalizePlan(raw: unknown): PlanKey {
+  if (raw === "business") return "pro";
+  if (isPlanKey(raw)) return raw;
+  return "free";
 }
 
 // `"unlimited"` is the explicit sentinel for "no cap" - callers should
@@ -117,6 +128,11 @@ export const PLANS: Plan[] = [
     key:        "pro",
     label:      "Pro",
     priceCents: 4900,
+    // Pro is now the single premium tier. It absorbs every feature
+    // the previous Business plan had (team roles, audit logs, API
+    // access, advanced integrations) - the only scaling dimension
+    // above Pro is the AI Credit allowance, sold as packs from
+    // /settings/billing.
     limits: {
       businesses:       "unlimited",
       members:          "unlimited",
@@ -126,42 +142,6 @@ export const PLANS: Plan[] = [
       forecastMonths:   "unlimited",
       maxNotificationRules: "unlimited",
       monthlyAICredits: 500,
-      features: {
-        smartAlerts:            true,
-        advancedInsights:       true,
-        contextualConsultation: true,
-        scenarioBuilder:        true,
-        multiScenarioCompare:   true,
-        exportExcel:            true,
-        exportCsv:              true,
-        exportPdf:              true,
-        whitelabelReports:      false,
-        yearlyReports:          true,
-        multiBusiness:          true,
-        multiUser:              true,
-        teamRoles:              false,
-        advancedIntegrations:   false,
-        apiAccess:              false,
-        webhooks:               false,
-        priorityAI:             false,
-        auditLogs:              false,
-        dedicatedOnboarding:    false,
-      },
-    },
-  },
-  {
-    key:        "business",
-    label:      "Business",
-    priceCents: 14900,
-    limits: {
-      businesses:       "unlimited",
-      members:          "unlimited",
-      dataSources:      "unlimited",
-      historyDays:      "unlimited",
-      signalsPerMonth:  "unlimited",
-      forecastMonths:   "unlimited",
-      maxNotificationRules: "unlimited",
-      monthlyAICredits: 2000,
       features: {
         smartAlerts:            true,
         advancedInsights:       true,

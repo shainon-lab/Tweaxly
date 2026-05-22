@@ -48,9 +48,8 @@ interface SubscriptionPanelProps {
 }
 
 const PLAN_OPTIONS: { value: string; label: string }[] = [
-  { value: "free",     label: "Free" },
-  { value: "pro",      label: "Pro" },
-  { value: "business", label: "Business" },
+  { value: "free", label: "Free" },
+  { value: "pro",  label: "Pro" },
 ];
 
 const KIND_OPTIONS: { value: string; label: string; hint: string }[] = [
@@ -67,7 +66,10 @@ const SOURCE_LABEL: Record<SubscriptionPanelProps["effectiveSource"], string> = 
 };
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro", business: "Business",
+  free: "Free", pro: "Pro",
+  // Legacy override/sub rows: still rendered as Pro since that's
+  // what getEffectivePlan normalises them to.
+  business: "Pro",
 };
 
 export function SubscriptionPanel(props: SubscriptionPanelProps) {

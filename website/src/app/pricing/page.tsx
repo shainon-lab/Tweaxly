@@ -1,9 +1,13 @@
-// /pricing - public pricing surface for the Tweaxly freemium model.
-// Three tiers (Free / Pro / Business) with a clearly-separated AI
-// Credits axis, a full feature-comparison matrix, an AI Credits
-// explainer, dedicated FAQs, and Product + FAQPage + BreadcrumbList
-// JSON-LD. Built to read as a single document for both buyers and
-// AI engines that summarise pricing pages in chat.
+// /pricing - simplified 2-tier model (Free / Pro) with AI Credits
+// as the scaling layer. The previous 3-tier model (Free / Pro /
+// Business) was collapsed into a single premium tier; everything
+// that used to be Business-only is now in Pro, and the only thing
+// above Pro is purchasing additional AI Credit packs.
+//
+// Page sections: Hero · Two plan cards · Feature comparison ·
+// AI Credits explainer + add-on packs · FAQ · Comparison page
+// cross-links · Final CTA. Ships Product + FAQPage + BreadcrumbList
+// JSON-LD.
 
 import { Fragment } from "react";
 import type { Metadata } from "next";
@@ -15,9 +19,9 @@ const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const SITE_URL    = "https://tweaxly.com";
 
 const DESCRIPTION =
-  "Tweaxly pricing for AI business intelligence. Start free with 30 AI Credits and 90 days of history. Upgrade to Pro ($49/mo) for unlimited history, full forecasting and scenario planning, or Business ($149/mo) for teams, API access and priority AI processing.";
+  "Tweaxly pricing for AI business intelligence. Start free with 30 AI Credits and 90 days of history. Upgrade to Pro ($49/mo) for unlimited everything + 500 AI Credits/month. Buy more AI Credit packs anytime.";
 const OG_DESCRIPTION =
-  "Three plans. Start free with AI Credits included. Upgrade to Pro for forecasting + scenario planning or Business for teams and API access.";
+  "Two plans. Start free with AI Credits included. Upgrade to Pro for unlimited platform access, then buy AI Credit packs as you scale.";
 
 export const metadata: Metadata = {
   title: { absolute: "Tweaxly Pricing | AI Business Intelligence for SMBs" },
@@ -30,7 +34,6 @@ export const metadata: Metadata = {
     "AI financial forecasting cost",
     "small business BI subscription",
     "Tweaxly Pro plan",
-    "Tweaxly Business plan",
   ],
   alternates: { canonical: "/pricing" },
   openGraph: {
@@ -50,7 +53,7 @@ export const metadata: Metadata = {
 // Plans
 // ─────────────────────────────────────────────────────────────────────
 
-type PlanKey = "free" | "pro" | "business";
+type PlanKey = "free" | "pro";
 
 interface Plan {
   key:        PlanKey;
@@ -58,12 +61,12 @@ interface Plan {
   price:      string;
   period:     string;
   tagline:    string;
-  bullets:    string[];     // headline differentiators
-  credits:    string;       // monthly AI Credits, plain text
+  bullets:    string[];
+  credits:    string;
   ctaLabel:   string;
   ctaHref:    string;
-  ctaSub:     string;       // small line under the CTA
-  highlight?: boolean;      // visually emphasise the Pro tier
+  ctaSub:     string;
+  highlight?: boolean;
 }
 
 const PLANS: Plan[] = [
@@ -72,11 +75,11 @@ const PLANS: Plan[] = [
     name:     "Free",
     price:    "$0",
     period:   "forever",
-    tagline:  "Get your business intelligence layer up and running in 5 minutes.",
+    tagline:  "Connect your business and get instant AI insights - no credit card.",
     credits:  "30 AI Credits / month",
     bullets: [
-      "1 business, 1 user",
-      "1 data source (CSV, bank or card)",
+      "1 workspace, 1 user",
+      "1 connected data source (CSV, bank or card)",
       "90 days of visible history",
       "Up to 3 business signals per month",
       "Forecast up to 3 months ahead",
@@ -91,41 +94,21 @@ const PLANS: Plan[] = [
     name:      "Pro",
     price:     "$49",
     period:    "per month",
-    tagline:   "Unlimited history, full forecasting and the AI advisor at full power.",
-    credits:   "500 AI Credits / month",
+    tagline:   "Unlock the full platform - everything Tweaxly can do, in one premium plan.",
+    credits:   "500 AI Credits / month · buy more anytime",
     highlight: true,
     bullets: [
-      "Multiple businesses, multiple users",
-      "Unlimited connected data sources",
+      "Unlimited workspaces, team members + roles",
+      "Unlimited data sources + integrations",
       "Unlimited historical data",
       "Unlimited business signals + smart alerts",
-      "Full forecasting + Scenario Builder",
-      "Export reports to Excel, CSV, PDF",
-      "Multi-currency intelligence",
+      "Full forecasting + Scenario Builder + scenarios compare",
+      "Export to Excel, CSV, PDF (+ white-label)",
+      "Priority AI processing + audit logs + API access",
     ],
     ctaLabel: "Start Pro Free",
     ctaHref:  SIGNUP_URL,
     ctaSub:   "Start free, upgrade when ready",
-  },
-  {
-    key:      "business",
-    name:     "Business",
-    price:    "$149",
-    period:   "per month",
-    tagline:  "Teams, priority AI processing, API access and enterprise forecasting.",
-    credits:  "2,000 AI Credits / month",
-    bullets: [
-      "Everything in Pro",
-      "Team collaboration + role-based access",
-      "Priority AI processing",
-      "API access + webhooks",
-      "Advanced integrations",
-      "White-label reports",
-      "Audit logs + dedicated onboarding",
-    ],
-    ctaLabel: "Start Business Free",
-    ctaHref:  SIGNUP_URL,
-    ctaSub:   "Talk to us about annual or team plans",
   },
 ];
 
@@ -133,60 +116,55 @@ const PLANS: Plan[] = [
 // Feature matrix
 // ─────────────────────────────────────────────────────────────────────
 
-interface MatrixRow {
-  dimension: string;
-  free:      string;
-  pro:       string;
-  business:  string;
-}
+interface MatrixRow { dimension: string; free: string; pro: string }
 interface MatrixGroup { label: string; rows: MatrixRow[] }
 
 const MATRIX: MatrixGroup[] = [
   {
     label: "Workspace",
     rows: [
-      { dimension: "Businesses",     free: "1",              pro: "Multiple",   business: "Multiple" },
-      { dimension: "Team members",   free: "1",              pro: "Multiple",   business: "Team + roles" },
-      { dimension: "Data sources",   free: "1",              pro: "Unlimited",  business: "Unlimited + integrations" },
-      { dimension: "Historical data", free: "90 days",       pro: "Unlimited",  business: "Unlimited" },
+      { dimension: "Workspaces",       free: "1",        pro: "Unlimited" },
+      { dimension: "Team members",     free: "1",        pro: "Team + roles" },
+      { dimension: "Data sources",     free: "1",        pro: "Unlimited + integrations" },
+      { dimension: "Historical data",  free: "90 days",  pro: "Unlimited" },
     ],
   },
   {
     label: "AI & intelligence",
     rows: [
-      { dimension: "Included AI Credits / month", free: "30",        pro: "500",         business: "2,000" },
-      { dimension: "Business signals / month",    free: "Up to 3",   pro: "Unlimited",   business: "Unlimited" },
-      { dimension: "Smart alerts",                free: "—",         pro: "✓",           business: "✓" },
-      { dimension: "AI consultation",             free: "Basic",     pro: "Full",        business: "Priority processing" },
-      { dimension: "Action-oriented recommendations", free: "—",     pro: "✓",           business: "✓" },
+      { dimension: "Included AI Credits / month",     free: "30",        pro: "500 (+ packs)" },
+      { dimension: "Business signals / month",        free: "Up to 3",   pro: "Unlimited" },
+      { dimension: "Smart alerts",                    free: "—",         pro: "✓" },
+      { dimension: "AI consultation",                 free: "Basic",     pro: "Full + priority processing" },
+      { dimension: "Action-oriented recommendations", free: "—",         pro: "✓" },
     ],
   },
   {
     label: "Forecasting",
     rows: [
-      { dimension: "Forecast horizon",     free: "3 months",     pro: "Full",   business: "Enterprise" },
-      { dimension: "Scenario Builder",     free: "—",            pro: "✓",      business: "✓" },
-      { dimension: "Multi-scenario compare", free: "—",          pro: "✓",      business: "✓" },
+      { dimension: "Forecast horizon",      free: "3 months",  pro: "Unlimited" },
+      { dimension: "Scenario Builder",      free: "—",         pro: "✓" },
+      { dimension: "Multi-scenario compare", free: "—",        pro: "✓" },
     ],
   },
   {
     label: "Reports",
     rows: [
-      { dimension: "On-screen reports",   free: "✓",            pro: "✓",            business: "✓" },
-      { dimension: "Excel / CSV export",  free: "—",            pro: "✓",            business: "✓" },
-      { dimension: "PDF export",          free: "—",            pro: "✓",            business: "✓" },
-      { dimension: "White-label reports", free: "—",            pro: "—",            business: "✓" },
-      { dimension: "Audit logs",          free: "—",            pro: "—",            business: "✓" },
+      { dimension: "On-screen reports",    free: "✓",  pro: "✓" },
+      { dimension: "Excel / CSV export",   free: "—",  pro: "✓" },
+      { dimension: "PDF export",           free: "—",  pro: "✓" },
+      { dimension: "White-label reports",  free: "—",  pro: "✓" },
+      { dimension: "Audit logs",           free: "—",  pro: "✓" },
     ],
   },
   {
     label: "Integrations & access",
     rows: [
-      { dimension: "Basic integrations",   free: "✓",  pro: "✓",  business: "✓" },
-      { dimension: "Advanced integrations", free: "—", pro: "—",  business: "✓" },
-      { dimension: "API access",           free: "—",  pro: "—",  business: "✓" },
-      { dimension: "Webhooks",             free: "—",  pro: "—",  business: "✓" },
-      { dimension: "Dedicated onboarding", free: "—",  pro: "—",  business: "✓" },
+      { dimension: "Basic integrations",    free: "✓",  pro: "✓" },
+      { dimension: "Advanced integrations", free: "—",  pro: "✓" },
+      { dimension: "API access",            free: "—",  pro: "✓" },
+      { dimension: "Webhooks",              free: "—",  pro: "✓" },
+      { dimension: "Dedicated onboarding",  free: "—",  pro: "✓" },
     ],
   },
 ];
@@ -196,15 +174,16 @@ const MATRIX: MatrixGroup[] = [
 // ─────────────────────────────────────────────────────────────────────
 
 const CREDIT_COSTS: { action: string; cost: string }[] = [
-  { action: "Ask the AI advisor a question",       cost: "1 credit"   },
-  { action: "Deep business analysis on a signal",  cost: "3 credits"  },
-  { action: "Generate a fresh forecast",           cost: "5 credits"  },
-  { action: "Scenario builder run",                cost: "5 credits"  },
+  { action: "Ask the AI advisor a question",      cost: "1 credit" },
+  { action: "Deep business analysis on a signal", cost: "3 credits" },
+  { action: "Generate a fresh forecast",          cost: "5 credits" },
+  { action: "Scenario builder run",               cost: "5 credits" },
 ];
 
 const CREDIT_PACKS: { pack: string; price: string }[] = [
-  { pack: "+100 AI Credits", price: "$19" },
-  { pack: "+500 AI Credits", price: "$79" },
+  { pack: "+100 AI Credits",   price: "$19" },
+  { pack: "+500 AI Credits",   price: "$79" },
+  { pack: "+2,000 AI Credits", price: "$249" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────
@@ -214,35 +193,35 @@ const CREDIT_PACKS: { pack: string; price: string }[] = [
 const PRICING_FAQS: { q: string; a: string }[] = [
   {
     q: "Is the Free plan really free?",
-    a: "Yes. The Free plan is free forever - no credit card required to sign up. You get one business, one user, 30 AI Credits per month, 90 days of visible history, and the core signals, forecasts and AI advisor at the levels listed above. Upgrade only when you need more.",
+    a: "Yes. The Free plan is free forever - no credit card required to sign up. You get one workspace, one user, 30 AI Credits per month, 90 days of visible history, and the core signals, forecasts and AI advisor at the levels listed above. Upgrade only when you need more.",
   },
   {
     q: "What is an AI Credit?",
-    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Every plan includes a monthly allowance, and you can buy more anytime.",
+    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free includes 30/month, Pro includes 500/month, and you can buy add-on packs anytime.",
   },
   {
     q: "What happens when I run out of AI Credits?",
-    a: "Your business data, dashboards, signals and forecasts remain fully available. AI-powered features (the advisor, deep analysis, fresh forecast runs) are paused until credits renew at the start of your next month - or until you buy a credit pack, which is added instantly.",
+    a: "Your workspace data, dashboards, signals and forecasts remain fully available. AI-powered features (the advisor, deep analysis, fresh forecast runs) are paused until credits renew at the start of your next month - or until you buy a credit pack, which is added instantly.",
   },
   {
     q: "Do AI Credits roll over month to month?",
-    a: "Not by default. Plan credits reset at the start of each billing cycle. Credits you buy as add-on packs are separate - they expire 12 months after purchase, not at the end of the month.",
+    a: "Plan credits reset at the start of each billing cycle. Credits you buy as add-on packs are separate - they expire 12 months after purchase, not at the end of the month.",
   },
   {
-    q: "Can I buy more AI Credits without upgrading my plan?",
-    a: "Yes. Credit packs (+100 for $19, +500 for $79) are available on every plan and add immediately. They're useful for occasional heavy-analysis months - you don't have to commit to a higher tier if you only need it for a quarter.",
+    q: "Can I buy more AI Credits without upgrading?",
+    a: "Yes. Credit packs (+100 for $19, +500 for $79, +2,000 for $249) are available on every plan and add immediately. Useful for occasional heavy-analysis months without committing to a different plan.",
   },
   {
     q: "What happens if I downgrade or cancel?",
-    a: "Your data is never deleted. You move to read-only mode: dashboards, past reports and historical signals stay visible. New AI consultation, forecast updates, uploads and advanced reports pause until you reactivate. Re-subscribe and everything resumes where it left off.",
+    a: "Your data is never deleted. The workspace moves to read-only mode: dashboards, past reports and historical signals stay visible. New AI consultation, forecast updates, uploads and advanced reports pause until you reactivate. Re-subscribe and everything resumes where it left off.",
   },
   {
     q: "Is there an annual plan?",
     a: "Annual billing is coming - typically saves around 20% on the monthly rate. If you'd like to start on annual today, email info@tweaxly.com and we'll set it up manually.",
   },
   {
-    q: "Can I try Pro or Business before paying?",
-    a: "Yes - sign up for Free, then start a Pro or Business plan free during early access (no credit card required at signup). When public pricing goes live, early-access users will have the option to lock in early-access terms.",
+    q: "Each workspace is its own plan - what does that mean?",
+    a: "If you run multiple businesses, every workspace has its own subscription and its own AI Credits. Upgrading workspace A to Pro doesn't change workspace B - they're independent. Useful for accountants, consultants and multi-business owners who want different tiers per business.",
   },
 ];
 
@@ -251,8 +230,6 @@ const PRICING_FAQS: { q: string; a: string }[] = [
 // ─────────────────────────────────────────────────────────────────────
 
 function PricingStructuredData() {
-  // One Product schema per paid plan + the Free plan as a separate
-  // Product. priceCurrency USD, monthly billing.
   const products = PLANS.map((p) => ({
     "@context": "https://schema.org",
     "@type":    "Product",
@@ -301,11 +278,7 @@ function PricingStructuredData() {
   return (
     <>
       {products.map((p, i) => (
-        <script
-          key={i}
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(p) }}
-        />
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(p) }} />
       ))}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqPage) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
@@ -352,12 +325,11 @@ function Hero() {
       <div className="eyebrow mb-4">Pricing</div>
       <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
         Start free.{" "}
-        <span className="gradient-text">Upgrade when ready.</span>
+        <span className="gradient-text">Upgrade to Pro when ready.</span>
       </h1>
       <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl">
-        Three plans. AI Credits included on every tier. No credit card to
-        start - you only pay when you need more history, more team members,
-        more forecasts or more AI processing.
+        Two plans. AI Credits included on both. Buy more credits anytime
+        as your AI usage grows - no need to jump tiers.
       </p>
       <div className="mt-6 flex items-center gap-2 text-xs text-slate-500">
         <span className="w-1.5 h-1.5 rounded-full bg-good" />
@@ -370,10 +342,8 @@ function Hero() {
 function PlanCards() {
   return (
     <section className="container-wide pb-12 lg:pb-16">
-      <div className="grid lg:grid-cols-3 gap-5 lg:gap-6">
-        {PLANS.map((p) => (
-          <PlanCard key={p.key} plan={p} />
-        ))}
+      <div className="grid sm:grid-cols-2 gap-5 lg:gap-6 max-w-4xl">
+        {PLANS.map((p) => <PlanCard key={p.key} plan={p} />)}
       </div>
     </section>
   );
@@ -392,7 +362,7 @@ function PlanCard({ plan }: { plan: Plan }) {
           <h2 className="text-xl font-semibold text-white">{plan.name}</h2>
           {plan.highlight ? (
             <span className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold">
-              Most popular
+              Recommended
             </span>
           ) : null}
         </div>
@@ -437,13 +407,10 @@ function PlanCard({ plan }: { plan: Plan }) {
 
 function CheckGlyph() {
   return (
-    <svg
-      width="14" height="14" viewBox="0 0 24 24" fill="none"
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"
       stroke="currentColor" strokeWidth="2.4"
       strokeLinecap="round" strokeLinejoin="round"
-      className="text-good shrink-0 mt-0.5"
-      aria-hidden="true"
-    >
+      className="text-good shrink-0 mt-0.5" aria-hidden="true">
       <path d="M5 12l5 5 9-11" />
     </svg>
   );
@@ -465,10 +432,9 @@ function FeatureMatrix() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-ink-900/80 text-left text-[11px] uppercase tracking-[0.16em] text-slate-400">
-              <th scope="col" className="px-5 py-4 font-semibold border-b border-line w-1/3">Capability</th>
+              <th scope="col" className="px-5 py-4 font-semibold border-b border-line w-1/2">Capability</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Free</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line text-brand-purple">Pro</th>
-              <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Business</th>
             </tr>
           </thead>
           <tbody>
@@ -477,7 +443,7 @@ function FeatureMatrix() {
                 <tr className="bg-ink-950/40">
                   <th
                     scope="rowgroup"
-                    colSpan={4}
+                    colSpan={3}
                     className="px-5 pt-5 pb-2 text-left text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold"
                   >
                     {group.label}
@@ -493,9 +459,6 @@ function FeatureMatrix() {
                     </td>
                     <td className="px-5 py-3 align-top text-slate-100 border-b border-line/40">
                       {row.pro === "✓" ? <CheckGlyph /> : row.pro === "—" ? <span className="text-slate-600">—</span> : row.pro}
-                    </td>
-                    <td className="px-5 py-3 align-top text-slate-300 border-b border-line/40">
-                      {row.business === "✓" ? <CheckGlyph /> : row.business === "—" ? <span className="text-slate-600">—</span> : row.business}
                     </td>
                   </tr>
                 ))}
@@ -526,8 +489,8 @@ function AICreditsExplainer() {
             added instantly and expire 12 months after purchase.
           </p>
           <p className="mt-3 text-sm text-slate-500 leading-relaxed">
-            Plan credits reset at the start of each billing cycle. Add-on
-            credit packs do not.
+            Need more AI power without changing plans? Buy a credit pack.
+            That&apos;s the scaling layer - no extra tiers to figure out.
           </p>
         </div>
 
@@ -559,8 +522,7 @@ function AICreditsExplainer() {
               ))}
             </ul>
             <div className="mt-4 text-xs text-slate-500 leading-relaxed">
-              Available on every plan. Added instantly. Expire 12 months
-              after purchase.
+              Available on every plan. Added instantly. Expire 12 months after purchase.
             </div>
           </div>
         </div>
@@ -656,7 +618,7 @@ function FinalCta() {
           <Link href="/features" className="btn-ghost text-base px-6 py-3">See all features →</Link>
         </div>
         <div className="mt-4 text-xs text-slate-500">
-          Pro $49/mo · Business $149/mo · AI Credits included on every plan
+          Pro $49/mo · 500 AI Credits included · Buy more credits anytime
         </div>
       </div>
     </section>

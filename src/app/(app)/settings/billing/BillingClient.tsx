@@ -48,7 +48,9 @@ interface BillingClientProps {
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro", business: "Business",
+  free: "Free", pro: "Pro",
+  // Legacy "business" rows roll up to Pro in the entitlements layer.
+  business: "Pro",
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -139,18 +141,18 @@ export function BillingClient(props: BillingClientProps) {
               )}
             </div>
           </div>
-          {props.plan !== "business" ? (
+          {props.plan === "free" ? (
             <a
               href="/pricing"
               className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
             >
-              {props.plan === "free" ? "Upgrade to Pro" : "Upgrade to Business"}
+              Upgrade to Pro
             </a>
           ) : null}
         </div>
 
         {/* Compare plans inline so the user has the quick view */}
-        <div className="mt-5 pt-5 border-t border-line/50 grid sm:grid-cols-3 gap-3">
+        <div className="mt-5 pt-5 border-t border-line/50 grid sm:grid-cols-2 gap-3">
           {props.availablePlans.map((p) => (
             <div
               key={p.key}

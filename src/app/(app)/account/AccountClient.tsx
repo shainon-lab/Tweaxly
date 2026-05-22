@@ -86,7 +86,9 @@ export default function AccountClient({
 // and links over rather than duplicating.
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro", business: "Business",
+  free: "Free", pro: "Pro",
+  // Legacy "business" rows roll up to Pro in the entitlements layer.
+  business: "Pro",
 };
 
 function BillingPane() {
@@ -145,12 +147,8 @@ function BillingPane() {
           {info?.readOnly
             ? "This workspace is in read-only mode. Reactivate from Billing & Credits to resume AI consultation, uploads and exports."
             : info?.plan === "free"
-              ? "You're on the Free plan: 1 business, 90 days history, 30 AI Credits per month, up to 3 business signals per month. Upgrade for unlimited."
-              : info?.plan === "pro"
-                ? "You're on the Pro plan: unlimited businesses, history, signals + full forecasting + Scenario Builder + exports + 500 AI Credits per month."
-                : info?.plan === "business"
-                  ? "You're on the Business plan: everything on Pro, plus teams, priority AI processing, API access, audit logs + 2,000 AI Credits per month."
-                  : ""}
+              ? "You're on the Free plan: 1 business, 90 days history, up to 3 business signals per month, 30 AI Credits per month. Upgrade to Pro for unlimited everything."
+              : "You're on the Pro plan: unlimited businesses, history, signals + full forecasting + Scenario Builder + team members + exports + 500 AI Credits per month. Buy more AI Credits anytime."}
         </div>
       </div>
       <div className="flex items-center gap-3 flex-wrap">
@@ -165,7 +163,7 @@ function BillingPane() {
             href="/settings/billing"
             className="text-sm px-4 py-1.5 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
           >
-            See Pro &amp; Business plans
+            See Pro plan + AI Credit packs
           </Link>
         ) : null}
       </div>

@@ -12,7 +12,7 @@ import { prisma } from "@/lib/db";
 import {
   PLANS, getPlanLimits,
   type PlanKey, type PlanLimits, type PlanFeatures,
-  isPlanKey,
+  normalizePlan,
 } from "./plans";
 
 export interface EffectivePlan {
@@ -49,9 +49,12 @@ export async function getEffectivePlan(businessId: string): Promise<EffectivePla
     },
     orderBy: { createdAt: "desc" },
   });
-  if (override && isPlanKey(override.plan)) {
+  if (override) {
+    // Legacy "business" rows normalise up to Pro - the tier was
+    // collapsed when we moved to the 2-plan model.
+    const plan = normalizePlan(override.plan);
     return {
-      plan:         override.plan,
+      plan,
       source:       "override",
       overrideId:   override.id,
       overrideKind: override.kind,
@@ -64,12 +67,13 @@ export async function getEffectivePlan(businessId: string): Promise<EffectivePla
     where: { businessId },
     orderBy: { createdAt: "desc" },
   });
-  if (sub && isPlanKey(sub.plan)) {
+  if (sub) {
+    const plan = normalizePlan(sub.plan);
     const activeLike = (ACTIVE_SUB_STATUSES as readonly string[]).includes(sub.status);
     const readOnlyLike = (READ_ONLY_SUB_STATUSES as readonly string[]).includes(sub.status);
     if (activeLike) {
       return {
-        plan:               sub.plan,
+        plan,
         source:             "subscription",
         subscriptionId:     sub.id,
         currentPeriodEnd:   sub.currentPeriodEnd,
@@ -81,7 +85,7 @@ export async function getEffectivePlan(businessId: string): Promise<EffectivePla
       // Plan stays the same so dashboards still render, but caller
       // sees readOnly=true and gates writes/AI accordingly.
       return {
-        plan:               sub.plan,
+        plan,
         source:             "subscription",
         subscriptionId:     sub.id,
         currentPeriodEnd:   sub.currentPeriodEnd,

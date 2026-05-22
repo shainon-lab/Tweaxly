@@ -11,13 +11,15 @@ import Link from "next/link";
 interface UsageModalProps {
   open:              boolean;
   onClose:           () => void;
-  plan:              string;   // "free" | "pro" | "business"
+  plan:              string;   // "free" | "pro" (legacy "business" → Pro)
   balance:           number;
   monthlyAllowance:  number;
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro", business: "Business",
+  free: "Free", pro: "Pro",
+  // Legacy "business" rows roll up to Pro in the entitlements layer.
+  business: "Pro",
 };
 
 // Static plan-limit reference. Kept in sync with src/lib/billing/plans.ts;
@@ -39,25 +41,12 @@ const LIMITS = {
   },
   pro: {
     businesses:        "Unlimited",
-    members:           "Unlimited",
+    members:           "Team + roles",
     dataSources:       "Unlimited",
     historyDays:       "Unlimited",
     signalsPerMonth:   "Unlimited",
     forecastMonths:    "Unlimited",
     aiCredits:         500,
-    scenarioBuilder:   true,
-    exports:           true,
-    smartAlerts:       true,
-    apiAccess:         false,
-  },
-  business: {
-    businesses:        "Unlimited",
-    members:           "Team + roles",
-    dataSources:       "Unlimited",
-    historyDays:       "Unlimited",
-    signalsPerMonth:   "Unlimited",
-    forecastMonths:    "Enterprise",
-    aiCredits:         2000,
     scenarioBuilder:   true,
     exports:           true,
     smartAlerts:       true,
@@ -68,7 +57,7 @@ const LIMITS = {
 type PlanKey = keyof typeof LIMITS;
 
 function isPlan(p: string): p is PlanKey {
-  return p === "free" || p === "pro" || p === "business";
+  return p === "free" || p === "pro";
 }
 
 export default function UsageModal({
@@ -89,13 +78,13 @@ export default function UsageModal({
 
   if (!open) return null;
 
-  const safePlan: PlanKey = isPlan(plan) ? plan : "free";
+  // Treat any unknown plan string (including legacy "business") as
+  // Pro - the entitlements layer normalises the same way.
+  const safePlan: PlanKey = isPlan(plan) ? plan : (plan === "business" ? "pro" : "free");
   const current = LIMITS[safePlan];
-  // Highlight the "next tier" in the comparison.
-  const nextTier: PlanKey | null =
-    safePlan === "free" ? "pro" :
-    safePlan === "pro"  ? "business" :
-    null;
+  // Only one possible upgrade target now (Free → Pro). Pro users
+  // see no comparison; they get a "Buy more credits" prompt instead.
+  const nextTier: PlanKey | null = safePlan === "free" ? "pro" : null;
   const next = nextTier ? LIMITS[nextTier] : null;
   const usedPct = monthlyAllowance > 0
     ? Math.max(0, Math.min(100, Math.round(((monthlyAllowance - balance) / monthlyAllowance) * 100)))
@@ -187,9 +176,8 @@ export default function UsageModal({
               <ComparisonRow label="Scenario Builder"      cur={current.scenarioBuilder}   next={next.scenarioBuilder} />
               <ComparisonRow label="Excel / CSV / PDF export" cur={current.exports}        next={next.exports} />
               <ComparisonRow label="Smart alerts"          cur={current.smartAlerts}       next={next.smartAlerts} />
-              {nextTier === "business" ? (
-                <ComparisonRow label="API access + webhooks" cur={current.apiAccess}       next={next.apiAccess} />
-              ) : null}
+              <ComparisonRow label="Team members + roles"  cur={current.members}           next={next.members} />
+              <ComparisonRow label="API access + webhooks" cur={current.apiAccess}         next={next.apiAccess} />
             </div>
           ) : null}
 
@@ -201,9 +189,7 @@ export default function UsageModal({
                 onClick={onClose}
                 className="btn-primary text-sm px-4 py-2 rounded-md"
               >
-                {safePlan === "free"
-                  ? "Upgrade this workspace to Pro · $49/mo"
-                  : "Upgrade this workspace to Business · $149/mo"}
+                Upgrade this workspace to Pro · $49/mo
               </Link>
             ) : null}
             <Link
@@ -211,7 +197,7 @@ export default function UsageModal({
               onClick={onClose}
               className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
             >
-              Buy credits for this workspace
+              Buy more AI Credits
             </Link>
           </div>
           <div className="mt-3 text-[11px] text-slate-500">

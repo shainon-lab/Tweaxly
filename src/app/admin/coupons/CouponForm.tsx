@@ -46,9 +46,8 @@ const BILLING_CYCLES: { value: string; label: string }[] = [
 ];
 
 const PLAN_OPTIONS: { value: string; label: string }[] = [
-  { value: "free",     label: "Free" },
-  { value: "pro",      label: "Pro" },
-  { value: "business", label: "Business" },
+  { value: "free", label: "Free" },
+  { value: "pro",  label: "Pro" },
 ];
 
 export function CouponForm({ mode, initial }: CouponFormProps) {
