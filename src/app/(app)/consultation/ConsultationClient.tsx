@@ -824,16 +824,16 @@ function CreditsWidget({
         <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs uppercase tracking-[0.16em] text-slate-400 font-semibold">
             <span className="pill text-[10px]">{PLAN_LABEL[plan] ?? plan}</span>
-            <span>AI Credits</span>
+            <span>{plan === "free" ? "Starter AI Credits" : "AI Credits"}</span>
           </div>
           <div className="mt-2 flex items-baseline gap-3">
             <span className={`text-2xl font-semibold ${empty ? "text-bad" : low ? "text-warn" : "text-white"}`}>
               {balance.toLocaleString()}
             </span>
             <span className="text-xs text-slate-500">
-              of {monthlyAllowance.toLocaleString()} this month
-              {" · "}
-              {costPerMessage} credit{costPerMessage === 1 ? "" : "s"} per question
+              {plan === "free"
+                ? <>starter credits remaining{" · "}{costPerMessage} per question</>
+                : <>of {monthlyAllowance.toLocaleString()} this month{" · "}{costPerMessage} per question</>}
             </span>
           </div>
           <div className="mt-2 h-1 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
@@ -853,12 +853,12 @@ function CreditsWidget({
             Have a code?
           </button>
           {empty ? (
-            <a href="/pricing" className="btn-brand text-sm px-4 py-2 whitespace-nowrap">
-              Upgrade
+            <a href="/settings/billing" className="btn-brand text-sm px-4 py-2 whitespace-nowrap">
+              {plan === "free" ? "Upgrade to Pro" : "Buy more credits"}
             </a>
           ) : low ? (
-            <a href="/pricing" className="btn-ghost text-sm px-4 py-2 whitespace-nowrap">
-              See plans →
+            <a href="/settings/billing" className="btn-ghost text-sm px-4 py-2 whitespace-nowrap">
+              {plan === "free" ? "Upgrade to Pro →" : "Buy more credits →"}
             </a>
           ) : null}
         </div>

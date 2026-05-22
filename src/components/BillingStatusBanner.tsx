@@ -43,10 +43,11 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
     );
   }
 
-  // Free tier + zero balance is the next-most-important banner.
-  // Pro/Business with low balance also gets a softer notice. We
-  // deliberately don't fire on every low balance - only when the
-  // user can no longer ask the AI advisor a single question.
+  // Free tier + zero balance: starter credits are a one-time grant,
+  // so the message is "onboarding complete, upgrade to keep going"
+  // rather than "wait for monthly reset". Upgrade is the only path
+  // forward - we deliberately never surface a "Buy more credits" CTA
+  // on Free (subscription is the monetization layer).
   if (balance <= 0 && plan === "free") {
     return (
       <div className="border-b border-accent/40 bg-accent-soft/20 px-4 sm:px-6 lg:px-8 py-2.5">
@@ -55,13 +56,13 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
             Free
           </span>
           <span className="flex-1 min-w-0 text-slate-200">
-            This workspace has used its monthly AI Credits. Upgrade just this workspace to Pro for 500 credits/month, or grab a credit pack - other workspaces are unaffected.
+            You&apos;ve used all your starter AI Credits on this workspace. Upgrade to Pro to receive 500 AI Credits every month + the ability to buy more anytime.
           </span>
           <Link
             href="/settings/billing"
             className="text-xs font-semibold px-3 py-1 rounded-md border border-accent/60 text-accent hover:bg-accent-soft hover:border-accent transition whitespace-nowrap"
           >
-            See plans →
+            Upgrade to Pro →
           </Link>
         </div>
       </div>

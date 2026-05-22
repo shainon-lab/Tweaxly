@@ -75,8 +75,8 @@ const PLANS: Plan[] = [
     name:     "Free",
     price:    "$0",
     period:   "forever",
-    tagline:  "Connect your business and get instant AI insights - no credit card.",
-    credits:  "30 AI Credits / month",
+    tagline:  "Connect your business and experience AI-powered insights. Starter credits included.",
+    credits:  "30 starter AI Credits (one-time)",
     bullets: [
       "1 workspace, 1 user",
       "1 connected data source (CSV, bank or card)",
@@ -132,7 +132,7 @@ const MATRIX: MatrixGroup[] = [
   {
     label: "AI & intelligence",
     rows: [
-      { dimension: "Included AI Credits / month",     free: "30",        pro: "500 (+ packs)" },
+      { dimension: "Included AI Credits",             free: "30 (starter, one-time)", pro: "500 / month (+ packs)" },
       { dimension: "Business signals / month",        free: "Up to 3",   pro: "Unlimited" },
       { dimension: "Smart alerts",                    free: "—",         pro: "✓" },
       { dimension: "AI consultation",                 free: "Basic",     pro: "Full + priority processing" },
@@ -193,23 +193,23 @@ const CREDIT_PACKS: { pack: string; price: string }[] = [
 const PRICING_FAQS: { q: string; a: string }[] = [
   {
     q: "Is the Free plan really free?",
-    a: "Yes. The Free plan is free forever - no credit card required to sign up. You get one workspace, one user, 30 AI Credits per month, 90 days of visible history, and the core signals, forecasts and AI advisor at the levels listed above. Upgrade only when you need more.",
+    a: "Yes. The Free plan is free forever - no credit card required. You get one workspace, one user, 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Upgrade to Pro when you're ready to use AI continuously.",
   },
   {
     q: "What is an AI Credit?",
-    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free includes 30/month, Pro includes 500/month, and you can buy add-on packs anytime.",
+    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 500 credits every month plus the ability to buy more anytime.",
   },
   {
-    q: "What happens when I run out of AI Credits?",
-    a: "Your workspace data, dashboards, signals and forecasts remain fully available. AI-powered features (the advisor, deep analysis, fresh forecast runs) are paused until credits renew at the start of your next month - or until you buy a credit pack, which is added instantly.",
+    q: "What happens when my starter credits run out on Free?",
+    a: "Your workspace data, dashboards, past reports and historical signals remain fully available. AI-powered features (the advisor, deep analysis, fresh forecast runs) pause - starter credits are a one-time onboarding grant on Free workspaces, not a recurring monthly allowance. Upgrade to Pro to continue using AI continuously with 500 monthly credits + add-on packs.",
   },
   {
-    q: "Do AI Credits roll over month to month?",
-    a: "Plan credits reset at the start of each billing cycle. Credits you buy as add-on packs are separate - they expire 12 months after purchase, not at the end of the month.",
+    q: "What happens when I run out of AI Credits on Pro?",
+    a: "Your Pro monthly allowance resets at the start of each billing cycle. If you need more this month, buy an add-on credit pack from Billing & Credits - they're added instantly and expire 12 months after purchase.",
   },
   {
-    q: "Can I buy more AI Credits without upgrading?",
-    a: "Yes. Credit packs (+100 for $19, +500 for $79, +2,000 for $249) are available on every plan and add immediately. Useful for occasional heavy-analysis months without committing to a different plan.",
+    q: "Can Free users buy more AI Credits?",
+    a: "No. Buying add-on AI Credits is a Pro feature. On Free workspaces, the starter grant is a one-time experience - if you want to keep using the AI, upgrade to Pro for 500 monthly credits + the ability to buy packs anytime.",
   },
   {
     q: "What happens if I downgrade or cancel?",

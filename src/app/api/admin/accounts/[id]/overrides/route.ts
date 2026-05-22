@@ -16,7 +16,9 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireAdminOrSuperApi } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
-import { grantCredits, isPlanKey } from "@/lib/billing";
+import {
+  grantCredits, isPlanKey, applyMonthlyAllowance, getPlanLimits,
+} from "@/lib/billing";
 
 const VALID_KINDS = ["full_paid", "trial_extension", "unlimited_credits", "custom"] as const;
 
@@ -81,6 +83,16 @@ export async function POST(req: Request, { params }: { params: { id: string } })
       reason: `Override grant by admin (${kind})`,
       meta:   { overrideId: override.id, adminUserId: auth.user.id },
     });
+  }
+
+  // If this override moves the workspace onto a plan with a recurring
+  // monthly allowance (Pro), grant that allowance now so the user
+  // doesn't have to wait until next month's cron to feel the upgrade.
+  // applyMonthlyAllowance also stamps the current period - keeps the
+  // ensureMonthlyAllowance month-rollover check honest going forward.
+  const newPlanLimits = getPlanLimits(body.plan);
+  if (newPlanLimits.monthlyAICredits > 0) {
+    await applyMonthlyAllowance(business.id);
   }
 
   await recordAudit({

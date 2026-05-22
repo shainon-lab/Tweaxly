@@ -47,9 +47,12 @@ export async function POST(req: NextRequest) {
   const cost = CREDIT_COSTS.consultationMessage;
   const spent = await consumeCredits(business.id, cost, "AI consultation", { source: "consultation_api" });
   if (!spent.ok) {
+    const message = eff.plan === "free"
+      ? "You've used all your starter AI Credits. Upgrade to Pro to continue using AI-powered consultations, forecasting and advanced intelligence."
+      : "You've run out of AI Credits this month. Buy more credits anytime - they're added instantly.";
     return NextResponse.json({
       error:    "insufficient_credits",
-      message:  "You've run out of AI Credits this month. Upgrade your plan or buy a credit pack to keep consulting.",
+      message,
       balance:  spent.balance,
       needed:   cost,
       plan:     eff.plan,

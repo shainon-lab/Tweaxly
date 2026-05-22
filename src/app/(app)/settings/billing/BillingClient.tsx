@@ -83,8 +83,12 @@ function fmtDate(iso: string): string {
 export function BillingClient(props: BillingClientProps) {
   const router = useRouter();
   const [, startTransition] = useTransition();
-  const pct = props.monthlyAllowance > 0
-    ? Math.max(0, Math.min(100, Math.round((props.walletBalance / props.monthlyAllowance) * 100)))
+  // Free workspaces show a one-time starter denominator (lifetimeGranted)
+  // since their monthlyAllowance is 0. Pro shows the recurring monthly
+  // allowance. Either way pct = current / denom.
+  const denominator = props.monthlyAllowance > 0 ? props.monthlyAllowance : props.lifetimeGranted;
+  const pct = denominator > 0
+    ? Math.max(0, Math.min(100, Math.round((props.walletBalance / denominator) * 100)))
     : 0;
 
   // Redeem code state
@@ -180,11 +184,15 @@ export function BillingClient(props: BillingClientProps) {
       <section className="card">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">AI Credits</div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+              {props.plan === "free" ? "Starter AI Credits" : "AI Credits"}
+            </div>
             <div className="mt-2 flex items-baseline gap-3">
               <span className="text-3xl font-semibold text-white tabular-nums">{props.walletBalance.toLocaleString()}</span>
               <span className="text-sm text-slate-500">
-                of {props.monthlyAllowance.toLocaleString()} this month
+                {props.plan === "free"
+                  ? <>of {denominator.toLocaleString()} starter credits</>
+                  : <>of {props.monthlyAllowance.toLocaleString()} this month</>}
               </span>
             </div>
             <div className="mt-3 h-1.5 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
@@ -195,9 +203,18 @@ export function BillingClient(props: BillingClientProps) {
               />
             </div>
             <div className="mt-3 text-xs text-slate-500">
-              Plan credits reset at the start of every calendar month
-              {props.periodStart ? <> · current period started {fmtDate(props.periodStart)}</> : null}.
-              Add-on credit packs don&apos;t reset; they expire 12 months after purchase.
+              {props.plan === "free" ? (
+                <>
+                  Starter AI Credits are a one-time grant on Free workspaces - they don&apos;t renew.
+                  Upgrade to Pro to receive {(500).toLocaleString()} AI Credits every month + the ability to buy add-on credit packs.
+                </>
+              ) : (
+                <>
+                  Plan credits reset at the start of every calendar month
+                  {props.periodStart ? <> · current period started {fmtDate(props.periodStart)}</> : null}.
+                  Add-on credit packs don&apos;t reset; they expire 12 months after purchase.
+                </>
+              )}
             </div>
           </div>
           <div className="grid grid-cols-2 gap-3 sm:gap-4 text-xs shrink-0">
@@ -252,16 +269,31 @@ export function BillingClient(props: BillingClientProps) {
         </div>
       </section>
 
-      {/* Credit packs */}
+      {/* Credit packs - Pro only. Free workspaces can't buy add-on
+          credits; instead they see an upgrade prompt that explains the
+          Pro flow (monthly credits + ability to buy more anytime). */}
       <section className="card">
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Buy more credits</div>
+            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
+              {props.plan === "free" ? "Need more AI power?" : "Buy more credits"}
+            </div>
             <p className="text-xs text-slate-500 mt-1 max-w-md">
-              Add-on credit packs work on every plan, add instantly, and expire 12 months after purchase. Useful for the occasional heavy-analysis month.
+              {props.plan === "free"
+                ? "Add-on credit packs are a Pro feature. Upgrade to Pro to receive 500 AI Credits every month and buy more credits anytime."
+                : "Add-on credit packs add instantly, expire 12 months after purchase, and work on top of your monthly allowance."}
             </p>
           </div>
+          {props.plan === "free" ? (
+            <a
+              href="/pricing"
+              className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition shrink-0"
+            >
+              Upgrade to Pro →
+            </a>
+          ) : null}
         </div>
+        {props.plan !== "free" ? (
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
           {props.creditPacks.map((pack) => (
             <div key={pack.sku} className="rounded-lg border border-line bg-ink-950/40 px-3 py-3 flex items-center justify-between">
@@ -283,9 +315,12 @@ export function BillingClient(props: BillingClientProps) {
             </div>
           ))}
         </div>
-        <div className="mt-3 text-[11px] text-slate-500">
-          Credit pack purchase will be available once the billing provider is connected.
-        </div>
+        ) : null}
+        {props.plan !== "free" ? (
+          <div className="mt-3 text-[11px] text-slate-500">
+            Credit pack purchase will be available once the billing provider is connected.
+          </div>
+        ) : null}
       </section>
 
       {/* Transaction history */}

@@ -22,7 +22,8 @@ import { getPlanLimits } from "./plans";
 import { getPlanFor } from "./entitlements";
 
 export type CreditKind =
-  | "monthly_grant"
+  | "monthly_grant"   // recurring monthly grant on Pro+ plans
+  | "starter_grant"   // one-time onboarding grant on Free (first wallet bootstrap)
   | "consume"
   | "purchase"
   | "admin_grant"
@@ -167,15 +168,21 @@ export async function applyMonthlyAllowance(businessId: string): Promise<{ balan
   return { balance, granted: allowance };
 }
 
-// Lazy bootstrap + monthly refresh. Idempotent - safe to call on
+// Lazy bootstrap + plan-aware grant. Idempotent - safe to call on
 // every request that's about to consume credits.
 //
-//   • If the wallet doesn't exist yet, create it AND grant the
-//     current plan's monthly allowance (so brand-new Free users get
-//     their 30 credits the first time they touch any AI surface).
-//   • If the wallet exists but periodStart is in a prior calendar
-//     month, grant the monthly allowance and stamp periodStart.
-//   • Otherwise do nothing.
+//   • Wallet doesn't exist yet
+//     ─ Free plan: create wallet + grant starter credits ONCE (kind:
+//       "starter_grant"). Never re-granted.
+//     ─ Pro plan: create wallet + grant the monthly allowance.
+//   • Wallet exists, plan has a recurring monthly allowance
+//     ─ If periodStart is in a prior calendar month: re-grant the
+//       monthly allowance and stamp periodStart.
+//     ─ Same month: no-op.
+//   • Wallet exists, plan does NOT have a recurring allowance (Free)
+//     ─ No-op. Starter credits were already granted at bootstrap; we
+//       never refresh them. When they run out the user is asked to
+//       upgrade.
 //
 // Calendar-month rollover is used rather than a fixed 30-day window
 // so the UI can show "Plan credits reset on the 1st" cleanly.
@@ -184,9 +191,44 @@ export async function ensureMonthlyAllowance(
   now: Date = new Date(),
 ): Promise<{ balance: number; granted: number; reset: boolean }> {
   const wallet = await prisma.aiCreditWallet.findUnique({ where: { businessId } });
+  const plan   = await getPlanFor(businessId);
+  const limits = getPlanLimits(plan);
+
   if (!wallet) {
-    const { granted, balance } = await applyMonthlyAllowance(businessId);
-    return { balance, granted, reset: true };
+    // Brand-new wallet. Pick the right first-grant flavour for the plan.
+    if (limits.starterAICredits > 0 && limits.monthlyAICredits <= 0) {
+      // Free flow: one-time starter grant.
+      const { balance } = await grantCredits(
+        businessId, limits.starterAICredits, "starter_grant",
+        { reason: `Starter AI Credits (${plan})` },
+      );
+      await prisma.aiCreditWallet.update({
+        where: { businessId },
+        data:  { monthlyAllowance: 0, periodStart: now },
+      });
+      return { balance, granted: limits.starterAICredits, reset: true };
+    }
+    if (limits.monthlyAICredits > 0) {
+      // Pro flow: monthly allowance.
+      const { granted, balance } = await applyMonthlyAllowance(businessId);
+      return { balance, granted, reset: true };
+    }
+    // No grants on this plan - still need to materialise the wallet so
+    // subsequent consumeCredits() calls have a row to read.
+    await prisma.aiCreditWallet.upsert({
+      where:  { businessId },
+      create: { businessId, balance: 0, monthlyAllowance: 0, periodStart: now },
+      update: { },
+    });
+    return { balance: 0, granted: 0, reset: true };
+  }
+
+  // Wallet exists.
+  if (limits.monthlyAICredits <= 0) {
+    // Free (or any plan without recurring monthly credits) - never
+    // refresh. The starter grant happened on bootstrap; users get a
+    // one-time experience.
+    return { balance: wallet.balance, granted: 0, reset: false };
   }
   const prev = wallet.periodStart;
   const sameMonth =

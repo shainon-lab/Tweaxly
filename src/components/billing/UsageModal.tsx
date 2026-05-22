@@ -135,11 +135,14 @@ export default function UsageModal({
           {/* Credit usage bar */}
           <div className="mt-5 rounded-xl border border-line bg-ink-950/60 p-4">
             <div className="flex items-baseline justify-between gap-3 flex-wrap">
-              <div className="text-sm font-semibold text-white">AI Credits</div>
+              <div className="text-sm font-semibold text-white">
+                {safePlan === "free" ? "Starter AI Credits" : "AI Credits"}
+              </div>
               <div className="text-xs text-slate-400 tabular-nums">
                 <span className="text-white font-semibold">{balance.toLocaleString()}</span>
-                {" left of "}
-                {monthlyAllowance.toLocaleString()} this month
+                {safePlan === "free"
+                  ? " starter credits left"
+                  : <> left of {monthlyAllowance.toLocaleString()} this month</>}
               </div>
             </div>
             <div className="mt-3 h-1.5 rounded-full bg-ink-700/80 overflow-hidden">
@@ -150,11 +153,20 @@ export default function UsageModal({
               />
             </div>
             <div className="mt-2 text-[11px] text-slate-500">
-              Resets at the start of every calendar month. Buy a credit pack from{" "}
-              <Link href="/settings/billing" onClick={onClose} className="text-brand-purple hover:text-brand-teal transition">
-                billing settings
-              </Link>{" "}
-              if you need more this month.
+              {safePlan === "free" ? (
+                <>
+                  Starter AI Credits are a one-time grant on Free workspaces - they don&apos;t renew.
+                  Upgrade to Pro for 500 AI Credits every month + the ability to buy more anytime.
+                </>
+              ) : (
+                <>
+                  Resets at the start of every calendar month. Buy a credit pack from{" "}
+                  <Link href="/settings/billing" onClick={onClose} className="text-brand-purple hover:text-brand-teal transition">
+                    billing settings
+                  </Link>{" "}
+                  if you need more this month.
+                </>
+              )}
             </div>
           </div>
 
@@ -181,7 +193,10 @@ export default function UsageModal({
             </div>
           ) : null}
 
-          {/* CTA row */}
+          {/* CTA row. Pro users see "Buy more AI Credits" since they
+              can scale via packs. Free users only see "Upgrade to
+              Pro" - the subscription is the monetization layer, so
+              we never offer Free users a pack purchase. */}
           <div className="mt-7 flex items-center gap-3 flex-wrap">
             {nextTier ? (
               <Link
@@ -191,14 +206,15 @@ export default function UsageModal({
               >
                 Upgrade this workspace to Pro · $49/mo
               </Link>
-            ) : null}
-            <Link
-              href="/settings/billing"
-              onClick={onClose}
-              className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
-            >
-              Buy more AI Credits
-            </Link>
+            ) : (
+              <Link
+                href="/settings/billing"
+                onClick={onClose}
+                className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
+              >
+                Buy more AI Credits
+              </Link>
+            )}
           </div>
           <div className="mt-3 text-[11px] text-slate-500">
             Each workspace has its own plan + AI Credits. Upgrading here won&apos;t affect any other workspace.

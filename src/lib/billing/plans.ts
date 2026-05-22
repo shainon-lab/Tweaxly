@@ -72,8 +72,14 @@ export interface PlanLimits {
   maxNotificationRules: Quota;
   // Monthly AI credit allowance. Always finite; "unlimited" is granted
   // via AdminPlanOverride.kind = "unlimited_credits" rather than via a
-  // sentinel in the plan itself.
+  // sentinel in the plan itself. Free is 0 here - Free workspaces get
+  // a one-time starter grant, not a recurring monthly allowance.
   monthlyAICredits: number;
+  // One-time starter AI Credits granted on first wallet creation.
+  // Used by Free to let new workspaces experience the AI; Pro is 0
+  // since Pro receives a recurring monthlyAICredits allowance instead.
+  // Never re-granted after the first wallet bootstrap.
+  starterAICredits: number;
   features:        PlanFeatures;
 }
 
@@ -100,7 +106,11 @@ export const PLANS: Plan[] = [
       signalsPerMonth:  3,
       forecastMonths:   3,
       maxNotificationRules: 1,
-      monthlyAICredits: 30,
+      // Free workspaces get starter credits ONCE on bootstrap; no
+      // monthly refresh. The Free plan exists for onboarding + value
+      // demonstration, not as a recurring-AI tier.
+      monthlyAICredits: 0,
+      starterAICredits: 30,
       features: {
         smartAlerts:            false,
         advancedInsights:       false,
@@ -142,6 +152,7 @@ export const PLANS: Plan[] = [
       forecastMonths:   "unlimited",
       maxNotificationRules: "unlimited",
       monthlyAICredits: 500,
+      starterAICredits: 0,
       features: {
         smartAlerts:            true,
         advancedInsights:       true,
