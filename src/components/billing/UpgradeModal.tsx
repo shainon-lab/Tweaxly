@@ -109,14 +109,15 @@ export default function UpgradeModal({
 
         <div className="relative p-6 sm:p-8">
           <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
-            Upgrade your plan
+            Upgrade this workspace
           </div>
           <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white leading-snug">
             {feature ? <>Unlock <span className="text-white">{feature}</span></> : <>Unlock deeper business intelligence</>}
           </h2>
           <p className="mt-3 text-sm text-slate-400 leading-relaxed">
-            You&apos;re on the <span className="pill text-[10px] mx-1">{planLabel}</span> plan.
-            Upgrade to keep your business signals, forecasts and AI advisor at full power.
+            This workspace is on the <span className="pill text-[10px] mx-1">{planLabel}</span> plan.
+            Each workspace has its own subscription and AI Credits - upgrading here
+            won&apos;t change any other workspace.
           </p>
 
           <ul className="mt-6 space-y-2.5">
@@ -141,7 +142,7 @@ export default function UpgradeModal({
               className="btn-primary text-sm px-4 py-2 rounded-md inline-flex items-center gap-1"
               onClick={onClose}
             >
-              Upgrade to Pro · $49/mo
+              Upgrade this workspace · $49/mo
               <span aria-hidden="true">→</span>
             </Link>
             <Link

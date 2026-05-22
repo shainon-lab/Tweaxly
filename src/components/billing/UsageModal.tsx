@@ -128,11 +128,11 @@ export default function UsageModal({
 
         <div className="p-6 sm:p-8">
           <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-2">
-            Plan usage &amp; limits
+            This workspace · Plan usage &amp; limits
           </div>
           <div className="flex items-baseline justify-between gap-2 flex-wrap">
             <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white">
-              You&apos;re on the {PLAN_LABEL[safePlan]} plan
+              This workspace is on the {PLAN_LABEL[safePlan]} plan
             </h2>
             <Link
               href="/settings/billing"
@@ -201,7 +201,9 @@ export default function UsageModal({
                 onClick={onClose}
                 className="btn-primary text-sm px-4 py-2 rounded-md"
               >
-                {safePlan === "free" ? "Upgrade to Pro · $49/mo" : "Upgrade to Business · $149/mo"}
+                {safePlan === "free"
+                  ? "Upgrade this workspace to Pro · $49/mo"
+                  : "Upgrade this workspace to Business · $149/mo"}
               </Link>
             ) : null}
             <Link
@@ -209,8 +211,11 @@ export default function UsageModal({
               onClick={onClose}
               className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
             >
-              Buy more credits
+              Buy credits for this workspace
             </Link>
+          </div>
+          <div className="mt-3 text-[11px] text-slate-500">
+            Each workspace has its own plan + AI Credits. Upgrading here won&apos;t affect any other workspace.
           </div>
         </div>
       </div>

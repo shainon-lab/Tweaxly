@@ -19,6 +19,19 @@ export type SwitcherWorkspace = {
   name: string;
   role: string;
   isCurrent: boolean;
+  // Per-workspace billing context. Optional so the switcher still
+  // works during the brief window before the layout's billing
+  // fetches complete (or for any caller that doesn't have these
+  // numbers handy). When present we render a small plan pill +
+  // AI-credits tail on each row.
+  plan?:    string;   // "free" | "pro" | "business"
+  balance?: number;
+};
+
+const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
+  free:     { label: "Free",     cls: "border-line/60 text-slate-400 bg-ink-700/60" },
+  pro:      { label: "Pro",      cls: "border-brand-purple/40 text-brand-purple bg-accent-soft/30" },
+  business: { label: "Business", cls: "border-brand-teal/40 text-brand-teal bg-brand-teal/10" },
 };
 
 export default function BusinessSwitcher({
@@ -99,8 +112,27 @@ export default function BusinessSwitcher({
                     }`}
                   >
                     <div className="min-w-0 flex-1">
-                      <div className="truncate font-medium">{w.name}</div>
-                      <div className="text-[10px] text-slate-500 truncate">{w.role.replace("_", " ")}</div>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <div className="truncate font-medium">{w.name}</div>
+                        {w.plan ? (
+                          <span
+                            className={`shrink-0 text-[9px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border ${(PLAN_BADGE[w.plan] ?? PLAN_BADGE.free).cls}`}
+                          >
+                            {(PLAN_BADGE[w.plan] ?? PLAN_BADGE.free).label}
+                          </span>
+                        ) : null}
+                      </div>
+                      <div className="text-[10px] text-slate-500 truncate flex items-center gap-1.5">
+                        <span>{w.role.replace("_", " ")}</span>
+                        {typeof w.balance === "number" ? (
+                          <>
+                            <span className="text-slate-600">·</span>
+                            <span className={w.balance <= 0 ? "text-bad" : w.balance < 5 ? "text-warn" : "text-slate-400"}>
+                              {w.balance.toLocaleString()} credits
+                            </span>
+                          </>
+                        ) : null}
+                      </div>
                     </div>
                     {w.isCurrent ? <Check size={14} strokeWidth={2} className="shrink-0" /> : null}
                   </button>

@@ -40,14 +40,57 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         },
         orderBy: { createdAt: "asc" },
       });
-  const workspaces = memberships
-    .filter((m) => m.business.status !== "suspended")
-    .map((m) => ({
-      id: m.business.id,
-      name: m.business.name,
-      role: m.role,
-      isCurrent: m.business.id === business.id,
-    }));
+  const activeMemberships = memberships.filter((m) => m.business.status !== "suspended");
+  // Per-workspace plan + credit balance so the BusinessSwitcher can
+  // show a plan badge + AI credits line for every business the user
+  // can switch into. The current workspace reads from billingCtx +
+  // effectivePlan computed above; the rest hit their own wallet/
+  // override rows. All scoped by businessId so each workspace is
+  // billed and metered independently (the spec's core rule).
+  const otherIds = activeMemberships.map((m) => m.business.id).filter((id) => id !== business.id);
+  const [otherWallets, otherOverrides, otherSubs] = await Promise.all([
+    otherIds.length
+      ? prisma.aiCreditWallet.findMany({ where: { businessId: { in: otherIds } } })
+      : Promise.resolve([]),
+    otherIds.length
+      ? prisma.adminPlanOverride.findMany({
+          where: {
+            businessId:    { in: otherIds },
+            effectiveFrom: { lte: new Date() },
+            revokedAt:     null,
+            OR: [{ effectiveUntil: null }, { effectiveUntil: { gte: new Date() } }],
+          },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
+    otherIds.length
+      ? prisma.subscription.findMany({
+          where: { businessId: { in: otherIds }, status: { in: ["active", "trialing"] } },
+          orderBy: { createdAt: "desc" },
+        })
+      : Promise.resolve([]),
+  ]);
+  const walletByBiz   = new Map(otherWallets.map((w) => [w.businessId, w.balance]));
+  const overrideByBiz = new Map(otherOverrides.map((o) => [o.businessId, o.plan]));
+  const subByBiz      = new Map(otherSubs.map((s) => [s.businessId, s.plan]));
+
+  const workspaces = activeMemberships.map((m) => {
+    const isCurrent = m.business.id === business.id;
+    const plan = isCurrent
+      ? effectivePlan.plan
+      : (overrideByBiz.get(m.business.id) ?? subByBiz.get(m.business.id) ?? "free");
+    const balance = isCurrent
+      ? billingCtx.balance
+      : (walletByBiz.get(m.business.id) ?? 0);
+    return {
+      id:        m.business.id,
+      name:      m.business.name,
+      role:      m.role,
+      isCurrent,
+      plan,
+      balance,
+    };
+  });
   return (
     // Lock the outer container to the viewport height and make only the main
     // area scroll - the sidebar stays put no matter how long the page is.

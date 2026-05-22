@@ -30,7 +30,7 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
             Read-only
           </span>
           <span className="flex-1 min-w-0">
-            This workspace is in read-only mode. Dashboards and historical reports remain visible, but new uploads, AI consultation and exports are paused.
+            This workspace is in read-only mode. Dashboards and historical reports remain visible, but new uploads, AI consultation and exports are paused for this workspace only - other workspaces are unaffected.
           </span>
           <Link
             href="/settings/billing"
@@ -55,7 +55,7 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
             Free
           </span>
           <span className="flex-1 min-w-0 text-slate-200">
-            You&apos;ve used your monthly AI Credits. Upgrade to Pro for 500 credits/month, or grab a credit pack.
+            This workspace has used its monthly AI Credits. Upgrade just this workspace to Pro for 500 credits/month, or grab a credit pack - other workspaces are unaffected.
           </span>
           <Link
             href="/settings/billing"
@@ -76,7 +76,7 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
             {PLAN_LABEL[plan]}
           </span>
           <span className="flex-1 min-w-0 text-slate-200">
-            You&apos;ve used your monthly AI Credits. They&apos;ll reset at the start of next month, or you can buy a pack to keep going.
+            This workspace has used its monthly AI Credits. They&apos;ll reset at the start of next month, or you can buy a pack for this workspace.
           </span>
           <Link
             href="/settings/billing"
