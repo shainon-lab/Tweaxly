@@ -40,13 +40,12 @@ function currentYM(): string {
 // Conservative: trim, collapse whitespace, drop trailing reference numbers
 // that look like "#12345" or "REF1234567".
 //
-// For the Bank Statement Import Wizard (source="bank") we skip the ref-
-// stripping pass — the wizard's spec is that every distinct description
-// gets its own Category and we never merge them silently. The user can
-// still rename / merge categories from the Categories tab afterward.
-function normalizeName(raw: string, strictGrouping: boolean): string {
+// Every transaction is still saved as its own row with its own date —
+// grouping happens at the category level so monthly reports can show
+// one line per (category × month) instead of one line per raw bank
+// description.
+function normalizeName(raw: string): string {
   let s = raw.trim().replace(/\s+/g, " ");
-  if (strictGrouping) return s;
   s = s.replace(/\s+#\s*\d+$/, "");
   s = s.replace(/\s+REF\s*\d{4,}$/i, "");
   return s;
@@ -191,7 +190,7 @@ export async function POST(req: NextRequest) {
     let name: string | null = null;
     if (!ruleApp) {
       const raw = norm.vendor || norm.description || "";
-      const cleaned = normalizeName(raw, body.source === "bank");
+      const cleaned = normalizeName(raw);
       if (cleaned) name = cleaned;
     }
     rowInfos.push({
