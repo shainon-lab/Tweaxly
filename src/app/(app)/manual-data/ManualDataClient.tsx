@@ -12,7 +12,7 @@ function fmtOriginal(amount: number, currency: string): string {
   return fmtMoney(Math.abs(amount), currency);
 }
 
-type UploadMode = "bank" | "dated";
+type UploadMode = "bank" | "dated" | "manual";
 
 type Category = { id: string; name: string; kind: string };
 
@@ -224,7 +224,7 @@ export default function ManualDataClient({
         <div className="text-sm text-slate-400 mb-3">
           Pick the option that matches your file. You can switch any time.
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             type="button"
             onClick={() => setUploadMode("bank")}
@@ -265,15 +265,37 @@ export default function ManualDataClient({
               to a known column order — no mapping step needed.
             </div>
           </button>
+          <button
+            type="button"
+            onClick={() => setUploadMode("manual")}
+            className={`text-left rounded-xl border p-4 transition ${
+              uploadMode === "manual"
+                ? "border-accent bg-accent-soft/30"
+                : "border-line bg-ink-900/30 hover:border-accent/40"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className={uploadMode === "manual" ? "pill-accent" : "pill text-[10px]"}>
+                {uploadMode === "manual" ? "selected" : "manual"}
+              </span>
+              <span className="font-medium text-slate-100">Single manual entry</span>
+            </div>
+            <div className="text-xs text-slate-400 leading-relaxed">
+              For items that won't appear in any upload — a personal-card business
+              purchase, a gift, or a one-off invoice settled outside the books.
+            </div>
+          </button>
         </div>
       </div>
 
       {uploadMode === "bank" ? (
         <GuidedBankImport defaultCurrency={currency} />
-      ) : (
+      ) : uploadMode === "dated" ? (
         <DatedUploadCard currency={currency} />
-      )}
+      ) : null}
 
+      {uploadMode === "manual" ? (
+      <>
       <div className="card mb-6">
         <div className="font-medium mb-3">Add a single manual entry</div>
 
@@ -529,6 +551,8 @@ export default function ManualDataClient({
           </table>
         )}
       </div>
+      </>
+      ) : null}
 
       {confirmDelete ? (
         <div
