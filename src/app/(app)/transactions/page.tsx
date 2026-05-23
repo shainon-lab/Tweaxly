@@ -47,11 +47,27 @@ export default async function TransactionsPage({
   // Revenue (income) categories first, then outcome categories.
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
 
+  // Surface a quick "Trash" link in the header when the workspace
+  // has anything in the recycle bin — owners might forget about
+  // batches they trashed last week.
+  const trashCount = await prisma.trashBatch.count({ where: { businessId: business.id } });
+
   return (
     <>
       <PageHeader
         title={t("page.transactions.title")}
         subtitle={`Transactions - ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
+        right={
+          trashCount > 0 ? (
+            <a
+              href="/transactions/trash"
+              className="text-xs font-medium px-3 py-1.5 rounded-md border border-warn/40 text-warn hover:bg-warn/10 transition inline-flex items-center gap-1.5"
+              title="Restore or permanently delete recently-trashed transactions"
+            >
+              Trash ({trashCount})
+            </a>
+          ) : null
+        }
       />
       <DataTabs />
       <ReviewBanner businessId={business.id} surface="transactions" />

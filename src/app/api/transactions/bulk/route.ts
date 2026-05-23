@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { trashTransactions } from "@/lib/trash";
 
 export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
-  const { business } = await requireBusiness();
-  const body = await req.json() as { ids: string[]; action: string; categoryId?: string; value?: boolean; note?: string };
+  const { business, user } = await requireBusiness();
+  const body = await req.json() as { ids: string[]; action: string; categoryId?: string; value?: boolean; note?: string; reason?: string };
   if (!Array.isArray(body.ids) || body.ids.length === 0) {
     return NextResponse.json({ error: "no ids" }, { status: 400 });
   }
@@ -61,6 +62,19 @@ export async function POST(req: NextRequest) {
         }
       }
       break;
+    }
+    case "trash": {
+      // Move every selected row to the recycle bin. Soft-delete +
+      // create one TrashBatch tying them together so the restore
+      // log is a single entry. Optional reason becomes the batch
+      // label in the trash UI.
+      const result = await trashTransactions({
+        businessId: business.id,
+        userId:     user.id,
+        txnIds:     body.ids,
+        reason:     body.reason ?? null,
+      });
+      return NextResponse.json({ ok: true, batchId: result.batchId, trashed: result.trashed });
     }
     default:
       return NextResponse.json({ error: "unknown action" }, { status: 400 });

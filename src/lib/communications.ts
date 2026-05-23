@@ -4,7 +4,8 @@
 // trail is recorded consistently no matter where consent changes.
 
 import crypto from "node:crypto";
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
+import type { Db } from "./db";
 
 // Policy version this consent was given against. Bumped any time the
 // Privacy Policy text materially changes - aligned with the consent
@@ -44,7 +45,7 @@ export function generateUnsubscribeToken(): string {
 // untouched. Stamps the audit fields, generates an unsubscribe token
 // lazily if the user is opting *in* and doesn't have one yet.
 export async function updateMarketingPreferences(
-  prisma: PrismaClient,
+  prisma: Db,
   userId: string,
   update: MarketingConsentUpdate,
   audit: MarketingAudit
@@ -76,7 +77,7 @@ export async function updateMarketingPreferences(
 // back on, the campaign sender can choose to honour the suppression
 // (standard anti-spam practice).
 export async function suppressEmail(
-  prisma: PrismaClient,
+  prisma: Db,
   email: string,
   channel: string,
   reason: "user_unsubscribe" | "bounce" | "complaint" | "admin",

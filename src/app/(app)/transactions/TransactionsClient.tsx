@@ -222,6 +222,22 @@ export default function TransactionsClient({
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("toggleRecurring", { value: true })}>Mark recurring</button>
           <button className="btn-ghost" disabled={pending} onClick={openIgnoreBulk}>Mark as ignore</button>
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("markIgnore", { value: false })}>Unignore (re-include)</button>
+          {/* Trash — sends selected rows to the 30-day recycle bin
+              (/transactions/trash). Restored as a single batch from
+              the trash page. Visually separated from the editing
+              actions to make destructive intent obvious. */}
+          <span className="border-l border-line/60 h-6 mx-1" aria-hidden="true" />
+          <button
+            className="text-sm font-medium px-3 py-1.5 rounded-md border border-bad/50 text-bad hover:bg-bad/10 transition"
+            disabled={pending}
+            onClick={async () => {
+              if (!confirm(`Move ${selected.size} transaction${selected.size === 1 ? "" : "s"} to trash? They'll stay restorable for 30 days.`)) return;
+              await bulk("trash");
+              setSelected(new Set());
+            }}
+          >
+            Move to trash
+          </button>
         </div>
       ) : null}
 

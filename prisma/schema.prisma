@@ -270,6 +270,7 @@ model Business {
   mutedSignals        MutedSignal[]
   mappingTemplates    MappingTemplate[]
   financialSources    FinancialSource[]
+  trashBatches        TrashBatch[]
   recommendations     Recommendation[]
   consultations       Consultation[]
   manualEntries       ManualEntry[]
@@ -676,10 +677,40 @@ model Transaction {
   manualEntryId        String?
   manualEntry          ManualEntry?    @relation(fields: [manualEntryId], references: [id], onDelete: Cascade)
   createdAt            DateTime        @default(now())
+  // ─── Soft delete (Trash / recycle bin) ────────────────────────────
+  // When a user bulk-trashes transactions, the rows stay in the table
+  // with deletedAt set + deleteBatchId pointing at the TrashBatch that
+  // groups the action. Every Transaction query MUST filter
+  // `deletedAt: null` to hide trashed rows from reports / UI.
+  // TrashBatches auto-purge 30 days after their createdAt — see
+  // src/lib/trash.ts.
+  deletedAt            DateTime?
+  deleteBatchId        String?
+  deleteBatch          TrashBatch?     @relation(fields: [deleteBatchId], references: [id], onDelete: SetNull)
 
   @@index([businessId, accountingMonth])
   @@index([businessId, type])
   @@index([businessId, vendor])
+  @@index([businessId, deletedAt])
+}
+
+// ─── Trash batch ───────────────────────────────────────────────────
+// One row per bulk-trash action. Holds a count + creation metadata so
+// the recycle-bin UI can render an undo log without re-querying every
+// transaction. A TrashBatch is alive until createdAt + 30 days, after
+// which the next read triggers permanent deletion of every transaction
+// pointing at it AND the batch itself.
+model TrashBatch {
+  id           String        @id @default(cuid())
+  businessId   String
+  business     Business      @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  deletedById  String?       // user who triggered the trash action
+  reason       String?       // optional free-text label ("Categorized as PERSONAL", etc.)
+  createdAt    DateTime      @default(now())
+
+  transactions Transaction[]
+
+  @@index([businessId, createdAt])
 }
 
 model CategorizationRule {
