@@ -167,7 +167,6 @@ export default function SettingsClient({
           vatRate: biz.vatRate,
           country: biz.country,
           timezone: biz.timezone,
-          industry: biz.industry,
         }),
       });
       if (!res.ok) {
@@ -433,11 +432,8 @@ export default function SettingsClient({
           change anything that doesn&apos;t fit yours.
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 items-end">
-          <div className="md:col-span-2"><label className="label">Name</label>
+          <div className="md:col-span-3"><label className="label">Name</label>
             <input className="input" value={biz.name} onChange={(e) => setBiz({ ...biz, name: e.target.value })} />
-          </div>
-          <div><label className="label">Industry</label>
-            <input className="input" value={biz.industry ?? ""} onChange={(e) => setBiz({ ...biz, industry: e.target.value || null })} placeholder="e.g. SaaS, Retail, Agency" />
           </div>
           <div><label className="label">Default currency</label>
             <CurrencyPicker
