@@ -2,7 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BulkUploadCard from "./BulkUploadCard";
-import BankImportWizard from "./BankImportWizard";
+import GuidedBankImport from "./GuidedBankImport";
 import DatedUploadCard from "./DatedUploadCard";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { fmtMoney } from "@/lib/format";
@@ -299,7 +299,7 @@ export default function ManualDataClient({
       </div>
 
       {uploadMode === "bank" ? (
-        <BankImportWizard defaultCurrency={currency} />
+        <GuidedBankImport defaultCurrency={currency} />
       ) : uploadMode === "dated" ? (
         <DatedUploadCard currency={currency} />
       ) : (

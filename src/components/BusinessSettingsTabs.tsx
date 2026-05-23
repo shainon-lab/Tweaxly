@@ -39,6 +39,11 @@ const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: st
     activeWhen: (path, tab) => path === "/settings" && tab === "plan",
   },
   {
+    href: "/sources",
+    tKey: "settings.tab.sources",
+    activeWhen: (path) => path === "/sources" || path.startsWith("/sources/"),
+  },
+  {
     href: "/manual-data",
     tKey: "settings.tab.import",
     activeWhen: (path) => path === "/manual-data" || path.startsWith("/manual-data/"),

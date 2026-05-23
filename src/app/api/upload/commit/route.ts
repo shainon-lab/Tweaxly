@@ -26,6 +26,15 @@ type Body = {
   // uploads where the user is uploading data that represents a specific
   // period (e.g. an exported P&L for May 2026).
   forceAccountingMonth?: string;
+  // ─── Financial Sources fields ─────────────────────────────────────
+  // Set by the guided bank-statement wizard. The batch is tagged so the
+  // monthly coverage matrix can find it; if replaceBatchIds is set, the
+  // listed batches are marked status="replaced" and their transactions
+  // deleted in the same transaction the new batch is created in.
+  financialSourceId?: string | null;
+  periodStart?: string | null; // YYYY-MM
+  periodEnd?:   string | null; // YYYY-MM
+  replaceBatchIds?: string[];
 };
 
 const YM_RE = /^\d{4}-\d{2}$/;
@@ -133,13 +142,73 @@ export async function POST(req: NextRequest) {
     }, { status: 400 });
   }
 
-  const batch = await prisma.uploadBatch.create({
-    data: {
-      businessId: business.id,
-      source: body.source,
-      filename: body.filename,
-      rowCount: body.rows.length,
-    },
+  // Validate financialSource ownership + replace targets up front so a
+  // bad ID surfaces before we start writing rows.
+  if (body.financialSourceId) {
+    const owned = await prisma.financialSource.findFirst({
+      where: { id: body.financialSourceId, businessId: business.id, status: "active" },
+      select: { id: true },
+    });
+    if (!owned) {
+      return NextResponse.json({ error: "Financial source not found in this workspace." }, { status: 404 });
+    }
+  }
+  if (body.replaceBatchIds && body.replaceBatchIds.length > 0) {
+    const ownedCount = await prisma.uploadBatch.count({
+      where: { id: { in: body.replaceBatchIds }, businessId: business.id, status: "active" },
+    });
+    if (ownedCount !== body.replaceBatchIds.length) {
+      return NextResponse.json({ error: "One or more replace targets aren't valid." }, { status: 400 });
+    }
+  }
+
+  // Period validation: must be YYYY-MM, periodStart <= periodEnd.
+  const periodStart = body.periodStart ?? null;
+  const periodEnd   = body.periodEnd   ?? periodStart;
+  if (periodStart && !YM_RE.test(periodStart)) {
+    return NextResponse.json({ error: "periodStart must be YYYY-MM." }, { status: 400 });
+  }
+  if (periodEnd && !YM_RE.test(periodEnd)) {
+    return NextResponse.json({ error: "periodEnd must be YYYY-MM." }, { status: 400 });
+  }
+  if (periodStart && periodEnd && periodStart > periodEnd) {
+    return NextResponse.json({ error: "periodStart must be <= periodEnd." }, { status: 400 });
+  }
+
+  // Replace + create batch atomically so a partial failure doesn't leave
+  // dangling rows. The categorization / FX passes below run outside the
+  // transaction since they're long-running and tolerate retries.
+  const batch = await prisma.$transaction(async (tx) => {
+    if (body.replaceBatchIds && body.replaceBatchIds.length > 0) {
+      // Wipe the replaced batches' transactions, then mark the batches
+      // themselves as replaced (replacedById is filled after the new
+      // batch is created below).
+      await tx.transaction.deleteMany({
+        where: { uploadBatchId: { in: body.replaceBatchIds }, businessId: business.id },
+      });
+      await tx.uploadBatch.updateMany({
+        where: { id: { in: body.replaceBatchIds }, businessId: business.id },
+        data: { status: "replaced", replacedAt: new Date() },
+      });
+    }
+    const created = await tx.uploadBatch.create({
+      data: {
+        businessId: business.id,
+        source: body.source,
+        filename: body.filename,
+        rowCount: body.rows.length,
+        financialSourceId: body.financialSourceId ?? null,
+        periodStart,
+        periodEnd,
+      },
+    });
+    if (body.replaceBatchIds && body.replaceBatchIds.length > 0) {
+      await tx.uploadBatch.updateMany({
+        where: { id: { in: body.replaceBatchIds }, businessId: business.id },
+        data: { replacedById: created.id },
+      });
+    }
+    return created;
   });
 
   // Fetch existing rules. Uncategorized is no longer a fallback - instead each

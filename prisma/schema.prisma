@@ -269,6 +269,7 @@ model Business {
   forecastAssumptions ForecastAssumption[]
   mutedSignals        MutedSignal[]
   mappingTemplates    MappingTemplate[]
+  financialSources    FinancialSource[]
   recommendations     Recommendation[]
   consultations       Consultation[]
   manualEntries       ManualEntry[]
@@ -561,6 +562,60 @@ model UploadBatch {
   representsMonth String?
   createdAt       DateTime      @default(now())
   transactions    Transaction[]
+
+  // ─── Financial Sources (Phase 1 of the Financial Data Pipeline) ─────
+  // Optional today so existing/legacy upload paths keep working; the
+  // new guided bank-statement wizard always sets these. financialSourceId
+  // identifies which Bank / Card / PayPal account the file came from;
+  // periodStart..periodEnd is the YYYY-MM coverage window (inclusive)
+  // used by the monthly coverage matrix + overlap detection.
+  financialSourceId String?
+  financialSource   FinancialSource? @relation(fields: [financialSourceId], references: [id], onDelete: SetNull)
+  periodStart       String? // YYYY-MM, inclusive
+  periodEnd         String? // YYYY-MM, inclusive
+  // "active" or "replaced". Replaced batches keep their transactions
+  // deleted but stay in the table as an audit trail; replacedById points
+  // at the batch that supersedes them.
+  status            String   @default("active")
+  replacedAt        DateTime?
+  replacedById      String?
+  replacedBy        UploadBatch?  @relation("ReplaceChain", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces          UploadBatch[] @relation("ReplaceChain")
+
+  @@index([businessId, financialSourceId])
+  @@index([businessId, periodStart, periodEnd])
+  @@index([businessId, status])
+}
+
+// ─── Financial Source ─────────────────────────────────────────────────
+// Workspace-scoped account that uploads belong to. Examples:
+//   "Business Bank ILS", "Visa Card", "PayPal USD". All transactions
+// imported through the guided wizard are tagged with one of these so
+// the coverage matrix can show which months are uploaded per account
+// and the duplicate-prevention layer can scope overlap checks correctly.
+model FinancialSource {
+  id           String   @id @default(cuid())
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Human-friendly label shown in the picker and coverage matrix.
+  name         String
+  // bank | credit_card | paypal | payment_provider | cash | other
+  type         String
+  currency     String // ISO 4217
+  last4        String? // optional last 4 digits, e.g. for cards
+  // YYYY-MM — first month this source is relevant. Used to scope the
+  // coverage matrix (we don't ask for months before this).
+  startMonth   String
+  // "active" or "archived". Archived sources hide from pickers but
+  // retain their batch history.
+  status       String   @default("active")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  uploadBatches UploadBatch[]
+
+  @@unique([businessId, name])
+  @@index([businessId, status])
 }
 
 model Transaction {

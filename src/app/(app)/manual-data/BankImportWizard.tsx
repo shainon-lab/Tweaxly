@@ -118,7 +118,29 @@ const COL_LETTERS = (i: number): string => {
   return s;
 };
 
-export default function BankImportWizard({ defaultCurrency }: { defaultCurrency: string }) {
+// Optional Phase-1 Financial Sources context. When set, the wizard tags
+// the created UploadBatch with this source + period, and (if replace
+// targets are listed) atomically wipes those old batches as part of
+// the commit. When omitted, the wizard behaves like the older bank
+// import flow with no source/period attached.
+export interface WizardContext {
+  sourceId:        string;
+  sourceName:      string;
+  sourceCurrency:  string;
+  periodStart:     string; // YYYY-MM
+  periodEnd:       string; // YYYY-MM (= periodStart for single-month uploads)
+  replaceBatchIds: string[];
+}
+
+export default function BankImportWizard({
+  defaultCurrency,
+  context,
+  onAfterDone,
+}: {
+  defaultCurrency: string;
+  context?: WizardContext;
+  onAfterDone?: () => void;
+}) {
   const router = useRouter();
   const [step, setStep] = useState<Step>("upload");
 
@@ -375,6 +397,12 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
                   rows,
                   mapping: mappingWithMeta,
                   saveTemplateName: saveAsName.trim() || null,
+                  // Phase 1 Financial Sources fields — passed through only
+                  // when the guided wrapper supplied them.
+                  financialSourceId: context?.sourceId ?? null,
+                  periodStart:       context?.periodStart ?? null,
+                  periodEnd:         context?.periodEnd ?? null,
+                  replaceBatchIds:   context?.replaceBatchIds ?? [],
                 }),
               });
               if (!res.ok) {
@@ -401,7 +429,7 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
           imported={importResult.imported}
           duplicateGroups={importResult.duplicateGroups}
           templateSaved={!!saveAsName.trim()}
-          onAnother={() => reset()}
+          onAnother={() => { reset(); onAfterDone?.(); }}
           onViewTxns={() => router.push("/transactions")}
         />
       )}

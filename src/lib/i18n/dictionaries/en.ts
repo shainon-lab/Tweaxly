@@ -131,6 +131,7 @@ export const en: Dictionary = {
   "settings.tab.businessProfile":  "Business Profile",
   "settings.tab.businessPlan":     "Business Plan",
   "settings.tab.import": "Import Data",
+  "settings.tab.sources": "Sources",
   "settings.tab.integration": "Integration",
   "settings.tab.categories": "Categories & Vendors",
   "settings.tab.transactions": "Transactions",
