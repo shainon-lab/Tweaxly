@@ -15,14 +15,14 @@ import { useT } from "@/lib/i18n/client";
 
 const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string) => boolean }[] = [
   {
-    href: "/sources",
-    tKey: "data.tab.sources",
-    activeWhen: (path) => path === "/sources" || path.startsWith("/sources/"),
-  },
-  {
     href: "/manual-data",
     tKey: "data.tab.import",
     activeWhen: (path) => path === "/manual-data" || path.startsWith("/manual-data/"),
+  },
+  {
+    href: "/sources",
+    tKey: "data.tab.sources",
+    activeWhen: (path) => path === "/sources" || path.startsWith("/sources/"),
   },
   {
     href: "/integration",
