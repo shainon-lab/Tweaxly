@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import LockedOverlay from "@/components/billing/LockedOverlay";
+import UpgradeModal from "@/components/billing/UpgradeModal";
 
 type Rule = {
   id: string;
@@ -64,6 +64,10 @@ export default function NotificationsClient({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  // Upgrade modal opens directly from the Add button when the user
+  // is on Free + already at quota. Replaces the prior LockedOverlay
+  // blur + the API's `rule_limit_reached` error roundtrip.
+  const [upgradeOpen, setUpgradeOpen] = useState(false);
   const [rules, setRules] = useState<Rule[]>(initialRules);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState({
@@ -74,6 +78,14 @@ export default function NotificationsClient({
     thresholdValue: 10,
     period: "month" as string,
     label: "",
+    // Phase-3 Monitors v2 - per-monitor severity + channel choice.
+    // Defaults honour the user's general toggles (push depends on
+    // their pushEnabled pref); explicit choices stored on the monitor
+    // override those defaults at dispatch time.
+    severity: "important" as "critical" | "important" | "info",
+    notificationChannels: { push: false, inApp: true, email: false } as {
+      push: boolean; inApp: boolean; email: boolean;
+    },
   });
   // Tracks whether the user has manually edited the label. While false, the
   // label auto-syncs to the suggestion derived from the rule's other fields.
@@ -153,11 +165,23 @@ export default function NotificationsClient({
         thresholdValue: Number(draft.thresholdValue),
         period: draft.period,
         label: draft.label || null,
+        severity: draft.severity,
+        notificationChannels: draft.notificationChannels,
       }),
     });
     if (!res.ok) {
       const txt = await res.text();
-      try { setError(JSON.parse(txt).error ?? txt); } catch { setError(txt); }
+      let parsed: { error?: string; message?: string } = {};
+      try { parsed = JSON.parse(txt); } catch { /* keep raw text */ }
+      // Server-side cap rejection - open the upgrade modal instead
+      // of leaking the machine code "rule_limit_reached" to the UI.
+      // Covers the case where local rule state is stale (eg another
+      // session added a rule, or initial fetch missed one).
+      if (parsed.error === "rule_limit_reached" || res.status === 403) {
+        setUpgradeOpen(true);
+        return;
+      }
+      setError(parsed.error ?? parsed.message ?? txt);
       return;
     }
     const created = await res.json();
@@ -326,9 +350,60 @@ export default function NotificationsClient({
               placeholder={suggestedLabel}
             />
           </div>
+          {/* Severity (Phase 3) - tags the dispatched alert so the
+              user's general settings know how loud to be. */}
+          <div className="md:col-span-2">
+            <label className="label">Severity when this fires</label>
+            <select
+              className="input"
+              value={draft.severity}
+              onChange={(e) => setDraft({ ...draft, severity: e.target.value as typeof draft.severity })}
+            >
+              <option value="critical">Critical — desktop push + in-app + email fallback</option>
+              <option value="important">Important — in-app, push when category is on</option>
+              <option value="info">Informational — in-app only</option>
+            </select>
+          </div>
+
+          {/* Per-monitor channel picker - overrides the user's general
+              toggles. Useful when one specific rule should ring
+              through harder than the default profile allows. */}
+          <div>
+            <label className="label">Channels for this monitor</label>
+            <div className="flex flex-wrap gap-3 pt-2">
+              <ChannelToggle
+                label="In-app"
+                checked={draft.notificationChannels.inApp}
+                onChange={(v) => setDraft({ ...draft, notificationChannels: { ...draft.notificationChannels, inApp: v } })}
+              />
+              <ChannelToggle
+                label="Push"
+                checked={draft.notificationChannels.push}
+                onChange={(v) => setDraft({ ...draft, notificationChannels: { ...draft.notificationChannels, push: v } })}
+              />
+              <ChannelToggle
+                label="Email"
+                checked={draft.notificationChannels.email}
+                onChange={(v) => setDraft({ ...draft, notificationChannels: { ...draft.notificationChannels, email: v } })}
+              />
+            </div>
+          </div>
+
           <div className="md:col-span-3 flex md:justify-end">
-            <button className="btn-primary w-full md:w-auto" disabled={pending} onClick={add}>
-              Add notification
+            <button
+              className="btn-primary w-full md:w-auto"
+              disabled={pending}
+              onClick={() => {
+                // Free at quota → open the upgrade modal instead of
+                // hitting the API (which would 403 with rule_limit_reached).
+                if (atRuleCap) {
+                  setUpgradeOpen(true);
+                  return;
+                }
+                add();
+              }}
+            >
+              Add monitor
             </button>
           </div>
         </div>
@@ -336,24 +411,82 @@ export default function NotificationsClient({
       </div>
   );
 
+  // Prebuilt monitor suggestions (Phase 3). One click pre-fills the
+  // draft + scrolls the user to the Add Monitor form so they can
+  // tweak before saving. None of these auto-create silently - the
+  // user always gets to confirm + override.
+  const SUGGESTIONS: { label: string; helper: string; apply: () => void }[] = [
+    {
+      label: "Alert me if expenses increase by more than 15%",
+      helper: "Month over month",
+      apply: () => setDraft({ ...draft, metric: "expenses", direction: "increase", thresholdType: "percent", thresholdValue: 15, period: "month", severity: "important", label: "Expenses up >15% MoM" }),
+    },
+    {
+      label: "Alert me if revenue drops more than 20%",
+      helper: "Vs last quarter",
+      apply: () => setDraft({ ...draft, metric: "revenue", direction: "decrease", thresholdType: "percent", thresholdValue: 20, period: "quarter", severity: "critical", label: "Revenue down >20% QoQ" }),
+    },
+    {
+      label: `Alert me if payroll exceeds ${fmtMoney.format(50000)}`,
+      helper: "In any month — set the value to match yours",
+      apply: () => {
+        const payrollCat = categories.find((c) => c.kind === "payroll");
+        setDraft({
+          ...draft,
+          metric: payrollCat ? "category" : "expenses",
+          categoryId: payrollCat?.id ?? draft.categoryId,
+          direction: "increase",
+          thresholdType: "amount",
+          thresholdValue: 50000,
+          period: "month",
+          severity: "important",
+          label: `Payroll exceeds ${fmtMoney.format(50000)}`,
+        });
+      },
+    },
+    {
+      label: "Alert me if net profit drops below 0",
+      helper: "Any month that ends in the red",
+      apply: () => setDraft({ ...draft, metric: "net", direction: "decrease", thresholdType: "amount", thresholdValue: 1, period: "month", severity: "critical", label: "Net profit in the red" }),
+    },
+  ];
+
   return (
     <>
-      {atRuleCap ? (
-        <LockedOverlay
-          locked
-          feature="Custom monitoring rules"
-          plan={plan}
-          blurb={`Free plans allow ${quotaMax} monitoring rule${quotaMax === 1 ? "" : "s"}. Upgrade to Pro for unlimited cash floor, expense ceiling, vendor-spike and revenue-drop alerts.`}
-          benefits={[
-            "Unlimited threshold rules across revenue, expenses, vendors and categories",
-            "Smart alerts on top of the standard signal stream",
-            "Priority delivery to email + in-app",
-            "Plus everything else on Pro: full forecasting + Scenario Builder + unlimited signals",
-          ]}
-        >
-          {addRuleForm}
-        </LockedOverlay>
-      ) : addRuleForm}
+      {/* ─── Prebuilt monitor suggestions ─────────────────────── */}
+      <div className="card mb-6">
+        <div className="font-medium mb-1">Quick-start monitors</div>
+        <div className="text-xs text-slate-400 mb-3">
+          One-click templates that pre-fill the form below. Tweak the values, severity or channels before clicking Add monitor.
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {SUGGESTIONS.map((s) => (
+            <button
+              key={s.label}
+              type="button"
+              onClick={() => { setLabelTouched(true); s.apply(); }}
+              className="text-left rounded-lg border border-line bg-ink-950/40 hover:border-accent/40 hover:bg-accent-soft/10 transition px-3 py-2.5"
+            >
+              <div className="text-sm font-medium text-slate-100">{s.label}</div>
+              <div className="text-[11px] text-slate-500 mt-0.5">{s.helper}</div>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {addRuleForm}
+      <UpgradeModal
+        open={upgradeOpen}
+        onClose={() => setUpgradeOpen(false)}
+        feature="Custom monitoring rules"
+        currentPlan={plan}
+        benefits={[
+          "Unlimited threshold rules across revenue, expenses, vendors and categories",
+          "Smart alerts on top of the standard signal stream",
+          "Priority delivery to email + in-app",
+          "Plus everything else on Pro: full forecasting + Scenario Builder + unlimited signals",
+        ]}
+      />
 
       <div className="card">
         <div className="font-medium mb-3">Your notifications</div>
@@ -428,5 +561,30 @@ export default function NotificationsClient({
         )}
       </div>
     </>
+  );
+}
+
+// Compact pill-style toggle for picking notification channels on the
+// add-monitor form. Click toggles the checked state.
+function ChannelToggle({
+  label, checked, onChange,
+}: {
+  label:    string;
+  checked:  boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      aria-pressed={checked}
+      className={`text-xs px-3 py-1.5 rounded-full border transition ${
+        checked
+          ? "border-accent/60 bg-accent-soft/50 text-accent"
+          : "border-line bg-ink-950/40 text-slate-300 hover:border-accent/40 hover:text-slate-100"
+      }`}
+    >
+      {label}
+    </button>
   );
 }

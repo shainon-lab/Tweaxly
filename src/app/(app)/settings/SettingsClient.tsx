@@ -6,16 +6,28 @@ import RulesClient from "../rules/RulesClient";
 import IntegrationClient from "../integration/IntegrationClient";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
 import CurrencySection from "./CurrencySection";
+import { BillingClient } from "./billing/BillingClient";
+import BusinessDnaSection, { type BusinessDnaProps } from "./BusinessDnaSection";
 
 // Settings shares a top-level tab row with the Data section
 // (/manual-data, /transactions, /data-log). The shared
 // BusinessSettingsTabs component renders that nav; this file owns the
-// three panels that live under the /settings route.
-type SettingsTab = "profile" | "categories" | "integration";
+// panels that live under the /settings route. The legacy "profile"
+// tab now splits into three:
+//   - settings : business basics (name/currency/fiscal/VAT) + currency
+//                conversion + branding
+//   - profile  : strategic Business DNA (the 7 questions + AI summary +
+//                derived patterns)
+//   - plan     : per-workspace billing (Plan & Credits)
+// The default landing tab is `settings` so old /settings links still
+// surface the everyday-edit surface; deep-links to the other two tabs
+// use ?tab=profile / ?tab=plan.
+type SettingsTab = "settings" | "profile" | "plan" | "categories" | "integration";
 
 function resolveSettingsTab(raw: string | null): SettingsTab {
   if (raw === "categories" || raw === "integration") return raw;
-  return "profile";
+  if (raw === "profile" || raw === "plan" || raw === "settings") return raw;
+  return "settings";
 }
 
 type Rule = {
@@ -83,11 +95,21 @@ export default function SettingsClient({
   categories,
   vendors,
   rules,
+  billing,
+  businessDna,
 }: {
   business: Biz;
   categories: Cat[];
   vendors: Vendor[];
   rules: Rule[];
+  // Per-workspace billing payload. Rendered as a "Plan & Credits"
+  // section inside the Business Profile tab - billing lives with the
+  // workspace it belongs to, not at account level.
+  billing?: React.ComponentProps<typeof BillingClient>;
+  // Business DNA - strategic profile the AI uses across the platform.
+  // null when the workspace hasn't filled it in yet; the section
+  // still renders with empty fields so the user can start.
+  businessDna?: BusinessDnaProps["initial"];
 }) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -400,10 +422,11 @@ export default function SettingsClient({
     <>
       <BusinessSettingsTabs />
 
-      {tab === "profile" ? (
+      {/* ─── Business Settings tab ─────────────────────────────── */}
+      {tab === "settings" ? (
         <>
       <div className="card mb-6">
-        <div className="font-medium mb-1">Business Profile</div>
+        <div className="font-medium mb-1">Business Settings</div>
         <div className="text-xs text-slate-400 mb-4">
           These settings drive every financial calculation in the platform. Defaults
           (USD, January fiscal year, no VAT) work for most US-based businesses -
@@ -518,6 +541,16 @@ export default function SettingsClient({
       </div>
 
         </>
+      ) : null}
+
+      {/* ─── Business Profile tab (Business DNA) ────────────────── */}
+      {tab === "profile" ? (
+        <BusinessDnaSection initial={businessDna ?? null} />
+      ) : null}
+
+      {/* ─── Business Plan tab (per-workspace billing) ──────────── */}
+      {tab === "plan" && billing ? (
+        <BillingClient {...billing} />
       ) : null}
 
       {tab === "categories" ? (

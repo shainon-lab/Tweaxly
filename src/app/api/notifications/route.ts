@@ -10,6 +10,22 @@ const METRICS = new Set(["revenue", "expenses", "net", "category"]);
 const DIRECTIONS = new Set(["increase", "decrease"]);
 const THRESHOLD_TYPES = new Set(["percent", "amount"]);
 const PERIODS = new Set(["month", "quarter", "year"]);
+const SEVERITIES = new Set(["critical", "important", "info"]);
+
+interface MonitorChannels {
+  push?: boolean;
+  inApp?: boolean;
+  email?: boolean;
+}
+function cleanChannels(v: unknown): MonitorChannels | undefined {
+  if (!v || typeof v !== "object") return undefined;
+  const o = v as Record<string, unknown>;
+  const out: MonitorChannels = {};
+  if (typeof o.push  === "boolean") out.push  = o.push;
+  if (typeof o.inApp === "boolean") out.inApp = o.inApp;
+  if (typeof o.email === "boolean") out.email = o.email;
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 function bad(msg: string) {
   return NextResponse.json({ error: msg }, { status: 400 });
@@ -26,6 +42,8 @@ export async function POST(req: NextRequest) {
     period?: string;
     label?: string | null;
     enabled?: boolean;
+    severity?: string;
+    notificationChannels?: MonitorChannels;
   };
 
   if (!body.metric || !METRICS.has(body.metric)) return bad("Invalid metric");
@@ -35,6 +53,8 @@ export async function POST(req: NextRequest) {
   if (body.thresholdValue == null || !isFinite(Number(body.thresholdValue)) || Number(body.thresholdValue) <= 0) {
     return bad("thresholdValue must be a positive number");
   }
+  const severity = body.severity && SEVERITIES.has(body.severity) ? body.severity : "important";
+  const channels = cleanChannels(body.notificationChannels);
 
   // Plan gate: enforce the maxNotificationRules quota server-side so
   // the UI gate is convenience, not security. Free = 1 rule;
@@ -77,6 +97,8 @@ export async function POST(req: NextRequest) {
       period: body.period,
       label: body.label?.trim() || null,
       enabled: body.enabled !== false,
+      severity,
+      ...(channels ? { notificationChannels: channels as unknown as object } : {}),
     },
   });
   // New rule can immediately fire and flip the sidebar badge -
@@ -92,6 +114,8 @@ export async function PATCH(req: NextRequest) {
     enabled?: boolean;
     label?: string | null;
     action?: "ack" | "unack";
+    severity?: string;
+    notificationChannels?: MonitorChannels;
   };
   if (!body.id) return bad("id required");
   const data: Record<string, unknown> = {};
@@ -99,6 +123,11 @@ export async function PATCH(req: NextRequest) {
   if ("label" in body) data.label = body.label?.toString().trim() || null;
   if (body.action === "ack")   data.acknowledgedAt = new Date();
   if (body.action === "unack") data.acknowledgedAt = null;
+  if (body.severity && SEVERITIES.has(body.severity)) data.severity = body.severity;
+  if ("notificationChannels" in body) {
+    const c = cleanChannels(body.notificationChannels);
+    data.notificationChannels = c ?? null;
+  }
   await prisma.notificationRule.updateMany({
     where: { id: body.id, businessId: business.id },
     data,

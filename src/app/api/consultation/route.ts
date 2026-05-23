@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, answerQuestion, deriveTitle } from "@/lib/advisor";
@@ -99,6 +100,7 @@ export async function POST(req: NextRequest) {
         role: m.role === "assistant" ? "assistant" : "user",
         content: m.content,
       })),
+      business.id,
     );
     answer = result.answer;
     mode   = result.mode;
@@ -114,9 +116,16 @@ export async function POST(req: NextRequest) {
   await prisma.consultationMessage.create({
     data: {
       consultationId,
-      role: "assistant",
-      content: answer.content,
-      payload: answer.payload ? JSON.stringify(answer.payload) : null,
+      role:       "assistant",
+      content:    answer.content,
+      payload:    answer.payload ? JSON.stringify(answer.payload) : null,
+      // Persist the structured payload so refreshes + history loads
+      // get the rich card layout, not just the markdown fallback.
+      // Prisma's Json column wants InputJsonValue - structured is a
+      // plain object so the cast is safe.
+      structured: answer.structured
+        ? (answer.structured as unknown as Prisma.InputJsonValue)
+        : Prisma.JsonNull,
     },
   });
   await prisma.consultation.update({

@@ -193,6 +193,69 @@ export const CATEGORIES: FeatureCategory[] = [
     ],
   },
   {
+    id:          "business-profile",
+    subpageSlug: "business-signals",
+    navLabel:    "Business Profile",
+    eyebrow:     "Business Profile & DNA",
+    h2:          "Your Business DNA, Permanent Context for the AI",
+    intro:
+      "A short profile of your business — industry, specific category, model, customers, stage, goals, KPIs — that Tweaxly captures once and reuses across every AI surface so the advisor, signals and forecasts reason about you, not a generic SMB.",
+    visual: null,
+    features: [
+      {
+        name: "About Your Business",
+        whatItDoes:
+          "AI generates a 80-200 word \"About Your Business\" paragraph from your profile + live financial snapshot - editable, regeneratable, used as permanent context across the platform.",
+        whyItMatters:
+          "Without a profile, the advisor treats every workspace the same. With one, every answer leans into your actual stage, customers and challenges from the first sentence.",
+        useCase:
+          "After a 2-minute onboarding wizard, Tweaxly identifies the workspace as \"a growing boutique guitar shop primarily serving consumers, currently focused on growth, with inventory turnover called out as the active challenge.\"",
+      },
+      {
+        name: "Specific Business Category",
+        whatItDoes:
+          "A typeahead pin of what kind of business this is - \"Recording Studio\", \"Jewelry Store\", \"Dental Clinic\" - far narrower than the high-level industry tag.",
+        whyItMatters:
+          "The advisor speaks in your vocabulary. Asking the same generic question on a Recording Studio vs a Dental Clinic should produce categorically different answers - and now it does.",
+        useCase:
+          "On a Recording Studio profile, asking \"should I raise prices?\" returns guidance framed around session rates, rehearsal vs recording, and how local studios benchmark - not generic small-business pricing advice.",
+      },
+      {
+        name: "Smart Evolution - Patterns Tweaxly Noticed",
+        whatItDoes:
+          "Eight deterministic detectors plus an AI polish pass scan your trailing data for seasonality, growth trajectory, cash-flow concern, marketing intensity, payroll heaviness, vendor concentration and category concentration - and write the observations back to your profile.",
+        whyItMatters:
+          "The owner's stated profile is one half of the truth; the other half is what the data shows. Smart Evolution captures both and feeds them to the advisor together.",
+        useCase:
+          "Patterns include: \"Highly seasonal - Nov/Dec consistently run ~50%+ above the average month\", \"Marketing-heavy - paid acquisition runs at ~18% of revenue\", \"Vendor concentration - Fender Distribution accounts for ~42% of tracked spend.\"",
+        faqs: [
+          {
+            q: "Do I have to do anything to get the patterns?",
+            a: "No. The first time you open Settings → Business Profile after completing the wizard, Tweaxly runs the detectors automatically and populates the panel. You can refresh anytime; the panel keeps the last-refreshed timestamp.",
+          },
+        ],
+      },
+      {
+        name: "AI Context Preferences",
+        whatItDoes:
+          "Owner-set biases the advisor honours on every answer - \"Prefer conservative forecasting\", \"Focus on growth opportunities\", \"Flag downside risks early\" - plus a free-text \"anything else for the AI to know\" box.",
+        whyItMatters:
+          "Two owners with the same numbers can have very different priorities. Preferences let the AI mirror the owner's posture without re-explaining it every conversation.",
+        useCase:
+          "A bootstrapped owner toggles \"Avoid aggressive expansion suggestions\" + writes \"never recommend taking on debt\" - subsequent advisor answers about growth lean into retention, pricing and unit-economic improvements instead.",
+      },
+      {
+        name: "Onboarding Wizard",
+        whatItDoes:
+          "A short multi-step flow (industry, business category, business model, main goal, customer type, stage, biggest challenge, KPIs) with progress bar, skip-where-relevant, and a closing \"Analyzing your business…\" state that hands off to AI summary generation.",
+        whyItMatters:
+          "Profile capture has to feel like \"help us understand you,\" not a configuration form. The wizard takes ~2 minutes and ships the user straight into a dashboard that's already personalised.",
+        useCase:
+          "New signups complete the wizard before they see the dashboard - by the time they land, the AI advisor already knows their stage, model and main focus.",
+      },
+    ],
+  },
+  {
     id:          "forecasting",
     subpageSlug: "forecasting",
     navLabel:    "Forecasting",
@@ -251,6 +314,15 @@ export const CATEGORIES: FeatureCategory[] = [
           "Decisions get made better when the alternative is visible. The scenario builder makes the alternative visible in 30 seconds.",
         useCase:
           "Modelling \"hire 2 engineers at $9K/mo each\" against baseline: cash runway drops from 14 months to 9 months unless monthly recurring revenue grows by $14K within 4 months.",
+      },
+      {
+        name: "Workforce Planning",
+        whatItDoes:
+          "A dedicated view of payroll cost, hiring headroom and per-employee economics - revenue per head, burn per head, fixed vs variable workforce cost - with a forecast of total payroll over the next 12 months.",
+        whyItMatters:
+          "Payroll is the biggest decision in most small businesses. Workforce Planning shows whether the business can absorb the next hire before the owner commits to a salary offer.",
+        useCase:
+          "Roster of 4 employees at $24K/mo loaded cost = 42% of revenue. Tweaxly projects affordable hires at \"1 additional engineer if average monthly revenue clears $62K\" based on current margin.",
       },
       {
         name: "Historical Window Selection",
@@ -417,43 +489,92 @@ export const CATEGORIES: FeatureCategory[] = [
     subpageSlug: "alerts",
     navLabel:    "Alerts",
     eyebrow:     "Alerts & Monitoring",
-    h2:          "Business Alerts & Real-Time Monitoring",
+    h2:          "Real-Time Business Alerts & Custom Monitors",
     intro:
-      "Set the thresholds that matter for your business and let Tweaxly watch them around the clock. Cash floor, expense ceiling, vendor spikes, revenue drops - all caught the moment they happen.",
+      "Desktop push notifications, custom monitors and a built-in Notification Center turn Tweaxly into a live business pulse. Critical changes reach you the moment they happen; quiet hours, severity routing and category toggles make sure the volume stays right.",
     visual: null,
     features: [
       {
-        name: "Threshold Alerts",
+        name: "Real-Time Business Alerts (Premium)",
         whatItDoes:
-          "Define your own thresholds - cash below $X, expenses above $Y, single-vendor spend above Z% - and get notified the moment any of them are crossed.",
+          "Browser-based desktop push notifications wired to AI signals and your custom monitors. Critical alerts ring through the moment they fire; non-critical ones honour your quiet hours and daily limit.",
         whyItMatters:
-          "Generic alerts are noise. Owner-defined thresholds are the things you actually wanted to know.",
+          "Email is too slow, dashboards are too passive. A native desktop notification on the moment a cash-flow risk or vendor anomaly is detected is the difference between catching it the same day and finding out next week.",
         useCase:
-          "\"Notify me if cash falls below $25K\" - the owner gets a same-day alert when a payroll run pushes cash to $22.8K, with 10 days of runway and three recommended actions.",
+          "On a Friday afternoon a forecast model flips negative for the following month. The owner gets a desktop notification within seconds: \"Cash flow warning — projected balance falls below your threshold in 38 days. Open Forecast.\" One click lands them on the relevant view.",
         faqs: [
           {
-            q: "Can Tweaxly detect unusual expenses?",
-            a: "Yes. Threshold alerts catch the explicit limits you set (eg \"expenses above $X\"), and AI Business Signals catch the implicit ones - unusual swings against your historical baseline, even when no fixed threshold has been crossed.",
+            q: "Are push notifications free?",
+            a: "No - desktop push notifications are a Premium feature. Free workspaces can still see every alert inside the in-app Notification Center; only the browser-push delivery layer is gated.",
+          },
+          {
+            q: "Do I need to install an app?",
+            a: "No. Tweaxly uses the Web Push standard through your browser - works on Chrome, Edge, Firefox, Brave and Safari on macOS without any install.",
           },
         ],
       },
       {
-        name: "Notification Rules",
+        name: "Custom Monitors (Premium)",
         whatItDoes:
-          "Choose which alerts and signals reach you, on which channels - email, in-app, or both.",
+          "Owner-defined rules: revenue / expense / cash thresholds, profitability bands, category-spend ceilings, vendor caps, forecast conditions. Each monitor carries its own severity, time-comparison (previous month, quarter, rolling average, custom) and notification channel.",
         whyItMatters:
-          "The wrong notification volume = the right amount of nothing. Rules let you tune the dial.",
+          "Generic AI signals catch what the system thinks is unusual. Custom monitors catch what YOU think is unusual - the lines that, when crossed, mean someone needs to act today.",
         useCase:
-          "The owner gets Critical signals by email + in-app, Medium signals in-app only, Low signals collected into a weekly digest.",
+          "Pre-built monitor: \"Alert me if cash runway falls below 60 days.\" When payroll lands and runway drops to 54 days, an Important alert fires with a one-tap link to the forecast.",
       },
       {
-        name: "Business Monitoring",
+        name: "Notification Center",
         whatItDoes:
-          "A continuously-updated picture of business health - cash position, runway, margin, vendor concentration - displayed as a monitoring panel rather than a static report.",
+          "A bell-icon inbox in the top nav, with unread counts, severity badges, business filter, category filter, mark-as-read and clear. Every alert is preserved with a deep link back to the relevant insight, forecast, monitor or consultation.",
         whyItMatters:
-          "Static reports go stale; monitoring stays current. Owners get a living dashboard rather than a Monday morning PDF.",
+          "Desktop pushes are ephemeral. The Notification Center is the durable record - so an owner who was away from their machine still sees what fired, when, and what to do about it.",
         useCase:
-          "An owner glances at the monitoring panel twice a day instead of running reports - 30 seconds in the morning, 30 seconds before dinner, full picture every time.",
+          "Returning from a long weekend, the owner opens the bell, filters to Critical-only across all workspaces, sees three alerts, clicks through to the deep-linked forecast, and is briefed in 90 seconds.",
+      },
+      {
+        name: "Notification Severity Routing",
+        whatItDoes:
+          "Three severity levels - Critical, Important, Informational - each routed differently. Critical: desktop push + in-app + optional email. Important: in-app + push when the category is on. Informational: in-app only.",
+        whyItMatters:
+          "An undifferentiated alert stream is worse than no alerts - it trains owners to ignore everything. Severity routing makes sure the loudest channel is reserved for the loudest signal.",
+        useCase:
+          "\"Forecasted negative balance\" routes as Critical (desktop push at 11pm). \"Office-supplies category up 12%\" routes as Informational (in-app, no buzz).",
+      },
+      {
+        name: "Quiet Hours & Daily Limit",
+        whatItDoes:
+          "Configure a daily quiet window in your local timezone; non-critical alerts delay until the window ends. A daily cap caps total deliveries so a noisy day never floods the inbox.",
+        whyItMatters:
+          "Real-time matters at 11am on a Tuesday and matters less at 11pm on a Sunday. The system respects the difference.",
+        useCase:
+          "Quiet hours 22:00-07:00 with critical-bypass on: a routine vendor-spike alert waits until 7am to deliver; a cash-flow warning rings through immediately.",
+      },
+      {
+        name: "Category Toggles & Sensitivity",
+        whatItDoes:
+          "Per-category opt-in (Revenue, Expense, Cash flow, Forecast, Vendor anomaly, AI recommendations, Custom monitor, Weekly summary) plus a global sensitivity dial (Conservative / Balanced / Aggressive).",
+        whyItMatters:
+          "Owners want different things at different stages. A founder pre-PMF wants every signal; a stable cash-cow wants only critical ones. The dials let both work.",
+        useCase:
+          "An e-commerce owner turns off Weekly Summary, leaves Cash Flow + Vendor Anomaly + AI Recommendations on, and sets sensitivity to Aggressive during the Q4 promo crunch.",
+      },
+      {
+        name: "Threshold Alerts (Free + Premium)",
+        whatItDoes:
+          "The original notification-rule engine - one threshold per workspace on the Free plan, unlimited on Pro - covering cash floor, expense ceiling, vendor spike, revenue drop.",
+        whyItMatters:
+          "Free users still get the headline guardrail. Premium unlocks the full real-time stack on top of it.",
+        useCase:
+          "Free workspace sets a single rule: \"Notify me if revenue drops more than 20% month-over-month.\" The rule still fires through the in-app Notification Center even without desktop push.",
+      },
+      {
+        name: "Future Channels",
+        whatItDoes:
+          "The notification dispatcher is built around a channel abstraction so additional channels - mobile push, email digest, Slack, WhatsApp, Microsoft Teams, generic webhooks - drop in without changing the alert logic.",
+        whyItMatters:
+          "Owners live on different surfaces. The architecture doesn't force a re-design every time a new channel becomes interesting.",
+        useCase:
+          "Today: desktop push + in-app. On the roadmap: same alerts arriving in your team's Slack channel or as a webhook into your own system.",
       },
     ],
   },

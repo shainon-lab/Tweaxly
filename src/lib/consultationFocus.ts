@@ -110,12 +110,13 @@ export function pickSuggestedConsultations(
   ctx: BusinessContext,
   signals: AdvisorRecommendation[],
   recommendedSignalKey?: string,
+  limit: number = 4,
 ): StrategicSituation[] {
   const out: StrategicSituation[] = [];
   const seen = new Set<string>();
 
-  // 1) Mine the signal pool for thematic situations - pick the next 3
-  //    most material signals after the recommended one.
+  // 1) Mine the signal pool for thematic situations - take the most
+  //    material signals after the recommended one, up to the limit.
   const ranked = [...signals]
     .filter((s) => !recommendedSignalKey || s.signalKey !== recommendedSignalKey)
     .sort((a, b) => severityScore(b.level) - severityScore(a.level) || b.impact - a.impact);
@@ -125,20 +126,20 @@ export function pickSuggestedConsultations(
     if (seen.has(sit.title)) continue;
     seen.add(sit.title);
     out.push(sit);
-    if (out.length >= 4) break;
+    if (out.length >= limit) break;
   }
 
-  // 2) Always include at least a few evergreen strategic themes if we
-  //    have spare slots. These are the most useful advisor entry
-  //    points when nothing else is screaming.
+  // 2) Always include evergreen strategic themes if we have spare
+  //    slots. These are the most useful advisor entry points when
+  //    nothing else is screaming.
   for (const evergreen of evergreenSituations(ctx)) {
-    if (out.length >= 4) break;
+    if (out.length >= limit) break;
     if (seen.has(evergreen.title)) continue;
     seen.add(evergreen.title);
     out.push(evergreen);
   }
 
-  return out.slice(0, 4);
+  return out.slice(0, limit);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -181,16 +182,18 @@ function themeForSignal(s: AdvisorRecommendation): string | null {
   }
 }
 
-// Build the Recommended Consultation card from a specific signal. Uses
-// the signal's existing observation/interpretation since those are
-// already executive-toned, and crafts a CTA + question that matches.
+// Build the Recommended Consultation card from a specific signal. The
+// question is rewritten in plain owner voice (short, conversational,
+// 5-15 words) - Claude still gets the full business context block, so
+// even a brief "should I worry about X?" produces a grounded answer.
 function recommendedFromSignal(
   s: AdvisorRecommendation,
   ctx: BusinessContext,
 ): RecommendedConsultation {
+  const key    = s.signalKey.split(":")[0];
+  const target = s.signalKey.includes(":") ? s.signalKey.split(":")[1] : null;
+
   const ctaForSignal = (): string => {
-    const key = s.signalKey.split(":")[0];
-    const target = s.signalKey.includes(":") ? s.signalKey.split(":")[1] : null;
     switch (key) {
       case "vendor_spike":                 return `Investigate ${target ?? "Vendor"} Cost Spike`;
       case "vendor_concentration":         return `Reduce ${target ?? "Vendor"} Concentration`;
@@ -204,18 +207,15 @@ function recommendedFromSignal(
       default:                              return "Analyze This Signal";
     }
   };
+
   const tone: RecommendedConsultation["tone"] =
     s.level === "bad" ? "bad" :
     s.level === "warn" ? "warn" :
     s.level === "good" ? "good" :
     "info";
-  // The hero needs an executive-tight interpretation - the full
-  // Business-Signals interpretation can run long because it carries
-  // user notes, peer context, and supporting nuance. Strip those and
-  // greedy-fit sentences up to ~140 chars so the hero reads as a
-  // confident one- or two-sentence insight.
+
   const tightInterpretation = tightenInterpretation(s.interpretation);
-  const question = `${s.observation} ${s.interpretation} The recommended action was: ${s.recommendation} Walk me through the diagnosis - is that read correct, and what should I actually do next, in order of priority? Use my recent data (latest month is ${ymToLabel(ctx.ym)}) and be specific.`;
+  const question = ownerQuestionForSignal(key, target, s.level);
   return {
     title: ctaForSignal(),
     observation: s.observation,
@@ -225,6 +225,58 @@ function recommendedFromSignal(
     tone,
     signalKey: s.signalKey,
   };
+}
+
+// Owner-voice question for each signal type. Short, direct, the way
+// someone running the business would phrase it - not a CFO walk-me-
+// through. Some questions are simple ("Should I be worried?"); some
+// are slightly more nuanced ("Can my margin support a hire?") so the
+// list mixes texture. Never longer than ~15 words.
+function ownerQuestionForSignal(
+  key: string,
+  target: string | null,
+  level: string,
+): string {
+  switch (key) {
+    case "vendor_spike":
+      return target
+        ? `Why did my spend with ${target} jump?`
+        : `Why did one of my vendors suddenly cost more?`;
+    case "vendor_concentration":
+      return target
+        ? `Am I too dependent on ${target}?`
+        : `Am I too dependent on one vendor?`;
+    case "forecast_negative_next_month":
+      return `Should I be worried about next month's cash?`;
+    case "expense_mom_jump":
+      return `Why are my costs up this month?`;
+    case "marketing_intensity_high":
+      return `Am I overspending on marketing?`;
+    case "payroll_heavy":
+      return `Is my payroll too heavy for what I'm bringing in?`;
+    case "revenue_mom_swing":
+      return level === "good"
+        ? `What's driving the jump in revenue?`
+        : `Why is my revenue slowing down?`;
+    case "net_margin_observation":
+      return `Why is my margin tightening?`;
+    case "growth_headroom":
+      return `Should I be spending more to grow?`;
+    case "uncategorized_high":
+      return `How do I clean up my uncategorized transactions?`;
+    case "top_expense_category":
+      return target
+        ? `Is ${target} eating too much of my budget?`
+        : `Which category is eating too much of my budget?`;
+    case "marketing_cut_held":
+      return `Did cutting marketing actually hurt me?`;
+    case "trailing_3_net":
+      return `Am I in a sustained dip?`;
+    case "ytd_snapshot":
+      return `Am I tracking behind for the year?`;
+    default:
+      return `What should I do about this?`;
+  }
 }
 
 // Trim a Business-Signals interpretation down to the most strategic
@@ -259,7 +311,6 @@ function recommendedFromContext(
   ctx: BusinessContext,
   signals: AdvisorRecommendation[],
 ): RecommendedConsultation | null {
-  const ccy = ctx.ccy;
   const m = ctx.current;
   const curMargin = m.income > 0 ? (m.income - m.expenses) / m.income : null;
 
@@ -269,7 +320,7 @@ function recommendedFromContext(
       title: "Explore Growth Opportunity",
       observation: `Margins held at ${fmtPct(curMargin)} while marketing spend is only ${fmtPct(ctx.marketingRatio)} of revenue.`,
       interpretation: `You have unused growth headroom - the business is generating profit faster than it's reinvesting in acquisition, which tends to plateau revenue over the medium term.`,
-      question: `My current margin is ${fmtPct(curMargin)} and marketing is only ${fmtPct(ctx.marketingRatio)} of revenue. Walk me through a measured approach to deploying ${fmtMoney(ctx.avgRevenue * 0.05, ccy)}/mo of additional acquisition spend - what should I measure, what level of CAC degradation is acceptable, and how would you stage the test? Use my actual numbers.`,
+      question: `Should I be spending more to grow?`,
       cta: "Explore Growth Opportunity",
       tone: "good",
     };
@@ -285,25 +336,25 @@ function recommendedFromContext(
     title: "Set Strategic Priorities",
     observation: `${ymToLabel(ctx.ym)} is operating in a stable band - nothing is flagging as urgent.`,
     interpretation: `Stable periods are the most useful time to make a deliberate strategic bet. The window where the cost of being wrong is lowest is exactly when most owners coast.`,
-    question: `My business is currently operating in a stable band - nothing urgent is flagging. Given my recent numbers, what would be the single highest-leverage strategic bet to consider this quarter - growth investment, cost optimization, hiring, or runway extension? Be specific about which numbers in my data drive your recommendation.`,
+    question: `What's the smartest move I can make this quarter?`,
     cta: "Set Strategic Priorities",
     tone: "info",
   };
 }
 
 // Turn an advisor signal into a Suggested Strategic Consultation.
-// Title is a tight business theme, blurb is a one-line interpreted
-// insight - short, scannable, signal-oriented, not a mini paragraph.
+// Question is rewritten in owner voice (see ownerQuestionForSignal);
+// title + blurb are kept for fallback / dedup purposes.
 function situationForSignal(
   s: AdvisorRecommendation,
-  ctx: BusinessContext,
+  _ctx: BusinessContext,
 ): StrategicSituation | null {
   const tone: StrategicSituation["tone"] =
     s.level === "bad" ? "bad" :
     s.level === "warn" ? "warn" :
     s.level === "good" ? "good" :
     "neutral";
-  const key = s.signalKey.split(":")[0];
+  const key    = s.signalKey.split(":")[0];
   const target = s.signalKey.includes(":") ? s.signalKey.split(":")[1] : null;
   const meta: Record<string, { title: string; blurb: string }> = {
     vendor_spike:                 { title: `${target ?? "Vendor"} Spike`,        blurb: "Costs jumped sharply month over month." },
@@ -326,7 +377,7 @@ function situationForSignal(
     id: s.signalKey,
     title: m.title,
     blurb: m.blurb,
-    question: `${s.observation} ${s.interpretation} The advisor's recommended action was: ${s.recommendation} Walk me through this in depth - is the diagnosis correct, what would you actually do first, and what should I be tracking after I act? Use my recent data (latest month: ${ymToLabel(ctx.ym)}).`,
+    question: ownerQuestionForSignal(key, target, s.level),
     tone,
   };
 }
@@ -342,7 +393,7 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
       id: "evergreen_hiring",
       title: "Hiring Expansion",
       blurb: "Can current margins absorb another hire?",
-      question: `I have ${ctx.employees.length} employees today and a fully-loaded payroll cost of ${fmtMoney(ctx.employeeCostMonthly, ctx.ccy)}/mo. Walk me through whether my current revenue and margin trajectory could absorb one additional hire, and which role would have the highest leverage. Use my numbers and be specific about the break-even threshold.`,
+      question: `Can I afford another hire right now?`,
       tone: "neutral",
     });
   } else {
@@ -350,7 +401,7 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
       id: "evergreen_first_hire",
       title: "First Hire Readiness",
       blurb: "When does the business support a first hire?",
-      question: `I have no employees today. Walk me through the revenue and margin thresholds I'd need to clear before considering my first hire, and what role would unlock the most growth. Use my actual numbers.`,
+      question: `When can I afford to hire my first employee?`,
       tone: "neutral",
     });
   }
@@ -359,7 +410,7 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
     id: "evergreen_expense_pressure",
     title: "Expense Pressure",
     blurb: "Where the biggest cost drag is hiding.",
-    question: `Walk me through my current expense base. Identify the 2–3 categories with the highest operational drag relative to revenue, the largest variance vs prior periods, or the most realistic optimization potential. Be specific - name the categories and the dollar amounts.`,
+    question: `Where am I overspending?`,
     tone: "neutral",
   });
 
@@ -367,7 +418,7 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
     id: "evergreen_priorities",
     title: "Strategic Priorities",
     blurb: "The top 3 areas worth attention this quarter.",
-    question: `Based on my recent business activity, what are the 3 most important operational priorities I should be focused on this quarter? Rank them by leverage and explain which specific numbers in my data drive each one.`,
+    question: `What should I focus on this quarter?`,
     tone: "neutral",
   });
 
@@ -375,7 +426,31 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
     id: "evergreen_cashflow",
     title: "Cash Flow Durability",
     blurb: "How a 20% revenue drop would land.",
-    question: `Walk me through how durable my current cash flow position is. If revenue dropped 20% next month, how would the numbers look? What would I need to cut, and which fixed commitments would force my hand first?`,
+    question: `What happens if my revenue drops 20% next month?`,
+    tone: "neutral",
+  });
+
+  out.push({
+    id: "evergreen_pricing",
+    title: "Pricing",
+    blurb: "Is there room to raise prices?",
+    question: `Should I raise my prices?`,
+    tone: "neutral",
+  });
+
+  out.push({
+    id: "evergreen_runway",
+    title: "Runway",
+    blurb: "How long does the current burn buy me?",
+    question: `How long is my runway at the current pace?`,
+    tone: "neutral",
+  });
+
+  out.push({
+    id: "evergreen_topcustomers",
+    title: "Customer Concentration",
+    blurb: "Am I too reliant on a few customers?",
+    question: `Am I too dependent on a few customers?`,
     tone: "neutral",
   });
 

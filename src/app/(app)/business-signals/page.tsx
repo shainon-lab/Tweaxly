@@ -13,6 +13,7 @@ import { evaluateNotificationRules } from "@/lib/notificationsEval";
 import { getQuota, getPlanFor } from "@/lib/billing";
 import LockedOverlay from "@/components/billing/LockedOverlay";
 import BusinessSignalsTabs from "./BusinessSignalsTabs";
+import { sweepAndDispatch } from "@/lib/alerts/sweep";
 
 export const dynamic = "force-dynamic";
 
@@ -22,8 +23,10 @@ export const dynamic = "force-dynamic";
 const MAX_PER_GROUP = 3;
 
 export default async function BusinessSignalsPage() {
-  const { business } = await requireBusiness();
+  const { user, business } = await requireBusiness();
   const ccy = business.currency;
+  // Phase-4 Alerts dispatcher (5-min throttled inside the lib).
+  void sweepAndDispatch(user.id, business.id).catch(() => {});
 
   const [advisorPool, mutedRows, triggeredAlerts] = await Promise.all([
     (async () => {

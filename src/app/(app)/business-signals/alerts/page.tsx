@@ -10,11 +10,14 @@ import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import { evaluateAndStampNotificationRules } from "@/lib/notificationsEval";
 import BusinessSignalsTabs from "../BusinessSignalsTabs";
+import { sweepAndDispatch } from "@/lib/alerts/sweep";
 
 export const dynamic = "force-dynamic";
 
 export default async function BusinessSignalsMonitorPage() {
-  const { business } = await requireBusiness();
+  const { user, business } = await requireBusiness();
+  // Phase-4 Alerts dispatcher (5-min throttled inside the lib).
+  void sweepAndDispatch(user.id, business.id).catch(() => {});
 
   const [thresholdAlerts, rules, categoriesRaw] = await Promise.all([
     evaluateAndStampNotificationRules(business.id),

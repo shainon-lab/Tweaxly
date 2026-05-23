@@ -3,7 +3,8 @@
 // One card per workspace in the overview grid. Shows plan badge,
 // AI credit balance + progress bar, alert count, last activity,
 // and two CTAs: Open (POST switch + reload) and Manage plan (link
-// to /settings/billing after switching).
+// to /settings after switching - billing lives inside Settings →
+// Business Profile per workspace).
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
@@ -72,7 +73,7 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
 
   async function openWorkspaceBilling() {
     if (card.isCurrent) {
-      startTransition(() => router.push("/settings/billing"));
+      startTransition(() => router.push("/settings"));
       return;
     }
     setBusy(true);
@@ -83,7 +84,7 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
         body:    JSON.stringify({ businessId: card.id }),
       });
       if (!res.ok) { alert("Couldn't switch workspace."); setBusy(false); return; }
-      window.location.assign("/settings/billing");
+      window.location.assign("/settings");
     } catch {
       alert("Network error.");
       setBusy(false);

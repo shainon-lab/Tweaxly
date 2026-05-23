@@ -29,7 +29,15 @@ export type CreditKind =
   | "admin_grant"
   | "coupon"
   | "expiry"
-  | "adjustment";
+  | "adjustment"
+  // Offsetting negative entry written when the source of an earlier
+  // grant is invalidated:
+  //   • Override revoked       → revert admin_grant credits
+  //   • Pack purchase refunded → revert purchase credits
+  //   • Subscription lapsed    → revert monthly_grant credits
+  // The reverted source + reference id are stamped in meta so the
+  // ledger stays auditable and revert is idempotent.
+  | "revert";
 
 export interface CreditOptions {
   reason?:    string;
@@ -228,7 +236,13 @@ export async function ensureMonthlyAllowance(
     // Free (or any plan without recurring monthly credits) - never
     // refresh. The starter grant happened on bootstrap; users get a
     // one-time experience.
-    return { balance: wallet.balance, granted: 0, reset: false };
+    // BUT: this is also the lazy hook for sub-lapse / downgrade.
+    // If the workspace still has monthly_grant credits sitting in
+    // the wallet from a prior Pro period, revert them now so the
+    // user doesn't keep consuming AI on a sub they no longer have.
+    await reconcileEntitledCredits(businessId);
+    const after = await prisma.aiCreditWallet.findUnique({ where: { businessId } });
+    return { balance: after?.balance ?? wallet.balance, granted: 0, reset: false };
   }
   const prev = wallet.periodStart;
   const sameMonth =
@@ -301,4 +315,230 @@ export async function getRecentTransactions(businessId: string, limit = 50) {
     orderBy: { createdAt: "desc" },
     take:    limit,
   });
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Reversion
+// ────────────────────────────────────────────────────────────────────
+//
+// Rules (from spec):
+//   1. Credits granted by an admin override revert when that override
+//      is revoked or expires.
+//   2. Credits granted by a subscription's monthly allowance revert
+//      when the subscription is no longer active (canceled, past_due,
+//      not-renewed, or downgraded to Free).
+//   3. Credits granted by a one-time pack purchase ONLY revert when
+//      that specific pack is refunded.
+//   4. Starter grants (one-time Free onboarding credits) and coupon
+//      redemptions are never auto-reverted.
+//
+// All reverts are clamped so the wallet can never go negative AND so
+// they never eat into protected sources (unrefunded packs). Each
+// revert writes a single `kind:"revert"` ledger row with
+// `meta.revertedSource` and a reference id, so subsequent calls
+// detect they've already reverted and become no-ops.
+
+// Sum the unrefunded pack credits still attributable to active
+// purchases. Used as the floor when computing how much of a monthly
+// or override revert we're allowed to write - pack credits must
+// survive a subscription lapse per the spec.
+async function getProtectedPackCredits(businessId: string): Promise<number> {
+  const purchases = await prisma.aiCreditTransaction.findMany({
+    where: { businessId, kind: "purchase" },
+    select: { id: true, delta: true },
+  });
+  if (purchases.length === 0) return 0;
+
+  let protectedTotal = 0;
+  for (const p of purchases) {
+    // Sum any prior writedowns of this specific purchase. Both the
+    // monthly "expiry" sweep and the refund flow tag their entries
+    // with the originating purchase txn id.
+    const writedowns = await prisma.aiCreditTransaction.findMany({
+      where: {
+        businessId,
+        OR: [
+          { kind: "expiry", meta: { path: ["purchaseTxnId"], equals: p.id } },
+          { kind: "revert", meta: { path: ["revertedSource"], equals: "purchase" }, AND: [{ meta: { path: ["purchaseTxnId"], equals: p.id } }] },
+        ],
+      },
+      select: { delta: true },
+    });
+    const written = writedowns.reduce((s, w) => s + Math.abs(w.delta), 0);
+    protectedTotal += Math.max(0, p.delta - written);
+  }
+  return protectedTotal;
+}
+
+// Write a single offsetting revert transaction inside an existing
+// Prisma interactive-tx. Returns the actual amount written (0 when
+// nothing left to revert).
+async function writeRevert(
+  tx: Parameters<Parameters<typeof prisma.$transaction>[0]>[0],
+  businessId: string,
+  amount: number,
+  reason: string,
+  meta: Record<string, unknown>,
+): Promise<number> {
+  if (amount <= 0) return 0;
+  const wallet = await tx.aiCreditWallet.findUnique({ where: { businessId } });
+  if (!wallet) return 0;
+  const clamped = Math.min(amount, wallet.balance);
+  if (clamped <= 0) return 0;
+  const newBalance = wallet.balance - clamped;
+  await tx.aiCreditWallet.update({
+    where: { businessId },
+    data:  { balance: newBalance },
+  });
+  await tx.aiCreditTransaction.create({
+    data: {
+      businessId,
+      delta:        -clamped,
+      kind:         "revert",
+      reason,
+      balanceAfter: newBalance,
+      meta:         meta as object,
+    },
+  });
+  return clamped;
+}
+
+// Revert every credit granted by a single admin override. Idempotent:
+// the second call notices the prior revert(s) and returns 0.
+export async function revertOverrideCredits(
+  overrideId: string,
+  reason: string = "Admin override revoked",
+): Promise<{ reverted: number }> {
+  const grants = await prisma.aiCreditTransaction.findMany({
+    where: {
+      kind: "admin_grant",
+      meta: { path: ["overrideId"], equals: overrideId },
+    },
+    select: { id: true, businessId: true, delta: true },
+  });
+  if (grants.length === 0) return { reverted: 0 };
+
+  // All grants for one override belong to the same business.
+  const businessId = grants[0].businessId;
+  const grantedTotal = grants.reduce((s, g) => s + g.delta, 0);
+
+  const prior = await prisma.aiCreditTransaction.findMany({
+    where: {
+      businessId,
+      kind: "revert",
+      meta: { path: ["revertedSource"], equals: "admin_grant" },
+      AND:  [{ meta: { path: ["overrideId"], equals: overrideId } }],
+    },
+    select: { delta: true },
+  });
+  const priorReverted = prior.reduce((s, p) => s + Math.abs(p.delta), 0);
+  const owed = Math.max(0, grantedTotal - priorReverted);
+  if (owed <= 0) return { reverted: 0 };
+
+  const reverted = await prisma.$transaction((tx) =>
+    writeRevert(tx, businessId, owed, reason, {
+      revertedSource: "admin_grant",
+      overrideId,
+    }),
+  );
+  return { reverted };
+}
+
+// Refund a specific credit pack. Reverts whatever portion of that
+// pack's grant is still in the wallet (accounting for prior expiries
+// and refunds). Idempotent.
+export async function refundPurchase(
+  purchaseTxnId: string,
+  reason: string = "Credit pack refunded",
+): Promise<{ reverted: number }> {
+  const purchase = await prisma.aiCreditTransaction.findFirst({
+    where: { id: purchaseTxnId, kind: "purchase" },
+    select: { id: true, businessId: true, delta: true },
+  });
+  if (!purchase) return { reverted: 0 };
+
+  const writedowns = await prisma.aiCreditTransaction.findMany({
+    where: {
+      businessId: purchase.businessId,
+      OR: [
+        { kind: "expiry", meta: { path: ["purchaseTxnId"], equals: purchase.id } },
+        { kind: "revert", meta: { path: ["revertedSource"], equals: "purchase" }, AND: [{ meta: { path: ["purchaseTxnId"], equals: purchase.id } }] },
+      ],
+    },
+    select: { delta: true },
+  });
+  const written = writedowns.reduce((s, w) => s + Math.abs(w.delta), 0);
+  const owed = Math.max(0, purchase.delta - written);
+  if (owed <= 0) return { reverted: 0 };
+
+  const reverted = await prisma.$transaction((tx) =>
+    writeRevert(tx, purchase.businessId, owed, reason, {
+      revertedSource: "purchase",
+      purchaseTxnId:  purchase.id,
+    }),
+  );
+  return { reverted };
+}
+
+// Revert recurring monthly_grant credits. Called when the workspace
+// transitions off a recurring plan (subscription lapsed, override
+// expired with no underlying sub). Protected: pack credits that are
+// still active are kept whole.
+export async function revertMonthlyGrants(
+  businessId: string,
+  reason: string = "Plan no longer active",
+): Promise<{ reverted: number }> {
+  const grants = await prisma.aiCreditTransaction.findMany({
+    where: { businessId, kind: "monthly_grant" },
+    select: { delta: true },
+  });
+  if (grants.length === 0) return { reverted: 0 };
+  const grantedTotal = grants.reduce((s, g) => s + g.delta, 0);
+
+  const prior = await prisma.aiCreditTransaction.findMany({
+    where: {
+      businessId,
+      kind: "revert",
+      meta: { path: ["revertedSource"], equals: "monthly_grant" },
+    },
+    select: { delta: true },
+  });
+  const priorReverted = prior.reduce((s, p) => s + Math.abs(p.delta), 0);
+  const owed = Math.max(0, grantedTotal - priorReverted);
+  if (owed <= 0) return { reverted: 0 };
+
+  const wallet = await prisma.aiCreditWallet.findUnique({ where: { businessId } });
+  if (!wallet) return { reverted: 0 };
+  const protectedPacks = await getProtectedPackCredits(businessId);
+  const revertCap = Math.max(0, wallet.balance - protectedPacks);
+  const amount = Math.min(owed, revertCap);
+  if (amount <= 0) return { reverted: 0 };
+
+  const reverted = await prisma.$transaction((tx) =>
+    writeRevert(tx, businessId, amount, reason, {
+      revertedSource: "monthly_grant",
+    }),
+  );
+  return { reverted };
+}
+
+// Top-level reconciler. Run after any entitlement change (override
+// revoke, sub lapse, plan downgrade, daily sweep) to bring the wallet
+// back in line with the current plan. Safe + cheap to call on every
+// read - all helpers are idempotent.
+//
+// Right now this covers the subscription-lapsed case. Override
+// reversions and pack refunds are invoked at their respective
+// endpoints because they have a specific reference id we need.
+export async function reconcileEntitledCredits(
+  businessId: string,
+): Promise<{ reverted: number }> {
+  const plan = await getPlanFor(businessId);
+  const limits = getPlanLimits(plan);
+  // Recurring allowance gone → any remaining monthly_grant credits
+  // belong to a stopped subscription. Revert them.
+  if (limits.monthlyAICredits <= 0) {
+    return revertMonthlyGrants(businessId);
+  }
+  return { reverted: 0 };
 }

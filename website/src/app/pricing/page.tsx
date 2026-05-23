@@ -76,10 +76,8 @@ const PLANS: Plan[] = [
     price:    "$0",
     period:   "forever",
     tagline:  "Connect your business and experience AI-powered insights. Starter credits included.",
-    credits:  "30 starter AI Credits (one-time)",
+    credits:  "30 starter AI Credits (one-time grant)",
     bullets: [
-      "1 workspace, 1 user",
-      "1 connected data source (CSV, bank or card)",
       "90 days of visible history",
       "Up to 3 business signals per month",
       "Forecast up to 3 months ahead",
@@ -95,16 +93,17 @@ const PLANS: Plan[] = [
     price:     "$49",
     period:    "per month",
     tagline:   "Unlock the full platform - everything Tweaxly can do, in one premium plan.",
-    credits:   "500 AI Credits / month · buy more anytime",
+    credits:   "500 AI Credits / month",
     highlight: true,
     bullets: [
-      "Unlimited workspaces, team members + roles",
-      "Unlimited data sources + integrations",
-      "Unlimited historical data",
+      "Buy add-on AI Credit packs anytime as you scale",
+      "Real-Time Business Alerts (desktop push + custom monitors)",
+      "Unlimited historical data + custom date ranges",
       "Unlimited business signals + smart alerts",
-      "Full forecasting + Scenario Builder + scenarios compare",
+      "Long-horizon forecasting (6, 12, 24, 36, 60 months)",
+      "Scenario Builder + multi-scenario compare",
+      "Workforce Planning + hire/cost modelling",
       "Export to Excel, CSV, PDF (+ white-label)",
-      "Priority AI processing + audit logs + API access",
     ],
     ctaLabel: "Start Pro Free",
     ctaHref:  SIGNUP_URL,
@@ -123,10 +122,12 @@ const MATRIX: MatrixGroup[] = [
   {
     label: "Workspace",
     rows: [
-      { dimension: "Workspaces",       free: "1",        pro: "Unlimited" },
+      // Workspaces are unlimited on both plans (each workspace has
+      // its own subscription), so we don't surface a count.
       { dimension: "Team members",     free: "1",        pro: "Team + roles" },
       { dimension: "Data sources",     free: "1",        pro: "Unlimited + integrations" },
       { dimension: "Historical data",  free: "90 days",  pro: "Unlimited" },
+      { dimension: "Custom historical range", free: "—", pro: "✓" },
     ],
   },
   {
@@ -135,6 +136,9 @@ const MATRIX: MatrixGroup[] = [
       { dimension: "Included AI Credits",             free: "30 (starter, one-time)", pro: "500 / month (+ packs)" },
       { dimension: "Business signals / month",        free: "Up to 3",   pro: "Unlimited" },
       { dimension: "Smart alerts",                    free: "—",         pro: "✓" },
+      { dimension: "Real-Time Business Alerts (desktop push)", free: "—", pro: "✓" },
+      { dimension: "Custom monitors",                 free: "1 threshold", pro: "Unlimited + severity routing" },
+      { dimension: "Quiet hours + daily limit",       free: "—",         pro: "✓" },
       { dimension: "AI consultation",                 free: "Basic",     pro: "Full + priority processing" },
       { dimension: "Action-oriented recommendations", free: "—",         pro: "✓" },
     ],
@@ -142,9 +146,11 @@ const MATRIX: MatrixGroup[] = [
   {
     label: "Forecasting",
     rows: [
-      { dimension: "Forecast horizon",      free: "3 months",  pro: "Unlimited" },
-      { dimension: "Scenario Builder",      free: "—",         pro: "✓" },
-      { dimension: "Multi-scenario compare", free: "—",        pro: "✓" },
+      { dimension: "Forecast horizon",       free: "3 months",  pro: "Up to 60 months" },
+      { dimension: "Scenario Builder",       free: "—",         pro: "✓" },
+      { dimension: "Multi-scenario compare", free: "—",         pro: "✓" },
+      { dimension: "Workforce Planning",     free: "—",         pro: "✓" },
+      { dimension: "Yearly reports + insights", free: "—",      pro: "✓" },
     ],
   },
   {
@@ -154,7 +160,6 @@ const MATRIX: MatrixGroup[] = [
       { dimension: "Excel / CSV export",   free: "—",  pro: "✓" },
       { dimension: "PDF export",           free: "—",  pro: "✓" },
       { dimension: "White-label reports",  free: "—",  pro: "✓" },
-      { dimension: "Audit logs",           free: "—",  pro: "✓" },
     ],
   },
   {
@@ -162,7 +167,6 @@ const MATRIX: MatrixGroup[] = [
     rows: [
       { dimension: "Basic integrations",    free: "✓",  pro: "✓" },
       { dimension: "Advanced integrations", free: "—",  pro: "✓" },
-      { dimension: "API access",            free: "—",  pro: "✓" },
       { dimension: "Webhooks",              free: "—",  pro: "✓" },
       { dimension: "Dedicated onboarding",  free: "—",  pro: "✓" },
     ],
@@ -181,9 +185,10 @@ const CREDIT_COSTS: { action: string; cost: string }[] = [
 ];
 
 const CREDIT_PACKS: { pack: string; price: string }[] = [
-  { pack: "+100 AI Credits",   price: "$19" },
-  { pack: "+500 AI Credits",   price: "$79" },
-  { pack: "+2,000 AI Credits", price: "$249" },
+  { pack: "+30 AI Credits",       price: "$9" },
+  { pack: "+50 AI Credits",       price: "$14" },
+  { pack: "+100 AI Credits",      price: "$19" },
+  { pack: "Custom (30+ credits)", price: "from $9" },
 ];
 
 // ─────────────────────────────────────────────────────────────────────
@@ -193,7 +198,7 @@ const CREDIT_PACKS: { pack: string; price: string }[] = [
 const PRICING_FAQS: { q: string; a: string }[] = [
   {
     q: "Is the Free plan really free?",
-    a: "Yes. The Free plan is free forever - no credit card required. You get one workspace, one user, 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Upgrade to Pro when you're ready to use AI continuously.",
+    a: "Yes. The Free plan is free forever - no credit card required. You get 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Create as many workspaces as you want (each is its own subscription). Upgrade any workspace to Pro when you're ready to use AI continuously.",
   },
   {
     q: "What is an AI Credit?",
@@ -328,8 +333,9 @@ function Hero() {
         <span className="gradient-text">Upgrade to Pro when ready.</span>
       </h1>
       <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl">
-        Two plans. AI Credits included on both. Buy more credits anytime
-        as your AI usage grows - no need to jump tiers.
+        Two plans. AI Credits included on both - 30 one-time starter
+        credits on Free, 500 every month on Pro plus add-on packs you
+        can buy anytime as your AI usage grows.
       </p>
       <div className="mt-6 flex items-center gap-2 text-xs text-slate-500">
         <span className="w-1.5 h-1.5 rounded-full bg-good" />
@@ -373,11 +379,11 @@ function PlanCard({ plan }: { plan: Plan }) {
         <p className="mt-3 text-sm text-slate-400 leading-relaxed">{plan.tagline}</p>
       </header>
 
-      <div className="rounded-lg border border-line/60 bg-ink-900/40 px-3 py-2 mb-5 text-sm">
-        <span className="text-brand-purple font-semibold">{plan.credits}</span>
-      </div>
-
       <ul className="space-y-2 text-sm text-slate-300 leading-relaxed mb-6 flex-1">
+        <li className="flex gap-2">
+          <CheckGlyph />
+          <span>{plan.credits}</span>
+        </li>
         {plan.bullets.map((b) => (
           <li key={b} className="flex gap-2">
             <CheckGlyph />
@@ -522,7 +528,7 @@ function AICreditsExplainer() {
               ))}
             </ul>
             <div className="mt-4 text-xs text-slate-500 leading-relaxed">
-              Available on every plan. Added instantly. Expire 12 months after purchase.
+              Pro plan only. Added instantly. Expire 12 months after purchase.
             </div>
           </div>
         </div>

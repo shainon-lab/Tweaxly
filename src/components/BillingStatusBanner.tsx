@@ -10,6 +10,8 @@
 // to the page. Used inside the (app) layout above the main content.
 
 import Link from "next/link";
+import UpgradeTriggerButton from "./billing/UpgradeTriggerButton";
+import BuyCreditsTriggerButton from "./billing/BuyCreditsTriggerButton";
 
 interface BillingStatusBannerProps {
   readOnly: boolean;
@@ -33,7 +35,7 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
             This workspace is in read-only mode. Dashboards and historical reports remain visible, but new uploads, AI consultation and exports are paused for this workspace only - other workspaces are unaffected.
           </span>
           <Link
-            href="/settings/billing"
+            href="/settings?tab=plan"
             className="text-xs font-semibold px-3 py-1 rounded-md border border-bad text-bad hover:bg-bad/15 transition whitespace-nowrap"
           >
             Reactivate →
@@ -58,12 +60,13 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
           <span className="flex-1 min-w-0 text-slate-200">
             You&apos;ve used all your starter AI Credits on this workspace. Upgrade to Pro to receive 500 AI Credits every month + the ability to buy more anytime.
           </span>
-          <Link
-            href="/settings/billing"
+          <UpgradeTriggerButton
+            currentPlan={plan}
+            feature="Pro plan"
             className="text-xs font-semibold px-3 py-1 rounded-md border border-accent/60 text-accent hover:bg-accent-soft hover:border-accent transition whitespace-nowrap"
           >
             Upgrade to Pro →
-          </Link>
+          </UpgradeTriggerButton>
         </div>
       </div>
     );
@@ -79,12 +82,11 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
           <span className="flex-1 min-w-0 text-slate-200">
             This workspace has used its monthly AI Credits. They&apos;ll reset at the start of next month, or you can buy a pack for this workspace.
           </span>
-          <Link
-            href="/settings/billing"
+          <BuyCreditsTriggerButton
             className="text-xs font-semibold px-3 py-1 rounded-md border border-warn/60 text-warn hover:bg-warn/15 hover:border-warn transition whitespace-nowrap"
           >
             Buy credits →
-          </Link>
+          </BuyCreditsTriggerButton>
         </div>
       </div>
     );

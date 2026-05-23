@@ -25,6 +25,8 @@ import WorkforcePayrollChart from "./WorkforcePayrollChart";
 import ScenarioBuilderPanel from "../forecast/ScenarioBuilderPanel";
 import WorkforceBuilderTrigger from "./WorkforceBuilderTrigger";
 import { type RosterMember } from "../forecast/ScenarioBuilder";
+import { hasFeature, getPlanFor } from "@/lib/billing";
+import LockedOverlay from "@/components/billing/LockedOverlay";
 
 const LEVEL_BAR: Record<string, string> = {
   good: "border-good/40",
@@ -37,6 +39,45 @@ export default async function WorkforcePage() {
   const { business } = await requireBusiness();
   const { t } = await getServerT();
   const ccy = business.currency;
+
+  // Workforce Planning is Pro-only. Free users get the same locked
+  // upgrade card pattern as the Scenarios tab - PageHeader and
+  // ForecastTabs render, everything else is suppressed in favor of
+  // a single LockedOverlay card.
+  const canWorkforce = await hasFeature(business.id, "workforcePlanning");
+  const currentPlan  = await getPlanFor(business.id);
+
+  if (!canWorkforce) {
+    return (
+      <>
+        <PageHeader
+          title={t("page.workforce.title")}
+          subtitle={t("page.workforce.subtitle")}
+        />
+        <ForecastTabs />
+        <LockedOverlay
+          locked={true}
+          feature="Workforce Planning"
+          plan={currentPlan}
+          benefits={[
+            "Live payroll cost, % of revenue, MoM change and 12-month forecast",
+            "Model hires, cuts, contract changes and one-offs",
+            "Revenue + burn per employee, affordable-hires estimate",
+            "Full Excel / CSV / PDF export",
+          ]}
+          blurb="See team cost, payroll trends and hiring headroom at a glance. Upgrade to Pro to unlock."
+        >
+          <div className="card min-h-[320px] flex flex-col items-center justify-center text-center">
+            <div className="text-base font-semibold text-slate-100 mb-2">Workforce Planning</div>
+            <div className="text-sm text-slate-400 max-w-md">
+              Financial intelligence about your team — how much it costs, how fast
+              payroll is growing, and what hires you can afford.
+            </div>
+          </div>
+        </LockedOverlay>
+      </>
+    );
+  }
 
   const employees = await prisma.employee.findMany({
     where: { businessId: business.id },

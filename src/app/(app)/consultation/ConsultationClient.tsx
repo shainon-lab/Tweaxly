@@ -9,22 +9,24 @@ import { useState, useTransition, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { MessageSquareText } from "lucide-react";
 import { renderMarkdown } from "./markdown";
-import type {
-  RecommendedConsultation,
-  StrategicSituation,
-  TodaysFocus,
-} from "@/lib/consultationFocus";
+import StructuredAdvisoryView from "@/components/advisory/StructuredAdvisoryView";
+import ThinkingProgress from "@/components/advisory/ThinkingProgress";
 import {
   buildDecisionBriefing,
   type DecisionBriefing,
   type StrategicPath,
 } from "@/lib/decisionBriefing";
+import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
+import BuyCreditsTriggerButton from "@/components/billing/BuyCreditsTriggerButton";
 
 type Msg = {
   id: string;
   role: "user" | "assistant";
   content: string;
   payload: string | null;
+  // Optional structured advisory payload (Phase 1). When present the
+  // UI renders the multi-card layout instead of plain markdown.
+  structured?: import("@/lib/advisorTypes").StructuredAdvice | null;
   createdAt: string;
 };
 
@@ -267,18 +269,17 @@ export default function ConsultationClient({
   active: initialActive,
   currency,
   claudeEnabled,
-  focus,
-  recommended,
-  suggested,
   initialDraft,
+  autoSubmit,
 }: {
   active: Active | null;
   currency: string;
   claudeEnabled: boolean;
-  focus: TodaysFocus | null;
-  recommended: RecommendedConsultation | null;
-  suggested: StrategicSituation[];
   initialDraft?: string;
+  // True when arriving from /consultation/suggested with ?auto=1.
+  // The component fires `send()` once on mount so the user lands
+  // directly on the answer.
+  autoSubmit?: boolean;
 }) {
   const router = useRouter();
   const [active, setActive] = useState<Active | null>(initialActive);
@@ -319,13 +320,27 @@ export default function ConsultationClient({
     return () => { cancelled = true };
   }, []);
 
-  // If we landed via ?q= (a "Consult AI" link from a Business Signal),
-  // focus the textarea so the user can edit immediately.
+  // If we landed via ?q= (a "Consult AI" link from a Business Signal,
+  // or a CONSULT click on the Suggested tab), focus the textarea so
+  // the user can edit immediately.
   useEffect(() => {
     if (initialDraft && textareaRef.current) {
       textareaRef.current.focus();
     }
   }, [initialDraft]);
+
+  // ?auto=1 path: the user clicked CONSULT on a Suggested question
+  // and expects to land on the answer, not the editor. Fire send()
+  // once. Guarded against duplicate fires (React StrictMode dev,
+  // re-renders) via a ref flag.
+  const autoFiredRef = useRef(false);
+  useEffect(() => {
+    if (autoSubmit && initialDraft && !autoFiredRef.current && !sending) {
+      autoFiredRef.current = true;
+      void send(initialDraft);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoSubmit, initialDraft]);
 
   useEffect(() => {
     setActive(initialActive);
@@ -432,80 +447,23 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Arrival mode - if the user came in with a prefilled question
-          (?q= from Analyze / Investigate / Explain This elsewhere),
-          the screen pivots: the freeform conversation leads, and the
-          hero is tucked behind a disclosure. The user's intent is the
-          priority, not the AI's. */}
-      {initialDraft ? (
-        <>
-          <FreeformConsultation
-            textareaRef={textareaRef}
-            draft={draft}
-            setDraft={setDraft}
-            sending={sending}
-            onSend={() => void send()}
-            arrivalMode
-          />
+      {/* Custom-question surface. The previous "Recommended" hero +
+          "Strategic situations" list moved to /consultation/suggested
+          so this screen stays focused on the user's own questions. */}
+      <FreeformConsultation
+        textareaRef={textareaRef}
+        draft={draft}
+        setDraft={setDraft}
+        sending={sending}
+        onSend={() => void send()}
+        arrivalMode={!!initialDraft}
+      />
 
-          {recommended ? (
-            <details className="rounded-xl border border-line bg-ink-900/30 px-4 py-3">
-              <summary className="cursor-pointer text-sm text-slate-300 hover:text-slate-100">
-                Or pivot to what the AI flagged today
-              </summary>
-              <div className="mt-3">
-                <RecommendedConsultationCard
-                  rec={recommended}
-                  suggested={suggested}
-                  onConsult={() => void send(recommended.question)}
-                  onPickSuggested={(q) => void send(q)}
-                  disabled={sending}
-                />
-              </div>
-            </details>
-          ) : null}
-        </>
-      ) : (
-        <>
-          {/* One unified hero - main AI recommendation on the left,
-              lightweight related directions on the right. Replaces
-              the previous stacked Recommended + Suggested sections. */}
-          {recommended ? (
-            <RecommendedConsultationCard
-              rec={recommended}
-              suggested={suggested}
-              onConsult={() => void send(recommended.question)}
-              onPickSuggested={(q) => void send(q)}
-              disabled={sending}
-            />
-          ) : null}
-
-          {/* Freeform consultation - always-visible major element,
-              calm container so it doesn't compete with the hero. */}
-          <FreeformConsultation
-            textareaRef={textareaRef}
-            draft={draft}
-            setDraft={setDraft}
-            sending={sending}
-            onSend={() => void send()}
-          />
-        </>
-      )}
-
-      {/* Loading shimmer while we wait for the advisor */}
-      {sending ? (
-        <div className="rounded-2xl border border-line bg-ink-900/40 p-6">
-          <div className="flex items-center gap-3">
-            <span className="inline-flex w-7 h-7 rounded-full bg-ink-700 text-accent border border-accent/40 items-center justify-center text-xs font-medium">AI</span>
-            <div className="text-sm text-slate-300 italic">Analyzing your data…</div>
-          </div>
-          <div className="mt-4 space-y-2 animate-pulse">
-            <div className="h-3 rounded bg-ink-700/60 w-5/6" />
-            <div className="h-3 rounded bg-ink-700/60 w-3/4" />
-            <div className="h-3 rounded bg-ink-700/60 w-2/3" />
-          </div>
-        </div>
-      ) : null}
+      {/* Live "thinking" indicator while we wait for the advisor:
+          sweeping progress bar, rotating status, elapsed timer.
+          Replaces the previous static skeleton so the user can see
+          time is moving. */}
+      {sending ? <ThinkingProgress /> : null}
 
       {/* Response card - the most recent Q&A. Older Q&As live on the
           Consultation History tab; this view keeps focus on the latest. */}
@@ -520,158 +478,25 @@ export default function ConsultationClient({
             </div>
           </div>
 
-          {/* Structured executive briefing - replaces the old
-              advisor-analysis blob. Builds takeaway + anchors + reasoning
-              + paths + risks from the same content + payload, then
-              renders each section with its own visual weight. */}
-          <ResponseBriefing
-            content={lastAssistantMsg.content}
-            payload={lastAssistantMsg.payload}
-            currency={currency}
-          />
+          {/* When the Claude response includes a structured payload
+              (Phase 1 of the advisory UX overhaul), render the rich
+              card layout. Otherwise fall back to the legacy
+              ResponseBriefing built from markdown content. */}
+          {lastAssistantMsg.structured ? (
+            <StructuredAdvisoryView data={lastAssistantMsg.structured} />
+          ) : (
+            <ResponseBriefing
+              content={lastAssistantMsg.content}
+              payload={lastAssistantMsg.payload}
+              currency={currency}
+            />
+          )}
         </div>
       ) : null}
     </div>
   );
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Strategic consultation cards
-// ─────────────────────────────────────────────────────────────────────────────
-
-function RecommendedConsultationCard({
-  rec,
-  suggested,
-  onConsult,
-  onPickSuggested,
-  disabled,
-}: {
-  rec: RecommendedConsultation;
-  suggested: StrategicSituation[];
-  onConsult: () => void;
-  onPickSuggested: (question: string) => void;
-  disabled: boolean;
-}) {
-  // Tone drives a subtle border accent so the card carries the same
-  // severity language the dashboard uses, but in a calmer hero form
-  // (no heavy fill, no alert chrome).
-  const borderTone =
-    rec.tone === "bad"  ? "border-bad/40"     :
-    rec.tone === "warn" ? "border-warn/40"    :
-    rec.tone === "good" ? "border-good/40"    :
-                          "border-accent/30";
-  const hasSuggestions = suggested.length > 0;
-  return (
-    <section
-      className={`rounded-2xl border ${borderTone} p-6 md:p-8 shadow-sm transition-all duration-300 hover:shadow-md hover:border-accent/40`}
-      style={{
-        backgroundImage:
-          "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.06) 100%)",
-      }}
-    >
-      {/* Two-column hero layout. Left: AI focus + main recommendation
-          + CTA. Right: lightweight related directions, vertically
-          stacked, no heavy chrome - the user reads them as supporting
-          AI guidance, not as another section of feature cards. */}
-      <div
-        className={
-          hasSuggestions
-            ? "grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10"
-            : "block"
-        }
-      >
-        <div className={hasSuggestions ? "lg:col-span-8" : ""}>
-          {/* Section anchor - quiet pre-heading that names the block
-              instead of describing what's inside it. */}
-          <div className="text-xs uppercase tracking-wide text-accent font-semibold mb-2">
-            Recommended Consultation
-          </div>
-
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-100 leading-tight mb-2.5">
-            {rec.title}
-          </h2>
-
-          {/* Observation + interpretation form one tight content
-              cluster - the interpretation should read as a direct
-              continuation of the metric, not a separate paragraph. */}
-          <p className="text-sm md:text-base text-slate-100 leading-relaxed max-w-3xl mb-1.5">
-            {rec.observation}
-          </p>
-          <p className="text-sm text-slate-400 leading-relaxed max-w-3xl mb-4">
-            {rec.interpretation}
-          </p>
-
-          {/* CTA sits flush left under the content cluster - close to
-              the recommendation it acts on, no horizontal vacuum. */}
-          <button
-            type="button"
-            className="text-sm px-4 py-2 rounded-full inline-flex items-center gap-1.5 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition duration-200 disabled:opacity-50"
-            onClick={onConsult}
-            disabled={disabled}
-            title="Open consultation with this context"
-          >
-            <MessageSquareText size={14} strokeWidth={1.75} aria-hidden="true" />
-            <span>Consult on this</span>
-          </button>
-        </div>
-
-        {hasSuggestions ? (
-          <RelatedDirections
-            items={suggested}
-            onPick={onPickSuggested}
-            disabled={disabled}
-          />
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-// RelatedDirections - the right rail of the hero. Fixed at three
-// rows so the section feels curated and predictable; any additional
-// candidates are dropped at the page level.
-function RelatedDirections({
-  items,
-  onPick,
-  disabled,
-}: {
-  items: StrategicSituation[];
-  onPick: (question: string) => void;
-  disabled: boolean;
-}) {
-  const visible = items.slice(0, 3);
-  return (
-    <aside className="lg:col-span-4 lg:border-l lg:border-line/60 lg:pl-6">
-      <div className="text-xs uppercase tracking-wide text-slate-400 font-semibold mb-2">
-        More trends to consult
-      </div>
-      <ul className="divide-y divide-line/40">
-        {visible.map((s) => (
-          <li key={s.id}>
-            <button
-              type="button"
-              disabled={disabled}
-              onClick={() => onPick(s.question)}
-              className="w-full text-left py-2.5 flex items-start justify-between gap-3 group disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-slate-100 group-hover:text-white transition duration-200 leading-tight">
-                  {s.title}
-                </div>
-                <div className="text-xs text-slate-500 leading-snug mt-1 line-clamp-2">
-                  {s.blurb}
-                </div>
-              </div>
-              <span className="shrink-0 mt-1 text-xs text-slate-500 group-hover:text-accent group-hover:translate-x-0.5 transition duration-200">
-                →
-              </span>
-            </button>
-          </li>
-        ))}
-      </ul>
-    </aside>
-  );
-}
 
 // FreeformConsultation - lighter container than before (no heavy
 // gradient bg, no thick padding). Still prominent - it's a core
@@ -705,15 +530,19 @@ function FreeformConsultation({
     // (proactive); this is the user-input tool (reactive). Visual
     // hierarchy makes that distinction obvious instead of presenting
     // them as competing peer recommendations.
-    <section className="rounded-2xl border border-line bg-ink-900/30 p-5 md:p-6 shadow-sm">
+    // Larger composition surface than before - this is now the
+    // primary surface of the New Advisory tab (the AI-curated
+    // questions moved to /consultation/suggested), so the textarea
+    // gets noticeably more room to write a real prompt.
+    <section className="rounded-2xl border border-line bg-ink-900/30 p-6 md:p-7 shadow-sm">
       <div className="text-xs uppercase tracking-wide text-good font-semibold mb-3">
         {heading}
       </div>
 
       <textarea
         ref={textareaRef}
-        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-sm md:text-base leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition duration-200 resize-none min-h-[88px] px-4 py-3"
-        rows={3}
+        className="w-full bg-ink-900/40 border border-line rounded-xl text-slate-100 placeholder:text-slate-500 text-base md:text-lg leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition duration-200 resize-none min-h-[180px] md:min-h-[220px] px-5 py-4"
+        rows={7}
         placeholder={PLACEHOLDER}
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
@@ -853,13 +682,33 @@ function CreditsWidget({
             Have a code?
           </button>
           {empty ? (
-            <a href="/settings/billing" className="btn-brand text-sm px-4 py-2 whitespace-nowrap">
-              {plan === "free" ? "Upgrade to Pro" : "Buy more credits"}
-            </a>
+            plan === "free" ? (
+              <UpgradeTriggerButton
+                currentPlan={plan}
+                feature="AI consultation"
+                className="btn-brand text-sm px-4 py-2 whitespace-nowrap"
+              >
+                Upgrade to Pro
+              </UpgradeTriggerButton>
+            ) : (
+              <BuyCreditsTriggerButton className="btn-brand text-sm px-4 py-2 whitespace-nowrap">
+                Buy more credits
+              </BuyCreditsTriggerButton>
+            )
           ) : low ? (
-            <a href="/settings/billing" className="btn-ghost text-sm px-4 py-2 whitespace-nowrap">
-              {plan === "free" ? "Upgrade to Pro →" : "Buy more credits →"}
-            </a>
+            plan === "free" ? (
+              <UpgradeTriggerButton
+                currentPlan={plan}
+                feature="AI consultation"
+                className="btn-ghost text-sm px-4 py-2 whitespace-nowrap"
+              >
+                Upgrade to Pro →
+              </UpgradeTriggerButton>
+            ) : (
+              <BuyCreditsTriggerButton className="btn-ghost text-sm px-4 py-2 whitespace-nowrap">
+                Buy more credits →
+              </BuyCreditsTriggerButton>
+            )
           ) : null}
         </div>
       </div>

@@ -16,6 +16,8 @@
 
 import Anthropic from "@anthropic-ai/sdk";
 import type { BusinessContext, ConsultationAnswer } from "./advisor";
+import { parseStructuredAdvice } from "./advisorTypes";
+import { getProfileForPrompt } from "./businessProfile";
 
 export type ConsultationHistoryMessage = {
   role: "user" | "assistant";
@@ -85,15 +87,64 @@ DOMAIN NORMS
 - All monetary values in this context are already normalized to ctx.ccy (the business base currency) - every figure in trailing, current, prev, dataFlow, forecast, etc. is in the base currency. The exception is that ctx.currencyMix lists original (non-base) currencies present in the underlying transactions with row counts. When ctx.currencyMix is non-empty and you notice a meaningful change in base-currency totals between periods, briefly consider whether exchange-rate movement is a contributing factor and call it out if plausible (e.g. "Revenue in USD stayed roughly flat, but the ILS-reported figure declined ~6% largely because of FX movement"). Don't speculate beyond what the data supports.
 
 ═══════════════════════════════════════════════════════
-OUTPUT STYLE
+OUTPUT FORMAT - STRUCTURED JSON ONLY
 ═══════════════════════════════════════════════════════
 
-- Markdown. Start with a level-3 heading (### …) summarizing what the answer is about.
-- Use **bold** for key numbers and decisions.
-- Use > blockquotes for important caveats or warnings.
-- Use bullets or short tables when listing multiple items (categories, vendors, employees).
-- Be direct and concrete. Skip hedging unless the data is genuinely uncertain.
-- Length should match the question. A short question like "what's my margin?" gets a 1-2 sentence answer with the number, not a five-paragraph essay.
+Return ONE JSON object, wrapped in a single fenced \`\`\`json … \`\`\` block. No prose before or after. The object MUST conform to this schema:
+
+{
+  "reasoningCategory": "trend" | "capacity" | "staffing" | "cashflow" | "forecast" | "operational_risk" | "profitability" | "seasonal" | "pricing" | "other",
+  "executiveDecision": {
+    "headline": string,        // ≤ 12 words. The single most important takeaway. e.g. "Hire within 30-60 days", "Don't enter the e-commerce channel yet", "SaaS pricing has three core models"
+    "stance":   "yes" | "no" | "conditional" | "wait" | "info"
+  },
+  "recommendation": string,    // ONE actionable sentence. e.g. "Hire in late Q1 once January's seasonal dip is past." For pure-knowledge questions, this can summarise the best path forward in a single sentence.
+  "drivers": [
+    {
+      "category":      string,         // 1-4 word label, e.g. "Revenue Growth", "Capacity Pressure", "Industry Benchmark"
+      "detail":        string,         // ONE sentence (≤ 30 words) explaining the reasoning. Cite specific numbers when grounded in their data.
+      "reasoningType": (same enum as reasoningCategory),
+      "dataAnchors":   string[]        // 0-3 short factual citations that anchor this driver in the business data. e.g. ["Repair revenue 2025-Q1: $1,800 → 2026-Q4: $7,400", "Trailing-3 net margin: 14%"]. EMPTY ARRAY when this driver is pure business knowledge / industry reasoning with no data backing.
+    }
+    // 2-6 drivers
+  ],
+  "confidence": {
+    "overall":             integer 0-100,
+    "dataCoverage":        "low" | "medium" | "high",  // how much of the answer is grounded in *this* business's data
+    "forecastReliability": "low" | "medium" | "high",  // when the answer depends on the forecast, how much to trust it
+    "basedOn":             string[],   // 3-8 short citations: a mix of data signals ("18 months of revenue history", "seasonal pattern across 2 yearly cycles") AND general principles ("SaaS retention benchmarks", "small-retail seasonality norms"). This is the user-facing trust footprint of the whole answer.
+    "missingInputs":       string[]    // 0-5 specific data points whose absence weakens the answer. e.g. "technician utilization", "walk-in conversion rate"
+  },
+  "risks": [
+    { "label": string, "detail": string }
+    // 1-4 balanced counter-considerations. Skip (empty array) if genuinely none exist for purely-informational answers.
+  ]
+}
+
+═══════════════════════════════════════════════════════
+SCOPE - ALL QUESTIONS GET THE FULL FRAMEWORK
+═══════════════════════════════════════════════════════
+
+The structure above applies to EVERY question, including general business strategy, market questions, and "how does X work" questions. You are not restricted to data-grounded answers.
+
+- DATA-GROUNDED question ("what's my biggest expense?"): drivers cite the actual numbers, dataAnchors are populated per driver, confidence.dataCoverage is "high", basedOn lists specific data signals.
+- HYBRID question ("should I hire?"): drivers mix data ("revenue grew 47% YoY") with reasoning ("a $5K/mo hire pays back within 4 months at current gross margin"). dataAnchors populated on the data-driven drivers, empty on the pure-reasoning ones. basedOn cites both. dataCoverage probably "medium".
+- GENERAL-KNOWLEDGE question ("what's the difference between SaaS and marketplace economics?"): drivers explain the concepts, dataAnchors usually empty, dataCoverage is "low", basedOn cites general principles ("standard SaaS unit economics", "marketplace liquidity research") not their data. Stance is typically "info" and the headline is a TLDR of the concept.
+
+Never refuse a question because it isn't in the data - pivot to general knowledge and reflect that honestly in the confidence + basedOn fields.
+
+═══════════════════════════════════════════════════════
+TONE
+═══════════════════════════════════════════════════════
+
+- You are a business operating advisor, not a chatbot. Sound operational, executive, analytical.
+- BANNED phrases (do not use): "I think", "probably", "seems like", "here's the read", "as an AI", "let me", "in conclusion", "great question", "happy to help", "feel free to".
+- When data is available, cite real numbers with currency + period. Generic claims like "marketing is a major expense" are worthless when the data has a specific answer.
+- For drivers grounded in data, populate dataAnchors. The UI shows these inline as little 📊 data chips so the user can see exactly which numbers backed each insight. Don't fabricate anchors — only cite figures you actually pulled from the business context block.
+- Confidence scoring: be honest. A simple "what's my margin?" question gets 95% even on thin data. A "should I hire?" question on the same data might get 55%. A pure-knowledge question can be 70-85% based on principle quality even with dataCoverage=low.
+- Stance discipline: "yes"/"no" only when the data + context genuinely point that way. "conditional" when the decision depends on missingInputs. "wait" when timing matters. "info" for purely descriptive / educational answers.
+
+Never include markdown headings, bullet lists, or prose narration outside the JSON block. The renderer parses the JSON and draws every visual element from those fields.
 
 ═══════════════════════════════════════════════════════
 GUARDRAILS
@@ -128,11 +179,18 @@ export async function answerQuestionWithClaude(
   message: string,
   history: ConsultationHistoryMessage[],
   apiKey: string,
+  // Optional business-id so we can pull the Business DNA profile and
+  // bias the answer. Backwards-compatible: when omitted the function
+  // skips the profile block entirely (older callers keep working).
+  businessId?: string,
 ): Promise<ConsultationAnswer> {
   const client = new Anthropic({ apiKey });
 
   const contextJson = serializeBusinessContext(ctx);
   const contextBlock = `Business context (current snapshot):\n\n\`\`\`json\n${contextJson}\n\`\`\``;
+
+  // Pull the Business DNA - empty string when not configured.
+  const profileBlock = businessId ? await getProfileForPrompt(businessId).catch(() => "") : "";
 
   // Prior conversation turns + the new user question. Anthropic expects
   // alternating roles starting with "user". History from the DB is already
@@ -151,6 +209,12 @@ export async function answerQuestionWithClaude(
     system: [
       // Frozen instructions - identical every request, will cache.
       { type: "text", text: SYSTEM_INSTRUCTIONS },
+      // Business DNA (owner-filled profile). Comes before the live
+      // snapshot so it frames every downstream reasoning step.
+      // Inlined into the snapshot's cache block since both share the
+      // same volatility (changes only when the user edits the profile
+      // or new data lands).
+      ...(profileBlock ? [{ type: "text" as const, text: profileBlock }] : []),
       // Per-business context. Cache breakpoint here so subsequent questions
       // in the same session re-use this prefix.
       {
@@ -163,13 +227,72 @@ export async function answerQuestionWithClaude(
   });
 
   // Concatenate every text block in the response into a single string.
-  let content = "";
+  let raw = "";
   for (const block of response.content) {
-    if (block.type === "text") content += block.text;
+    if (block.type === "text") raw += block.text;
   }
-  if (!content.trim()) {
+  if (!raw.trim()) {
     throw new Error("Claude returned an empty response");
   }
 
-  return { content };
+  // Pull the JSON object out of the response. We instructed the model
+  // to wrap it in a ```json fence; tolerate bare JSON too just in
+  // case the fence is missing.
+  const fenceMatch = raw.match(/```json\s*([\s\S]*?)```/i);
+  const jsonText   = (fenceMatch ? fenceMatch[1] : raw).trim();
+
+  let structured;
+  try {
+    const parsed   = JSON.parse(jsonText);
+    structured     = parseStructuredAdvice(parsed) ?? undefined;
+  } catch {
+    structured = undefined;
+  }
+
+  // Always keep a markdown `content` fallback so older clients + the
+  // chat-history serialiser still have something to render.
+  const content = structured
+    ? renderStructuredAsMarkdown(structured)
+    : raw;
+
+  return { content, structured };
+}
+
+// Plain-markdown projection of a structured answer. Used as the
+// `content` fallback (DB persistence, history replay, copy/paste).
+// The richer card layout lives in the UI.
+function renderStructuredAsMarkdown(s: import("./advisorTypes").StructuredAdvice): string {
+  const lines: string[] = [];
+  // Recommendation-first, mirroring the new visual hierarchy.
+  lines.push(`### ${s.executiveDecision.headline}`);
+  if (s.recommendation && s.recommendation !== s.executiveDecision.headline) {
+    lines.push("");
+    lines.push(`**Recommendation:** ${s.recommendation}`);
+  }
+  lines.push("");
+  lines.push(`*Confidence ${s.confidence.overall}% · data coverage ${s.confidence.dataCoverage} · forecast reliability ${s.confidence.forecastReliability}*`);
+  if (s.drivers.length) {
+    lines.push("");
+    lines.push("**Why:**");
+    for (const d of s.drivers) {
+      const anchors = d.dataAnchors && d.dataAnchors.length
+        ? `  \n  *Data:* ${d.dataAnchors.join(" · ")}`
+        : "";
+      lines.push(`- **${d.category}** - ${d.detail}${anchors}`);
+    }
+  }
+  if (s.confidence.basedOn.length) {
+    lines.push("");
+    lines.push(`*Based on:* ${s.confidence.basedOn.join(", ")}`);
+  }
+  if (s.confidence.missingInputs.length) {
+    lines.push("");
+    lines.push(`*Important missing data:* ${s.confidence.missingInputs.join(", ")}`);
+  }
+  if (s.risks.length) {
+    lines.push("");
+    lines.push("**Risks:**");
+    for (const r of s.risks) lines.push(`- **${r.label}** - ${r.detail}`);
+  }
+  return lines.join("\n");
 }

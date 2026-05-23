@@ -7,6 +7,8 @@
 
 import { useEffect, useRef } from "react";
 import Link from "next/link";
+import UpgradeTriggerButton from "./UpgradeTriggerButton";
+import BuyCreditsTriggerButton from "./BuyCreditsTriggerButton";
 
 interface UsageModalProps {
   open:              boolean;
@@ -106,11 +108,11 @@ export default function UsageModal({
       >
         <button
           type="button"
-          onClick={onClose}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}
           aria-label="Close"
-          className="absolute top-3 right-3 w-9 h-9 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-ink-700 transition"
+          className="absolute top-3 right-3 z-10 w-9 h-9 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-ink-700 transition"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="pointer-events-none">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
@@ -124,7 +126,7 @@ export default function UsageModal({
               This workspace is on the {PLAN_LABEL[safePlan]} plan
             </h2>
             <Link
-              href="/settings/billing"
+              href="/settings?tab=plan"
               onClick={onClose}
               className="text-xs text-brand-purple hover:text-brand-teal transition"
             >
@@ -161,7 +163,7 @@ export default function UsageModal({
               ) : (
                 <>
                   Resets at the start of every calendar month. Buy a credit pack from{" "}
-                  <Link href="/settings/billing" onClick={onClose} className="text-brand-purple hover:text-brand-teal transition">
+                  <Link href="/settings?tab=plan" onClick={onClose} className="text-brand-purple hover:text-brand-teal transition">
                     billing settings
                   </Link>{" "}
                   if you need more this month.
@@ -199,21 +201,21 @@ export default function UsageModal({
               we never offer Free users a pack purchase. */}
           <div className="mt-7 flex items-center gap-3 flex-wrap">
             {nextTier ? (
-              <Link
-                href="/settings/billing"
-                onClick={onClose}
+              <UpgradeTriggerButton
+                currentPlan={safePlan}
+                feature="Pro plan"
+                onBeforeOpen={onClose}
                 className="btn-primary text-sm px-4 py-2 rounded-md"
               >
                 Upgrade this workspace to Pro · $49/mo
-              </Link>
+              </UpgradeTriggerButton>
             ) : (
-              <Link
-                href="/settings/billing"
-                onClick={onClose}
-                className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
+              <BuyCreditsTriggerButton
+                onBeforeOpen={onClose}
+                className="btn-primary text-sm px-4 py-2 rounded-md"
               >
                 Buy more AI Credits
-              </Link>
+              </BuyCreditsTriggerButton>
             )}
           </div>
           <div className="mt-3 text-[11px] text-slate-500">

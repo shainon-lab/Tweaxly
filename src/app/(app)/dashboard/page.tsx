@@ -23,6 +23,9 @@ import { prisma } from "@/lib/db";
 import { buildDashboardBreakdowns } from "@/lib/dashboardBreakdowns";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 import Link from "next/link";
+import { getBusinessProfile, isProfileSubstantive } from "@/lib/businessProfile";
+import BusinessProfilePromptBanner from "@/components/BusinessProfilePromptBanner";
+import { sweepAndDispatch } from "@/lib/alerts/sweep";
 
 const VALID_RANGES: DashboardRange[] = [
   "this_month",
@@ -71,7 +74,12 @@ export default async function DashboardPage({
     compare?: string;
   }>;
 }) {
-  const { business } = await requireBusiness();
+  const { user, business } = await requireBusiness();
+  // Phase-4 Alerts dispatcher. 5-minute throttled inside the lib so
+  // calling it inline on every dashboard render is fine - most calls
+  // bail out instantly. Wrapped in catch so a sweep failure can't
+  // 500 the dashboard.
+  void sweepAndDispatch(user.id, business.id).catch(() => {});
   const { t } = await getServerT();
   const sp = await searchParams;
   // Default landing view: "This year" - gives the owner a year-to-date view
@@ -145,6 +153,7 @@ export default async function DashboardPage({
         prev,
         trailing,
         employeeCostMonthly: employeeCost.total,
+        businessId: business.id,
       });
 
   // Default custom-range start/end fed into the picker - used when user
@@ -157,6 +166,12 @@ export default async function DashboardPage({
   // tile's Learn-more copy to the generic flavor instead of the
   // comparison-flavored one.
   const comparing = compare !== "none";
+
+  // Profile-completion banner. Renders only when the workspace
+  // hasn't filled in industry + business model. Dismissible
+  // per-workspace via localStorage on the client.
+  const profile        = await getBusinessProfile(business.id);
+  const profileSubstantive = isProfileSubstantive(profile);
 
   return (
     <>
@@ -172,6 +187,13 @@ export default async function DashboardPage({
           />
         }
       />
+
+      {!profileSubstantive ? (
+        <BusinessProfilePromptBanner
+          businessId={business.id}
+          businessName={business.name}
+        />
+      ) : null}
 
       {empty ? (
         <div className="card text-center py-12">

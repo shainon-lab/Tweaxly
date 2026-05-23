@@ -31,7 +31,7 @@ import {
   isForecastReady,
 } from "@/lib/forecastEngine";
 import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/workforce";
-import { hasFeature, getPlanFor } from "@/lib/billing";
+import { hasFeature, getPlanFor, getQuota } from "@/lib/billing";
 import LockedOverlay from "@/components/billing/LockedOverlay";
 import ForecastReadinessBanner from "./ForecastReadinessBanner";
 import ForecastExplanationPanel from "./ForecastExplanationPanel";
@@ -40,7 +40,6 @@ import ForecastChart from "./ForecastChart";
 import { type RosterMember } from "./ScenarioBuilder";
 import ScenarioBuilderPanel from "./ScenarioBuilderPanel";
 import ScenarioBuilderTrigger from "./ScenarioBuilderTrigger";
-import ScenariosOnboarding from "./ScenariosOnboarding";
 import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
@@ -65,6 +64,13 @@ export default async function ForecastPage({
   const canScenarios = await hasFeature(business.id, "scenarioBuilder");
   const currentPlan  = await getPlanFor(business.id);
   const sp = await searchParams;
+  const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
+
+  // Forecast horizon + custom historical range are Pro-only. Free is
+  // capped at "Next 3 months" and the preset historical windows. Read
+  // the existing forecastMonths quota: Free=3, Pro="unlimited".
+  const forecastQuota = await getQuota(business.id, "forecastMonths");
+  const canLongForecast = forecastQuota === "unlimited" || forecastQuota > 3;
 
   // Shared benefit list for the scenario-builder upgrade prompts -
   // used in both the empty-state and populated-state LockedOverlay.
@@ -78,10 +84,20 @@ export default async function ForecastPage({
   //   "overview"  - passive AI outlook (default)
   //   "scenarios" - interactive scenario builder
   //   Workforce Planning lives on /workforce as its own route
-  const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
+  // (view was already resolved above so we can short-circuit the
+  // Scenarios tab when locked / empty without doing the rest of the
+  // engine work first.)
 
-  const historical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "12m";
-  const horizon = horizonByForecastValue(sp.horizon ?? "12m");
+  const rawHistorical: HistoricalPeriodValue = isHistoricalValue(sp.historical) ? sp.historical : "12m";
+  const rawHorizon = horizonByForecastValue(sp.horizon ?? "12m");
+  // Free users only get presets + the 3-month horizon. Quietly clamp
+  // anything richer so a Pro→Free downgrade (or a bookmarked URL)
+  // doesn't render content that's supposed to be locked. The picker
+  // also blocks these choices but the server is the source of truth.
+  const historical: HistoricalPeriodValue = !canLongForecast && rawHistorical === "custom" ? "12m" : rawHistorical;
+  const horizon = !canLongForecast && rawHorizon.months > 3
+    ? horizonByForecastValue("3m")
+    : rawHorizon;
   const range = resolveHistoricalRange(historical, sp.hist_from, sp.hist_to);
 
   // Run the centralized engine so we get the readiness gate,
@@ -195,6 +211,16 @@ export default async function ForecastPage({
     assumptions:  effectiveAssumptions,
   });
 
+  // Two short-circuit states on the Scenarios tab:
+  //   • Not upgraded (canScenarios=false) → upgrade flow only
+  //   • Upgraded but no assumptions saved  → empty-state message only
+  // In both, suppress the engine/banner/KPIs/chart/table and the
+  // historical/horizon controls in the page header. The user asked
+  // for *nothing else* on the tab in those states.
+  const scenariosLocked = view === "scenarios" && !canScenarios;
+  const scenariosEmpty  = view === "scenarios" && canScenarios && assumptions.length === 0;
+  const scenariosBare   = scenariosLocked || scenariosEmpty;
+
   return (
     <>
       <PageHeader
@@ -205,24 +231,42 @@ export default async function ForecastPage({
             : t("page.forecast.subtitle.overview")
         }
         right={
-          <div className="flex items-end gap-3 flex-wrap justify-end">
-            <ForecastSetup
-              historical={historical}
-              horizon={horizon.value}
-              histFrom={sp.hist_from}
-              histTo={sp.hist_to}
-            />
-            {/* Persistent Scenario Builder entry point - only appears
-                on the Scenarios view AFTER the user has at least one
-                assumption in play. Before that, the onboarding empty
-                state provides the inline entry instead. */}
-            {view === "scenarios" && assumptions.length > 0 && canScenarios ? (
-              <ScenarioBuilderTrigger />
-            ) : null}
-          </div>
+          scenariosBare ? null : (
+            <div className="flex items-end gap-3 flex-wrap justify-end">
+              <ForecastSetup
+                historical={historical}
+                horizon={horizon.value}
+                histFrom={sp.hist_from}
+                histTo={sp.hist_to}
+                canLongForecast={canLongForecast}
+                currentPlan={currentPlan}
+              />
+              {/* Persistent Scenario Builder entry point - only appears
+                  on the Scenarios view AFTER the user has at least one
+                  assumption in play. */}
+              {view === "scenarios" && assumptions.length > 0 && canScenarios ? (
+                <ScenarioBuilderTrigger />
+              ) : null}
+            </div>
+          )
         }
       />
       <ForecastTabs />
+
+      {scenariosLocked ? (
+        <ScenariosLockedCard plan={currentPlan} benefits={scenarioBenefits} />
+      ) : null}
+
+      {scenariosEmpty ? (
+        <ScenariosEmptyCard
+          roster={roster}
+          activePayrollSum={activePayrollSum}
+          maxMonthsAhead={horizon.months}
+          currency={ccy}
+        />
+      ) : null}
+
+      {scenariosBare ? null : (<>
 
       {/* When the engine reports the forecast is unavailable (custom
           range under 90 days, missing dates, empty range, or
@@ -252,27 +296,6 @@ export default async function ForecastPage({
           "Forecast unavailable" card above replaces this entire
           section otherwise. */}
       {engineResult.ok ? <>
-
-      {/* Scenarios view, empty state. Hide everything else (KPIs,
-          chart, insights, table) until the user has at least one
-          assumption - the empty state owns the screen and provides
-          its own inline builder entry. */}
-      {view === "scenarios" && assumptions.length === 0 ? (
-        <LockedOverlay
-          locked={!canScenarios}
-          feature="Scenario Builder"
-          plan={currentPlan}
-          benefits={scenarioBenefits}
-          blurb="The full Scenario Builder onboarding is shown above as a preview. Upgrade to Pro to start modelling hires, contracts, marketing changes and one-offs against baseline."
-        >
-          <ScenariosOnboarding
-            roster={roster}
-            activePayrollSum={activePayrollSum}
-            maxMonthsAhead={horizon.months}
-            currency={ccy}
-          />
-        </LockedOverlay>
-      ) : null}
 
       {/* Scenarios view, populated. Show active-assumption chips and
           mount the side panel (the panel listens for the open event
@@ -309,10 +332,10 @@ export default async function ForecastPage({
         </>
       ) : null}
 
-      {/* Forecast body - KPI cards, insights, chart, table. Hidden
-          when the user is in the Scenarios empty state. */}
-      {!(view === "scenarios" && assumptions.length === 0) ? (
-        <>
+      {/* Forecast body - KPI cards, insights, chart, table. The
+          Scenarios empty + locked states are intercepted upstream
+          (scenariosBare short-circuit), so this section only runs
+          for Overview or for Scenarios with active assumptions. */}
       {/* KPI tiles. On Overview `effectiveAssumptions` is empty, so
           `summary.scenarioRevenueTotal` etc. equal the baseline
           totals and the 'baseline:' / 'vs baseline' subtext folds
@@ -460,11 +483,69 @@ export default async function ForecastPage({
           </tbody>
         </table>
       </details>
-        </>
-      ) : null}
 
       </> : null}
 
+      </>)}
+
+    </>
+  );
+}
+
+// Scenarios tab — Free plan. Shows ONLY the upgrade flow; KPIs,
+// readiness, chart and table are all suppressed by the caller via the
+// `scenariosBare` short-circuit. Built on LockedOverlay so the user
+// gets the same upgrade modal as every other gated surface.
+function ScenariosLockedCard({ plan, benefits }: { plan: string; benefits: string[] }) {
+  return (
+    <LockedOverlay
+      locked={true}
+      feature="Scenario Builder"
+      plan={plan}
+      benefits={benefits}
+      blurb="Model hires, contracts, marketing shifts and one-offs against your baseline. Upgrade to Pro to unlock."
+    >
+      <div className="card min-h-[320px] flex flex-col items-center justify-center text-center">
+        <div className="text-base font-semibold text-slate-100 mb-2">Scenario Builder</div>
+        <div className="text-sm text-slate-400 max-w-md">
+          Stack hires, cuts, contract changes and one-offs against your baseline forecast and see them update live.
+        </div>
+      </div>
+    </LockedOverlay>
+  );
+}
+
+// Scenarios tab — Pro plan, no assumptions saved yet. Single empty-
+// state card with an inline trigger that opens the Scenario Builder
+// side panel (mounted alongside so the event has a listener).
+function ScenariosEmptyCard({
+  roster, activePayrollSum, maxMonthsAhead, currency,
+}: {
+  roster: RosterMember[];
+  activePayrollSum: number;
+  maxMonthsAhead: number;
+  currency: string;
+}) {
+  return (
+    <>
+      <div className="card text-center py-16">
+        <div className="text-base font-semibold text-slate-100 mb-2">
+          You have no active scenarios
+        </div>
+        <div className="text-sm text-slate-400 max-w-md mx-auto mb-6">
+          Build a scenario to model how a hire, contract change, marketing
+          shift or one-off would move your forecast.
+        </div>
+        <div className="flex justify-center">
+          <ScenarioBuilderTrigger />
+        </div>
+      </div>
+      <ScenarioBuilderPanel
+        roster={roster}
+        activePayrollSum={activePayrollSum}
+        maxMonthsAhead={maxMonthsAhead}
+        currency={currency}
+      />
     </>
   );
 }

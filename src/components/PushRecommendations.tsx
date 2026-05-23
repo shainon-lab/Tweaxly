@@ -33,6 +33,50 @@ export type PushRec = {
 
 type Badge = "Critical" | "Action Needed" | "Watch" | "Opportunity" | "FYI";
 
+// Owner-voice consult prompt for a signal. Maps the signal type to a
+// short, plain-English question the user would actually ask. Falls
+// back to null when the signal doesn't have a mapping - caller uses
+// the raw recommendation as a fallback.
+function signalOwnerQuestion(r: PushRec): string | null {
+  if (!r.signalKey) return null;
+  const key    = r.signalKey.split(":")[0];
+  const target = r.signalKey.includes(":") ? r.signalKey.split(":")[1] : null;
+  switch (key) {
+    case "vendor_spike":
+      return target ? `Why did my spend with ${target} jump?` : `Why did one of my vendors suddenly cost more?`;
+    case "vendor_concentration":
+      return target ? `Am I too dependent on ${target}?` : `Am I too dependent on one vendor?`;
+    case "forecast_negative_next_month":
+      return `Should I be worried about next month's cash?`;
+    case "expense_mom_jump":
+      return `Why are my costs up this month?`;
+    case "marketing_intensity_high":
+      return `Am I overspending on marketing?`;
+    case "payroll_heavy":
+      return `Is my payroll too heavy for what I'm bringing in?`;
+    case "revenue_mom_swing":
+      return r.level === "good"
+        ? `What's driving the jump in revenue?`
+        : `Why is my revenue slowing down?`;
+    case "net_margin_observation":
+      return `Why is my margin tightening?`;
+    case "growth_headroom":
+      return `Should I be spending more to grow?`;
+    case "uncategorized_high":
+      return `How do I clean up my uncategorized transactions?`;
+    case "top_expense_category":
+      return target ? `Is ${target} eating too much of my budget?` : `Which category is eating too much of my budget?`;
+    case "marketing_cut_held":
+      return `Did cutting marketing actually hurt me?`;
+    case "trailing_3_net":
+      return `Am I in a sustained dip?`;
+    case "ytd_snapshot":
+      return `Am I tracking behind for the year?`;
+    default:
+      return null;
+  }
+}
+
 function badgeFor(r: PushRec): Badge {
   if (r.level === "bad")  return "Critical";
   if (r.level === "warn") return "Action Needed";
@@ -556,10 +600,11 @@ function SignalCard({
     rec.level === "warn" ? "border-warn/40" :
     rec.level === "good" ? (rec.category === "growth" ? "border-accent/30" : "border-good/25") :
                            "border-line";
-  const glowShadow = isCritical
-    ? "shadow-[0_0_24px_-6px_rgba(239,91,91,0.35)]"
-    : "";
-  const colSpan = isCritical ? "lg:col-span-2" : "";
+  // Critical signals stay distinct via the red border + pulsing dot
+  // + "Critical" badge + subtle red wash, but render at the SAME size
+  // as every other card. Previously they spanned 2 columns and used
+  // larger type, which broke the uniform grid rhythm.
+  const criticalWash = isCritical ? "bg-bad/10" : "";
   const selectedRing = selected ? "ring-2 ring-accent/60 ring-offset-2 ring-offset-ink-900" : "";
 
   const arrowChar = display.direction === "up" ? "↑" : display.direction === "down" ? "↓" : "";
@@ -576,7 +621,7 @@ function SignalCard({
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={`Open details for ${display.title}`}
-      className={`${colSpan} h-48 rounded-2xl border ${borderColor} bg-ink-900/50 ${glowShadow} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
+      className={`h-48 rounded-2xl border ${borderColor} ${isCritical ? criticalWash : "bg-ink-900/50"} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
     >
       {/* Meta line - severity dot + badge + category + lifecycle */}
       <div className="flex items-center gap-2 text-[11px] text-slate-400">
@@ -596,13 +641,13 @@ function SignalCard({
       </div>
 
       {/* Title */}
-      <div className={`${isCritical ? "text-xl" : "text-lg"} font-semibold text-slate-50 leading-tight tracking-tight`}>
+      <div className="text-lg font-semibold text-slate-50 leading-tight tracking-tight">
         {display.title}
       </div>
 
       {/* Hero metric */}
       {display.metric ? (
-        <div className={`${isCritical ? "text-4xl" : "text-3xl"} font-bold text-slate-50 leading-none tabular-nums tracking-tight`}>
+        <div className="text-3xl font-bold text-slate-50 leading-none tabular-nums tracking-tight">
           {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
           {display.metric}
         </div>
@@ -653,6 +698,7 @@ function SignalDetailPanel({
   onClose: () => void;
   onResolve: () => void;
 }) {
+  const router = useRouter();
   // When the user closes the panel, unmount it immediately - no exit
   // slide, no stale snapshot lingering on the side of the screen.
   // (The entry animation still plays via the slideInRight keyframe
@@ -674,7 +720,11 @@ function SignalDetailPanel({
       : display.direction === "down"
       ? "text-bad"
       : "";
-  const consultQuestion = `${r.observation} ${r.interpretation} You suggested: ${r.recommendation} Walk me through this in more depth - is the diagnosis right, and what should I actually do?`;
+  // Owner-voice question per signal so the New Advisory screen lands
+  // with a short, scannable prompt the user can edit before consulting
+  // (no auto-submit - they hit Analyze themselves). Falls back to the
+  // raw recommendation when the signal type isn't in our mapping.
+  const consultQuestion = signalOwnerQuestion(r) ?? r.recommendation;
 
   return (
     <aside
@@ -756,13 +806,15 @@ function SignalDetailPanel({
         </button>
         <button
           type="button"
-          onClick={() => openConsult({
-            prompt: consultQuestion,
-            contextTitle: `Signal · ${CATEGORY_LABEL[r.category] ?? r.category}`,
-            contextSubtitle: display.title,
-          })}
+          onClick={() => {
+            // Drop the question into the New Advisory textarea without
+            // submitting - the user clicks Consult themselves so the
+            // flow + UI match every other consultation entry point.
+            onClose();
+            router.push(`/consultation?q=${encodeURIComponent(consultQuestion)}`);
+          }}
           className="text-sm px-4 py-2 rounded-full inline-flex items-center gap-2 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
-          title="Open consultation with this context"
+          title="Send this question to the advisor"
         >
           <MessageSquareText size={14} strokeWidth={1.75} aria-hidden="true" />
           <span>Consult about this signal</span>

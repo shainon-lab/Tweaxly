@@ -59,6 +59,9 @@ export type SummaryInput = {
   // can talk about evolution, not just the current snapshot.
   trailing: TrailingMonth[];
   employeeCostMonthly: number;
+  // Optional businessId so the Claude path can inject the Business
+  // DNA profile into the prompt. Backwards-compatible when omitted.
+  businessId?: string;
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -180,6 +183,18 @@ async function buildNarrativeWithClaude(
 ): Promise<string | null> {
   const client = new Anthropic({ apiKey });
   const snapshot = buildSnapshotForPrompt(input);
+
+  // Pull the Business DNA profile so the executive summary reflects
+  // the owner's stated focus + watched KPIs. Empty string when the
+  // workspace hasn't filled it in.
+  let profileBlock = "";
+  if (input.businessId) {
+    try {
+      const { getProfileForPrompt } = await import("./businessProfile");
+      profileBlock = await getProfileForPrompt(input.businessId);
+    } catch { /* keep going without the profile */ }
+  }
+
   const response = await client.messages.create({
     model: "claude-opus-4-7",
     max_tokens: 600,
@@ -187,6 +202,7 @@ async function buildNarrativeWithClaude(
     output_config: { effort: "high" },
     system: [
       { type: "text", text: SYSTEM_INSTRUCTIONS },
+      ...(profileBlock ? [{ type: "text" as const, text: profileBlock }] : []),
     ],
     messages: [
       {

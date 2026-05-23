@@ -12,6 +12,11 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import {
+  CUSTOM_PACK_SKU, CUSTOM_PACK_MIN_CREDITS, calculateCustomPackPriceCents,
+} from "@/lib/billing";
+import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
+import CheckoutSuccessHandler from "@/components/billing/CheckoutSuccessHandler";
 
 interface Transaction {
   id:           string;
@@ -96,6 +101,40 @@ export function BillingClient(props: BillingClientProps) {
   const [redeeming, setRedeeming] = useState(false);
   const [redeemMsg, setRedeemMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
+  // Checkout state - the disabled buttons get a busy label while we
+  // round-trip to Polar for a checkout/portal URL, then redirect.
+  const [checkoutBusy, setCheckoutBusy] = useState<string | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  // Custom-pack draft. Lives in the packs card and previews the
+  // sliding-scale price live as the user types.
+  const [customCredits, setCustomCredits] = useState<string>(String(CUSTOM_PACK_MIN_CREDITS));
+  const customCreditsNum = Math.floor(Number(customCredits));
+  const customValid = Number.isFinite(customCreditsNum) && customCreditsNum >= CUSTOM_PACK_MIN_CREDITS;
+  const customPriceCents = customValid ? calculateCustomPackPriceCents(customCreditsNum) : 0;
+
+  async function openCheckout(endpoint: string, body?: object, busyKey = "checkout") {
+    setCheckoutBusy(busyKey);
+    setCheckoutError(null);
+    try {
+      const res  = await fetch(endpoint, {
+        method:  "POST",
+        headers: { "content-type": "application/json" },
+        body:    body ? JSON.stringify(body) : undefined,
+      });
+      const data = await res.json().catch(() => ({} as { url?: string; message?: string }));
+      if (!res.ok || !data.url) {
+        setCheckoutError(data.message ?? "Could not open checkout. Try again in a moment.");
+        return;
+      }
+      window.location.assign(data.url);
+    } catch {
+      setCheckoutError("Network error - check your connection.");
+    } finally {
+      setCheckoutBusy(null);
+    }
+  }
+
   async function redeem() {
     if (!code.trim()) return;
     setRedeeming(true);
@@ -121,11 +160,24 @@ export function BillingClient(props: BillingClientProps) {
 
   return (
     <div className="space-y-6 max-w-4xl">
+      {/* Post-checkout poller. Renders nothing on normal loads; on
+          ?checkout=success it polls /api/billing/credits until the
+          webhook lands, then router.refresh()'s every server-rendered
+          surface so the new plan + credit balance appear without the
+          user having to refresh manually. */}
+      <CheckoutSuccessHandler
+        initialPlan={props.plan}
+        initialBalance={props.walletBalance}
+      />
       {/* Plan summary */}
       <section className="card">
+        <div className="font-medium mb-1">Plan</div>
+        <div className="text-xs text-slate-400 mb-4">
+          Your active plan for this workspace, who it&apos;s sourced from, and
+          when the current period rolls.
+        </div>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">Your plan</div>
             <div className="mt-2 flex items-center gap-3">
               <span className="text-2xl font-semibold text-white">{PLAN_LABEL[props.plan] ?? props.plan}</span>
               {props.planSource === "override" ? (
@@ -146,13 +198,23 @@ export function BillingClient(props: BillingClientProps) {
             </div>
           </div>
           {props.plan === "free" ? (
-            <a
-              href="/pricing"
+            <UpgradeTriggerButton
+              currentPlan={props.plan}
+              feature="Pro plan"
               className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
             >
               Upgrade to Pro
-            </a>
-          ) : null}
+            </UpgradeTriggerButton>
+          ) : (
+            <button
+              type="button"
+              onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
+              disabled={checkoutBusy === "portal"}
+              className="text-sm px-4 py-2 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
+            >
+              {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
+            </button>
+          )}
         </div>
 
         {/* Compare plans inline so the user has the quick view */}
@@ -182,11 +244,16 @@ export function BillingClient(props: BillingClientProps) {
 
       {/* Credit balance */}
       <section className="card">
+        <div className="font-medium mb-1">
+          {props.plan === "free" ? "Starter AI Credits" : "AI Credits"}
+        </div>
+        <div className="text-xs text-slate-400 mb-4">
+          {props.plan === "free"
+            ? "One-time grant on Free workspaces. Upgrade to Pro for a monthly allowance + the ability to buy more anytime."
+            : "Your monthly allowance plus any add-on packs. Reset at the start of every calendar month."}
+        </div>
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div className="min-w-0 flex-1">
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-              {props.plan === "free" ? "Starter AI Credits" : "AI Credits"}
-            </div>
             <div className="mt-2 flex items-baseline gap-3">
               <span className="text-3xl font-semibold text-white tabular-nums">{props.walletBalance.toLocaleString()}</span>
               <span className="text-sm text-slate-500">
@@ -239,11 +306,12 @@ export function BillingClient(props: BillingClientProps) {
 
       {/* Redeem promo code */}
       <section className="card">
-        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">Promo code</div>
-        <p className="text-xs text-slate-500 mb-3">
-          Have a code from a launch campaign, partner, or beta program? Apply it here -
-          credit codes land instantly; discount codes apply at the next invoice.
-        </p>
+        <div className="font-medium mb-1">Promo code</div>
+        <div className="text-xs text-slate-400 mb-4">
+          Have a code from a launch campaign, partner, or beta program?
+          Apply it here - credit codes land instantly; discount codes
+          apply at the next invoice.
+        </div>
         <div className="flex items-center gap-2 flex-wrap">
           <input
             type="text"
@@ -273,25 +341,24 @@ export function BillingClient(props: BillingClientProps) {
           credits; instead they see an upgrade prompt that explains the
           Pro flow (monthly credits + ability to buy more anytime). */}
       <section className="card">
-        <div className="flex items-start justify-between gap-3 flex-wrap">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
-              {props.plan === "free" ? "Need more AI power?" : "Buy more credits"}
-            </div>
-            <p className="text-xs text-slate-500 mt-1 max-w-md">
-              {props.plan === "free"
-                ? "Add-on credit packs are a Pro feature. Upgrade to Pro to receive 500 AI Credits every month and buy more credits anytime."
-                : "Add-on credit packs add instantly, expire 12 months after purchase, and work on top of your monthly allowance."}
-            </p>
+        <div className="flex items-start justify-between gap-3 flex-wrap mb-1">
+          <div className="font-medium">
+            {props.plan === "free" ? "Need more AI power?" : "Buy more credits"}
           </div>
           {props.plan === "free" ? (
-            <a
-              href="/pricing"
+            <UpgradeTriggerButton
+              currentPlan={props.plan}
+              feature="Pro plan"
               className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition shrink-0"
             >
               Upgrade to Pro →
-            </a>
+            </UpgradeTriggerButton>
           ) : null}
+        </div>
+        <div className="text-xs text-slate-400 mb-4">
+          {props.plan === "free"
+            ? "Add-on credit packs are a Pro feature. Upgrade to Pro to receive 500 AI Credits every month and buy more credits anytime."
+            : "Add-on credit packs add instantly, expire 12 months after purchase, and work on top of your monthly allowance."}
         </div>
         {props.plan !== "free" ? (
         <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -305,27 +372,76 @@ export function BillingClient(props: BillingClientProps) {
                 <span className="text-sm text-slate-300 font-semibold">{fmtUSD(pack.priceCents)}</span>
                 <button
                   type="button"
-                  disabled
-                  title="Billing provider not connected yet"
-                  className="text-xs px-3 py-1 rounded-md border border-line text-slate-400 hover:border-slate-500 hover:text-slate-200 transition disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => openCheckout("/api/billing/checkout/pack", { sku: pack.sku }, `pack:${pack.sku}`)}
+                  disabled={checkoutBusy === `pack:${pack.sku}`}
+                  className="text-xs px-3 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition disabled:opacity-60"
                 >
-                  Buy
+                  {checkoutBusy === `pack:${pack.sku}` ? "Opening…" : "Buy"}
                 </button>
               </div>
             </div>
           ))}
+
+          {/* Custom amount tile. Server enforces the same minimum +
+              sliding-scale price, but we mirror them client-side for
+              a live preview. */}
+          <div className="rounded-lg border border-line bg-ink-950/40 px-3 py-3 sm:col-span-2">
+            <div className="flex items-center justify-between gap-3 flex-wrap">
+              <div className="min-w-0">
+                <div className="text-sm font-semibold text-white">Custom AI Credits</div>
+                <div className="text-[11px] text-slate-500">
+                  Minimum {CUSTOM_PACK_MIN_CREDITS} · 30¢/credit under 50 · 28¢ from 50 · 19¢ from 100+
+                </div>
+              </div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={CUSTOM_PACK_MIN_CREDITS}
+                  step={1}
+                  className="input w-28 text-right tabular-nums"
+                  value={customCredits}
+                  onChange={(e) => setCustomCredits(e.target.value)}
+                  aria-label="Custom credit amount"
+                />
+                <span className="text-xs text-slate-400">credits</span>
+                <span className="text-sm text-slate-300 font-semibold tabular-nums min-w-[60px] text-right">
+                  {customValid ? fmtUSD(customPriceCents) : "—"}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => openCheckout(
+                    "/api/billing/checkout/pack",
+                    { sku: CUSTOM_PACK_SKU, credits: customCreditsNum },
+                    `pack:${CUSTOM_PACK_SKU}`,
+                  )}
+                  disabled={!customValid || checkoutBusy === `pack:${CUSTOM_PACK_SKU}`}
+                  className="text-xs px-3 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {checkoutBusy === `pack:${CUSTOM_PACK_SKU}` ? "Opening…" : "Buy"}
+                </button>
+              </div>
+            </div>
+            {!customValid && customCredits !== "" ? (
+              <div className="mt-2 text-[11px] text-warn">
+                Minimum {CUSTOM_PACK_MIN_CREDITS} credits.
+              </div>
+            ) : null}
+          </div>
         </div>
         ) : null}
-        {props.plan !== "free" ? (
-          <div className="mt-3 text-[11px] text-slate-500">
-            Credit pack purchase will be available once the billing provider is connected.
-          </div>
+        {checkoutError ? (
+          <div className="mt-3 text-[11px] text-bad">{checkoutError}</div>
         ) : null}
       </section>
 
       {/* Transaction history */}
       <section className="card">
-        <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-3">Recent credit activity</div>
+        <div className="font-medium mb-1">Recent credit activity</div>
+        <div className="text-xs text-slate-400 mb-4">
+          Every grant, purchase, refund and consumption against this
+          workspace&apos;s wallet, newest first.
+        </div>
         {props.transactions.length === 0 ? (
           <div className="text-xs text-slate-500">No credit activity yet. Try asking the AI advisor a question.</div>
         ) : (

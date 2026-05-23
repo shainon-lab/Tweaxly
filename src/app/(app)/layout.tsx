@@ -3,6 +3,8 @@ import Sidebar from "@/components/Sidebar";
 import GlobalConsult from "@/components/GlobalConsult";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import BillingStatusBanner from "@/components/BillingStatusBanner";
+import { NotificationCenterProvider } from "@/components/notifications/NotificationCenterContext";
+import NotificationCenterMount from "@/components/notifications/NotificationCenterMount";
 import { requireBusiness } from "@/lib/auth";
 import { getSidebarAlerts } from "@/lib/alerts";
 import { prisma } from "@/lib/db";
@@ -94,6 +96,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   return (
     // Lock the outer container to the viewport height and make only the main
     // area scroll - the sidebar stays put no matter how long the page is.
+    <NotificationCenterProvider>
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Persistent impersonation banner - shown only when a super_admin
           is viewing this account as a customer. Sits above the layout so
@@ -138,6 +141,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           once at the layout level so every app screen has the AI
           advisor available without navigating away. */}
       <GlobalConsult />
+      {/* Notification Center side panel - mounted here (NOT inside the
+          Sidebar) so its fixed positioning is relative to the viewport,
+          not the Sidebar's transform containing block. */}
+      <NotificationCenterMount />
     </div>
+    </NotificationCenterProvider>
   );
 }

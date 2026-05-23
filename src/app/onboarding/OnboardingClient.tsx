@@ -133,7 +133,12 @@ export function OnboardingClient({
         }),
       });
       if (!res.ok) { setError("Couldn't save your answers. Try again."); setBusy(false); return; }
-      window.location.assign("/manual-data?onboarding=1");
+      // Chain into the Business DNA wizard before showing the manual-
+      // data step. Both wizards are short (~2 min each); together
+      // they form the new onboarding spine. The DNA wizard
+      // self-redirects to /dashboard on completion, so after this
+      // chain the user lands on the dashboard.
+      window.location.assign("/onboarding/business-profile");
     } catch {
       setError("Network error - check your connection.");
       setBusy(false);

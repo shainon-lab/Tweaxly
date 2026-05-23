@@ -16,11 +16,27 @@ import { usePathname, useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/client";
 
 // Tab labels are i18n keys; the component resolves them per render.
+// The Settings page split out three sub-tabs from the legacy "Business
+// Profile" panel: Business Settings (the basics + currency + branding),
+// Business Profile (the AI-facing DNA), and Business Plan (per-
+// workspace billing). The data-side tabs sit alongside for parity.
 const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: string | null) => boolean }[] = [
   {
     href: "/settings",
-    tKey: "settings.tab.profile",
-    activeWhen: (path, tab) => path === "/settings" && (!tab || tab === "profile"),
+    tKey: "settings.tab.businessSettings",
+    // /settings with no ?tab= falls through to "settings" in the
+    // resolver, so this entry is active for that path too.
+    activeWhen: (path, tab) => path === "/settings" && (!tab || tab === "settings"),
+  },
+  {
+    href: "/settings?tab=profile",
+    tKey: "settings.tab.businessProfile",
+    activeWhen: (path, tab) => path === "/settings" && tab === "profile",
+  },
+  {
+    href: "/settings?tab=plan",
+    tKey: "settings.tab.businessPlan",
+    activeWhen: (path, tab) => path === "/settings" && tab === "plan",
   },
   {
     href: "/manual-data",
@@ -46,16 +62,6 @@ const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: st
     href: "/data-log",
     tKey: "settings.tab.dataLog",
     activeWhen: (path) => path === "/data-log" || path.startsWith("/data-log/"),
-  },
-  {
-    href: "/settings/workspaces",
-    tKey: "settings.tab.workspaces",
-    activeWhen: (path) => path === "/settings/workspaces" || path.startsWith("/settings/workspaces/"),
-  },
-  {
-    href: "/settings/billing",
-    tKey: "settings.tab.billing",
-    activeWhen: (path) => path === "/settings/billing" || path.startsWith("/settings/billing/"),
   },
 ];
 

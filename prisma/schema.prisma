@@ -69,6 +69,10 @@ model User {
   createdCoupons            Coupon[]             @relation("CouponCreatedBy")
   targetedCoupons           Coupon[]             @relation("CouponTargetUser")
   couponRedemptions         CouponRedemption[]
+  // Real-Time Business Alerts (Premium)
+  alertPreferences          AlertPreference[]
+  pushSubscriptions         PushSubscription[]
+  alertNotifications        AlertNotification[]
 }
 
 // Suppression list for sent campaigns. Even if a user has the matching
@@ -277,6 +281,177 @@ model Business {
   creditTransactions  AiCreditTransaction[]
   targetedCoupons     Coupon[]              @relation("CouponTargetBusiness")
   couponRedemptions   CouponRedemption[]
+  profile             BusinessProfile?
+  alertPreferences    AlertPreference[]
+  alertNotifications  AlertNotification[]
+}
+
+// Real-Time Business Alerts (Premium) - per-user × per-business
+// preferences for desktop push, in-app, email; category toggles,
+// sensitivity, quiet hours, daily limit. One row per (userId,
+// businessId) pair so the same user can configure each workspace
+// independently.
+model AlertPreference {
+  id                 String   @id @default(cuid())
+  userId             String
+  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId         String
+  business           Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // Delivery channels
+  pushEnabled        Boolean  @default(false)
+  inAppEnabled       Boolean  @default(true)
+  emailEnabled       Boolean  @default(false)
+
+  // Category toggles - which classes of alert the user wants to hear.
+  // Stored as a Json bag so we can add new categories without a
+  // migration; keys mirror the AlertCategory enum in code.
+  categories         Json?
+
+  // "conservative" | "balanced" | "aggressive"
+  sensitivity        String   @default("balanced")
+
+  // Quiet hours - HH:MM-HH:MM local time + IANA timezone. When
+  // quietHoursEnabled, non-critical alerts are delayed until the
+  // window ends. criticalBypass lets critical alerts ring through
+  // anyway.
+  quietHoursEnabled  Boolean  @default(false)
+  quietHoursStart    String?  // "22:00"
+  quietHoursEnd      String?  // "07:00"
+  quietHoursTimezone String?  // "America/New_York"
+  criticalBypass     Boolean  @default(true)
+
+  // Hard daily cap so the system can never flood a user. Default is
+  // a safe upper bound; the dispatcher counts deliveries against it.
+  dailyLimit         Int      @default(15)
+
+  // Phase-4 sweep throttle. The dispatcher checks this on every page
+  // load that hooks into sweepAndDispatch() and bails out if it ran
+  // recently - bounds the per-user work even when the workspace is
+  // active across many tabs.
+  lastSweepAt        DateTime?
+
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@unique([userId, businessId])
+  @@index([businessId])
+}
+
+// One PushSubscription per (user, device/browser). The push endpoint
+// + p256dh + auth keys are what `web-push` needs to dispatch a
+// notification. Devices unsubscribe → row deleted.
+model PushSubscription {
+  id          String   @id @default(cuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  endpoint    String   @unique
+  p256dh      String
+  authKey     String
+  userAgent   String?
+  createdAt   DateTime @default(now())
+  lastSeenAt  DateTime @default(now())
+
+  @@index([userId])
+}
+
+// Every alert that fires lands here - the Notification Center reads
+// it, the dispatcher writes it, and the delivery columns record what
+// the dispatcher tried + how each channel responded. One row per
+// alert; per-channel delivery state stored together so the inbox
+// reads in a single query.
+model AlertNotification {
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessId   String
+  business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // What kind of alert this is. "signal" = AI-detected; "monitor" =
+  // user-defined rule fired. The sourceKey is the signalKey or
+  // monitor id so the inbox can group / dedupe.
+  source       String   // "signal" | "monitor"
+  sourceKey    String
+
+  // Routing + ranking metadata.
+  category     String   // mirrors AlertCategory in code
+  severity     String   // "critical" | "important" | "info"
+
+  // Content (denormalised so the inbox never needs a join to read).
+  title        String
+  body         String
+  // Optional href the CTA points at, e.g. "/forecast?focus=cashflow".
+  deepLink     String?
+
+  // Inbox state
+  readAt       DateTime?
+
+  // Per-channel delivery
+  pushSentAt   DateTime?
+  pushError    String?
+  emailSentAt  DateTime?
+  emailError   String?
+
+  createdAt    DateTime @default(now())
+
+  @@index([userId, createdAt])
+  @@index([userId, readAt])
+  @@index([businessId])
+}
+
+// Business DNA - the workspace's strategic identity. Captured during
+// onboarding (or filled in later from Settings) via a short 7-question
+// flow. Used to permanently bias every Claude-powered surface
+// (consultation, executive summary, signal interpretation, forecasts)
+// so the AI reasons in the context of THIS business - its industry,
+// model, customers, stage, goals, challenges, and which KPIs the
+// owner actually cares about. One row per Business; absence means the
+// dashboard shows a "Complete your Business Profile" banner.
+model BusinessProfile {
+  id                 String    @id @default(cuid())
+  businessId         String    @unique
+  business           Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // The 7 strategic onboarding questions. All nullable so partial
+  // saves are valid (the UI saves per-step in the wizard).
+  industry           String?   // free text + searchable dropdown
+  // Specific business category - "Recording Studio", "Jewelry Store",
+  // "Dental Clinic", etc. A second pass after industry that narrows
+  // the AI's reasoning vocabulary. Typeahead from a curated list with
+  // free-text fallback.
+  businessCategory   String?
+  businessModels     String[]  // multi-select - subscription, services, etc.
+  mainGoal           String?   // growth | profitability | stability | ...
+  customerType       String?   // b2b | b2c | enterprise | smb | ...
+  revenueStage       String?   // early | growing | established | ...
+  biggestChallenge   String?   // free text
+  importantKpis      String[]  // multi-select - revenue_growth, mrr, ...
+
+  // AI-generated "About Your Business" summary - 80-200 words. Built
+  // from the 7 fields above + the live BusinessContext at generation
+  // time. Editable manually; regeneratable on demand. The
+  // aiSummaryUpdatedAt timestamp lets us show "regenerated 2 days
+  // ago" + auto-refresh once enough new data lands.
+  aiSummary          String?
+  aiSummaryUpdatedAt DateTime?
+
+  // Phase-3 AI Context Preferences. Free-text hints + a set of named
+  // bias toggles ("prefer_conservative_forecasting", "focus_growth"
+  // etc.) that further shape the advisor's tone + ranking. Persisted
+  // as JSON so we can evolve the shape without a migration per new
+  // preference.
+  aiContextPreferences Json?
+
+  // Phase-3 Smart Evolution. Auto-derived observations Tweaxly
+  // notices about the business over time ("highly seasonal", "revenue
+  // depends on paid acquisition", etc.). Refreshed periodically by
+  // the enrichment job; the timestamp drives a 7-day staleness check
+  // so we don't re-run the detection on every dashboard hit.
+  derivedSignals     String[]  @default([])
+  lastDerivedAt      DateTime?
+
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
 }
 
 model NotificationRule {
@@ -299,6 +474,13 @@ model NotificationRule {
   // Optional friendly label the user can set for this rule.
   label          String?
   enabled        Boolean   @default(true)
+  // Phase-3 Monitor v2: severity of the alert when the rule fires
+  // ("critical" | "important" | "info" - default "important"), plus
+  // a per-monitor channel preference bag (push/inApp/email booleans)
+  // that overrides the user's general toggles when set. The Phase-4
+  // dispatcher reads these to decide how loud each fire should be.
+  severity              String   @default("important")
+  notificationChannels  Json?
   // Stamped the first time we see this rule actually firing. Persisted so
   // the Alerts UI can display a meaningful timestamp ("appeared 3 days
   // ago") even though triggers are evaluated live.
@@ -656,6 +838,11 @@ model ConsultationMessage {
   content        String
   // optional structured JSON payload (options, items, etc.)
   payload        String?
+  // Phase-1 structured advisor output. When present, the UI renders
+  // a multi-card layout (executive decision, confidence, drivers,
+  // risks, recommendation) instead of the markdown content. Older
+  // assistant messages + mock-mode fallbacks leave this null.
+  structured     Json?
   createdAt      DateTime     @default(now())
 
   @@index([consultationId, createdAt])

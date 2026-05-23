@@ -3,9 +3,16 @@
 // The setup row at the top of the Forecast tab - historical period selector
 // and forecast horizon selector, both URL-driven. Custom historical range
 // exposes from/to month inputs.
+//
+// Gating: on the Free plan, the "Custom range" historical option and any
+// horizon longer than 3 months are Pro-only. Those options are still
+// rendered (with a "Pro" suffix) so the upgrade story is visible, but
+// selecting one short-circuits to the shared UpgradeModal and never
+// pushes the URL change. The server also clamps mismatched URLs.
 
 import { useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import UpgradeModal from "@/components/billing/UpgradeModal";
 
 // Aligned with src/lib/forecastEngine.ts BASELINE_OPTIONS.
 //   - "recommended" lets the engine pick per readiness rules (default).
@@ -79,16 +86,30 @@ export default function ForecastSetup({
   horizon,
   histFrom,
   histTo,
+  canLongForecast = true,
+  currentPlan,
 }: {
   historical: string;
   horizon: string;
   histFrom?: string;
   histTo?: string;
+  // When false, only the 3-month horizon + preset historical windows
+  // are pickable. Anything longer or "custom" opens the UpgradeModal.
+  canLongForecast?: boolean;
+  currentPlan?: string;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
+  const [upgradeOpen, setUpgradeOpen] = useState<null | "horizon" | "custom">(null);
+
+  // Suffix Pro-only options when the user is on Free so the upgrade
+  // story is visible inline in the dropdown.
+  const horizonLabel = (label: string, months: number) =>
+    !canLongForecast && months > 3 ? `${label} · Pro` : label;
+  const historicalLabel = (value: string, label: string) =>
+    !canLongForecast && value === "custom" ? `${label} · Pro` : label;
   // Day-level pickers. URL now carries full ISO dates (YYYY-MM-DD);
   // we also accept legacy YYYY-MM and snap to 1st-of / 28th-of for
   // backward compatibility with old bookmarks.
@@ -138,6 +159,12 @@ export default function ForecastSetup({
           onChange={(e) => {
             const v = e.target.value;
             if (v === "custom") {
+              if (!canLongForecast) {
+                // Pop the upgrade modal and let the controlled component
+                // revert to the previous historical on the next render.
+                setUpgradeOpen("custom");
+                return;
+              }
               // Seed the URL with the day-level defaults so the first
               // render of "Custom" produces a valid 12-month window
               // - no flicker through an invalid state.
@@ -153,7 +180,7 @@ export default function ForecastSetup({
           disabled={pending}
         >
           {HISTORICAL_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>{historicalLabel(o.value, o.label)}</option>
           ))}
         </select>
       </div>
@@ -201,14 +228,45 @@ export default function ForecastSetup({
         <select
           className="input"
           value={horizon}
-          onChange={(e) => update({ horizon: e.target.value })}
+          onChange={(e) => {
+            const v = e.target.value;
+            const opt = HORIZON_OPTIONS.find((o) => o.value === v);
+            // Free is capped at 3 months. Anything longer pops the
+            // upgrade modal and the URL stays put.
+            if (!canLongForecast && opt && months(opt.value) > 3) {
+              setUpgradeOpen("horizon");
+              return;
+            }
+            update({ horizon: v });
+          }}
           disabled={pending}
         >
           {HORIZON_OPTIONS.map((o) => (
-            <option key={o.value} value={o.value}>{o.label}</option>
+            <option key={o.value} value={o.value}>{horizonLabel(o.label, months(o.value))}</option>
           ))}
         </select>
       </div>
+
+      <UpgradeModal
+        open={upgradeOpen !== null}
+        onClose={() => setUpgradeOpen(null)}
+        currentPlan={currentPlan}
+        feature={upgradeOpen === "custom" ? "Custom historical range" : "Long-horizon forecasting"}
+        benefits={[
+          "Forecast 6, 12, 24, 36 or 60 months ahead",
+          "Pick any custom historical window with day-level precision",
+          "Scenario Builder + multi-scenario compare",
+          "Full Excel / CSV / PDF export",
+        ]}
+      />
     </div>
   );
+}
+
+// Resolve a horizon code (e.g. "12m") to its month count. The
+// HORIZON_OPTIONS list above is the source of truth - we mirror its
+// shape here for the disabled-option gate logic.
+function months(value: string): number {
+  const m = value.match(/^(\d+)m$/);
+  return m ? Number(m[1]) : 3;
 }

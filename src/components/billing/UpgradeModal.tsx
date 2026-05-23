@@ -19,8 +19,7 @@
 //     ]}
 //   />
 
-import { useEffect, useRef } from "react";
-import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 interface UpgradeModalProps {
   open:        boolean;
@@ -52,6 +51,30 @@ export default function UpgradeModal({
   open, onClose, feature, currentPlan, benefits,
 }: UpgradeModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Drops the user straight onto Polar's checkout for the current
+  // workspace's Pro subscription. Anything that opens this modal -
+  // anywhere on the platform - now flows through here so there's
+  // exactly one upgrade path.
+  async function startCheckout() {
+    setError(null);
+    setBusy(true);
+    try {
+      const res  = await fetch("/api/billing/checkout/subscription", { method: "POST" });
+      const data = await res.json().catch(() => ({} as { url?: string; message?: string }));
+      if (!res.ok || !data.url) {
+        setError(data.message ?? "Could not open checkout. Try again in a moment.");
+        return;
+      }
+      window.location.assign(data.url);
+    } catch {
+      setError("Network error - check your connection.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   // ESC + outside-click close. Focus trap is light - we just focus
   // the panel on open so screen readers land in the right place.
@@ -100,11 +123,11 @@ export default function UpgradeModal({
         />
         <button
           type="button"
-          onClick={onClose}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onClose(); }}
           aria-label="Close"
-          className="absolute top-3 right-3 w-9 h-9 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-ink-700 transition"
+          className="absolute top-3 right-3 z-10 w-9 h-9 inline-flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-ink-700 transition"
         >
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" className="pointer-events-none">
             <path d="M6 6l12 12M18 6L6 18" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
           </svg>
         </button>
@@ -139,22 +162,20 @@ export default function UpgradeModal({
           </ul>
 
           <div className="mt-7 flex items-center gap-3 flex-wrap">
-            <Link
-              href="/settings/billing"
-              className="btn-primary text-sm px-4 py-2 rounded-md inline-flex items-center gap-1"
-              onClick={onClose}
+            <button
+              type="button"
+              onClick={startCheckout}
+              disabled={busy}
+              className="btn-primary text-sm px-4 py-2 rounded-md inline-flex items-center gap-1 disabled:opacity-60"
             >
-              Upgrade this workspace · $49/mo
-              <span aria-hidden="true">→</span>
-            </Link>
-            <Link
-              href="/settings/billing"
-              className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
-              onClick={onClose}
-            >
-              Compare all plans
-            </Link>
+              {busy ? "Opening checkout…" : (
+                <>Upgrade this workspace · $49/mo <span aria-hidden="true">→</span></>
+              )}
+            </button>
           </div>
+          {error ? (
+            <div className="mt-3 text-[11px] text-bad">{error}</div>
+          ) : null}
           <div className="mt-3 text-[11px] text-slate-500">
             Need more AI power? Buy credit packs anytime from Billing &amp; Credits - they add instantly.
           </div>

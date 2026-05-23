@@ -2,17 +2,25 @@
 
 // Account page. Top-level destination under the main sidebar nav (sits
 // alongside Settings). Sub-tabs:
-//   Billing & Products | Payment Methods | Password | Language & Region
-//   | Access Logs | Close Account
+//   Workspaces | Payment Methods | Password | Language & Region
+//   | Communication Preferences | Access Logs | Close Account
+//
+// The "Workspaces" tab is the cross-workspace overview: one card per
+// business with plan + AI credits + alerts + activity. Per-workspace
+// billing (purchases, ledger, plan changes) lives inside each
+// workspace's own Settings → Business Profile.
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n/client";
 import { LanguagePreference } from "./LanguagePreference";
 import CommunicationPreferences from "./CommunicationPreferences";
+import { WorkspaceCard, type WorkspaceCardData } from "../workspaces/WorkspaceCard";
+import NotificationsPane from "./NotificationsPane";
 
 type AccountSubTab =
-  | "billing"
+  | "workspaces"
+  | "notifications"
   | "payment"
   | "password"
   | "preferences"
@@ -22,6 +30,7 @@ type AccountSubTab =
 
 export default function AccountClient({
   user,
+  workspaces,
 }: {
   user: {
     email: string;
@@ -30,12 +39,14 @@ export default function AccountClient({
     region: string | null;
     detectedRegion: string | null;
   };
+  workspaces: WorkspaceCardData[];
 }) {
   const t = useT();
-  const [tab, setTab] = useState<AccountSubTab>("billing");
+  const [tab, setTab] = useState<AccountSubTab>("workspaces");
 
   const subTabs: { value: AccountSubTab; label: string }[] = [
-    { value: "billing",       label: t("account.tab.billing") },
+    { value: "workspaces",    label: t("account.tab.workspaces") },
+    { value: "notifications", label: "Notifications" },
     { value: "payment",       label: "Payment Methods" },
     { value: "password",      label: t("account.tab.password") },
     { value: "preferences",   label: t("account.tab.preferences") },
@@ -63,7 +74,8 @@ export default function AccountClient({
         ))}
       </div>
 
-      {tab === "billing"       ? <BillingPane /> : null}
+      {tab === "workspaces"    ? <WorkspacesPane workspaces={workspaces} /> : null}
+      {tab === "notifications" ? <NotificationsPane workspaces={workspaces} /> : null}
       {tab === "payment"       ? <PaymentMethodsPane /> : null}
       {tab === "password"      ? <PasswordPane user={user} /> : null}
       {tab === "preferences"   ? (
@@ -80,93 +92,59 @@ export default function AccountClient({
   );
 }
 
-// Plan + credit balance summary, fetched live from /api/billing/credits.
-// The full picture (transactions, redeem code, packs) lives in
-// /settings/billing - this pane keeps the Account-page surface short
-// and links over rather than duplicating.
-
-const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro",
-  // Legacy "business" rows roll up to Pro in the entitlements layer.
-  business: "Pro",
-};
-
-function BillingPane() {
-  const [info, setInfo] = useState<{
-    plan:             string;
-    balance:          number;
-    monthlyAllowance: number;
-    readOnly:         boolean;
-  } | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    fetch("/api/billing/credits")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d) => {
-        if (cancelled || !d) return;
-        setInfo({
-          plan:             d.plan,
-          balance:          d.balance,
-          monthlyAllowance: d.monthlyAllowance,
-          readOnly:         d.readOnly,
-        });
-      })
-      .catch(() => { /* widget is best-effort */ });
-    return () => { cancelled = true };
-  }, []);
-
-  const planLabel = info ? (PLAN_LABEL[info.plan] ?? info.plan) : null;
+// Cross-workspace overview grid. Each card shows plan + AI credits +
+// alerts + activity; clicking "Manage plan" switches workspace and
+// drops the user into that workspace's Settings → Business Profile,
+// where the per-workspace billing UI lives.
+function WorkspacesPane({ workspaces }: { workspaces: WorkspaceCardData[] }) {
+  const totalCredits    = workspaces.reduce((s, c) => s + c.balance, 0);
+  const totalAllowance  = workspaces.reduce((s, c) => s + c.monthlyAllowance, 0);
+  const totalAlerts     = workspaces.reduce((s, c) => s + c.firingAlerts, 0);
+  const readOnlyCount   = workspaces.filter((c) => c.readOnly).length;
 
   return (
-    <div className="card">
-      <div className="font-medium mb-1">Billing &amp; Products</div>
-      <div className="text-sm text-slate-400 mb-4 leading-relaxed">
-        Your active plan and credit balance. For invoices, credit packs and
-        plan changes, head to{" "}
-        <Link href="/settings/billing" className="text-accent hover:underline">
-          Settings → Billing &amp; Credits
-        </Link>
-        .
+    <>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <Stat label="Workspaces"         value={workspaces.length.toString()} />
+        <Stat label="AI Credits balance" value={totalCredits.toLocaleString()} sub={`of ${totalAllowance.toLocaleString()} monthly`} />
+        <Stat label="Firing alerts"      value={totalAlerts.toString()} tone={totalAlerts > 0 ? "warn" : undefined} />
+        <Stat label="Read-only"          value={readOnlyCount.toString()} tone={readOnlyCount > 0 ? "bad" : undefined} />
       </div>
-      <div className="rounded-xl border border-line bg-ink-900/40 p-5 mb-3">
-        <div className="flex items-center gap-2 mb-1 flex-wrap">
-          <span className={info?.readOnly ? "pill-warn" : "pill-good"}>
-            {info?.readOnly ? "Read-only" : "Active"}
-          </span>
-          <span className="text-base font-semibold text-slate-100">
-            {planLabel ? `Tweaxly ${planLabel}` : "Loading…"}
-          </span>
-          {info ? (
-            <span className="ml-auto text-xs text-slate-400 tabular-nums">
-              {info.balance.toLocaleString()} / {info.monthlyAllowance.toLocaleString()} AI Credits left
-            </span>
-          ) : null}
-        </div>
-        <div className="text-sm text-slate-400">
-          {info?.readOnly
-            ? "This workspace is in read-only mode. Reactivate from Billing & Credits to resume AI consultation, uploads and exports."
-            : info?.plan === "free"
-              ? "You're on the Free plan: 1 business, 90 days history, up to 3 business signals per month, 30 AI Credits per month. Upgrade to Pro for unlimited everything."
-              : "You're on the Pro plan: unlimited businesses, history, signals + full forecasting + Scenario Builder + team members + exports + 500 AI Credits per month. Buy more AI Credits anytime."}
-        </div>
-      </div>
-      <div className="flex items-center gap-3 flex-wrap">
-        <Link
-          href="/settings/billing"
-          className="text-sm px-4 py-1.5 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
-        >
-          Manage in Billing &amp; Credits →
-        </Link>
-        {info?.plan === "free" ? (
+
+      {workspaces.length === 0 ? (
+        <div className="card text-center py-12">
+          <div className="text-sm text-slate-300">You aren&apos;t a member of any workspaces yet.</div>
           <Link
-            href="/settings/billing"
-            className="text-sm px-4 py-1.5 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
+            href="/settings/workspaces"
+            className="inline-block mt-4 text-sm px-4 py-1.5 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
           >
-            See Pro plan + AI Credit packs
+            Create your first workspace
           </Link>
-        ) : null}
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {workspaces.map((c) => <WorkspaceCard key={c.id} card={c} />)}
+        </div>
+      )}
+
+      <div className="mt-8 text-xs text-slate-500 flex items-center gap-4 flex-wrap">
+        <Link href="/settings/workspaces" className="text-accent hover:underline">
+          Manage workspaces (rename / leave / delete) →
+        </Link>
+        <span className="text-slate-700">·</span>
+        <span>Each workspace is billed and metered independently - upgrading one never affects another.</span>
       </div>
+    </>
+  );
+}
+
+function Stat({ label, value, sub, tone }: { label: string; value: string; sub?: string; tone?: "warn" | "bad" }) {
+  const valueCls = tone === "warn" ? "text-warn" : tone === "bad" ? "text-bad" : "text-slate-100";
+  return (
+    <div className="card-tight">
+      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
+      <div className={`mt-1 text-xl font-semibold tabular-nums ${valueCls}`}>{value}</div>
+      {sub ? <div className="text-[11px] text-slate-500 mt-0.5">{sub}</div> : null}
     </div>
   );
 }

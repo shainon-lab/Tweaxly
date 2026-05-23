@@ -881,10 +881,15 @@ export type HorizonBlock = {
 };
 
 export type ConsultationAnswer = {
-  content: string;            // markdown text
+  content: string;            // markdown text (always present - used as fallback)
   payload?: {
     horizons?: HorizonBlock[];
   };
+  // Phase-1 structured response from Claude. When present, the UI
+  // renders this as a stack of cards (executive decision · confidence
+  // · drivers · risks · recommendation) instead of plain markdown.
+  // Older messages / mock responses leave this undefined.
+  structured?: import("./advisorTypes").StructuredAdvice;
 };
 
 const intentSavings = /\b(sav|cut|reduc|trim|lower|shrink)/i;
@@ -1401,6 +1406,9 @@ export async function answerQuestion(
   ctx: BusinessContext,
   message: string,
   history: { role: "user" | "assistant"; content: string }[] = [],
+  // Optional businessId so the Claude path can inject the Business
+  // DNA profile into the system prompt. Backwards-compatible.
+  businessId?: string,
 ): Promise<AdvisorAnswer> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   // Reject obvious placeholders to avoid silent 401s on unconfigured envs.
@@ -1418,6 +1426,7 @@ export async function answerQuestion(
         message,
         history,
         apiKey!,
+        businessId,
       );
       return { answer, mode: "claude" };
     } catch (e) {

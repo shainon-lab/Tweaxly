@@ -4,10 +4,13 @@ import { usePathname } from "next/navigation";
 import { useT } from "@/lib/i18n/client";
 
 // Tabs shown on every page under the Consultation umbrella.
-// Chat = the active conversation; Chat history = accordion of past Q&As.
+//   - New advisory  - blank-slate textarea for custom questions
+//   - Suggested     - AI-curated questions based on the workspace's data
+//   - History       - accordion of past Q&As
 const TAB_HREFS = [
-  { href: "/consultation",         tKey: "tabs.consult.new"     },
-  { href: "/consultation/history", tKey: "tabs.consult.history" },
+  { href: "/consultation",           tKey: "tabs.consult.new"       },
+  { href: "/consultation/suggested", tKey: "tabs.consult.suggested" },
+  { href: "/consultation/history",   tKey: "tabs.consult.history"   },
 ];
 
 export default function ConsultationTabs({ historyCount }: { historyCount?: number }) {

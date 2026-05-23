@@ -1,52 +1,31 @@
+// New Advisory.
+//
+// Custom-question surface only. The previous "Recommended" hero and
+// "Strategic situations" list moved to /consultation/suggested. This
+// page is now a focused, spacious textarea + answer view.
+//
+// Arrival from /consultation/suggested with ?q=&auto=1 prefills the
+// draft AND auto-submits, so the user lands directly on the answer.
+// Arrival with just ?q= prefills the draft for editing.
+
 import PageHeader from "@/components/PageHeader";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
-import {
-  pickTodaysFocus,
-  pickRecommendedConsultation,
-  pickSuggestedConsultations,
-  type TodaysFocus,
-  type RecommendedConsultation,
-  type StrategicSituation,
-} from "@/lib/consultationFocus";
 import ConsultationClient from "./ConsultationClient";
 import ConsultationTabs from "./ConsultationTabs";
 
 export default async function ConsultationPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string }>;
+  searchParams: Promise<{ q?: string; auto?: string }>;
 }) {
   const { business } = await requireBusiness();
   const sp = await searchParams;
 
-  const active = null;
   const totalQuestions = await prisma.consultationMessage.count({
     where: { consultation: { businessId: business.id }, role: "user" },
   });
-
-  // Build today's AI focus + the Recommended hero + the curated
-  // Strategic situations. All derived from the same BusinessContext
-  // the advisor uses, so the Consultation surface stays consistent
-  // with whatever the user is seeing on the dashboard and signals.
-  let focus: TodaysFocus | null = null;
-  let recommended: RecommendedConsultation | null = null;
-  let suggested: StrategicSituation[] = [];
-  try {
-    const ctx = await buildBusinessContext(business.id);
-    const signals = await recommendProactive(business.id, ctx);
-    focus = pickTodaysFocus(ctx, signals);
-    recommended = pickRecommendedConsultation(ctx, signals);
-    suggested = pickSuggestedConsultations(ctx, signals, recommended?.signalKey);
-  } catch {
-    // Fresh accounts without any data still render - the freeform
-    // input below is always available.
-    focus = null;
-    recommended = null;
-    suggested = [];
-  }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const claudeEnabled =
@@ -55,6 +34,9 @@ export default async function ConsultationPage({
     !/change-me|placeholder|todo|your[-_]key/i.test(apiKey);
 
   const initialDraft = typeof sp.q === "string" ? sp.q : "";
+  // ?auto=1 means the user clicked a suggested question - submit the
+  // draft on mount so they don't have to click Consult again.
+  const autoSubmit   = sp.auto === "1" && !!initialDraft.trim();
   const { t } = await getServerT();
 
   return (
@@ -67,11 +49,9 @@ export default async function ConsultationPage({
       <ConsultationClient
         currency={business.currency}
         claudeEnabled={claudeEnabled}
-        active={active}
-        focus={focus}
-        recommended={recommended}
-        suggested={suggested}
+        active={null}
         initialDraft={initialDraft}
+        autoSubmit={autoSubmit}
       />
     </>
   );

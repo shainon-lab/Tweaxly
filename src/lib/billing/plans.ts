@@ -36,6 +36,10 @@ export interface PlanFeatures {
   // Forecasting.
   scenarioBuilder:       boolean;
   multiScenarioCompare:  boolean;
+  // Workforce Planning surface (sub-tab under Forecast). Gated
+  // alongside Scenarios since both are decision-support tools the
+  // Free tier doesn't get.
+  workforcePlanning:     boolean;
   // Reports.
   exportExcel:           boolean;
   exportCsv:             boolean;
@@ -99,7 +103,10 @@ export const PLANS: Plan[] = [
     label:      "Free",
     priceCents: 0,
     limits: {
-      businesses:       1,
+      // Workspaces are unlimited on every plan - the unit of
+      // subscription IS the workspace, so capping how many a user
+      // can have makes no sense. Premium gating is per workspace.
+      businesses:       "unlimited",
       members:          1,
       dataSources:      1,
       historyDays:      90,
@@ -117,12 +124,13 @@ export const PLANS: Plan[] = [
         contextualConsultation: false,
         scenarioBuilder:        false,
         multiScenarioCompare:   false,
+        workforcePlanning:      false,
         exportExcel:            false,
         exportCsv:              false,
         exportPdf:              false,
         whitelabelReports:      false,
         yearlyReports:          false,
-        multiBusiness:          false,
+        multiBusiness:          true,
         multiUser:              false,
         teamRoles:              false,
         advancedIntegrations:   false,
@@ -159,6 +167,7 @@ export const PLANS: Plan[] = [
         contextualConsultation: true,
         scenarioBuilder:        true,
         multiScenarioCompare:   true,
+        workforcePlanning:      true,
         exportExcel:            true,
         exportCsv:              true,
         exportPdf:              true,
@@ -198,9 +207,30 @@ export function costFor(action: CreditAction): number { return CREDIT_COSTS[acti
 
 // Add-on credit packs available on every plan.
 export const CREDIT_PACKS: { sku: string; credits: number; priceCents: number }[] = [
+  { sku: "pack_30",  credits: 30,  priceCents:  900 },
+  { sku: "pack_50",  credits: 50,  priceCents: 1400 },
   { sku: "pack_100", credits: 100, priceCents: 1900 },
-  { sku: "pack_500", credits: 500, priceCents: 7900 },
 ];
+
+// Custom pack: user picks any credit count >= CUSTOM_PACK_MIN_CREDITS
+// and we price it via a sliding scale that mirrors the fixed packs.
+// Polar enforces the minimum amount at the product level too; the
+// server-side computation here is the authoritative source.
+export const CUSTOM_PACK_SKU = "pack_custom" as const;
+export const CUSTOM_PACK_MIN_CREDITS = 30;
+
+// Sliding-scale rate per credit (in cents):
+//   30-49   credits → 30¢ each   (matches pack_30: 30 × 30¢ = $9)
+//   50-99   credits → 28¢ each   (matches pack_50: 50 × 28¢ = $14)
+//   100+    credits → 19¢ each   (matches pack_100: 100 × 19¢ = $19)
+export function calculateCustomPackPriceCents(credits: number): number {
+  if (!Number.isFinite(credits) || credits < CUSTOM_PACK_MIN_CREDITS) {
+    throw new Error(`Custom pack requires at least ${CUSTOM_PACK_MIN_CREDITS} credits`);
+  }
+  const intCredits = Math.floor(credits);
+  const perCredit = intCredits >= 100 ? 19 : intCredits >= 50 ? 28 : 30;
+  return intCredits * perCredit;
+}
 
 // Quota helpers - centralised so callers don't sprinkle the
 // "unlimited" check everywhere.

@@ -17,6 +17,7 @@ import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
 import BusinessSwitcher, { type SwitcherWorkspace } from "./BusinessSwitcher";
 import UsageModal from "./billing/UsageModal";
+import BellButton from "./notifications/BellButton";
 import { useT } from "@/lib/i18n/client";
 
 type AlertKey = "transactions" | "insights" | "businessSignals";
@@ -123,7 +124,10 @@ export default function Sidebar({
         {/* TWEAXLY is the platform brand and always renders here. The business
             slot below shows either the uploaded business logo or the business
             name as a fallback. */}
-        <div className="px-4 py-5 border-b border-line bg-brand-navy relative">
+        <div
+          data-sidebar-header
+          className="px-4 py-5 border-b border-line bg-brand-navy relative"
+        >
           <Logo size="md" showTagline />
           {hasCustomLogo ? (
             <div className="mt-3 flex items-center min-h-[40px]">
@@ -154,15 +158,20 @@ export default function Sidebar({
               Hidden when billing data isn't loaded (e.g. during the
               very first render before ensureMonthlyAllowance has run). */}
           {billing ? <SidebarCreditsPill billing={billing} /> : null}
-          {/* Mobile-only close button inside the drawer header */}
-          <button
-            type="button"
-            className="lg:hidden absolute top-3 right-3 w-8 h-8 inline-flex items-center justify-center text-slate-300 hover:text-white rounded-md"
-            onClick={() => setMobileOpen(false)}
-            aria-label="Close navigation"
-          >
-            <span className="text-lg leading-none">✕</span>
-          </button>
+          {/* Top-right corner: notifications bell + mobile close. The
+              bell triggers the Notification Center side panel; the
+              close button is mobile-only. */}
+          <div className="absolute top-3 right-3 flex items-center gap-1">
+            <BellButton />
+            <button
+              type="button"
+              className="lg:hidden w-8 h-8 inline-flex items-center justify-center text-slate-300 hover:text-white rounded-md"
+              onClick={() => setMobileOpen(false)}
+              aria-label="Close navigation"
+            >
+              <span className="text-lg leading-none">✕</span>
+            </button>
+          </div>
         </div>
         <nav className="px-2 py-3 flex-1 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
@@ -263,6 +272,7 @@ function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
         type="button"
         onClick={() => setUsageOpen(true)}
         aria-haspopup="dialog"
+        data-credits-pill
         className="mt-3 w-full block text-left rounded-md border border-line/60 bg-ink-900/40 hover:border-accent/40 hover:bg-ink-900 transition px-3 py-2 cursor-pointer"
       >
         <div className="flex items-center justify-between text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
