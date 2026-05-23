@@ -66,6 +66,7 @@ export const en: Dictionary = {
   "nav.advisory": "Advisory",
   "nav.forecast": "Forecast",
   "nav.reports": "Reports",
+  "nav.data":     "Data",
   "nav.settings": "Settings",
   "nav.account": "Account",
   "nav.admin": "Admin",
@@ -136,6 +137,15 @@ export const en: Dictionary = {
   "settings.tab.categories": "Categories & Vendors",
   "settings.tab.transactions": "Transactions",
   "settings.tab.dataLog": "Data Log",
+  // ─── Data section tab labels ───────────────────────────────────
+  // These mirror the legacy settings.tab.* keys but are namespaced
+  // under data.* so future divergence (e.g. different label per
+  // platform area) doesn't break the other surface.
+  "data.tab.sources":      "Sources",
+  "data.tab.import":       "Import Data",
+  "data.tab.integration":  "Integration",
+  "data.tab.transactions": "Transactions",
+  "data.tab.dataLog":      "Data Log",
   "settings.tab.workspaces": "Workspaces",
   "settings.tab.billing":    "Billing & Credits",
 

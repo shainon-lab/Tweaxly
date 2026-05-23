@@ -1,5 +1,5 @@
 import PageHeader from "@/components/PageHeader";
-import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import DataTabs from "@/components/DataTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -98,7 +98,7 @@ export default async function DataLogPage() {
         title={t("page.dataLog.title")}
         subtitle="Data log - every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
       />
-      <BusinessSettingsTabs />
+      <DataTabs />
       <DataLogClient rows={rows} currency={business.currency} />
     </>
   );

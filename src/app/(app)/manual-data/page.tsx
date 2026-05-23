@@ -1,5 +1,5 @@
 import PageHeader from "@/components/PageHeader";
-import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import DataTabs from "@/components/DataTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -50,7 +50,7 @@ export default async function ManualDataPage({
             : "Import data - add income or outcome entries manually, or bulk-upload a file."
         }
       />
-      {fromOnboarding ? <OnboardingImportIntro /> : <BusinessSettingsTabs />}
+      {fromOnboarding ? <OnboardingImportIntro /> : <DataTabs />}
       <ManualDataClient
         entries={entries.map((e) => {
           const entryCurrency = (e.currency ?? business.currency).toUpperCase();

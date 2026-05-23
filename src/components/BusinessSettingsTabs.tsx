@@ -1,31 +1,22 @@
 "use client";
 
-// Unified tab nav shown across every Business Settings destination.
-// The Settings page used to own a 3-tab internal switcher (Business
-// Profile, Categories & Vendors, Integration) and the Data section
-// owned its own 3-tab switcher (Import data, Transactions, Data log).
-// Both groups now collapse into one 6-tab row anchored to this
-// component - the Data sidebar entry is gone and these views live
-// under Business Settings.
+// Settings tab nav — configuration only. Data-ops tabs (Sources,
+// Import, Integration, Transactions, Data Log) moved to <DataTabs />
+// under the new /data sidebar section, so this strip is now four tabs:
+//   Business Settings · Business Profile · Business Plan · Categories
 //
-// /settings holds three of the six tabs via a ?tab= query (profile is
-// the default, no param needed); the other three are full routes.
+// /settings uses a ?tab= query for the first three (settings is the
+// default with no param); /settings?tab=categories renders the
+// Categories & Vendors editor inside SettingsClient.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/client";
 
-// Tab labels are i18n keys; the component resolves them per render.
-// The Settings page split out three sub-tabs from the legacy "Business
-// Profile" panel: Business Settings (the basics + currency + branding),
-// Business Profile (the AI-facing DNA), and Business Plan (per-
-// workspace billing). The data-side tabs sit alongside for parity.
 const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: string | null) => boolean }[] = [
   {
     href: "/settings",
     tKey: "settings.tab.businessSettings",
-    // /settings with no ?tab= falls through to "settings" in the
-    // resolver, so this entry is active for that path too.
     activeWhen: (path, tab) => path === "/settings" && (!tab || tab === "settings"),
   },
   {
@@ -39,34 +30,9 @@ const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: st
     activeWhen: (path, tab) => path === "/settings" && tab === "plan",
   },
   {
-    href: "/sources",
-    tKey: "settings.tab.sources",
-    activeWhen: (path) => path === "/sources" || path.startsWith("/sources/"),
-  },
-  {
-    href: "/manual-data",
-    tKey: "settings.tab.import",
-    activeWhen: (path) => path === "/manual-data" || path.startsWith("/manual-data/"),
-  },
-  {
-    href: "/settings?tab=integration",
-    tKey: "settings.tab.integration",
-    activeWhen: (path, tab) => path === "/settings" && tab === "integration",
-  },
-  {
     href: "/settings?tab=categories",
     tKey: "settings.tab.categories",
     activeWhen: (path, tab) => path === "/settings" && tab === "categories",
-  },
-  {
-    href: "/transactions",
-    tKey: "settings.tab.transactions",
-    activeWhen: (path) => path === "/transactions" || path.startsWith("/transactions/"),
-  },
-  {
-    href: "/data-log",
-    tKey: "settings.tab.dataLog",
-    activeWhen: (path) => path === "/data-log" || path.startsWith("/data-log/"),
   },
 ];
 

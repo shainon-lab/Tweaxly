@@ -10,6 +10,7 @@ import {
   FileText,
   SlidersHorizontal,
   CircleUser,
+  Database,
   Shield,
   type LucideIcon,
 } from "lucide-react";
@@ -37,10 +38,12 @@ const NAV: { href: string; tKey: string; Icon: LucideIcon; alertKey?: AlertKey }
   // Workforce Planning lives inside Forecast as a sub-tab now - the
   // platform is business-intelligence, not HR, so workforce is a
   // financial-planning lever rather than a standalone destination.
-  // Data, Integration, and Notifications all live inside Settings
-  // as sub-tabs. The transactions alert badge surfaces on Settings
-  // so duplicate-review counts stay visible in the sidebar.
-  { href: "/settings",         tKey: "nav.settings", Icon: SlidersHorizontal, alertKey: "transactions" },
+  // Data section owns the operational data surfaces: Sources, Import
+  // Data, Integration, Transactions, Data Log. Settings is now
+  // configuration-only (Business Settings / Profile / Plan / Categories).
+  // The transactions alert badge moved with Transactions to /data.
+  { href: "/data",             tKey: "nav.data",     Icon: Database,          alertKey: "transactions" },
+  { href: "/settings",         tKey: "nav.settings", Icon: SlidersHorizontal },
   { href: "/account",          tKey: "nav.account",  Icon: CircleUser },
 ];
 
@@ -175,24 +178,25 @@ export default function Sidebar({
         </div>
         <nav className="px-2 py-3 flex-1 space-y-0.5 overflow-y-auto">
           {NAV.map((n) => {
-            // Business Settings owns /settings AND the data sub-tab
-            // routes (/manual-data, /transactions, /data-log) AND the
-            // /integration route that still exists as a backwards-
-            // compatible landing for the Integration tab. Reports & Charts
-            // owns /report, /data-flow, /insights via ReportsTabs.
-            const settingsRoutes = [
-              "/settings", "/manual-data", "/transactions", "/data-log", "/integration",
-            ];
-            const reportsRoutes = ["/report", "/data-flow", "/insights"];
+            // Settings now owns ONLY configuration surfaces (/settings
+            // and its tab variants). Data section owns the operational
+            // surfaces: Sources, Import (manual-data), Integration,
+            // Transactions, Data Log. Reports & Charts owns /report,
+            // /data-flow, /insights via ReportsTabs.
+            const settingsRoutes = ["/settings"];
+            const dataRoutes     = ["/data", "/sources", "/manual-data", "/transactions", "/data-log", "/integration"];
+            const reportsRoutes  = ["/report", "/data-flow", "/insights"];
             // Forecast owns /forecast plus /workforce (Workforce
             // Planning sub-tab) plus /employees (Edit Roster drill-
             // down kept inside the Forecast nav group).
             const forecastRoutes = ["/forecast", "/workforce", "/employees"];
             const inSettingsGroup = settingsRoutes.some((r) => path === r || path.startsWith(r + "/"));
-            const inReportsGroup = reportsRoutes.some((r) => path === r || path.startsWith(r + "/"));
+            const inDataGroup     = dataRoutes.some((r) => path === r || path.startsWith(r + "/"));
+            const inReportsGroup  = reportsRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const inForecastGroup = forecastRoutes.some((r) => path === r || path.startsWith(r + "/"));
             const active =
               n.href === "/settings" ? inSettingsGroup :
+              n.href === "/data"     ? inDataGroup :
               n.href === "/report"   ? inReportsGroup :
               n.href === "/forecast" ? inForecastGroup :
               path === n.href || path.startsWith(n.href + "/");

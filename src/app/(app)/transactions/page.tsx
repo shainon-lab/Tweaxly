@@ -1,5 +1,5 @@
 import PageHeader from "@/components/PageHeader";
-import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
+import DataTabs from "@/components/DataTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -52,7 +52,7 @@ export default async function TransactionsPage({
         title={t("page.transactions.title")}
         subtitle={`Transactions - ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
       />
-      <BusinessSettingsTabs />
+      <DataTabs />
       <TransactionsClient
         txns={txns.map((t) => ({
           id: t.id,
