@@ -343,6 +343,8 @@ export default function BankImportWizard({
         <ConfirmStep
           preview={preview}
           assignments={assignments}
+          skipRows={skipRows}
+          replaceCount={context?.replaceBatchIds.length ?? 0}
           saveAsName={saveAsName}
           setSaveAsName={setSaveAsName}
           importing={importing}
@@ -1073,31 +1075,72 @@ function Stat({ label, value, tone = "muted" }: { label: string; value: string; 
 }
 
 // ─── Step 4: Confirm ───────────────────────────────────────────────────────
+// Last stop before the actual /api/upload/commit POST. Shows a
+// reconciliation preview so the owner sees what's about to land:
+// import count, income/expense totals from the mapped columns, skipped-
+// row count, and a note about settlement + duplicate detection running
+// post-import.
 function ConfirmStep({
-  preview, assignments, saveAsName, setSaveAsName, importing, onBack, onImport,
+  preview, assignments, skipRows, replaceCount,
+  saveAsName, setSaveAsName, importing, onBack, onImport,
 }: {
   preview: PreviewResponse;
   assignments: Assignments;
+  skipRows: Set<number>;
+  replaceCount: number;
   saveAsName: string;
   setSaveAsName: (s: string) => void;
   importing: boolean;
   onBack: () => void;
   onImport: () => void;
 }) {
-  void assignments;
+  const summary = useMemo(
+    () => buildReconciliation(preview.rows, assignments, skipRows),
+    [preview.rows, assignments, skipRows],
+  );
+
   return (
     <div>
-      <div className="text-sm text-slate-300 mb-3">
-        About to import <span className="font-semibold text-slate-100">{preview.rows.length}</span> rows
-        from <span className="font-medium">{preview.filename}</span>.
+      {/* Reconciliation preview — totals + counts */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+        <Stat label="To import"    value={summary.toImport.toLocaleString()} tone="good" />
+        <Stat label="Skipped"      value={summary.skipped.toLocaleString()} tone={summary.skipped > 0 ? "warn" : "muted"} />
+        <Stat label="Income total" value={fmtAmt(summary.incomeTotal)} tone={summary.incomeTotal > 0 ? "good" : "muted"} />
+        <Stat label="Outcome total" value={fmtAmt(summary.expenseTotal)} tone={summary.expenseTotal > 0 ? "warn" : "muted"} />
       </div>
-      <div className="card-tight border-warn/40 bg-warn/5 mb-4 flex items-start gap-2">
-        <AlertTriangle size={14} className="text-warn shrink-0 mt-0.5" />
-        <div className="text-xs text-slate-200 leading-relaxed">
-          Duplicates (same date + amount + vendor) are flagged automatically and
-          shown for review in <span className="text-slate-100">Data Log</span> after import — they're never silently dropped.
-        </div>
+
+      <div className="card-tight border-line/60 mb-4">
+        <div className="text-[11px] uppercase tracking-wider text-slate-500 mb-2">What happens after you click Import</div>
+        <ul className="text-xs text-slate-300 space-y-1.5">
+          {replaceCount > 0 ? (
+            <li className="text-bad inline-flex items-start gap-1.5">
+              <AlertTriangle size={12} className="mt-0.5 shrink-0" />
+              <span>
+                <span className="font-medium">{replaceCount} previous import{replaceCount === 1 ? "" : "s"} will be replaced.</span> Old transactions are deleted; the import history stays for audit.
+              </span>
+            </li>
+          ) : null}
+          <li className="inline-flex items-start gap-1.5">
+            <span className="text-good">✓</span>
+            <span>
+              <span className="font-medium">{summary.toImport.toLocaleString()}</span> transaction{summary.toImport === 1 ? "" : "s"} from <span className="font-medium">{preview.filename}</span> will be created with their original dates and currencies preserved.
+            </span>
+          </li>
+          <li className="inline-flex items-start gap-1.5">
+            <span className="text-accent">⇆</span>
+            <span>
+              Credit-card / PayPal <span className="font-medium">settlements</span> are auto-detected (matched against your other sources' monthly totals) and excluded from P&amp;L — the detailed lines count instead.
+            </span>
+          </li>
+          <li className="inline-flex items-start gap-1.5">
+            <span className="text-warn">⚠</span>
+            <span>
+              Likely <span className="font-medium">duplicates</span> (same date + amount + vendor across sources) are flagged for review on the Data Log. They're never silently dropped.
+            </span>
+          </li>
+        </ul>
       </div>
+
       <div className="max-w-md mb-5">
         <label className="label">Save this mapping as a template (optional)</label>
         <input
@@ -1119,11 +1162,50 @@ function ConfirmStep({
           disabled={importing}
           className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-50"
         >
-          {importing ? (<><Loader2 size={14} className="animate-spin" /> Importing…</>) : "Import"}
+          {importing ? (<><Loader2 size={14} className="animate-spin" /> Importing…</>) : `Import ${summary.toImport.toLocaleString()} transaction${summary.toImport === 1 ? "" : "s"}`}
         </button>
       </div>
     </div>
   );
+}
+
+// Client-side reconciliation summary used by the Confirm step. Mirrors
+// the same row-walk as dryRun() but reports totals + counts rather than
+// per-row issues. Lives client-side so the user doesn't pay another
+// network round-trip just to see "what am I about to import".
+function buildReconciliation(
+  rows: Record<string, unknown>[],
+  a: Assignments,
+  skipRows: Set<number>,
+): { toImport: number; skipped: number; incomeTotal: number; expenseTotal: number } {
+  const amountH  = headerFor(a, "amount");
+  const incomeH  = headerFor(a, "income");
+  const expenseH = headerFor(a, "expense");
+  let toImport = 0;
+  let skipped  = 0;
+  let income   = 0;
+  let expense  = 0;
+  for (let i = 0; i < rows.length; i++) {
+    if (skipRows.has(i)) { skipped++; continue; }
+    toImport++;
+    const r = rows[i];
+    if (amountH) {
+      const n = parseNum(r[amountH]);
+      if (n > 0) income  += n;
+      else       expense += Math.abs(n);
+    } else if (incomeH || expenseH) {
+      const inc = incomeH  ? Math.abs(parseNum(r[incomeH]))  : 0;
+      const exp = expenseH ? Math.abs(parseNum(r[expenseH])) : 0;
+      income  += inc;
+      expense += exp;
+    }
+  }
+  return { toImport, skipped, incomeTotal: income, expenseTotal: expense };
+}
+
+function fmtAmt(n: number): string {
+  if (!Number.isFinite(n)) return "—";
+  return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 // ─── Step 5: Done ──────────────────────────────────────────────────────────

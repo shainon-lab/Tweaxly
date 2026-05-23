@@ -2,6 +2,7 @@ import PageHeader from "@/components/PageHeader";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
+import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost, trailingMonthsSummary } from "@/lib/metrics";
@@ -217,6 +218,14 @@ export default async function DashboardPage({
               tiles so the user reads the interpretation before the
               numbers. */}
           {summary ? <ExecutiveSummaryHero summary={summary} /> : null}
+
+          {/* Financial Data Pipeline (Phase 3) — compact tile only.
+              Links over to /sources for the full coverage matrix +
+              missing-month breakdown. Hidden when no sources exist so
+              brand-new workspaces aren't pestered. */}
+          <div className="mb-4">
+            <HealthScoreWidget variant="compact" />
+          </div>
 
           {/* All Overview tiles share a single StatGroup so opening one
               Learn-more panel automatically closes any other. Comparison
