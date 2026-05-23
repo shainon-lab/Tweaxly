@@ -235,6 +235,47 @@ export async function sweepAndDispatch(
       });
     }
 
+    // ── Data coverage gaps ──────────────────────────────────────
+    // For each active financial source, check whether the PREVIOUS
+    // full month was uploaded. Emits one alert per (source, month);
+    // the per-severity dedup window keeps it from re-firing every
+    // sweep until the user uploads.
+    try {
+      const prevYM = previousFullYm();
+      const activeSources = await prisma.financialSource.findMany({
+        where: { businessId, status: "active" },
+        select: { id: true, name: true, startMonth: true },
+      });
+      const inWindow = activeSources.filter((s) => s.startMonth <= prevYM);
+      if (inWindow.length > 0) {
+        const covered = await prisma.uploadBatch.findMany({
+          where: {
+            businessId,
+            status: "active",
+            financialSourceId: { in: inWindow.map((s) => s.id) },
+            periodStart: { lte: prevYM },
+            periodEnd:   { gte: prevYM },
+          },
+          select: { financialSourceId: true },
+        });
+        const coveredIds = new Set(covered.map((b) => b.financialSourceId));
+        for (const s of inWindow) {
+          if (coveredIds.has(s.id)) continue;
+          await tryDispatch({
+            sourceKey: `coverage_gap:${s.id}:${prevYM}`,
+            source:    "signal",
+            category:  "data_coverage",
+            severity:  "important",
+            title:     `${s.name} is missing ${humanYM(prevYM)}`,
+            body:      `Upload last month's statement so reports and the AI advisor stay accurate.`,
+            deepLink:  "/manual-data",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("[alerts.sweep] coverage check failed", { userId, businessId, err });
+    }
+
     return { skipped: false, dispatched };
   } catch (err) {
     console.error("[alerts.sweep] failed", { userId, businessId, err });
@@ -344,4 +385,19 @@ function humanCategoryLabel(c: AlertCategory): string {
 // per day - re-sweeping the same day doesn't re-emit the summary.
 function todayYMD(): string {
   return new Date().toISOString().slice(0, 10);
+}
+
+// Previous full month (e.g. on 2026-05-23 → "2026-04"). What the
+// coverage-gap check considers "should be uploaded by now".
+function previousFullYm(): string {
+  const d = new Date();
+  d.setUTCDate(1);                       // safe arithmetic in UTC
+  d.setUTCMonth(d.getUTCMonth() - 1);
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+// "2026-04" → "April 2026" for human-readable alert titles.
+function humanYM(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString("en-US", { month: "long", year: "numeric" });
 }

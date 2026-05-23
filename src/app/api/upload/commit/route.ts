@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db";
 import { normalizeRow, type ColumnMapping } from "@/lib/normalize";
 import { findApplicableRule } from "@/lib/categorize";
 import { findDuplicateCandidates } from "@/lib/duplicates";
+import { detectSettlements, applySettlements } from "@/lib/settlements";
 import { kindFromName, parseDate } from "@/lib/parsers";
 import { convertAmount } from "@/lib/fx";
 import { isSupportedCurrency } from "@/lib/currencies";
@@ -421,8 +422,34 @@ export async function POST(req: NextRequest) {
     });
   }
 
+  // Settlement detection — runs symmetrically whether this is a bank
+  // upload (looks for card/paypal totals) or a card/paypal upload (re-
+  // evaluates recent bank rows against new totals). Idempotent.
+  let settlementsApplied = 0;
+  const settlementSamples: { source: string; ym: string; amount: number }[] = [];
+  try {
+    const matches = await detectSettlements(business.id);
+    if (matches.length > 0) {
+      settlementsApplied = await applySettlements(business.id, matches);
+      for (const m of matches.slice(0, 5)) {
+        settlementSamples.push({
+          source: m.matchedSourceName,
+          ym:     m.matchedYM,
+          amount: Math.abs(m.bankAmount),
+        });
+      }
+    }
+  } catch (err) {
+    // Never let settlement detection break the import. The user can re-
+    // run it manually from the Sources page (Phase 3) or correct rows
+    // by hand if anything looks wrong.
+    console.error("[/api/upload/commit] settlement detection failed", err);
+  }
+
   return NextResponse.json({
     imported: created.length,
     duplicateGroups: createdGroups,
+    settlementsApplied,
+    settlementSamples,
   });
 }

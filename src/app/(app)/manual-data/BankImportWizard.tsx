@@ -173,7 +173,12 @@ export default function BankImportWizard({
   const [, startTransition] = useTransition();
 
   // Step 5 done state
-  const [importResult, setImportResult] = useState<{ imported: number; duplicateGroups: number } | null>(null);
+  const [importResult, setImportResult] = useState<{
+    imported: number;
+    duplicateGroups: number;
+    settlementsApplied: number;
+    settlementSamples: { source: string; ym: string; amount: number }[];
+  } | null>(null);
 
   // Pull saved templates once — used in the Map step.
   useEffect(() => {
@@ -412,7 +417,12 @@ export default function BankImportWizard({
                 throw new Error(msg);
               }
               const data = await res.json();
-              setImportResult({ imported: data.imported ?? 0, duplicateGroups: data.duplicateGroups ?? 0 });
+              setImportResult({
+                imported:           data.imported ?? 0,
+                duplicateGroups:    data.duplicateGroups ?? 0,
+                settlementsApplied: data.settlementsApplied ?? 0,
+                settlementSamples:  data.settlementSamples ?? [],
+              });
               setStep("done");
               startTransition(() => router.refresh());
             } catch (err) {
@@ -428,6 +438,8 @@ export default function BankImportWizard({
         <DoneStep
           imported={importResult.imported}
           duplicateGroups={importResult.duplicateGroups}
+          settlementsApplied={importResult.settlementsApplied}
+          settlementSamples={importResult.settlementSamples}
           templateSaved={!!saveAsName.trim()}
           onAnother={() => { reset(); onAfterDone?.(); }}
           onViewTxns={() => router.push("/transactions")}
@@ -1116,30 +1128,69 @@ function ConfirmStep({
 
 // ─── Step 5: Done ──────────────────────────────────────────────────────────
 function DoneStep({
-  imported, duplicateGroups, templateSaved, onAnother, onViewTxns,
+  imported, duplicateGroups, settlementsApplied, settlementSamples,
+  templateSaved, onAnother, onViewTxns,
 }: {
   imported: number;
   duplicateGroups: number;
+  settlementsApplied: number;
+  settlementSamples: { source: string; ym: string; amount: number }[];
   templateSaved: boolean;
   onAnother: () => void;
   onViewTxns: () => void;
 }) {
   return (
-    <div className="text-center py-6">
-      <CheckCircle2 size={36} className="text-good mx-auto mb-2" />
-      <div className="text-lg font-semibold text-slate-100">
-        Imported {imported.toLocaleString()} transaction{imported === 1 ? "" : "s"}
+    <div>
+      <div className="text-center py-4">
+        <CheckCircle2 size={36} className="text-good mx-auto mb-2" />
+        <div className="text-lg font-semibold text-slate-100">
+          Imported {imported.toLocaleString()} transaction{imported === 1 ? "" : "s"}
+        </div>
+        <div className="text-sm text-slate-400 mt-1">
+          {duplicateGroups > 0 ? `${duplicateGroups} duplicate group${duplicateGroups === 1 ? "" : "s"} flagged for review.` : "No duplicates found."}
+          {templateSaved ? " Mapping template saved." : ""}
+        </div>
       </div>
-      <div className="text-sm text-slate-400 mt-1">
-        {duplicateGroups > 0 ? `${duplicateGroups} duplicate group${duplicateGroups === 1 ? "" : "s"} flagged for review.` : "No duplicates found."}
-        {templateSaved ? " Mapping template saved." : ""}
-      </div>
+
+      {settlementsApplied > 0 ? (
+        <div className="card-tight border-good/40 bg-good/5 my-4">
+          <div className="flex items-start gap-2 mb-2">
+            <CheckCircle2 size={16} className="text-good shrink-0 mt-0.5" />
+            <div className="text-sm text-slate-200">
+              <span className="font-medium">
+                {settlementsApplied} credit-card / PayPal settlement{settlementsApplied === 1 ? "" : "s"} detected.
+              </span>
+              <div className="text-xs text-slate-400 mt-0.5">
+                These bank rows are excluded from P&amp;L — the detailed card/PayPal lines count instead. You can undo this from the Transactions page if a match was wrong.
+              </div>
+            </div>
+          </div>
+          {settlementSamples.length > 0 ? (
+            <ul className="text-xs text-slate-400 space-y-0.5 mt-2 pl-6">
+              {settlementSamples.map((s, i) => (
+                <li key={i} className="list-disc">
+                  {fmtYmDone(s.ym)} · {s.source} · {s.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </li>
+              ))}
+              {settlementsApplied > settlementSamples.length ? (
+                <li className="list-none text-slate-500">+ {settlementsApplied - settlementSamples.length} more</li>
+              ) : null}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="flex items-center justify-center gap-2 mt-5">
         <button type="button" onClick={onAnother} className="btn-ghost text-sm">Import another</button>
         <button type="button" onClick={onViewTxns} className="btn-primary text-sm">View transactions →</button>
       </div>
     </div>
   );
+}
+
+function fmtYmDone(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString(undefined, { month: "short", year: "numeric" });
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────

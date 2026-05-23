@@ -26,6 +26,8 @@ export const ALERT_CATEGORIES = [
     helper: "Rules you defined in Business Monitors." },
   { value: "weekly_summary",   label: "Weekly AI business summary",
     helper: "A Monday roll-up of the week ahead." },
+  { value: "data_coverage",    label: "Missing data alerts",
+    helper: "When a financial source (bank, card, PayPal) is missing the previous month's import." },
 ] as const;
 
 export type AlertCategory = (typeof ALERT_CATEGORIES)[number]["value"];
