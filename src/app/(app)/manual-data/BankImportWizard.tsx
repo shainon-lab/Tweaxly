@@ -136,6 +136,10 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
   // step). Once the user picks, we hold their choice through commit even
   // if they go back and tweak the column mapping.
   const [dateFormat, setDateFormat] = useState<DateFormat | null>(null);
+  // Row indices the user explicitly chose to skip on the Validate step.
+  // Lifted up so the decision survives back-navigation. Reset by reset()
+  // (new file) and whenever the user goes back to Map and changes things.
+  const [skipRows, setSkipRows] = useState<Set<number>>(new Set());
 
   // Saved templates for this workspace (auto-suggest on second+ uploads).
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
@@ -171,6 +175,7 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
     setPreview(null);
     setAssignments({});
     setDateFormat(null);
+    setSkipRows(new Set());
     setAppliedTemplateId(null);
     setSaveAsName("");
     setImporting(false);
@@ -300,7 +305,9 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
           assignments={assignments}
           defaultCcy={defaultCcy}
           dateFormat={dateFormat}
-          onBack={() => setStep("dateFormat")}
+          skipRows={skipRows}
+          setSkipRows={setSkipRows}
+          onBack={() => { setSkipRows(new Set()); setStep("dateFormat"); }}
           onNext={() => setStep("confirm")}
         />
       )}
@@ -317,7 +324,11 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
             setImporting(true);
             try {
               let mapping = toServerMapping(assignments);
-              let rows: Record<string, unknown>[] = preview.rows;
+              // Drop any rows the user explicitly chose to skip on the
+              // Validate step. We filter *before* the date/amount synthesis
+              // passes so index-based skipRows still lines up with the
+              // remaining payload.
+              let rows: Record<string, unknown>[] = preview.rows.filter((_, i) => !skipRows.has(i));
 
               // Rewrite the date column to ISO YYYY-MM-DD using the user-
               // confirmed format. Deterministic — never relies on
@@ -846,58 +857,121 @@ function DateFormatStep({
 }
 
 // ─── Step 4: Validate ──────────────────────────────────────────────────────
+// Walk every row with the chosen mapping; surface unparseable rows ONE AT
+// A TIME with the row's actual contents so the user can confirm each one
+// is either OK to drop ("Skip this row") or worth letting through anyway
+// ("Import as-is"). Bulk actions exist for files with many of the same
+// kind of error. Continue is blocked until every error has been addressed.
 function ValidateStep({
-  preview, assignments, defaultCcy, dateFormat, onBack, onNext,
+  preview, assignments, defaultCcy, dateFormat,
+  skipRows, setSkipRows,
+  onBack, onNext,
 }: {
   preview: PreviewResponse;
   assignments: Assignments;
   defaultCcy: string;
   dateFormat: DateFormat | null;
+  skipRows: Set<number>;
+  setSkipRows: (s: Set<number>) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
-  // Client-side dry run: walk the rows with the chosen mapping and count
-  // how many would normalize cleanly. Date + Amount (or Income/Expense)
-  // are the must-haves; everything else is best-effort.
   const result = useMemo(
     () => dryRun(preview.rows, assignments, defaultCcy, dateFormat),
     [preview.rows, assignments, defaultCcy, dateFormat],
   );
 
+  // `addressed` tracks which error rows the user has explicitly resolved
+  // (skip OR import-anyway). Lives in local state since it only matters
+  // while the user is on this step — the skip set carries forward via
+  // skipRows in parent state.
+  const [addressed, setAddressed] = useState<Set<number>>(() => new Set(skipRows));
+
+  // If the error set changes (e.g. user went back to Map and remapped),
+  // reset to whatever the current skipRows says.
+  const errorSignature = result.issues.map((i) => i.row).join(",");
+  useEffect(() => {
+    setAddressed(new Set(skipRows));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [errorSignature]);
+
+  const errorRows  = result.issues.map((iss) => iss.row);
+  const pending    = errorRows.filter((r) => !addressed.has(r));
+  const currentRow = pending[0] ?? null;
+  const currentIss = currentRow == null ? null : result.issues.find((i) => i.row === currentRow) ?? null;
+  const reviewedCount = errorRows.length - pending.length;
+  const willImport = result.total - skipRows.size;
+
+  function markSkip(row: number) {
+    const nextSkip = new Set(skipRows); nextSkip.add(row); setSkipRows(nextSkip);
+    const nextAdd = new Set(addressed); nextAdd.add(row); setAddressed(nextAdd);
+  }
+  function markImport(row: number) {
+    const nextAdd = new Set(addressed); nextAdd.add(row); setAddressed(nextAdd);
+  }
+  function skipAllPending() {
+    const nextSkip = new Set(skipRows); for (const r of pending) nextSkip.add(r); setSkipRows(nextSkip);
+    const nextAdd = new Set(addressed); for (const r of pending) nextAdd.add(r); setAddressed(nextAdd);
+  }
+  function importAllPending() {
+    const nextAdd = new Set(addressed); for (const r of pending) nextAdd.add(r); setAddressed(nextAdd);
+  }
+
+  const canContinue = pending.length === 0 && willImport > 0;
+
   return (
     <div>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-4">
-        <Stat label="Total rows"        value={result.total.toLocaleString()} />
-        <Stat label="Valid rows"        value={result.valid.toLocaleString()} tone="good" />
-        <Stat label="Rows with issues"  value={result.invalid.toLocaleString()} tone={result.invalid > 0 ? "warn" : "muted"} />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-4">
+        <Stat label="Total rows"   value={result.total.toLocaleString()} />
+        <Stat label="Valid rows"   value={result.valid.toLocaleString()} tone="good" />
+        <Stat label="Will skip"    value={skipRows.size.toLocaleString()} tone={skipRows.size > 0 ? "warn" : "muted"} />
+        <Stat label="To import"    value={willImport.toLocaleString()} tone="good" />
       </div>
-      {result.issues.length > 0 ? (
-        <div className="rounded-md border border-line bg-ink-900/40 max-h-[260px] overflow-y-auto">
-          <table className="w-full text-xs">
-            <thead className="bg-ink-900/80 text-[10px] uppercase tracking-wider text-slate-500">
-              <tr>
-                <th className="text-left px-3 py-2 w-16">Row</th>
-                <th className="text-left px-3 py-2">Issue</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-line/60">
-              {result.issues.slice(0, 50).map((iss, i) => (
-                <tr key={i}>
-                  <td className="px-3 py-1.5 text-slate-400 font-mono">{iss.row + 1}</td>
-                  <td className="px-3 py-1.5 text-warn">{iss.message}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          {result.issues.length > 50 ? (
-            <div className="px-3 py-2 text-[11px] text-slate-500 border-t border-line">
-              + {result.issues.length - 50} more issues — they'll be flagged after import.
-            </div>
-          ) : null}
-        </div>
-      ) : (
+
+      {errorRows.length === 0 ? (
         <div className="rounded-md border border-good/30 bg-good/10 px-4 py-3 text-sm text-good inline-flex items-center gap-2">
           <CheckCircle2 size={16} /> All {result.total} rows parse cleanly with this mapping.
+        </div>
+      ) : currentIss ? (
+        <div className="rounded-md border border-warn/40 bg-warn/5 px-4 py-3">
+          <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
+            <div className="text-sm text-slate-200">
+              <span className="text-[11px] uppercase tracking-wider text-slate-500 mr-2">
+                Error {reviewedCount + 1} of {errorRows.length}
+              </span>
+              Row <span className="font-mono">{currentIss.row + 1}</span> — <span className="text-warn">{currentIss.message}</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs">
+              <button type="button" onClick={importAllPending} className="btn-ghost py-1 text-xs">Import all anyway</button>
+              <button type="button" onClick={skipAllPending}   className="btn-ghost py-1 text-xs">Skip all</button>
+            </div>
+          </div>
+          <RowPreview row={preview.rows[currentIss.row]} assignments={assignments} />
+          <div className="flex items-center gap-2 mt-3">
+            <button
+              type="button"
+              onClick={() => markSkip(currentIss.row)}
+              className="text-xs font-medium px-3 py-1.5 rounded-md border border-warn/50 text-warn hover:bg-warn/10 transition"
+            >
+              Skip this row
+            </button>
+            <button
+              type="button"
+              onClick={() => markImport(currentIss.row)}
+              className="text-xs font-medium px-3 py-1.5 rounded-md border border-line text-slate-200 hover:bg-ink-700 transition"
+            >
+              Import as-is
+            </button>
+            <span className="text-[11px] text-slate-500 ml-auto">
+              Import as-is keeps the row in the file. If the server can't normalize it either, it's skipped silently.
+            </span>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-md border border-good/30 bg-good/10 px-4 py-3 text-sm text-good">
+          <CheckCircle2 size={16} className="inline mr-1.5 -mt-0.5" />
+          All {errorRows.length} errors reviewed.
+          {skipRows.size > 0 ? ` ${skipRows.size} row${skipRows.size === 1 ? "" : "s"} will be skipped on import.` : ""}
         </div>
       )}
 
@@ -906,7 +980,7 @@ function ValidateStep({
         <button
           type="button"
           onClick={onNext}
-          disabled={result.valid === 0}
+          disabled={!canContinue}
           className="btn-primary text-sm disabled:opacity-50"
         >
           Continue →
@@ -914,6 +988,38 @@ function ValidateStep({
       </div>
     </div>
   );
+}
+
+// Compact preview of one row's mapped fields. Shows just what the user
+// mapped (so 100-column files don't dump every cell), plus the row index.
+function RowPreview({ row, assignments }: { row: Record<string, unknown>; assignments: Assignments }) {
+  const mapped = Object.entries(assignments).filter(([, f]) => f !== "ignore");
+  return (
+    <div className="rounded-md border border-line/60 bg-ink-900/40 px-3 py-2">
+      <div className="space-y-1 text-xs">
+        {mapped.length === 0 ? (
+          <div className="text-slate-500 italic">No columns are mapped — every cell will be ignored.</div>
+        ) : mapped.map(([header, field]) => (
+          <div key={header} className="flex items-baseline gap-2">
+            <span className="text-slate-500 w-28 shrink-0">{labelForField(field)}</span>
+            <span className="text-slate-200 font-mono break-all" dir="auto">
+              {formatCell(row[header])}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function labelForField(f: FieldKey): string {
+  return FIELD_OPTIONS.find((o) => o.value === f)?.label ?? f;
+}
+
+function formatCell(v: unknown): string {
+  if (v == null || v === "") return "—";
+  if (v instanceof Date) return v.toISOString().slice(0, 10);
+  return String(v);
 }
 
 function Stat({ label, value, tone = "muted" }: { label: string; value: string; tone?: "good" | "warn" | "muted" }) {
@@ -1082,16 +1188,22 @@ function computeValidation(a: Assignments, preview: PreviewResponse | null): Val
   if (dateCount > 1)     errors.push("Transaction date is mapped to more than one column.");
   if (descCount === 0)   errors.push("A Description or Vendor column is required.");
   if (amountCount > 1)   errors.push("Amount is mapped to more than one column.");
+  // Don't allow mixing — a single signed Amount column shouldn't coexist
+  // with separate Income/Outcome columns; the wizard wouldn't know which
+  // sign to honor for each row.
+  if (amountCount > 0 && (incomeCount > 0 || expenseCount > 0)) {
+    errors.push("Pick either a single Amount column OR Income/Outcome columns - not both.");
+  }
 
-  const amountSig = amountCount > 0 || (incomeCount > 0 && expenseCount > 0) || (incomeCount + expenseCount > 0);
-  if (!amountSig) errors.push("Map an Amount column, OR map both Income and Expense columns.");
+  const amountSig = amountCount > 0 || (incomeCount + expenseCount > 0);
+  if (!amountSig) errors.push("Map an Amount column, OR an Income/Outcome column.");
 
   // Soft warnings.
   if (incomeCount > 0 && expenseCount === 0 && amountCount === 0) {
-    warnings.push("Only Income mapped — every row will be imported as income.");
+    warnings.push("Only Income mapped — every row will be imported as positive (income).");
   }
   if (expenseCount > 0 && incomeCount === 0 && amountCount === 0) {
-    warnings.push("Only Expense mapped — every row will be imported as expense.");
+    warnings.push("Only Outcome mapped — every row will be imported as negative (outcome), regardless of how it appears in the file.");
   }
 
   return { ok: errors.length === 0, errors, warnings };
