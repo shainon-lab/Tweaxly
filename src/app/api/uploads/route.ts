@@ -18,28 +18,40 @@ export async function GET() {
 // DELETE - remove a specific upload batch and ALL its transactions.
 // Cascade is implicit: Transaction.uploadBatch is onDelete:SetNull, so we
 // explicitly delete the transactions first, then the batch.
+// Wrapped in $transaction so a partial failure rolls back instead of
+// orphaning rows half-deleted. Errors return JSON, never an HTML page.
 export async function DELETE(req: NextRequest) {
-  const { business } = await requireBusiness();
-  const id = new URL(req.url).searchParams.get("id");
-  if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
-  const owned = await prisma.uploadBatch.findFirst({
-    where: { id, businessId: business.id },
-  });
-  if (!owned) return NextResponse.json({ error: "not found" }, { status: 404 });
+  try {
+    const { business } = await requireBusiness();
+    const id = new URL(req.url).searchParams.get("id");
+    if (!id) return NextResponse.json({ error: "id required" }, { status: 400 });
+    const owned = await prisma.uploadBatch.findFirst({
+      where: { id, businessId: business.id },
+      select: { id: true },
+    });
+    if (!owned) return NextResponse.json({ error: "Upload not found in this workspace." }, { status: 404 });
 
-  // Delete the transactions first so the data is fully removed (not just orphaned).
-  const txnsDeleted = await prisma.transaction.deleteMany({
-    where: { uploadBatchId: id, businessId: business.id },
-  });
-  await prisma.uploadBatch.delete({ where: { id } });
+    const txnsDeleted = await prisma.$transaction(async (tx) => {
+      const del = await tx.transaction.deleteMany({
+        where: { uploadBatchId: id, businessId: business.id },
+      });
+      await tx.uploadBatch.delete({ where: { id } });
+      return del.count;
+    });
 
-  // Clean any duplicate groups that no longer have associated transactions.
-  await prisma.duplicateGroup.deleteMany({
-    where: { businessId: business.id, transactions: { none: {} } },
-  });
+    // Clean any duplicate groups left empty after the deletion. Runs outside
+    // the $transaction since it's a cleanup, not a correctness requirement.
+    await prisma.duplicateGroup.deleteMany({
+      where: { businessId: business.id, transactions: { none: {} } },
+    });
 
-  return NextResponse.json({
-    ok: true,
-    deletedTransactions: txnsDeleted.count,
-  });
+    return NextResponse.json({
+      ok: true,
+      deletedTransactions: txnsDeleted,
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "delete failed";
+    console.error("[/api/uploads DELETE]", err);
+    return NextResponse.json({ error: msg }, { status: 500 });
+  }
 }

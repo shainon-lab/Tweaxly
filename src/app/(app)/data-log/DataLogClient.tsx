@@ -59,7 +59,18 @@ export default function DataLogClient({
           : `/api/uploads?id=${row.id}`;
       const res = await fetch(url, { method: "DELETE" });
       if (!res.ok) {
-        alert(await res.text());
+        // The endpoint returns JSON on errors, but if the route is missing
+        // entirely Next.js serves an HTML 404 page. Try JSON first; if the
+        // body looks like HTML, show a short readable hint instead of the
+        // raw doctype + markup.
+        const raw = await res.text();
+        let msg = `${res.status} ${res.statusText}`;
+        try { msg = JSON.parse(raw).error ?? msg; }
+        catch {
+          if (raw.trim().startsWith("<")) msg = `Server returned ${res.status} — endpoint may be unavailable. Try again in a moment.`;
+          else msg = raw || msg;
+        }
+        alert(msg);
         return;
       }
       const data = await res.json();
@@ -71,6 +82,8 @@ export default function DataLogClient({
       alert(
         `Removed ${noun} "${row.label}" and ${deletedTxns} transaction${deletedTxns === 1 ? "" : "s"}.`,
       );
+    } catch (err) {
+      alert(err instanceof Error ? err.message : "Delete failed - check your connection and try again.");
     } finally {
       setBusyId(null);
     }
