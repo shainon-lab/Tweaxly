@@ -32,6 +32,10 @@ import {
   Loader2,
 } from "lucide-react";
 import CurrencyPicker from "@/components/CurrencyPicker";
+import {
+  DATE_FORMATS, type DateFormat, parseDateWithFormat,
+  suggestDateFormat, formatDateLong, toIsoDate,
+} from "@/lib/dateFormats";
 
 // ─── Field vocabulary ─────────────────────────────────────────────────────
 // What the user maps each file column to. "ignore" means the column is
@@ -91,14 +95,15 @@ type SavedTemplate = {
 type Assignments = Record<string /* header */, FieldKey>;
 
 // ─── Step ids ─────────────────────────────────────────────────────────────
-type Step = "upload" | "map" | "validate" | "confirm" | "done";
+type Step = "upload" | "map" | "dateFormat" | "validate" | "confirm" | "done";
 
 const STEPS: { id: Step; label: string }[] = [
-  { id: "upload",   label: "Upload" },
-  { id: "map",      label: "Map columns" },
-  { id: "validate", label: "Validate" },
-  { id: "confirm",  label: "Confirm" },
-  { id: "done",     label: "Done" },
+  { id: "upload",     label: "Upload" },
+  { id: "map",        label: "Map columns" },
+  { id: "dateFormat", label: "Date format" },
+  { id: "validate",   label: "Validate" },
+  { id: "confirm",    label: "Confirm" },
+  { id: "done",       label: "Done" },
 ];
 
 const COL_LETTERS = (i: number): string => {
@@ -127,6 +132,10 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
   const [preview, setPreview] = useState<PreviewResponse | null>(null);
   const [assignments, setAssignments] = useState<Assignments>({});
   const [defaultCcy, setDefaultCcy] = useState<string>(defaultCurrency);
+  // null = not chosen yet (auto-suggested on first entry to the dateFormat
+  // step). Once the user picks, we hold their choice through commit even
+  // if they go back and tweak the column mapping.
+  const [dateFormat, setDateFormat] = useState<DateFormat | null>(null);
 
   // Saved templates for this workspace (auto-suggest on second+ uploads).
   const [templates, setTemplates] = useState<SavedTemplate[]>([]);
@@ -161,6 +170,7 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
     setUploadError(null);
     setPreview(null);
     setAssignments({});
+    setDateFormat(null);
     setAppliedTemplateId(null);
     setSaveAsName("");
     setImporting(false);
@@ -215,12 +225,21 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
     for (const h of headers) next[h] = "ignore";
     for (const [field, header] of Object.entries(t.mapping)) {
       if (!header) continue;
+      // Skip the meta key we stash the date format under.
+      if (field === "__dateFormat__") continue;
+      if (typeof header !== "string") continue;
       if (!headers.includes(header)) continue;
       const mapped = mapServerFieldToClient(field);
       if (mapped) next[header] = mapped;
     }
     setAssignments(next);
     setAppliedTemplateId(t.id);
+    // Restore the saved date format so the user doesn't have to re-pick
+    // it on every monthly upload from the same bank.
+    const savedFmt = t.mapping["__dateFormat__"];
+    if (typeof savedFmt === "string" && (DATE_FORMATS as readonly string[]).includes(savedFmt)) {
+      setDateFormat(savedFmt as DateFormat);
+    }
   }
 
   // ── Validation derived from current assignments ──────────────────────
@@ -260,6 +279,17 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
           onApplyTemplate={(t) => applyTemplate(t, assignments, preview.headers)}
           validation={validation}
           onBack={() => setStep("upload")}
+          onNext={() => setStep("dateFormat")}
+        />
+      )}
+
+      {step === "dateFormat" && preview && (
+        <DateFormatStep
+          preview={preview}
+          assignments={assignments}
+          dateFormat={dateFormat}
+          setDateFormat={setDateFormat}
+          onBack={() => setStep("map")}
           onNext={() => setStep("validate")}
         />
       )}
@@ -269,7 +299,8 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
           preview={preview}
           assignments={assignments}
           defaultCcy={defaultCcy}
-          onBack={() => setStep("map")}
+          dateFormat={dateFormat}
+          onBack={() => setStep("dateFormat")}
           onNext={() => setStep("confirm")}
         />
       )}
@@ -281,12 +312,21 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
           saveAsName={saveAsName}
           setSaveAsName={setSaveAsName}
           importing={importing}
-          onBack={() => setStep("confirm" === step ? "validate" : "confirm")}
+          onBack={() => setStep("validate")}
           onImport={async () => {
             setImporting(true);
             try {
               let mapping = toServerMapping(assignments);
               let rows: Record<string, unknown>[] = preview.rows;
+
+              // Rewrite the date column to ISO YYYY-MM-DD using the user-
+              // confirmed format. Deterministic — never relies on
+              // browser/locale auto-parsing. Cells the format can't parse
+              // pass through untouched so per-row validation flags them.
+              const dateH = headerFor(assignments, "date");
+              if (dateH && dateFormat) {
+                rows = rows.map((r) => ({ ...r, [dateH]: toIsoDate(r[dateH], dateFormat) }));
+              }
 
               // Income/expense split: synthesize a signed "__amt__" column.
               // Income contributes positive, expense contributes negative,
@@ -308,6 +348,13 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
                 rows = rows.map((r) => ({ ...r, __ccy__: defaultCcy }));
                 mapping = { ...mapping, currency: "__ccy__" };
               }
+
+              // Stash the date format inside the mapping payload so it
+              // round-trips when the user opts to save this as a template.
+              // The server stores `mapping` as opaque JSON; downstream
+              // callers ignore unknown keys.
+              const mappingWithMeta: Record<string, unknown> = { ...mapping };
+              if (dateFormat) mappingWithMeta["__dateFormat__"] = dateFormat;
               const res = await fetch("/api/upload/commit", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
@@ -315,7 +362,7 @@ export default function BankImportWizard({ defaultCurrency }: { defaultCurrency:
                   source: "bank",
                   filename: preview.filename,
                   rows,
-                  mapping,
+                  mapping: mappingWithMeta,
                   saveTemplateName: saveAsName.trim() || null,
                 }),
               });
@@ -605,20 +652,202 @@ function ConfidencePill({ value }: { value: number }) {
   );
 }
 
-// ─── Step 3: Validate ──────────────────────────────────────────────────────
+// ─── Step 3: Date format ──────────────────────────────────────────────────
+// Sits between Map and Validate. The user picks the format; we never guess
+// silently. Sample values come from the mapped date column, and each one
+// is shown next to a long-form preview ("3 April 2026") so the choice is
+// visually obvious.
+function DateFormatStep({
+  preview, assignments, dateFormat, setDateFormat, onBack, onNext,
+}: {
+  preview: PreviewResponse;
+  assignments: Assignments;
+  dateFormat: DateFormat | null;
+  setDateFormat: (f: DateFormat) => void;
+  onBack: () => void;
+  onNext: () => void;
+}) {
+  const dateHeader = headerFor(assignments, "date");
+
+  // Pull up to 10 non-empty distinct samples from the date column. We
+  // dedup so the user doesn't see "03/04/2026" repeated 8 times when one
+  // month dominates the export.
+  const samples = useMemo<unknown[]>(() => {
+    if (!dateHeader) return [];
+    const seen = new Set<string>();
+    const out: unknown[] = [];
+    for (const r of preview.rows) {
+      const v = r[dateHeader];
+      if (v == null || v === "") continue;
+      const k = v instanceof Date ? v.toISOString() : String(v).trim();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      out.push(v);
+      if (out.length >= 10) break;
+    }
+    return out;
+  }, [preview.rows, dateHeader]);
+
+  // Auto-suggest on first entry. Once the user picks, their choice wins
+  // even if they navigate back and forth.
+  const suggestion = useMemo(() => suggestDateFormat(samples), [samples]);
+  useEffect(() => {
+    if (dateFormat === null) setDateFormat(suggestion.suggested);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [suggestion.suggested]);
+
+  const fmt: DateFormat = dateFormat ?? suggestion.suggested;
+
+  // Validate the current pick against all samples — if anything fails,
+  // block Continue and surface the row so the user can switch formats.
+  const validation = useMemo(() => {
+    const fails: { sample: string; reason: string }[] = [];
+    for (const s of samples) {
+      const parsed = parseDateWithFormat(s, fmt);
+      if (!parsed) {
+        const raw = s instanceof Date ? s.toISOString() : String(s);
+        // Distinguish "doesn't fit the format" from "impossible date" so the
+        // error is actionable.
+        const rawParts = raw.split(/[\/\-.]/).map((p) => p.trim());
+        const reason =
+          rawParts.length !== fmt.split(/[\/\-.]/).length
+            ? "doesn't match this format's structure"
+            : "produces an impossible date (e.g. day 31 in a 30-day month)";
+        fails.push({ sample: raw, reason });
+      }
+    }
+    return { ok: fails.length === 0, fails };
+  }, [samples, fmt]);
+
+  if (!dateHeader) {
+    return (
+      <div>
+        <div className="text-sm text-bad mb-3">
+          No date column was mapped. Go back and pick a column for "Transaction date".
+        </div>
+        <button type="button" onClick={onBack} className="btn-ghost text-sm">← Back</button>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <div className="text-sm text-slate-300 mb-3">
+        Pick the date format used in <span className="font-medium text-slate-100">{dateHeader}</span>.
+        We never guess between DD/MM and MM/DD silently — confirm the format and we'll apply it to every row.
+      </div>
+
+      {suggestion.ambiguous ? (
+        <div className="card-tight border-warn/40 bg-warn/5 mb-4 flex items-start gap-2">
+          <AlertTriangle size={14} className="text-warn shrink-0 mt-0.5" />
+          <div className="text-xs text-slate-200 leading-relaxed">
+            Some dates can be interpreted in more than one way. Please confirm the correct date format before importing.
+          </div>
+        </div>
+      ) : null}
+
+      <div className="grid grid-cols-1 md:grid-cols-[260px_1fr] gap-4">
+        <div>
+          <label className="label">Date format</label>
+          <select
+            className="input"
+            value={fmt}
+            onChange={(e) => setDateFormat(e.target.value as DateFormat)}
+          >
+            {DATE_FORMATS.map((f) => (
+              <option key={f} value={f}>{f}</option>
+            ))}
+          </select>
+          <div className="text-xs text-slate-500 mt-1">
+            Showing {samples.length} unique sample{samples.length === 1 ? "" : "s"} from the file.
+          </div>
+        </div>
+
+        <div className="rounded-md border border-line overflow-hidden" dir="ltr">
+          <table className="w-full text-sm">
+            <thead className="bg-ink-900/60 text-[11px] uppercase tracking-wider text-slate-500">
+              <tr>
+                <th className="text-left px-3 py-2">Original</th>
+                <th className="text-left px-3 py-2">Parsed as</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-line/60">
+              {samples.length === 0 ? (
+                <tr>
+                  <td colSpan={2} className="px-3 py-4 text-xs text-slate-500 text-center">
+                    No date values found in this column.
+                  </td>
+                </tr>
+              ) : samples.map((s, i) => {
+                const raw = s instanceof Date ? s.toISOString().slice(0, 10) : String(s).trim();
+                const parsed = parseDateWithFormat(s, fmt);
+                return (
+                  <tr key={i}>
+                    <td className="px-3 py-1.5 font-mono text-xs text-slate-300">{raw}</td>
+                    <td className="px-3 py-1.5 text-xs">
+                      {parsed ? (
+                        <span className="text-good">{formatDateLong(parsed)}</span>
+                      ) : (
+                        <span className="text-bad inline-flex items-center gap-1">
+                          <XIcon size={12} /> invalid
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {!validation.ok ? (
+        <div className="mt-4 space-y-1">
+          {validation.fails.slice(0, 5).map((f, i) => (
+            <div key={i} className="text-xs text-bad inline-flex items-start gap-1.5">
+              <XIcon size={14} className="mt-0.5 shrink-0" />
+              <span><span className="font-mono">{f.sample}</span> — {f.reason}</span>
+            </div>
+          ))}
+          {validation.fails.length > 5 ? (
+            <div className="text-[11px] text-slate-500">+ {validation.fails.length - 5} more failures</div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex items-center justify-between mt-5">
+        <button type="button" onClick={onBack} className="btn-ghost text-sm">← Back</button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={!validation.ok || samples.length === 0}
+          className="btn-primary text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+        >
+          Continue →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ─── Step 4: Validate ──────────────────────────────────────────────────────
 function ValidateStep({
-  preview, assignments, defaultCcy, onBack, onNext,
+  preview, assignments, defaultCcy, dateFormat, onBack, onNext,
 }: {
   preview: PreviewResponse;
   assignments: Assignments;
   defaultCcy: string;
+  dateFormat: DateFormat | null;
   onBack: () => void;
   onNext: () => void;
 }) {
   // Client-side dry run: walk the rows with the chosen mapping and count
   // how many would normalize cleanly. Date + Amount (or Income/Expense)
   // are the must-haves; everything else is best-effort.
-  const result = useMemo(() => dryRun(preview.rows, assignments, defaultCcy), [preview.rows, assignments, defaultCcy]);
+  const result = useMemo(
+    () => dryRun(preview.rows, assignments, defaultCcy, dateFormat),
+    [preview.rows, assignments, defaultCcy, dateFormat],
+  );
 
   return (
     <div>
@@ -860,7 +1089,12 @@ type DryRunResult = {
   issues:  { row: number; message: string }[];
 };
 
-function dryRun(rows: Record<string, unknown>[], a: Assignments, defaultCcy: string): DryRunResult {
+function dryRun(
+  rows: Record<string, unknown>[],
+  a: Assignments,
+  defaultCcy: string,
+  dateFormat: DateFormat | null,
+): DryRunResult {
   void defaultCcy;
   // Pick the columns we care about for validation: date + amount (single or split).
   const dateHeader     = headerFor(a, "date");
@@ -876,7 +1110,13 @@ function dryRun(rows: Record<string, unknown>[], a: Assignments, defaultCcy: str
     const probs: string[] = [];
     if (dateHeader) {
       const v = r[dateHeader];
-      if (v == null || v === "" || !looksLikeDate(v)) probs.push("date couldn't be parsed");
+      // With a user-confirmed format, use the deterministic parser. Without
+      // one (shouldn't happen — the wizard blocks Continue) fall back to
+      // the loose heuristic so we still produce a useful preview.
+      const parsedOk = dateFormat
+        ? parseDateWithFormat(v, dateFormat) !== null
+        : looksLikeDate(v);
+      if (v == null || v === "" || !parsedOk) probs.push("date couldn't be parsed");
     }
     let hasAmount = false;
     if (amountHeader) {
