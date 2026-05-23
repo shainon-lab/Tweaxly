@@ -218,7 +218,29 @@ export default function ManualDataClient({
 
   return (
     <>
-      {/* Mode selector - two upload patterns. Each renders the matching card. */}
+      {/* Recommended workflow — calm informational header, no warning
+          color. Tells owners how to use this page in order of priority
+          so first-timers don't reach for the template / single-entry
+          options when a bank statement is what they actually want. */}
+      <div className="card mb-4 border-accent/30 bg-accent-soft/10">
+        <div className="text-sm text-slate-100 font-medium mb-1">Recommended workflow</div>
+        <ol className="text-sm text-slate-300 list-decimal pl-5 space-y-1 leading-relaxed">
+          <li>
+            <span className="font-medium text-slate-100">First time:</span>{" "}
+            upload a historical date range from every source you track (bank, credit card, PayPal, etc.) so we have a complete baseline.
+          </li>
+          <li>
+            <span className="font-medium text-slate-100">Each month:</span>{" "}
+            upload last month's statement from each source — the coverage matrix and missing-month alerts will remind you.
+          </li>
+          <li>
+            The <span className="font-medium text-slate-100">Tweaxly CSV template</span> and{" "}
+            <span className="font-medium text-slate-100">Single manual entry</span> options are only for items that won't appear in any export.
+          </li>
+        </ol>
+      </div>
+
+      {/* Mode selector - three upload patterns. Each renders the matching card. */}
       <div className="card mb-4">
         <div className="font-medium mb-1">How are you uploading?</div>
         <div className="text-sm text-slate-400 mb-3">
