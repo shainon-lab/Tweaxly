@@ -152,10 +152,20 @@ export default function TransactionsClient({
     }
   }
   async function unIgnoreOne(t: Txn) {
-    await updateOne(t.id, {
+    // For auto-detected settlements, also reset the type so the row
+    // doesn't keep the credit_card_settlement / paypal_settlement
+    // classification after the user rejects the match. Sign decides
+    // income vs expense: negative ⇒ expense (the common case for a
+    // bank-side outflow that wasn't actually a card payment).
+    const isSettlement = t.type === "credit_card_settlement" || t.type === "paypal_settlement";
+    const patch: Partial<Txn> = {
       isExcludedFromPnl: false,
       excludeNote: null,
-    } as never);
+    };
+    if (isSettlement) {
+      (patch as { type?: string }).type = t.amount >= 0 ? "income" : "expense";
+    }
+    await updateOne(t.id, patch as never);
   }
 
   async function dismissDup(t: Txn) {
@@ -320,14 +330,25 @@ export default function TransactionsClient({
                       </button>
                     ) : null}
                     {ignored ? (
-                      <button
-                        type="button"
-                        className="pill cursor-pointer hover:border-accent/60"
-                        title={t.excludeNote ? t.excludeNote : "Click to add a reason"}
-                        onClick={() => openIgnoreSingle(t)}
-                      >
-                        not calculated{t.excludeNote ? " ⓘ" : ""}
-                      </button>
+                      (() => {
+                        const isSettlement = t.type === "credit_card_settlement" || t.type === "paypal_settlement";
+                        const label = isSettlement
+                          ? (t.type === "paypal_settlement" ? "auto: PayPal settlement" : "auto: card settlement")
+                          : "not calculated";
+                        const className = isSettlement
+                          ? "inline-flex items-center text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-accent/40 bg-accent-soft/30 text-accent cursor-pointer hover:border-accent"
+                          : "pill cursor-pointer hover:border-accent/60";
+                        return (
+                          <button
+                            type="button"
+                            className={className}
+                            title={t.excludeNote ? t.excludeNote : "Click to add a reason"}
+                            onClick={() => openIgnoreSingle(t)}
+                          >
+                            {label}{t.excludeNote ? " ⓘ" : ""}
+                          </button>
+                        );
+                      })()
                     ) : null}
                   </td>
                   <td className="text-right whitespace-nowrap">
@@ -336,9 +357,13 @@ export default function TransactionsClient({
                         className="btn-ghost py-1"
                         disabled={pending}
                         onClick={() => unIgnoreOne(t)}
-                        title="Re-include this transaction in P&L calculations"
+                        title={
+                          t.type === "credit_card_settlement" || t.type === "paypal_settlement"
+                            ? "Undo the auto-detected settlement and treat this row as a normal transaction"
+                            : "Re-include this transaction in P&L calculations"
+                        }
                       >
-                        Re-include
+                        {t.type === "credit_card_settlement" || t.type === "paypal_settlement" ? "Undo settlement" : "Re-include"}
                       </button>
                     ) : (
                       <button

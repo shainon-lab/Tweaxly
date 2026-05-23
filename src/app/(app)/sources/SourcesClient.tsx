@@ -15,6 +15,7 @@ import { useRouter } from "next/navigation";
 import { Plus, Pencil, Archive, AlertTriangle } from "lucide-react";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
+import MonthlyChecklist from "@/components/sources/MonthlyChecklist";
 
 type SourceType = "bank" | "credit_card" | "paypal" | "payment_provider" | "cash" | "other";
 
@@ -84,6 +85,7 @@ export default function SourcesClient({ currency }: { currency: string }) {
   return (
     <>
       <HealthScoreWidget variant="full" />
+      <MonthlyChecklist />
       <div className="card mb-6">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>

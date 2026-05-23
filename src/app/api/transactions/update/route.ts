@@ -13,6 +13,15 @@ const ALLOWED = new Set([
   "excludeNote",
   "vendor",
   "notes",
+  // type — restricted to a known vocabulary below. Lets the settlement
+  // undo flow flip an auto-detected credit_card_settlement back to
+  // "expense" when the heuristic was wrong.
+  "type",
+]);
+
+const ALLOWED_TYPES = new Set([
+  "income", "expense", "transfer", "fee", "payroll", "tax", "other",
+  "credit_card_settlement", "paypal_settlement",
 ]);
 
 export async function POST(req: NextRequest) {
@@ -26,6 +35,11 @@ export async function POST(req: NextRequest) {
   }
   if (data.accountingMonth && typeof data.accountingMonth === "string" && !/^\d{4}-\d{2}$/.test(data.accountingMonth)) {
     return NextResponse.json({ error: "accountingMonth must be YYYY-MM" }, { status: 400 });
+  }
+  if (data.type !== undefined) {
+    if (typeof data.type !== "string" || !ALLOWED_TYPES.has(data.type)) {
+      return NextResponse.json({ error: `type must be one of ${[...ALLOWED_TYPES].join(", ")}` }, { status: 400 });
+    }
   }
   if (data.categoryId) {
     const cat = await prisma.category.findFirst({ where: { id: String(data.categoryId), businessId: business.id } });
