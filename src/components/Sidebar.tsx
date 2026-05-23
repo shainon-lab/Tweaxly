@@ -162,10 +162,13 @@ export default function Sidebar({
               very first render before ensureMonthlyAllowance has run). */}
           {billing ? <SidebarCreditsPill billing={billing} /> : null}
           {/* Top-right corner: notifications bell + mobile close. The
-              bell triggers the Notification Center side panel; the
-              close button is mobile-only. */}
+              bell is a Premium feature — only render it for paid
+              plans. Free workspaces don't accumulate notifications
+              (the sweep skips them server-side too), so showing the
+              bell would just be a permanently-empty UI affordance.
+              The mobile close button is always present. */}
           <div className="absolute top-3 right-3 flex items-center gap-1">
-            <BellButton />
+            {billing && billing.plan !== "free" ? <BellButton /> : null}
             <button
               type="button"
               className="lg:hidden w-8 h-8 inline-flex items-center justify-center text-slate-300 hover:text-white rounded-md"

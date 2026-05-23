@@ -1,23 +1,29 @@
 // GET /api/alerts/inbox
 //
-// Paginated list of the current user's notifications, newest first.
+// Paginated list of notifications for the current user IN the current
+// active workspace, newest first. The bell + notification center are
+// always per-workspace so a user with multiple workspaces only sees
+// the alerts for the one they're looking at.
+//
 // Optional query filters:
 //   ?severity=critical|important|info
 //   ?category=<AlertCategory>
-//   ?businessId=<id>
+//   ?businessId=all  // opt-in: show alerts across every workspace the
+//                    // user belongs to (used by no UI today; kept for
+//                    // future "all workspaces" view)
 //   ?onlyUnread=1
 //   ?limit=N (default 50, max 200)
 //   ?cursor=<id>  // last id from the previous page
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
-import { requireUser } from "@/lib/auth";
+import { requireBusiness } from "@/lib/auth";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET(req: Request) {
-  const user = await requireUser();
+  const { user, business } = await requireBusiness();
   const url  = new URL(req.url);
 
   const severity   = url.searchParams.get("severity");
@@ -30,7 +36,17 @@ export async function GET(req: Request) {
   const where: Record<string, unknown> = { userId: user.id };
   if (severity   && ["critical","important","info"].includes(severity)) where.severity = severity;
   if (category) where.category = category;
-  if (businessId) where.businessId = businessId;
+  // Default: scope to active workspace. Explicit ?businessId=all opts
+  // out of the scoping; any other value scopes to that workspace
+  // (membership check is enforced server-side via requireBusiness above,
+  // so a malicious id only ever sees their OWN notifications anyway).
+  if (businessId === "all") {
+    // no-op — leave businessId unscoped
+  } else if (businessId) {
+    where.businessId = businessId;
+  } else {
+    where.businessId = business.id;
+  }
   if (onlyUnread) where.readAt = null;
 
   const items = await prisma.alertNotification.findMany({

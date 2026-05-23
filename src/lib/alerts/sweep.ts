@@ -36,6 +36,17 @@ export async function sweepAndDispatch(
   businessId: string,
 ): Promise<{ skipped: boolean; dispatched: number }> {
   try {
+    // 0. Premium gate. Notifications (the whole alerts pipeline — bell,
+    // push, email) are a paid-plan feature; free workspaces never sweep
+    // and never accumulate notifications. The fetch is cheap (one
+    // wallet/subscription row) and runs before throttle so we never
+    // even write a lastSweepAt for free workspaces.
+    const { getEffectivePlan } = await import("@/lib/billing");
+    const plan = await getEffectivePlan(businessId).catch(() => null);
+    if (!plan || plan.plan === "free") {
+      return { skipped: true, dispatched: 0 };
+    }
+
     // 1. Throttle - skip work if a sweep ran recently.
     const prefRow = await prisma.alertPreference.findUnique({
       where: { userId_businessId: { userId, businessId } },
