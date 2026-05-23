@@ -2,6 +2,7 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import BulkUploadCard from "./BulkUploadCard";
+import BankImportWizard from "./BankImportWizard";
 import DatedUploadCard from "./DatedUploadCard";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { fmtMoney } from "@/lib/format";
@@ -12,7 +13,7 @@ function fmtOriginal(amount: number, currency: string): string {
   return fmtMoney(Math.abs(amount), currency);
 }
 
-type UploadMode = "dated" | "monthly";
+type UploadMode = "bank" | "dated" | "monthly";
 
 type Category = { id: string; name: string; kind: string };
 
@@ -82,7 +83,7 @@ export default function ManualDataClient({
   //   "monthly" - one file per month, user picks the month for the whole
   //               file (legacy P&L summary style).
   // Default to "dated" since it matches what most people upload.
-  const [uploadMode, setUploadMode] = useState<UploadMode>("dated");
+  const [uploadMode, setUploadMode] = useState<UploadMode>("bank");
 
   // Form state
   const [type, setType] = useState<"income" | "outcome">("outcome");
@@ -234,7 +235,27 @@ export default function ManualDataClient({
         <div className="text-sm text-slate-400 mb-3">
           Pick the option that matches your file. You can switch any time.
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <button
+            type="button"
+            onClick={() => setUploadMode("bank")}
+            className={`text-left rounded-xl border p-4 transition ${
+              uploadMode === "bank"
+                ? "border-accent bg-accent-soft/30"
+                : "border-line bg-ink-900/30 hover:border-accent/40"
+            }`}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <span className={uploadMode === "bank" ? "pill-accent" : "pill text-[10px]"}>
+                {uploadMode === "bank" ? "selected" : "recommended"}
+              </span>
+              <span className="font-medium text-slate-100">Bank statement</span>
+            </div>
+            <div className="text-xs text-slate-400 leading-relaxed">
+              Upload any bank export — CSV, XLS, or XLSX. We auto-detect columns,
+              you confirm the mapping, and we save it for next time.
+            </div>
+          </button>
           <button
             type="button"
             onClick={() => setUploadMode("dated")}
@@ -246,13 +267,13 @@ export default function ManualDataClient({
           >
             <div className="flex items-center gap-2 mb-1">
               <span className={uploadMode === "dated" ? "pill-accent" : "pill text-[10px]"}>
-                {uploadMode === "dated" ? "selected" : "option 1"}
+                {uploadMode === "dated" ? "selected" : "template"}
               </span>
-              <span className="font-medium text-slate-100">Dated transactions</span>
+              <span className="font-medium text-slate-100">Tweaxly CSV template</span>
             </div>
             <div className="text-xs text-slate-400 leading-relaxed">
-              Each row has its own date. We assign every transaction to the right month automatically.
-              Works with our CSV template or most bank exports.
+              Use our pre-formatted CSV template. Each row has its own date, mapped
+              to a known column order — no mapping step needed.
             </div>
           </button>
           <button
@@ -266,7 +287,7 @@ export default function ManualDataClient({
           >
             <div className="flex items-center gap-2 mb-1">
               <span className={uploadMode === "monthly" ? "pill-accent" : "pill text-[10px]"}>
-                {uploadMode === "monthly" ? "selected" : "option 2"}
+                {uploadMode === "monthly" ? "selected" : "P&L"}
               </span>
               <span className="font-medium text-slate-100">Monthly summary</span>
             </div>
@@ -277,7 +298,9 @@ export default function ManualDataClient({
         </div>
       </div>
 
-      {uploadMode === "dated" ? (
+      {uploadMode === "bank" ? (
+        <BankImportWizard defaultCurrency={currency} />
+      ) : uploadMode === "dated" ? (
         <DatedUploadCard currency={currency} />
       ) : (
         <BulkUploadCard currency={currency} />

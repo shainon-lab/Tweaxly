@@ -1,15 +1,55 @@
-// File parsing - handles CSV and XLSX uniformly via SheetJS.
-// Returns { headers, rows } where rows are { [header]: cellValue }.
+// File parsing - handles CSV/XLS/XLSX uniformly via SheetJS, with
+// Windows-1255 fallback for Israeli bank CSV exports that aren't UTF-8.
+// Returns { headers, rows, encoding } where rows are { [header]: cellValue }.
 import * as XLSX from "xlsx";
 
 export type ParsedRow = Record<string, unknown>;
-export type ParsedFile = { headers: string[]; rows: ParsedRow[] };
+export type ParsedFile = { headers: string[]; rows: ParsedRow[]; encoding?: string };
+
+// CSV encoding detection. UTF-8 decoders emit U+FFFD for invalid bytes, and
+// Windows-1255 (Hebrew) bytes 0xE0-0xFA decoded as UTF-8 produce a flood of
+// them. We try UTF-8 first; if >0.5% of chars are replacements OR no Hebrew
+// chars appear despite non-ASCII bytes, retry as Windows-1255. Works for the
+// 95% case of bank exports without bringing in chardet.
+function decodeCsvBuffer(buf: Buffer): { text: string; encoding: string } {
+  // UTF-8 BOM ⇒ definitely UTF-8.
+  if (buf.length >= 3 && buf[0] === 0xef && buf[1] === 0xbb && buf[2] === 0xbf) {
+    return { text: buf.slice(3).toString("utf-8"), encoding: "utf-8" };
+  }
+  const utf8 = new TextDecoder("utf-8", { fatal: false }).decode(buf);
+  const replCount = (utf8.match(/�/g) || []).length;
+  const replRatio = utf8.length > 0 ? replCount / utf8.length : 0;
+  const hasNonAscii = buf.some((b) => b >= 0x80);
+  const hasHebrewInUtf8 = /[֐-׿]/.test(utf8);
+  // If the UTF-8 decode looks broken (lots of replacements) OR we see
+  // high-bit bytes but no Hebrew came through, try Windows-1255.
+  if (replRatio > 0.005 || (hasNonAscii && !hasHebrewInUtf8 && replCount === 0)) {
+    try {
+      const win1255 = new TextDecoder("windows-1255", { fatal: false }).decode(buf);
+      const hebrewIn1255 = /[֐-׿]/.test(win1255);
+      if (hebrewIn1255) return { text: win1255, encoding: "windows-1255" };
+    } catch {
+      // Some runtimes lack the legacy encoding label - fall through to UTF-8.
+    }
+  }
+  return { text: utf8, encoding: "utf-8" };
+}
 
 export function parseFileBuffer(filename: string, buf: Buffer): ParsedFile {
   const isCsv = /\.csv$/i.test(filename);
-  const wb = XLSX.read(buf, { type: "buffer", cellDates: true, raw: false });
+  let detectedEncoding: string | undefined;
+  let readBuf: Buffer = buf;
+  if (isCsv) {
+    const decoded = decodeCsvBuffer(buf);
+    detectedEncoding = decoded.encoding;
+    // SheetJS reads CSV from buffer using its own auto-detect, which often
+    // misses Windows-1255. Re-encode as UTF-8 buffer so SheetJS gets clean
+    // input and headers come through as readable Hebrew strings.
+    readBuf = Buffer.from(decoded.text, "utf-8");
+  }
+  const wb = XLSX.read(readBuf, { type: "buffer", cellDates: true, raw: false });
   const sheetName = wb.SheetNames[0];
-  if (!sheetName) return { headers: [], rows: [] };
+  if (!sheetName) return { headers: [], rows: [], encoding: detectedEncoding };
   const sheet = wb.Sheets[sheetName];
   const json = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
     defval: null,
@@ -53,7 +93,98 @@ export function parseFileBuffer(filename: string, buf: Buffer): ParsedFile {
   }
 
   void isCsv;
-  return { headers, rows };
+  return { headers, rows, encoding: detectedEncoding };
+}
+
+// Per-field confidence + source for the mapping the wizard shows in its
+// table. Exact header match = 0.95, contains-match = 0.75, content-based
+// fallback = 0.55 (date/amount/desc only). null when nothing matched.
+export type MappingConfidence = {
+  field: string;
+  header: string | null;
+  confidence: number; // 0..1
+  source: "header_exact" | "header_contains" | "content" | "none";
+};
+
+export function guessMappingWithConfidence(
+  headers: string[],
+  rows: ParsedRow[] = [],
+): { mapping: Record<string, string | null>; confidence: Record<string, MappingConfidence> } {
+  const lower = headers.map((h) => h.toLowerCase().trim());
+  const mapping: Record<string, string | null> = {};
+  const confidence: Record<string, MappingConfidence> = {};
+
+  for (const [field, hints] of Object.entries(FIELD_HINTS)) {
+    let foundIdx = -1;
+    let source: MappingConfidence["source"] = "none";
+    for (const h of hints) {
+      const idx = lower.findIndex((x) => x === h);
+      if (idx !== -1) { foundIdx = idx; source = "header_exact"; break; }
+    }
+    if (foundIdx === -1) {
+      for (const h of hints) {
+        const idx = lower.findIndex((x) => x.includes(h));
+        if (idx !== -1) { foundIdx = idx; source = "header_contains"; break; }
+      }
+    }
+    mapping[field] = foundIdx === -1 ? null : headers[foundIdx];
+    confidence[field] = {
+      field,
+      header: mapping[field],
+      confidence: source === "header_exact" ? 0.95 : source === "header_contains" ? 0.75 : 0,
+      source,
+    };
+  }
+
+  // Content-based fallback for date/amount/description when headers didn't
+  // produce a hit. Mirrors guessMapping's logic but assigns 0.55 confidence
+  // since values alone are weaker evidence than a labelled header.
+  if (rows.length > 0 && (!mapping.date || !mapping.amount || !mapping.description)) {
+    const sample = rows.slice(0, Math.min(rows.length, 30));
+    const dateScore: Record<string, number> = {};
+    const amountScore: Record<string, number> = {};
+    const textScore: Record<string, number> = {};
+    for (const h of headers) {
+      let dateCount = 0, amountCount = 0, textCount = 0;
+      for (const row of sample) {
+        const v = row[h];
+        if (v == null || v === "") continue;
+        if (parseDate(v) !== null) dateCount++;
+        const n = parseAmount(v);
+        if (Number.isFinite(n) && n !== 0 && Math.abs(n) >= 0.01) amountCount++;
+        const s = String(v ?? "").trim();
+        if (parseDate(v) === null && s.length >= 3 && /[A-Za-z֐-׿]/.test(s)) textCount++;
+      }
+      dateScore[h] = dateCount / sample.length;
+      amountScore[h] = amountCount / sample.length;
+      textScore[h] = textCount / sample.length;
+    }
+    if (!mapping.date) {
+      const best = headers.reduce((b, h) => (dateScore[h] > (dateScore[b] ?? 0) ? h : b), headers[0]);
+      if (best && dateScore[best] >= 0.5) {
+        mapping.date = best;
+        confidence.date = { field: "date", header: best, confidence: 0.55, source: "content" };
+      }
+    }
+    if (!mapping.amount) {
+      const pool = headers.filter((h) => h !== mapping.date);
+      const best = pool.reduce((b, h) => (amountScore[h] > (amountScore[b] ?? 0) ? h : b), pool[0] ?? headers[0]);
+      if (best && amountScore[best] >= 0.5) {
+        mapping.amount = best;
+        confidence.amount = { field: "amount", header: best, confidence: 0.55, source: "content" };
+      }
+    }
+    if (!mapping.description && !mapping.vendor) {
+      const pool = headers.filter((h) => h !== mapping.date && h !== mapping.amount);
+      const best = pool.reduce((b, h) => (textScore[h] > (textScore[b] ?? 0) ? h : b), pool[0] ?? headers[0]);
+      if (best && textScore[best] >= 0.3) {
+        mapping.description = best;
+        confidence.description = { field: "description", header: best, confidence: 0.55, source: "content" };
+      }
+    }
+  }
+
+  return { mapping, confidence };
 }
 
 // Heuristic: guess which header maps to which canonical field.
@@ -124,11 +255,15 @@ const FIELD_HINTS: Record<string, string[]> = {
     "פירוט עסקה",
     "פרטי העסקה",
   ],
-  currency: ["currency", "ccy", "מטבע"],
-  txnId: ["id", "transaction id", "reference", "ref", "ref no", "txn id"],
-  source: ["source", "account", "account number", "חשבון"],
+  currency: ["currency", "ccy", "curr", "מטבע", "מטבע עסקה"],
+  txnId: [
+    "id", "transaction id", "reference", "ref", "ref no", "ref number",
+    "reference number", "txn id", "transaction reference", "asmachta",
+    "אסמכתא", "אסמכתה", "מספר אסמכתא", "מספר עסקה",
+  ],
+  source: ["source", "account", "account number", "חשבון", "מספר חשבון"],
   category: ["category", "type", "קטגוריה", "סוג עסקה"],
-  notes: ["notes", "comment", "comments", "הערות"],
+  notes: ["notes", "comment", "comments", "הערות", "הערה"],
   vendor: [
     "vendor",
     "payee",
@@ -138,6 +273,12 @@ const FIELD_HINTS: Record<string, string[]> = {
     "ספק",
     "שם בית עסק",
     "שם המוטב",
+    "מוטב",
+    "בית עסק",
+  ],
+  balance: [
+    "balance", "running balance", "available balance", "ledger balance",
+    "יתרה", "יתרה לאחר עסקה", "יתרה בחשבון",
   ],
 };
 

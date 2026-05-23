@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
-import { parseFileBuffer, guessMapping } from "@/lib/parsers";
+import { parseFileBuffer, guessMapping, guessMappingWithConfidence } from "@/lib/parsers";
 
 export const runtime = "nodejs";
 
@@ -16,12 +16,16 @@ export async function POST(req: NextRequest) {
   if (parsed.headers.length === 0) {
     return NextResponse.json({ error: "Could not read any headers from this file." }, { status: 400 });
   }
+  // Keep legacy `guess` for the existing BulkUploadCard caller; the new
+  // wizard reads `confidence` for the per-field 0..1 score + source.
   const guess = guessMapping(parsed.headers, parsed.rows);
-  // Cap preview rows to 1000 to keep payload sane.
+  const { confidence } = guessMappingWithConfidence(parsed.headers, parsed.rows);
   return NextResponse.json({
     headers: parsed.headers,
     rows: parsed.rows.slice(0, 1000),
     filename: file.name,
+    encoding: parsed.encoding ?? null,
     guess,
+    confidence,
   });
 }
