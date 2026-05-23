@@ -1,3 +1,9 @@
+// Hard guard: any client component (transitively) importing db.ts will
+// fail the build with a clear error instead of silently bundling
+// @prisma/client into the browser. The previous incident had a stale
+// PrismaClient instance leak into the layout's client chunk; this
+// import makes that class of bug impossible to merge.
+import "server-only";
 import { PrismaClient } from "@prisma/client";
 
 // Global singleton so dev-mode hot-reload doesn't pile up connections.

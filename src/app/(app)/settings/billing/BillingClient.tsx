@@ -12,9 +12,12 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+// Direct submodule import — see note in BuyCreditsModal.tsx. Importing
+// from the @/lib/billing barrel pulls entitlements.ts which pulls
+// PrismaClient into the client bundle.
 import {
   CUSTOM_PACK_SKU, CUSTOM_PACK_MIN_CREDITS, calculateCustomPackPriceCents,
-} from "@/lib/billing";
+} from "@/lib/billing/plans";
 import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
 import CheckoutSuccessHandler from "@/components/billing/CheckoutSuccessHandler";
 

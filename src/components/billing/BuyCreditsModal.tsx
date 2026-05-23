@@ -9,10 +9,15 @@
 // /api/billing/checkout/pack and redirects to Polar.
 
 import { useEffect, useRef, useState } from "react";
+// Direct import from the plans submodule — not the @/lib/billing
+// barrel — because the barrel re-exports entitlements.ts which in turn
+// imports the Prisma client. Pulling the barrel from a client component
+// drags @prisma/client into the browser bundle and crashes every
+// page at load time. See src/lib/db.ts (server-only guard).
 import {
   CREDIT_PACKS, CUSTOM_PACK_SKU, CUSTOM_PACK_MIN_CREDITS,
   calculateCustomPackPriceCents,
-} from "@/lib/billing";
+} from "@/lib/billing/plans";
 
 interface BuyCreditsModalProps {
   open:    boolean;
