@@ -4,6 +4,7 @@ import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import GetStartedBanner from "@/components/sources/GetStartedBanner";
+import PreviousMonthCatchUp from "@/components/sources/PreviousMonthCatchUp";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost, trailingMonthsSummary } from "@/lib/metrics";
@@ -220,12 +221,18 @@ export default async function DashboardPage({
               numbers. */}
           {summary ? <ExecutiveSummaryHero summary={summary} /> : null}
 
-          {/* Financial Data Pipeline. GetStartedBanner shows ONLY for
-              workspaces with zero financial sources (first-run); once
-              even one source exists the compact HealthScoreWidget tile
-              takes over. Both are client-fetched so the server-render
-              path stays unchanged. */}
+          {/* Financial Data Pipeline surfaces, in order of urgency:
+              1. PreviousMonthCatchUp — full warning card when any
+                 source is missing the previous full month's data.
+                 Auto-hides when the previous month is fully covered.
+              2. GetStartedBanner — only for workspaces with zero
+                 financial sources (first-run).
+              3. HealthScoreWidget (compact) — running completeness %
+                 tile, always visible once at least one source exists.
+              All three are client-fetched so the server-render path
+              stays unchanged. */}
           <div className="mb-4">
+            <PreviousMonthCatchUp />
             <GetStartedBanner />
             <HealthScoreWidget variant="compact" />
           </div>
