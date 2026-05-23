@@ -260,11 +260,10 @@ export default function ManualDataClient({
               <span className={uploadMode === "bank" ? "pill-accent" : "pill text-[10px]"}>
                 {uploadMode === "bank" ? "selected" : "recommended"}
               </span>
-              <span className="font-medium text-slate-100">Bank statement</span>
+              <span className="font-medium text-slate-100">Source statement</span>
             </div>
             <div className="text-xs text-slate-400 leading-relaxed">
-              Upload any bank export — CSV, XLS, or XLSX. We auto-detect columns,
-              you confirm the mapping, and we save it for next time.
+              Upload an export from any source — bank, credit card, PayPal, Stripe, or others — in CSV, XLS, or XLSX. We auto-detect columns, you confirm the mapping, and we save it for next time.
             </div>
           </button>
           <button

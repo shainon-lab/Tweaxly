@@ -280,11 +280,12 @@ export default function BankImportWizard({
 
   return (
     <div className="card mb-6">
-      <div className="font-medium mb-1">Bank statement import</div>
+      <div className="font-medium mb-1">Source statement import</div>
       <div className="text-xs text-slate-400 mb-4">
-        Upload a CSV, XLS, or XLSX from any bank. The wizard auto-detects the
-        columns; you confirm the mapping and we handle currency conversion,
-        categorization, and duplicate detection.
+        Upload a CSV, XLS, or XLSX export from any source — bank, credit card,
+        PayPal, Stripe, and more. The wizard auto-detects the columns; you
+        confirm the mapping and we handle currency conversion, categorization,
+        and duplicate detection.
       </div>
 
       <Stepper current={step} />
@@ -514,7 +515,7 @@ function UploadStep({
       >
         <UploadIcon size={28} strokeWidth={1.5} className="mx-auto text-slate-400 mb-2" />
         <div className="text-sm font-medium text-slate-100">
-          {uploading ? "Reading file…" : "Drop a bank statement here, or click to browse"}
+          {uploading ? "Reading file…" : "Drop a source statement here, or click to browse"}
         </div>
         <div className="text-xs text-slate-400 mt-1">
           CSV, XLS, XLSX up to 10 MB. Hebrew (Windows-1255) files are auto-detected.
