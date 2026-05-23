@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import DataTabs from "@/components/DataTabs";
+import ReviewBanner from "@/components/ReviewBanner";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -51,6 +52,7 @@ export default async function ManualDataPage({
         }
       />
       {fromOnboarding ? <OnboardingImportIntro /> : <DataTabs />}
+      {!fromOnboarding ? <ReviewBanner businessId={business.id} surface="data" /> : null}
       <ManualDataClient
         entries={entries.map((e) => {
           const entryCurrency = (e.currency ?? business.currency).toUpperCase();

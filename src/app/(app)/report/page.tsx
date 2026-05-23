@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import PageHeader from "@/components/PageHeader";
+import ReviewBanner from "@/components/ReviewBanner";
 import ReportPeriodPicker from "@/components/ReportPeriodPicker";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { Stat } from "@/components/Stat";
@@ -264,6 +265,7 @@ export default async function ReportPage({
         }
       />
       <ReportsInnerTabs />
+      <ReviewBanner businessId={business.id} surface="reports" />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Stat

@@ -1,5 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import DataTabs from "@/components/DataTabs";
+import ReviewBanner from "@/components/ReviewBanner";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -53,6 +54,7 @@ export default async function TransactionsPage({
         subtitle={`Transactions - ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
       />
       <DataTabs />
+      <ReviewBanner businessId={business.id} surface="transactions" />
       <TransactionsClient
         txns={txns.map((t) => ({
           id: t.id,
