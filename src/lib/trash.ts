@@ -13,12 +13,13 @@
 // trash-list endpoint so no cron is required.
 
 import { prisma } from "./db";
-import { PrismaClient } from "@prisma/client";
 
-// Lazy direct client for write operations that need to bypass the
-// soft-delete extension (the extension only affects reads, but using
-// the extended client for writes is fine — we just don't need it).
-const writeClient = new PrismaClient();
+// Writes go through the extended client too. The $extends in db.ts
+// only intercepts reads (findMany/findFirst/count/aggregate/groupBy)
+// — updateMany/create/delete/$transaction pass through unchanged,
+// so soft-delete + restore + purge all work as expected without a
+// second PrismaClient instance (which would cause the @prisma/client
+// package to be pulled into the client bundle).
 
 export const TRASH_RETENTION_DAYS = 30;
 
@@ -29,7 +30,7 @@ export async function trashTransactions(input: {
   reason?:     string | null;
 }): Promise<{ batchId: string; trashed: number }> {
   if (input.txnIds.length === 0) return { batchId: "", trashed: 0 };
-  return await writeClient.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx) => {
     const batch = await tx.trashBatch.create({
       data: {
         businessId:  input.businessId,
@@ -58,7 +59,7 @@ export async function restoreBatch(input: {
   businessId: string;
   batchId:    string;
 }): Promise<{ restored: number }> {
-  return await writeClient.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx) => {
     // Verify ownership before touching rows.
     const owned = await tx.trashBatch.findFirst({
       where: { id: input.batchId, businessId: input.businessId },
@@ -88,7 +89,7 @@ export async function purgeBatch(input: {
   businessId: string;
   batchId:    string;
 }): Promise<{ purged: number }> {
-  return await writeClient.$transaction(async (tx) => {
+  return await prisma.$transaction(async (tx) => {
     const owned = await tx.trashBatch.findFirst({
       where: { id: input.batchId, businessId: input.businessId },
       select: { id: true },
@@ -107,13 +108,13 @@ export async function purgeBatch(input: {
 // expired batches disappear naturally without a separate cron.
 export async function purgeExpired(businessId: string): Promise<{ purgedBatches: number; purgedRows: number }> {
   const cutoff = new Date(Date.now() - TRASH_RETENTION_DAYS * 86400_000);
-  const expired = await writeClient.trashBatch.findMany({
+  const expired = await prisma.trashBatch.findMany({
     where: { businessId, createdAt: { lt: cutoff } },
     select: { id: true },
   });
   if (expired.length === 0) return { purgedBatches: 0, purgedRows: 0 };
   let purgedRows = 0;
-  await writeClient.$transaction(async (tx) => {
+  await prisma.$transaction(async (tx) => {
     for (const b of expired) {
       const res = await tx.transaction.deleteMany({
         where: { deleteBatchId: b.id, businessId },
