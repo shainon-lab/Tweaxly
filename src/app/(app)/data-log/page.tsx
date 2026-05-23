@@ -26,7 +26,11 @@ export default async function DataLogPage() {
     prisma.uploadBatch.findMany({
       where: { businessId: business.id },
       orderBy: { createdAt: "desc" },
-      include: { _count: { select: { transactions: true } } },
+      include: {
+        _count: { select: { transactions: true, replaces: true } },
+        financialSource: { select: { name: true } },
+        replacedBy: { select: { filename: true, createdAt: true } },
+      },
     }),
     prisma.manualEntry.findMany({
       where: { businessId: business.id },
@@ -39,6 +43,8 @@ export default async function DataLogPage() {
   ]);
 
   // Normalize both sources into a single row type and sort by createdAt.
+  // Each upload-batch row carries status + audit-chain metadata so the
+  // client can render a "Replaced by …" / "Replaces N batches" pill.
   const rows = [
     ...batches.map((b) => ({
       id: b.id,
@@ -47,9 +53,16 @@ export default async function DataLogPage() {
       source: b.source,
       mode: b.mode,
       label: b.filename,
-      representsMonth: b.representsMonth,
+      representsMonth: b.representsMonth ?? (b.periodStart
+        ? (b.periodEnd && b.periodEnd !== b.periodStart ? `${b.periodStart}..${b.periodEnd}` : b.periodStart)
+        : null),
       rowCount: b.rowCount,
       transactions: b._count.transactions,
+      status: b.status,
+      financialSourceName: b.financialSource?.name ?? null,
+      replacedByFilename: b.replacedBy?.filename ?? null,
+      replacedAt: b.replacedAt?.toISOString() ?? null,
+      replacesCount: b._count.replaces,
     })),
     ...manualEntries.map((e) => {
       const freq = FREQUENCY_LABEL[e.frequency] ?? e.frequency;
@@ -67,6 +80,14 @@ export default async function DataLogPage() {
         representsMonth: startYM,
         rowCount: 1,
         transactions: e._count.transactions,
+        // Manual entries don't have an audit chain — keep field shape
+        // consistent with upload rows so the client can render the
+        // same Row type without an extra union branch.
+        status: "active" as const,
+        financialSourceName: null,
+        replacedByFilename: null,
+        replacedAt: null,
+        replacesCount: 0,
       };
     }),
   ].sort((a, b) => b.createdAt.localeCompare(a.createdAt));

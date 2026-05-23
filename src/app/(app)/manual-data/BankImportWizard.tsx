@@ -177,7 +177,8 @@ export default function BankImportWizard({
     imported: number;
     duplicateGroups: number;
     settlementsApplied: number;
-    settlementSamples: { source: string; ym: string; amount: number }[];
+    settlementSamples: { source: string; ym: string; amount: number; kind?: string }[];
+    settlementBreakdown?: { cardCount: number; paypalCount: number; transferCount: number; providerCount: number };
   } | null>(null);
 
   // Pull saved templates once — used in the Map step.
@@ -420,10 +421,11 @@ export default function BankImportWizard({
               }
               const data = await res.json();
               setImportResult({
-                imported:           data.imported ?? 0,
-                duplicateGroups:    data.duplicateGroups ?? 0,
-                settlementsApplied: data.settlementsApplied ?? 0,
-                settlementSamples:  data.settlementSamples ?? [],
+                imported:            data.imported ?? 0,
+                duplicateGroups:     data.duplicateGroups ?? 0,
+                settlementsApplied:  data.settlementsApplied ?? 0,
+                settlementSamples:   data.settlementSamples ?? [],
+                settlementBreakdown: data.settlementBreakdown,
               });
               setStep("done");
               startTransition(() => router.refresh());
@@ -442,6 +444,7 @@ export default function BankImportWizard({
           duplicateGroups={importResult.duplicateGroups}
           settlementsApplied={importResult.settlementsApplied}
           settlementSamples={importResult.settlementSamples}
+          settlementBreakdown={importResult.settlementBreakdown}
           templateSaved={!!saveAsName.trim()}
           onAnother={() => { reset(); onAfterDone?.(); }}
           onViewTxns={() => router.push("/transactions")}
@@ -1210,17 +1213,26 @@ function fmtAmt(n: number): string {
 
 // ─── Step 5: Done ──────────────────────────────────────────────────────────
 function DoneStep({
-  imported, duplicateGroups, settlementsApplied, settlementSamples,
+  imported, duplicateGroups, settlementsApplied, settlementSamples, settlementBreakdown,
   templateSaved, onAnother, onViewTxns,
 }: {
   imported: number;
   duplicateGroups: number;
   settlementsApplied: number;
-  settlementSamples: { source: string; ym: string; amount: number }[];
+  settlementSamples: { source: string; ym: string; amount: number; kind?: string }[];
+  settlementBreakdown?: { cardCount: number; paypalCount: number; transferCount: number; providerCount: number };
   templateSaved: boolean;
   onAnother: () => void;
   onViewTxns: () => void;
 }) {
+  const breakdown: { label: string; count: number }[] = settlementBreakdown
+    ? [
+        { label: "credit-card",       count: settlementBreakdown.cardCount },
+        { label: "PayPal",            count: settlementBreakdown.paypalCount },
+        { label: "bank transfer",     count: settlementBreakdown.transferCount },
+        { label: "provider payout",   count: settlementBreakdown.providerCount },
+      ].filter((b) => b.count > 0)
+    : [];
   return (
     <div>
       <div className="text-center py-4">
@@ -1240,10 +1252,20 @@ function DoneStep({
             <CheckCircle2 size={16} className="text-good shrink-0 mt-0.5" />
             <div className="text-sm text-slate-200">
               <span className="font-medium">
-                {settlementsApplied} credit-card / PayPal settlement{settlementsApplied === 1 ? "" : "s"} detected.
+                {settlementsApplied} auto-classified transaction{settlementsApplied === 1 ? "" : "s"} excluded from P&amp;L.
               </span>
-              <div className="text-xs text-slate-400 mt-0.5">
-                These bank rows are excluded from P&amp;L — the detailed card/PayPal lines count instead. You can undo this from the Transactions page if a match was wrong.
+              {breakdown.length > 0 ? (
+                <div className="text-xs text-slate-400 mt-0.5">
+                  {breakdown.map((b, i) => (
+                    <span key={b.label}>
+                      {i > 0 ? " · " : ""}
+                      <span className="text-slate-200">{b.count}</span> {b.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
+              <div className="text-xs text-slate-400 mt-1">
+                Card / PayPal payments match the detailed lines instead. Bank-to-bank transfers are internal moves, not P&amp;L. Provider payouts (Stripe, Square…) are the bank reflection of revenue already recorded on the provider side. Undo any single match from the Transactions page.
               </div>
             </div>
           </div>
@@ -1251,7 +1273,7 @@ function DoneStep({
             <ul className="text-xs text-slate-400 space-y-0.5 mt-2 pl-6">
               {settlementSamples.map((s, i) => (
                 <li key={i} className="list-disc">
-                  {fmtYmDone(s.ym)} · {s.source} · {s.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  {fmtYmDone(s.ym)} · {labelForKind(s.kind)} · {s.source} · {s.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </li>
               ))}
               {settlementsApplied > settlementSamples.length ? (
@@ -1273,6 +1295,16 @@ function DoneStep({
 function fmtYmDone(ym: string): string {
   const [y, m] = ym.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString(undefined, { month: "short", year: "numeric" });
+}
+
+function labelForKind(kind: string | undefined): string {
+  switch (kind) {
+    case "credit_card": return "card payment";
+    case "paypal":      return "PayPal";
+    case "transfer":    return "bank transfer";
+    case "provider":    return "provider payout";
+    default:            return "settlement";
+  }
 }
 
 // ─── Helpers ───────────────────────────────────────────────────────────────

@@ -15,6 +15,14 @@ type Row = {
   representsMonth: string | null;
   rowCount: number;
   transactions: number;
+  // Audit-chain metadata. Manual entries leave these as default/empty;
+  // upload rows carry the full replace history so the table can render
+  // a "Replaced by …" or "Replaces N batches" pill inline.
+  status: string;                       // "active" | "replaced"
+  financialSourceName: string | null;
+  replacedByFilename:  string | null;
+  replacedAt:          string | null;
+  replacesCount:       number;
 };
 
 function typePill(row: Row) {
@@ -118,8 +126,37 @@ export default function DataLogClient({
                   </td>
                   <td>{typePill(r)}</td>
                   <td>{sourcePill(r)}</td>
-                  <td className="text-slate-200 truncate max-w-[280px]">
-                    {r.label}
+                  <td className="text-slate-200 max-w-[320px]">
+                    <div className="truncate">{r.label}</div>
+                    {/* Audit-chain pills — surface replace history so
+                        the user can trace what superseded what. */}
+                    {r.financialSourceName || r.status === "replaced" || r.replacesCount > 0 ? (
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1">
+                        {r.financialSourceName ? (
+                          <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-line text-slate-400">
+                            {r.financialSourceName}
+                          </span>
+                        ) : null}
+                        {r.status === "replaced" ? (
+                          <span
+                            className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-warn/40 bg-warn/10 text-warn"
+                            title={r.replacedByFilename
+                              ? `Replaced ${r.replacedAt ? new Date(r.replacedAt).toLocaleString() : ""} by ${r.replacedByFilename}`
+                              : "This batch was replaced by a later import"}
+                          >
+                            Replaced
+                          </span>
+                        ) : null}
+                        {r.replacesCount > 0 ? (
+                          <span
+                            className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-accent/40 bg-accent-soft/30 text-accent"
+                            title={`This import replaced ${r.replacesCount} earlier batch${r.replacesCount === 1 ? "" : "es"} for the same source + period.`}
+                          >
+                            Replaces {r.replacesCount}
+                          </span>
+                        ) : null}
+                      </div>
+                    ) : null}
                   </td>
                   <td className="text-slate-300">{r.representsMonth ?? "-"}</td>
                   <td className="text-right text-slate-300">{r.rowCount}</td>

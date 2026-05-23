@@ -4,7 +4,7 @@ import { prisma } from "@/lib/db";
 import { normalizeRow, type ColumnMapping } from "@/lib/normalize";
 import { findApplicableRule } from "@/lib/categorize";
 import { findDuplicateCandidates } from "@/lib/duplicates";
-import { detectSettlements, applySettlements } from "@/lib/settlements";
+import { detectAllSettlements } from "@/lib/settlements";
 import { kindFromName, parseDate } from "@/lib/parsers";
 import { convertAmount } from "@/lib/fx";
 import { isSupportedCurrency } from "@/lib/currencies";
@@ -422,27 +422,26 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Settlement detection — runs symmetrically whether this is a bank
-  // upload (looks for card/paypal totals) or a card/paypal upload (re-
-  // evaluates recent bank rows against new totals). Idempotent.
+  // Settlement detection — runs ALL three passes (credit-card / PayPal,
+  // bank-to-bank transfers, payment-provider payouts) symmetrically
+  // regardless of which source was just uploaded. Idempotent. Wrapped
+  // in try/catch so a detection failure never breaks the import — the
+  // user can correct individual rows from the Transactions page.
   let settlementsApplied = 0;
-  const settlementSamples: { source: string; ym: string; amount: number }[] = [];
+  let settlementSamples: { source: string; ym: string; amount: number; kind?: string }[] = [];
+  let settlementBreakdown: { cardCount: number; paypalCount: number; transferCount: number; providerCount: number } = {
+    cardCount: 0, paypalCount: 0, transferCount: 0, providerCount: 0,
+  };
   try {
-    const matches = await detectSettlements(business.id);
-    if (matches.length > 0) {
-      settlementsApplied = await applySettlements(business.id, matches);
-      for (const m of matches.slice(0, 5)) {
-        settlementSamples.push({
-          source: m.matchedSourceName,
-          ym:     m.matchedYM,
-          amount: Math.abs(m.bankAmount),
-        });
-      }
-    }
+    const result = await detectAllSettlements(business.id);
+    settlementsApplied =
+      result.cardCount + result.paypalCount + result.transferCount + result.providerCount;
+    settlementSamples = result.samples;
+    settlementBreakdown = {
+      cardCount: result.cardCount, paypalCount: result.paypalCount,
+      transferCount: result.transferCount, providerCount: result.providerCount,
+    };
   } catch (err) {
-    // Never let settlement detection break the import. The user can re-
-    // run it manually from the Sources page (Phase 3) or correct rows
-    // by hand if anything looks wrong.
     console.error("[/api/upload/commit] settlement detection failed", err);
   }
 
@@ -451,5 +450,6 @@ export async function POST(req: NextRequest) {
     duplicateGroups: createdGroups,
     settlementsApplied,
     settlementSamples,
+    settlementBreakdown,
   });
 }

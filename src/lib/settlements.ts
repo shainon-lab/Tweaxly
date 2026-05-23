@@ -222,6 +222,330 @@ export async function applySettlements(
   return applied;
 }
 
+// ── Bank-to-bank transfer detection ─────────────────────────────────
+// When the owner has 2+ bank sources, internal transfers between them
+// (savings ⇄ checking, ILS bank ⇄ USD bank, etc.) should NOT count as
+// either income or expense — they're balance moves, not P&L events.
+//
+// Heuristic: for every recent bank-side outflow, look for an opposing
+// inflow on a DIFFERENT bank source with the same absolute amount
+// (within ±$1 / 0.5%) dated within ±3 days. Description hints
+// (TRANSFER/WIRE/ZELLE/ACH/העברה) boost confidence — pairs without
+// any hint are still matched but only when both date and amount are
+// dead-on (±1 day, exact amount).
+
+export type TransferMatch = {
+  outflowTxnId: string;
+  inflowTxnId:  string;
+  amount:       number;        // positive magnitude
+  outflowDate:  Date;
+  outflowSourceId: string;
+  inflowSourceId:  string;
+  outflowSourceName: string;
+  inflowSourceName:  string;
+  reason: string;
+};
+
+const TRANSFER_HINTS = [
+  /transfer/i, /wire/i, /zelle/i, /\bach\b/i,
+  /to\s+account/i, /from\s+account/i,
+  /העברה/, /העברת/,
+];
+
+export async function detectBankTransfers(businessId: string): Promise<TransferMatch[]> {
+  const cutoff = new Date(Date.now() - SCAN_WINDOW_DAYS * 86400_000);
+  const sources = await prisma.financialSource.findMany({
+    where: { businessId, status: "active", type: "bank" },
+    select: { id: true, name: true },
+  });
+  if (sources.length < 2) return [];
+  const sourceMeta = new Map(sources.map((s) => [s.id, s]));
+  const bankSourceIds = new Set(sources.map((s) => s.id));
+
+  const txns = await prisma.transaction.findMany({
+    where: {
+      businessId,
+      transactionDate: { gte: cutoff },
+      uploadBatch: { status: "active" },
+    },
+    select: {
+      id: true, amount: true, description: true, vendor: true,
+      transactionDate: true, type: true, isExcludedFromPnl: true,
+      uploadBatch: { select: { financialSourceId: true } },
+    },
+  });
+
+  type Side = {
+    id: string; sourceId: string; amount: number; date: Date; hasHint: boolean;
+    desc: string;
+  };
+  const outflows: Side[] = [];
+  const inflows:  Side[] = [];
+  for (const t of txns) {
+    const srcId = t.uploadBatch?.financialSourceId;
+    if (!srcId || !bankSourceIds.has(srcId)) continue;
+    if (t.isExcludedFromPnl)               continue;
+    if (t.type === "bank_transfer")        continue; // already classified
+    if (t.type === "credit_card_settlement" || t.type === "paypal_settlement") continue;
+    const desc = `${t.vendor ?? ""} ${t.description ?? ""}`.trim();
+    const hasHint = TRANSFER_HINTS.some((re) => re.test(desc));
+    const side: Side = { id: t.id, sourceId: srcId, amount: t.amount, date: t.transactionDate, hasHint, desc };
+    if (t.amount < 0) outflows.push(side);
+    else if (t.amount > 0) inflows.push(side);
+  }
+
+  const matches: TransferMatch[] = [];
+  const used = new Set<string>();
+  for (const out of outflows) {
+    if (used.has(out.id)) continue;
+    const mag = Math.abs(out.amount);
+    const tolerance = Math.max(1.0, mag * 0.005);
+    // Without hints, require exact-ish amount + ≤1 day apart. With hints,
+    // relax to ±3 days.
+    const maxDays = out.hasHint ? 3 : 1;
+    let best: { in: Side; diff: number; days: number } | null = null;
+    for (const inn of inflows) {
+      if (used.has(inn.id))                continue;
+      if (inn.sourceId === out.sourceId)   continue; // must be cross-source
+      const days = Math.abs((inn.date.getTime() - out.date.getTime()) / 86400_000);
+      if (days > maxDays)                  continue;
+      const diff = Math.abs(inn.amount - mag);
+      if (diff > tolerance)                continue;
+      // Require AT LEAST one side to have a hint when the dates are
+      // looser than ±1 — defends against random coincidence on round
+      // amounts (e.g. $500 in/out at unrelated vendors).
+      if (days > 1 && !inn.hasHint && !out.hasHint) continue;
+      if (!best || diff < best.diff || (diff === best.diff && days < best.days)) {
+        best = { in: inn, diff, days };
+      }
+    }
+    if (!best) continue;
+    used.add(out.id);
+    used.add(best.in.id);
+    const outMeta = sourceMeta.get(out.sourceId)!;
+    const inMeta  = sourceMeta.get(best.in.sourceId)!;
+    matches.push({
+      outflowTxnId:      out.id,
+      inflowTxnId:       best.in.id,
+      amount:            mag,
+      outflowDate:       out.date,
+      outflowSourceId:   out.sourceId,
+      inflowSourceId:    best.in.sourceId,
+      outflowSourceName: outMeta.name,
+      inflowSourceName:  inMeta.name,
+      reason: `Outflow ${mag.toFixed(2)} from ${outMeta.name} matches inflow on ${inMeta.name} (±${best.days.toFixed(0)}d, hint ${out.hasHint || best.in.hasHint ? "yes" : "no"})`,
+    });
+  }
+  return matches;
+}
+
+export async function applyBankTransfers(businessId: string, matches: TransferMatch[]): Promise<number> {
+  let applied = 0;
+  for (const m of matches) {
+    // Mark BOTH sides — owner sees one settlement pill per row and the
+    // pair is excluded from P&L symmetrically.
+    const note = `Auto-detected bank transfer — ${m.reason}. Internal account-to-account move, not income or expense.`;
+    const res = await prisma.transaction.updateMany({
+      where: { id: { in: [m.outflowTxnId, m.inflowTxnId] }, businessId },
+      data: {
+        type:              "bank_transfer",
+        isExcludedFromPnl: true,
+        excludeNote:       note,
+      },
+    });
+    applied += res.count;
+  }
+  return applied;
+}
+
+// ── Payment provider settlement detection ─────────────────────────
+// When the owner uploads both a Stripe/Square/Wise export AND their
+// bank statement, the bank inflow ("STRIPE PAYOUT $9,700") should be
+// excluded from P&L because the detailed provider transactions already
+// account for the revenue (and the fees).
+//
+// Heuristic: for each payment_provider source, compute monthly NET
+// income (positive rows minus absolute negative rows = what the
+// provider would actually payout to bank). For each bank-side inflow
+// hinting "STRIPE"/"SQUARE"/"WISE"/etc. or naming the provider source,
+// look for a matching net within tolerance in the same month or ±1.
+
+export type ProviderSettlementMatch = {
+  bankTxnId:        string;
+  bankAmount:       number;      // positive
+  bankDescription:  string;
+  bankDate:         Date;
+  providerSourceId: string;
+  providerSourceName: string;
+  providerNet:      number;
+  providerYM:       string;
+  reason:           string;
+};
+
+const PROVIDER_HINTS = [
+  /stripe/i, /square/i, /wise/i, /payoneer/i, /shopify\s*payout/i,
+  /payout/i,
+  /סטרייפ/, /סקוור/, /וייז/,
+];
+
+export async function detectPaymentProviderSettlements(businessId: string): Promise<ProviderSettlementMatch[]> {
+  const cutoff = new Date(Date.now() - SCAN_WINDOW_DAYS * 86400_000);
+  const sources = await prisma.financialSource.findMany({
+    where: { businessId, status: "active" },
+    select: { id: true, name: true, type: true, currency: true, last4: true },
+  });
+  const providerSources = sources.filter((s) => s.type === "payment_provider");
+  const bankSources     = sources.filter((s) => s.type === "bank");
+  if (providerSources.length === 0 || bankSources.length === 0) return [];
+  const bankSourceIds = new Set(bankSources.map((s) => s.id));
+
+  const txns = await prisma.transaction.findMany({
+    where: {
+      businessId,
+      transactionDate: { gte: cutoff },
+      uploadBatch: { status: "active" },
+    },
+    select: {
+      id: true, amount: true, description: true, vendor: true,
+      transactionDate: true, accountingMonth: true, type: true,
+      isExcludedFromPnl: true,
+      uploadBatch: { select: { financialSourceId: true } },
+    },
+  });
+
+  // Compute per-(provider, ym) net income — what the provider would
+  // payout. Net = sum(amount) including fees (negative rows reduce it).
+  type Net = { sourceId: string; ym: string; net: number; sourceName: string };
+  const netByKey = new Map<string, Net>();
+  const sourceMeta = new Map(sources.map((s) => [s.id, s]));
+  for (const t of txns) {
+    const srcId = t.uploadBatch?.financialSourceId;
+    if (!srcId) continue;
+    const meta = sourceMeta.get(srcId);
+    if (!meta || meta.type !== "payment_provider") continue;
+    if (t.isExcludedFromPnl)                       continue;
+    const key = `${srcId}|${t.accountingMonth}`;
+    let entry = netByKey.get(key);
+    if (!entry) {
+      entry = { sourceId: srcId, ym: t.accountingMonth, net: 0, sourceName: meta.name };
+      netByKey.set(key, entry);
+    }
+    entry.net += t.amount;
+  }
+  if (netByKey.size === 0) return [];
+
+  const matches: ProviderSettlementMatch[] = [];
+  for (const t of txns) {
+    const srcId = t.uploadBatch?.financialSourceId;
+    if (!srcId || !bankSourceIds.has(srcId)) continue;
+    if (t.amount <= 0)                                continue; // payouts are inflows
+    if (t.type === "payment_provider_settlement")     continue;
+    if (t.isExcludedFromPnl)                          continue;
+    const desc = `${t.vendor ?? ""} ${t.description ?? ""}`.trim();
+    const namedProvider = providerSources.find((s) =>
+      new RegExp(`\\b${escapeRegex(s.name)}\\b`, "i").test(desc) ||
+      (s.last4 && new RegExp(`\\b${s.last4}\\b`).test(desc)),
+    );
+    const isProviderHint = PROVIDER_HINTS.some((re) => re.test(desc));
+    if (!namedProvider && !isProviderHint) continue;
+    const candidateAmount = t.amount;
+    const tolerance = Math.max(TOLERANCE_ABS, candidateAmount * TOLERANCE_RATIO);
+    const candidateMonths = [t.accountingMonth, prevYm(t.accountingMonth), nextYm(t.accountingMonth)];
+    let best: { net: Net; diff: number } | null = null;
+    for (const net of netByKey.values()) {
+      if (namedProvider && net.sourceId !== namedProvider.id) continue;
+      if (!candidateMonths.includes(net.ym))                  continue;
+      const diff = Math.abs(net.net - candidateAmount);
+      if (diff > tolerance)                                   continue;
+      if (!best || diff < best.diff) best = { net, diff };
+    }
+    if (!best) continue;
+    matches.push({
+      bankTxnId:          t.id,
+      bankAmount:         t.amount,
+      bankDescription:    desc || "(no description)",
+      bankDate:           t.transactionDate,
+      providerSourceId:   best.net.sourceId,
+      providerSourceName: best.net.sourceName,
+      providerNet:        best.net.net,
+      providerYM:         best.net.ym,
+      reason: `Inflow ${candidateAmount.toFixed(2)} matches ${best.net.sourceName} ${best.net.ym} net ${best.net.net.toFixed(2)} (within ${tolerance.toFixed(2)})`,
+    });
+  }
+  return matches;
+}
+
+export async function applyPaymentProviderSettlements(
+  businessId: string,
+  matches: ProviderSettlementMatch[],
+): Promise<number> {
+  let applied = 0;
+  for (const m of matches) {
+    const res = await prisma.transaction.updateMany({
+      where: { id: m.bankTxnId, businessId },
+      data: {
+        type:              "payment_provider_settlement",
+        isExcludedFromPnl: true,
+        excludeNote:       `Auto-detected ${m.providerSourceName} payout — ${m.reason}. The detailed provider lines count as revenue instead.`,
+      },
+    });
+    applied += res.count;
+  }
+  return applied;
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────
+// Runs all three detection passes in series and returns a combined
+// summary the wizard surfaces on the Done step.
+export async function detectAllSettlements(businessId: string): Promise<{
+  cardCount:     number;
+  paypalCount:   number;
+  transferCount: number;
+  providerCount: number;
+  samples:       { kind: string; source: string; ym: string; amount: number }[];
+}> {
+  const out = { cardCount: 0, paypalCount: 0, transferCount: 0, providerCount: 0, samples: [] as { kind: string; source: string; ym: string; amount: number }[] };
+
+  const card = await detectSettlements(businessId);
+  if (card.length > 0) {
+    await applySettlements(businessId, card);
+    for (const m of card) {
+      if (m.matchedKind === "paypal") out.paypalCount++; else out.cardCount++;
+      if (out.samples.length < 5) {
+        out.samples.push({ kind: m.matchedKind, source: m.matchedSourceName, ym: m.matchedYM, amount: Math.abs(m.bankAmount) });
+      }
+    }
+  }
+  const transfers = await detectBankTransfers(businessId);
+  if (transfers.length > 0) {
+    out.transferCount = await applyBankTransfers(businessId, transfers);
+    for (const m of transfers.slice(0, 5 - out.samples.length)) {
+      if (out.samples.length < 5) {
+        out.samples.push({
+          kind: "transfer",
+          source: `${m.outflowSourceName} → ${m.inflowSourceName}`,
+          ym: monthFromDate(m.outflowDate),
+          amount: m.amount,
+        });
+      }
+    }
+  }
+  const providers = await detectPaymentProviderSettlements(businessId);
+  if (providers.length > 0) {
+    out.providerCount = await applyPaymentProviderSettlements(businessId, providers);
+    for (const m of providers.slice(0, 5 - out.samples.length)) {
+      if (out.samples.length < 5) {
+        out.samples.push({ kind: "provider", source: m.providerSourceName, ym: m.providerYM, amount: m.bankAmount });
+      }
+    }
+  }
+  return out;
+}
+
+function monthFromDate(d: Date): string {
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
 // ─── helpers ─────────────────────────────────────────────────────────
 function prevYm(ym: string): string { return shiftYm(ym, -1); }
 function nextYm(ym: string): string { return shiftYm(ym, +1); }
