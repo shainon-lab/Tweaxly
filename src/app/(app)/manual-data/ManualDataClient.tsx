@@ -1,7 +1,6 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import BulkUploadCard from "./BulkUploadCard";
 import GuidedBankImport from "./GuidedBankImport";
 import DatedUploadCard from "./DatedUploadCard";
 import CurrencyPicker from "@/components/CurrencyPicker";
@@ -13,7 +12,7 @@ function fmtOriginal(amount: number, currency: string): string {
   return fmtMoney(Math.abs(amount), currency);
 }
 
-type UploadMode = "bank" | "dated" | "monthly";
+type UploadMode = "bank" | "dated";
 
 type Category = { id: string; name: string; kind: string };
 
@@ -219,23 +218,13 @@ export default function ManualDataClient({
 
   return (
     <>
-      <div className="card mb-4 border-warn/40 bg-warn/5">
-        <div className="flex items-start gap-3">
-          <span className="pill-warn shrink-0 mt-0.5">heads-up</span>
-          <div className="text-sm text-slate-200 leading-relaxed">
-            <span className="font-medium">Before adding anything manually, make sure it's not already in a file you've uploaded - and won't be in a file you'll upload soon.</span>{" "}
-            Manual entries are for things that <em>aren't</em> in your bank/payroll exports - for example, a personal-card business purchase, a gift, or a one-off invoice you settled outside the books. If the same item also lands in an upload later, it'll be counted twice.
-          </div>
-        </div>
-      </div>
-
       {/* Mode selector - two upload patterns. Each renders the matching card. */}
       <div className="card mb-4">
         <div className="font-medium mb-1">How are you uploading?</div>
         <div className="text-sm text-slate-400 mb-3">
           Pick the option that matches your file. You can switch any time.
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setUploadMode("bank")}
@@ -276,34 +265,13 @@ export default function ManualDataClient({
               to a known column order — no mapping step needed.
             </div>
           </button>
-          <button
-            type="button"
-            onClick={() => setUploadMode("monthly")}
-            className={`text-left rounded-xl border p-4 transition ${
-              uploadMode === "monthly"
-                ? "border-accent bg-accent-soft/30"
-                : "border-line bg-ink-900/30 hover:border-accent/40"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className={uploadMode === "monthly" ? "pill-accent" : "pill text-[10px]"}>
-                {uploadMode === "monthly" ? "selected" : "P&L"}
-              </span>
-              <span className="font-medium text-slate-100">Monthly summary</span>
-            </div>
-            <div className="text-xs text-slate-400 leading-relaxed">
-              All rows in the file belong to the same month - like a P&L sheet for May. You pick the month, we apply it to every row.
-            </div>
-          </button>
         </div>
       </div>
 
       {uploadMode === "bank" ? (
         <GuidedBankImport defaultCurrency={currency} />
-      ) : uploadMode === "dated" ? (
-        <DatedUploadCard currency={currency} />
       ) : (
-        <BulkUploadCard currency={currency} />
+        <DatedUploadCard currency={currency} />
       )}
 
       <div className="card mb-6">
