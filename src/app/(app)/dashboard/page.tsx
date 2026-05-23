@@ -3,6 +3,7 @@ import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
+import GetStartedBanner from "@/components/sources/GetStartedBanner";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost, trailingMonthsSummary } from "@/lib/metrics";
@@ -219,11 +220,13 @@ export default async function DashboardPage({
               numbers. */}
           {summary ? <ExecutiveSummaryHero summary={summary} /> : null}
 
-          {/* Financial Data Pipeline (Phase 3) — compact tile only.
-              Links over to /sources for the full coverage matrix +
-              missing-month breakdown. Hidden when no sources exist so
-              brand-new workspaces aren't pestered. */}
+          {/* Financial Data Pipeline. GetStartedBanner shows ONLY for
+              workspaces with zero financial sources (first-run); once
+              even one source exists the compact HealthScoreWidget tile
+              takes over. Both are client-fetched so the server-render
+              path stays unchanged. */}
           <div className="mb-4">
+            <GetStartedBanner />
             <HealthScoreWidget variant="compact" />
           </div>
 

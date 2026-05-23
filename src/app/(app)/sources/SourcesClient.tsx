@@ -356,6 +356,32 @@ function SourceFormModal({
                 value={startMonth}
                 onChange={(e) => setStart(e.target.value)}
               />
+              {/* Quick-presets answer the spec's "how far back to
+                  import" question concretely: each click sets the
+                  startMonth, and the coverage matrix then asks for
+                  every month between that and today. */}
+              {!isEdit ? (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {[
+                    { label: "3 months", months: 3 },
+                    { label: "6 months", months: 6 },
+                    { label: "12 months", months: 12 },
+                  ].map((p) => (
+                    <button
+                      key={p.months}
+                      type="button"
+                      onClick={() => setStart(monthsAgo(p.months))}
+                      className={`text-[11px] px-2 py-0.5 rounded border transition ${
+                        startMonth === monthsAgo(p.months)
+                          ? "border-accent bg-accent-soft/40 text-accent"
+                          : "border-line text-slate-400 hover:text-slate-200 hover:border-line"
+                      }`}
+                    >
+                      Last {p.label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
             </div>
           </div>
           {isEdit ? (
@@ -385,5 +411,15 @@ function SourceFormModal({
 
 function defaultStartMonth(): string {
   const d = new Date();
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+// N months before the current month, as YYYY-MM. Used by the quick-pick
+// presets on the Add Source modal so owners can pick "Last 3 / 6 / 12
+// months" without manually fiddling with the month input.
+function monthsAgo(n: number): string {
+  const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - n);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
