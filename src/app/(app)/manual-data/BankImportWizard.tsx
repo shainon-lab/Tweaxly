@@ -538,9 +538,28 @@ function UploadStep({
         </div>
       ) : null}
       {error ? <div className="mt-3 text-sm text-bad">{error}</div> : null}
+
+      {/* Optional: download the Tweaxly template. Used to be its own
+          upload mode but it makes more sense as a "preparing your file"
+          aid here — the user can either drop their raw source export
+          (mapping wizard handles it) or grab the template, fill it in,
+          and skip the mapping step. */}
+      <div className="mt-4 rounded-md border border-line/60 bg-ink-900/30 px-3 py-2.5 flex items-start gap-3 flex-wrap">
+        <div className="text-xs text-slate-400 flex-1 min-w-[240px]">
+          <span className="font-medium text-slate-200">Want to skip the mapping step?</span> Download our pre-formatted CSV template (Date · Description · Amount), fill it in, then drop it above.
+        </div>
+        <a
+          href="/templates/tweaxly-transactions-template.csv"
+          download
+          className="text-xs font-medium px-3 py-1.5 rounded-md border border-accent/40 text-accent hover:bg-accent-soft/30 transition inline-flex items-center gap-1.5 shrink-0"
+        >
+          Download Tweaxly template
+        </a>
+      </div>
+
       {templateCount > 0 ? (
         <div className="mt-4 text-xs text-slate-400">
-          {templateCount} saved {templateCount === 1 ? "template" : "templates"} available — if your file's
+          {templateCount} saved {templateCount === 1 ? "mapping" : "mappings"} available — if your file's
           column headers match a saved one, the mapping will be applied automatically.
         </div>
       ) : null}

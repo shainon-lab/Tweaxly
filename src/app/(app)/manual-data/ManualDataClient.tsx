@@ -2,7 +2,6 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import GuidedBankImport from "./GuidedBankImport";
-import DatedUploadCard from "./DatedUploadCard";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { fmtMoney } from "@/lib/format";
 
@@ -12,7 +11,7 @@ function fmtOriginal(amount: number, currency: string): string {
   return fmtMoney(Math.abs(amount), currency);
 }
 
-type UploadMode = "bank" | "dated" | "manual";
+type UploadMode = "bank" | "manual";
 
 type Category = { id: string; name: string; kind: string };
 
@@ -234,19 +233,23 @@ export default function ManualDataClient({
             upload last month's statement from each source — the coverage matrix and missing-month alerts will remind you.
           </li>
           <li>
-            The <span className="font-medium text-slate-100">Tweaxly CSV template</span> and{" "}
-            <span className="font-medium text-slate-100">Single manual entry</span> options are only for items that won't appear in any export.
+            Inside Source statement, you can optionally download the{" "}
+            <span className="font-medium text-slate-100">Tweaxly CSV template</span> to pre-format your file (skips the mapping step). The{" "}
+            <span className="font-medium text-slate-100">Single manual entry</span> option is for one-offs that won't appear in any export.
           </li>
         </ol>
       </div>
 
-      {/* Mode selector - three upload patterns. Each renders the matching card. */}
+      {/* Mode selector - two upload patterns. Each renders the matching card.
+          The Tweaxly CSV template used to be its own option but is now a
+          download link inside the Source statement flow's upload step
+          (an OPTIONAL way to pre-format a file, not a separate workflow). */}
       <div className="card mb-4">
         <div className="font-medium mb-1">How are you uploading?</div>
         <div className="text-sm text-slate-400 mb-3">
           Pick the option that matches your file. You can switch any time.
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <button
             type="button"
             onClick={() => setUploadMode("bank")}
@@ -264,26 +267,6 @@ export default function ManualDataClient({
             </div>
             <div className="text-xs text-slate-400 leading-relaxed">
               Upload an export from any source — bank, credit card, PayPal, Stripe, or others — in CSV, XLS, or XLSX. We auto-detect columns, you confirm the mapping, and we save it for next time.
-            </div>
-          </button>
-          <button
-            type="button"
-            onClick={() => setUploadMode("dated")}
-            className={`text-left rounded-xl border p-4 transition ${
-              uploadMode === "dated"
-                ? "border-accent bg-accent-soft/30"
-                : "border-line bg-ink-900/30 hover:border-accent/40"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className={uploadMode === "dated" ? "pill-accent" : "pill text-[10px]"}>
-                {uploadMode === "dated" ? "selected" : "template"}
-              </span>
-              <span className="font-medium text-slate-100">Tweaxly CSV template</span>
-            </div>
-            <div className="text-xs text-slate-400 leading-relaxed">
-              Use our pre-formatted CSV template. Each row has its own date, mapped
-              to a known column order — no mapping step needed.
             </div>
           </button>
           <button
@@ -311,8 +294,6 @@ export default function ManualDataClient({
 
       {uploadMode === "bank" ? (
         <GuidedBankImport defaultCurrency={currency} />
-      ) : uploadMode === "dated" ? (
-        <DatedUploadCard currency={currency} />
       ) : null}
 
       {uploadMode === "manual" ? (
