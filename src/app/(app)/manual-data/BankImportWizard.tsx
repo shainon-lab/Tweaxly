@@ -669,9 +669,11 @@ function DateFormatStep({
 }) {
   const dateHeader = headerFor(assignments, "date");
 
-  // Pull up to 10 non-empty distinct samples from the date column. We
-  // dedup so the user doesn't see "03/04/2026" repeated 8 times when one
-  // month dominates the export.
+  // Pull up to 10 non-empty distinct date-shaped samples. Many bank
+  // exports include a leftover header/title row (e.g. "Value Date" or
+  // its Hebrew "תאריך ערך" equivalent) mid-data; we skip those at the
+  // gate so they don't block Continue. The commit step skips rows whose
+  // date doesn't parse anyway, so dropping them here is purely a UX win.
   const samples = useMemo<unknown[]>(() => {
     if (!dateHeader) return [];
     const seen = new Set<string>();
@@ -679,10 +681,23 @@ function DateFormatStep({
     for (const r of preview.rows) {
       const v = r[dateHeader];
       if (v == null || v === "") continue;
-      const k = v instanceof Date ? v.toISOString() : String(v).trim();
-      if (seen.has(k)) continue;
-      seen.add(k);
-      out.push(v);
+      if (v instanceof Date) {
+        const k = v.toISOString();
+        if (seen.has(k)) continue;
+        seen.add(k);
+        out.push(v);
+      } else {
+        const s = String(v).trim();
+        if (!s) continue;
+        // A real date has ≥4 digit characters (DD + MM + YY at minimum,
+        // and most files use 4-digit years). Below that, the cell is
+        // almost certainly a header label that leaked into the data.
+        const digitCount = (s.match(/\d/g) || []).length;
+        if (digitCount < 4) continue;
+        if (seen.has(s)) continue;
+        seen.add(s);
+        out.push(v);
+      }
       if (out.length >= 10) break;
     }
     return out;
