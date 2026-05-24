@@ -72,6 +72,11 @@ type Vendor = {
   transactionCount: number;
   totalAmount:      number;   // signed sum
   lastSeenAt:       string | null; // ISO
+  // Distinct transaction descriptions and category names derived from
+  // actual transactions for this vendor — powers the Transactions and
+  // (real) Category columns. Sorted alphabetically.
+  descriptions:     string[];
+  txnCategoryNames: string[];
 };
 
 // Suggested categories the spec mandates we offer (but never auto-
@@ -370,6 +375,8 @@ export default function SettingsClient({
       transactionCount: v.transactionCount ?? 0,
       totalAmount:      v.totalAmount      ?? 0,
       lastSeenAt:       v.lastSeenAt       ?? null,
+      descriptions:     v.descriptions     ?? [],
+      txnCategoryNames: v.txnCategoryNames ?? [],
     };
     setVends((cur) => {
       const existing = cur.find((x) => x.id === withDefaults.id);
@@ -481,7 +488,6 @@ export default function SettingsClient({
   function vendorsForCategory(categoryId: string): Vendor[] {
     return vends.filter((v) => v.categoryId === categoryId);
   }
-  const unassignedVendors = vends.filter((v) => !v.categoryId);
 
   async function toggleOneTime(c: Cat) {
     const next = !c.isOneTime;
@@ -755,9 +761,8 @@ export default function SettingsClient({
               <thead>
                 <tr>
                   <th>Vendor</th>
-                  <th>Status</th>
+                  <th>Transactions</th>
                   <th>Category</th>
-                  <th className="text-right">Transactions</th>
                   <th className="text-right">Total</th>
                   <th>Last seen</th>
                   <th>One-time?</th>
@@ -765,7 +770,43 @@ export default function SettingsClient({
                 </tr>
               </thead>
               <tbody>
-                {[...unassignedVendors, ...vends.filter((v) => v.categoryId)].map((v) => (
+                {/* Only show vendors with at least one active transaction.
+                    Filters out stale auto-created Vendor rows whose
+                    transactions have since been re-vendored via the
+                    Transactions bulk "Set vendor" action. Keeping the
+                    unassigned-first order so vendors needing a pin
+                    bubble up. */}
+                {[...vends.filter((v) => v.transactionCount > 0 && !v.categoryId),
+                  ...vends.filter((v) => v.transactionCount > 0 && v.categoryId)].map((v) => {
+                  // Category column source = the actual categories the
+                  // vendor's transactions sit in (NOT just Vendor.categoryId).
+                  // Single → name; multiple → "Mixed (A, B)"; none → "Undefined".
+                  const catLabel =
+                    v.txnCategoryNames.length === 0
+                      ? <span className="text-warn text-xs italic">Undefined</span>
+                      : v.txnCategoryNames.length === 1
+                        ? <span className="text-slate-200 text-xs">{v.txnCategoryNames[0]}</span>
+                        : (
+                          <span className="text-slate-200 text-xs" title={v.txnCategoryNames.join("\n")}>
+                            Mixed <span className="text-slate-500">({v.txnCategoryNames.length})</span>
+                          </span>
+                        );
+                  // Transactions column = distinct descriptions for
+                  // this vendor with the count in parens (matches the
+                  // Categories table's vendor-name treatment).
+                  const txnLabel =
+                    v.descriptions.length === 0
+                      ? <span className="text-slate-500 text-xs">—</span>
+                      : (
+                        <span
+                          className="text-slate-300 text-xs"
+                          title={v.descriptions.join("\n")}
+                        >
+                          <span className="line-clamp-2">{v.descriptions.join(", ")}</span>
+                          <span className="text-slate-500"> ({v.descriptions.length})</span>
+                        </span>
+                      );
+                  return (
                   <tr key={v.id}>
                     <td>
                       {v.transactionCount > 0 ? (
@@ -780,27 +821,25 @@ export default function SettingsClient({
                         <span className="text-slate-300">{v.name}</span>
                       )}
                     </td>
-                    <td>
-                      {v.categoryId ? (
-                        <span className="pill text-[10px]">categorized</span>
-                      ) : (
-                        <span className="pill-warn text-[10px]">uncategorized</span>
-                      )}
-                    </td>
-                    <td>
+                    <td className="max-w-[320px]">{txnLabel}</td>
+                    <td className="max-w-[200px]">
+                      <div>{catLabel}</div>
+                      {/* Inline category pin editor — sets Vendor.categoryId
+                          for future uploads. Doesn't touch existing
+                          transactions; bulk-rewrite via Transactions if needed. */}
                       <select
-                        className="input max-w-[260px] py-1"
+                        className="input max-w-[260px] py-1 mt-1"
                         value={v.categoryId ?? "__undefined__"}
                         onChange={(e) => assignVendorCategory(v.id, e.target.value)}
+                        title="Pin a category to this vendor for FUTURE uploads. Existing transactions are not changed."
                       >
-                        <option value="__undefined__">Undefined</option>
+                        <option value="__undefined__">No pin</option>
                         {cats.map((c) => (
                           <option key={c.id} value={c.id}>{c.name}</option>
                         ))}
                         <option value="__new__">+ Add new category…</option>
                       </select>
                     </td>
-                    <td className="text-right text-slate-300">{v.transactionCount}</td>
                     <td className="text-right text-slate-300 font-mono text-xs">
                       {!v.transactionCount || !v.totalAmount ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </td>
@@ -831,11 +870,12 @@ export default function SettingsClient({
                       <button className="btn-danger py-1 text-xs" onClick={() => removeVendor(v.id)}>Delete</button>
                     </td>
                   </tr>
-                ))}
-                {vends.length === 0 ? (
+                  );
+                })}
+                {vends.filter((v) => v.transactionCount > 0).length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="text-center text-sm text-slate-400 py-6">
-                      No vendors yet. Use <span className="text-slate-200">+ Add vendor</span> above, or upload transactions with vendor names.
+                    <td colSpan={7} className="text-center text-sm text-slate-400 py-6">
+                      No vendors with active transactions yet. Use the <span className="text-slate-200">Set vendor…</span> bulk action on Transactions to normalize raw descriptions into vendors.
                     </td>
                   </tr>
                 ) : null}

@@ -105,6 +105,48 @@ export default async function SettingsPage() {
     list.sort((a, b) => a.localeCompare(b));
   }
 
+  // ── Per-vendor aggregates for the Vendors table ──────────────────
+  // We need three things per vendor name:
+  //   1. The distinct categories that vendor's transactions sit in
+  //      (so the Category column reflects reality, not just the
+  //      Vendor.categoryId pin which may be empty or stale).
+  //   2. The distinct transaction descriptions for that vendor
+  //      (powers the new "Transactions: name, name, name (N)" cell).
+  //   3. Whether the vendor has any active transactions at all
+  //      (used to filter out stale auto-created Vendor rows whose
+  //      transactions have since been re-vendored).
+  // All three come from the SAME groupBy passes so the data is in
+  // one shape downstream.
+  const txnCategoryByVendor = await prisma.transaction.findMany({
+    where: {
+      businessId: business.id,
+      vendor:     { not: null },
+      isExcludedFromPnl: false,
+    },
+    select: {
+      vendor:      true,
+      description: true,
+      category:    { select: { name: true } },
+    },
+  });
+  const vendorCategoryNames    = new Map<string, Set<string>>();   // vendor → category names (excluding catch-all)
+  const vendorDescriptionNames = new Map<string, Set<string>>();   // vendor → distinct descriptions
+  const vendorTxnCount         = new Map<string, number>();        // vendor → total active txns
+  for (const t of txnCategoryByVendor) {
+    if (!t.vendor) continue;
+    const key = t.vendor.toLowerCase();
+    vendorTxnCount.set(key, (vendorTxnCount.get(key) ?? 0) + 1);
+    if (t.description && t.description.trim()) {
+      if (!vendorDescriptionNames.has(key)) vendorDescriptionNames.set(key, new Set());
+      vendorDescriptionNames.get(key)!.add(t.description.trim());
+    }
+    const cn = t.category?.name;
+    if (cn && cn !== "Uncategorized" && cn !== "Undefined Category") {
+      if (!vendorCategoryNames.has(key)) vendorCategoryNames.set(key, new Set());
+      vendorCategoryNames.get(key)!.add(cn);
+    }
+  }
+
   // ── Per-workspace billing data for the Business Profile tab ───
   // Plan + AI Credits live alongside the rest of the workspace's
   // settings now. Account-level surfaces only see a cross-workspace
@@ -195,12 +237,22 @@ export default async function SettingsPage() {
           vendorNames:      vendorNamesByCategoryId.get(c.id) ?? [],
         }))}
         vendors={vendors.map((v) => {
-          const agg = vendorAggByName.get(v.name.toLowerCase());
+          const key = v.name.toLowerCase();
+          const agg = vendorAggByName.get(key);
+          const descs = vendorDescriptionNames.get(key);
+          const cats  = vendorCategoryNames.get(key);
           return {
             id: v.id, name: v.name, categoryId: v.categoryId, isOneTime: v.isOneTime,
             transactionCount: agg?.count ?? 0,
             totalAmount:      agg?.sum ?? 0,
             lastSeenAt:       agg?.lastSeen ?? null,
+            // Distinct descriptions for the new Transactions column.
+            descriptions:     descs ? Array.from(descs).sort((a, b) => a.localeCompare(b)) : [],
+            // Category names derived from the actual transactions
+            // (NOT just the Vendor.categoryId pin). Lets the Category
+            // column show what's real on the data, with "Mixed" /
+            // "Undefined" labels when applicable.
+            txnCategoryNames: cats ? Array.from(cats).sort((a, b) => a.localeCompare(b)) : [],
           };
         })}
         rules={rules.map((r) => ({
