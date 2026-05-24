@@ -225,14 +225,25 @@ export async function POST(req: NextRequest) {
 
   // Pre-load every existing vendor in the workspace so we can look up
   // "have we seen this vendor before, and if so what category did the
-  // user pin to it?" in memory. The Vendor.categoryId field IS the
-  // vendor→category memory the spec calls for. Case-insensitive keys
-  // match the @@unique([businessId, name]) collation in practice.
+  // user pin to it?" in memory. Lookups go via canonical name AND any
+  // alias the vendor absorbed in past merges — so an "Interest X"
+  // upload finds the canonical "Bank Leumi" vendor even if the user
+  // merged it weeks ago.
   const existingVendors = await prisma.vendor.findMany({
     where: { businessId: business.id },
-    select: { id: true, name: true, categoryId: true, isOneTime: true },
+    select: { id: true, name: true, categoryId: true, isOneTime: true, aliases: true },
   });
-  const vendorByName = new Map(existingVendors.map((v) => [v.name.toLowerCase(), v]));
+  const vendorByName = new Map<string, typeof existingVendors[number]>();
+  for (const v of existingVendors) {
+    vendorByName.set(v.name.toLowerCase(), v);
+    for (const alias of v.aliases) {
+      const k = alias.toLowerCase();
+      // If the same alias somehow points at two vendors (shouldn't —
+      // merges enforce uniqueness), the older vendor wins. Don't
+      // overwrite the canonical name with an alias.
+      if (!vendorByName.has(k)) vendorByName.set(k, v);
+    }
+  }
   // Track every NEW vendor name we see in this import so we can create
   // the Vendor rows in one upsert pass after the row-processing loop.
   const newVendorNames = new Set<string>();

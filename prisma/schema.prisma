@@ -528,6 +528,11 @@ model Vendor {
   // Like Category.isOneTime — transactions matching this vendor inherit
   // this default when no transaction-level override is set.
   isOneTime  Boolean   @default(false)
+  // Alternate names this vendor absorbed via merges (lowercase).
+  // Upload-time vendor lookup matches by name OR by any alias, so a
+  // future upload of "Interest X" finds the canonical "Bank Leumi"
+  // vendor that absorbed it in a prior merge.
+  aliases    String[]  @default([])
   createdAt  DateTime  @default(now())
 
   // Reverse side of Category.primaryVendor relation.

@@ -1,5 +1,6 @@
 "use client";
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import RulesClient from "../rules/RulesClient";
@@ -749,7 +750,19 @@ export default function SettingsClient({
               <tbody>
                 {[...unassignedVendors, ...vends.filter((v) => v.categoryId)].map((v) => (
                   <tr key={v.id}>
-                    <td>{v.name}</td>
+                    <td>
+                      {v.transactionCount > 0 ? (
+                        <Link
+                          href={`/transactions?vendor=${encodeURIComponent(v.name)}`}
+                          className="text-slate-100 hover:text-accent underline-offset-2 hover:underline"
+                          title="Drill into every transaction tagged with this vendor"
+                        >
+                          {v.name}
+                        </Link>
+                      ) : (
+                        <span className="text-slate-300">{v.name}</span>
+                      )}
+                    </td>
                     <td>
                       {v.categoryId ? (
                         <span className="pill text-[10px]">categorized</span>

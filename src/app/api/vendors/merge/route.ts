@@ -54,13 +54,25 @@ export async function POST(req: NextRequest) {
         },
         data: { vendor: to.name },
       });
-      // Inherit categoryId / isOneTime if the TO row was blank but FROM had it.
-      const patch: { categoryId?: string; isOneTime?: boolean } = {};
+      // Patch the TO row: inherit categoryId/isOneTime from FROM if
+      // blank, and append the FROM's canonical name + any aliases it
+      // already had to the TO's aliases array. This is what makes
+      // future uploads of the absorbed name auto-find the canonical
+      // vendor instead of creating a fresh row.
+      const mergedAliasSet = new Set<string>([
+        ...to.aliases.map((a) => a.toLowerCase()),
+        from.name.toLowerCase(),
+        ...from.aliases.map((a) => a.toLowerCase()),
+      ]);
+      // Don't include the TO vendor's own name as an alias of itself.
+      mergedAliasSet.delete(to.name.toLowerCase());
+      const patch: { categoryId?: string; isOneTime?: boolean; aliases: string[] } = {
+        aliases: Array.from(mergedAliasSet),
+      };
       if (!to.categoryId && from.categoryId) patch.categoryId = from.categoryId;
       if (!to.isOneTime  && from.isOneTime)  patch.isOneTime  = true;
-      if (Object.keys(patch).length > 0) {
-        await tx.vendor.update({ where: { id: to.id }, data: patch });
-      }
+      await tx.vendor.update({ where: { id: to.id }, data: patch });
+
       // Move any Category.primaryVendor pointers off the source.
       await tx.category.updateMany({
         where: { businessId: business.id, primaryVendorId: from.id },
