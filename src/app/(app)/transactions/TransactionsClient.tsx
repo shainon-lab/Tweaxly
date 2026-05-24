@@ -106,6 +106,53 @@ export default function TransactionsClient({
     startTransition(() => router.refresh());
   }
 
+  // After a user categorizes an uncategorized row, offer to pin the
+  // category to its vendor so future uploads + past uncategorized rows
+  // from the same vendor flip automatically. Spec: "Apply this category
+  // to the vendor going forward [+ past uncategorized transactions]".
+  const [vendorPrompt, setVendorPrompt] = useState<{
+    txnId:        string;
+    vendorName:   string;
+    categoryId:   string;
+    categoryName: string;
+  } | null>(null);
+
+  function maybePromptVendorPin(t: Txn, newCategoryId: string | null) {
+    if (!newCategoryId) return;
+    // Only prompt when the row was previously uncategorized — otherwise
+    // every routine category edit would trigger the toast.
+    const wasUncategorized = !t.categoryId
+      || t.categoryName === "Uncategorized"
+      || t.categoryName === "Undefined Category";
+    if (!wasUncategorized) return;
+    const cat = categories.find((c) => c.id === newCategoryId);
+    if (!cat) return;
+    const vendorName = (t.vendor ?? t.description ?? "").trim();
+    if (!vendorName) return;
+    setVendorPrompt({
+      txnId:        t.id,
+      vendorName,
+      categoryId:   newCategoryId,
+      categoryName: cat.name,
+    });
+  }
+
+  async function applyVendorCategory(applyToPast: boolean) {
+    if (!vendorPrompt) return;
+    const res = await fetch("/api/vendors/apply-category", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        vendorName: vendorPrompt.vendorName,
+        categoryId: vendorPrompt.categoryId,
+        applyToPast,
+      }),
+    });
+    setVendorPrompt(null);
+    if (!res.ok) { alert(await res.text()); return; }
+    startTransition(() => router.refresh());
+  }
+
   function openIgnoreSingle(txn: Txn) {
     setIgnoreTarget({ kind: "single", txn });
     setIgnoreNote(txn.excludeNote ?? "");
@@ -326,7 +373,11 @@ export default function TransactionsClient({
                     <select
                       className="input max-w-[200px] py-1"
                       value={t.categoryId ?? ""}
-                      onChange={(e) => updateOne(t.id, { categoryId: e.target.value || null } as never)}
+                      onChange={(e) => {
+                        const newId = e.target.value || null;
+                        updateOne(t.id, { categoryId: newId } as never);
+                        maybePromptVendorPin(t, newId);
+                      }}
                     >
                       <option value="">Uncategorized</option>
                       {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -454,6 +505,45 @@ export default function TransactionsClient({
                 {ignoreSaving ? "Saving…" : "Mark as not calculated"}
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Vendor-pin toast — non-modal, bottom-right. Appears after the
+          user categorizes a previously-uncategorized row; offers to
+          remember the choice for the vendor (so future uploads auto-
+          categorize) and optionally backfill past uncategorized rows
+          from the same vendor. */}
+      {vendorPrompt ? (
+        <div className="fixed bottom-6 right-6 z-50 max-w-sm card border-accent/50 bg-ink-900/95 backdrop-blur shadow-xl shadow-black/40">
+          <div className="text-sm text-slate-100 font-medium mb-1">
+            Remember this category for <span className="text-accent">{vendorPrompt.vendorName}</span>?
+          </div>
+          <div className="text-xs text-slate-400 mb-3 leading-relaxed">
+            Future uploads with this vendor will auto-categorize as <span className="text-slate-200 font-medium">{vendorPrompt.categoryName}</span>. You can also apply it to past uncategorized rows now.
+          </div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => applyVendorCategory(true)}
+              className="text-xs font-medium px-3 py-1.5 rounded-md bg-accent text-white hover:bg-accent/90 transition"
+            >
+              Future + past
+            </button>
+            <button
+              type="button"
+              onClick={() => applyVendorCategory(false)}
+              className="text-xs font-medium px-3 py-1.5 rounded-md border border-accent/40 text-accent hover:bg-accent-soft/30 transition"
+            >
+              Future only
+            </button>
+            <button
+              type="button"
+              onClick={() => setVendorPrompt(null)}
+              className="text-xs text-slate-500 hover:text-slate-300 ml-auto"
+            >
+              Just this one
+            </button>
           </div>
         </div>
       ) : null}

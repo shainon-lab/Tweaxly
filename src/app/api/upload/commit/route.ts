@@ -223,27 +223,45 @@ export async function POST(req: NextRequest) {
   // we don't hit the DB once per row when the same vendor appears repeatedly.
   const categoryCache = new Map<string, { id: string; isOneTime: boolean }>();
 
-  // PASS 1: pre-aggregate transactions per name to set kind correctly when
-  // creating new categories. (E.g. if a vendor's net is income, mark
-  // kind=revenue; otherwise kind=other.) This way the first transaction's
-  // sign doesn't lock a category into the wrong bucket.
+  // Pre-load every existing vendor in the workspace so we can look up
+  // "have we seen this vendor before, and if so what category did the
+  // user pin to it?" in memory. The Vendor.categoryId field IS the
+  // vendor→category memory the spec calls for. Case-insensitive keys
+  // match the @@unique([businessId, name]) collation in practice.
+  const existingVendors = await prisma.vendor.findMany({
+    where: { businessId: business.id },
+    select: { id: true, name: true, categoryId: true, isOneTime: true },
+  });
+  const vendorByName = new Map(existingVendors.map((v) => [v.name.toLowerCase(), v]));
+  // Track every NEW vendor name we see in this import so we can create
+  // the Vendor rows in one upsert pass after the row-processing loop.
+  const newVendorNames = new Set<string>();
+
+  // PASS 1: per-row classification.
+  //   1. Apply any CategorizationRule (persisted pattern rules).
+  //   2. Else, if the user mapped a Category column AND the row has a
+  //      non-empty value, that's the category name.
+  //   3. Else, look the vendor up in the Vendor table. If it exists
+  //      with a categoryId, use that. (This is the "remember the
+  //      category for this vendor" behavior.)
+  //   4. Else, fall back to "Undefined Category". The vendor row is
+  //      auto-created (with no categoryId) so future uploads can
+  //      learn from it once the user assigns a category.
   type RowInfo = {
-    norm: ReturnType<typeof normalizeRow>;
-    name: string | null;
+    norm:           ReturnType<typeof normalizeRow>;
+    vendorName:     string | null;
+    name:           string | null; // category name (used when categoryId not resolved yet)
     ruleCategoryId: string | null;
+    vendorCategoryId: string | null; // resolved from Vendor.categoryId
   };
   const rowInfos: RowInfo[] = [];
   const netByName = new Map<string, number>();
   const forceDir = body.forceDirection;
-  // Canonical name for the catch-all bucket. Every imported row that
-  // doesn't get a category from (1) an explicit Category column in the
-  // file or (2) a CategorizationRule lands here. Surfaced as a banner
-  // on the dashboard / reports / data section so the owner can review.
   const UNDEFINED_CATEGORY = "Undefined Category";
   for (const row of body.rows) {
     const norm = normalizeRow(row, body.mapping, body.source, business.currency, sign);
     if (!norm) {
-      rowInfos.push({ norm, name: null, ruleCategoryId: null });
+      rowInfos.push({ norm, vendorName: null, name: null, ruleCategoryId: null, vendorCategoryId: null });
       continue;
     }
     // Apply forceDirection: every row force-signed to match the user's choice.
@@ -252,41 +270,67 @@ export async function POST(req: NextRequest) {
       norm.amount = forceDir === "income" ? magnitude : -magnitude;
       norm.type = forceDir === "income" ? "income" : "expense";
     }
-    // Apply forceAccountingMonth: every row gets bucketed into this month
-    // regardless of the row's parsed transaction date.
-    if (forceYM) {
-      norm.accountingMonth = forceYM;
-    }
+    if (forceYM) norm.accountingMonth = forceYM;
+
+    // Identify the vendor for this row — prefer the explicitly mapped
+    // vendor column; fall back to description if the file only had one
+    // merchant field. normalizeName trims + collapses whitespace.
+    const vendorName = normalizeName(norm.vendor || norm.description || "") || null;
+
     const ruleApp = findApplicableRule(rules, {
       description: norm.description,
       vendor: norm.vendor,
       source: body.source,
     });
-    // Category precedence per the user-facing spec:
-    //   1. CategorizationRule match — persisted automation
-    //   2. norm.rawCategory — the value in the Category column the user
-    //      mapped in the wizard, if any
-    //   3. UNDEFINED_CATEGORY — fallback bucket that triggers the
-    //      "transactions need categorizing" review alert.
-    // We no longer auto-create a category named after the vendor —
-    // explicit user intent or the catch-all bucket only.
+
     let name: string | null = null;
+    let vendorCategoryId: string | null = null;
     if (!ruleApp) {
       const explicit = (norm.rawCategory ?? "").trim();
       if (explicit) {
+        // User mapped a Category column and the row had a value.
         name = normalizeName(explicit);
+      } else if (vendorName) {
+        // Look up the vendor's pinned category.
+        const v = vendorByName.get(vendorName.toLowerCase());
+        if (v?.categoryId) {
+          vendorCategoryId = v.categoryId;
+        } else {
+          name = UNDEFINED_CATEGORY;
+          // If this is a brand-new vendor, queue it for creation so the
+          // next upload's vendor lookup can find it.
+          if (!v) newVendorNames.add(vendorName);
+        }
       } else {
+        // No vendor / description either — still send to the catch-all
+        // so the row stays reviewable.
         name = UNDEFINED_CATEGORY;
       }
     }
     rowInfos.push({
       norm,
+      vendorName,
       name,
       ruleCategoryId: ruleApp?.categoryId ?? null,
+      vendorCategoryId,
     });
     if (name) {
       netByName.set(name, (netByName.get(name) ?? 0) + norm.amount);
     }
+  }
+
+  // Create any brand-new Vendor rows so future uploads can read them.
+  // skipDuplicates handles the race where the same vendor name shows
+  // up multiple times in the same import batch.
+  if (newVendorNames.size > 0) {
+    await prisma.vendor.createMany({
+      data: Array.from(newVendorNames).map((name) => ({
+        businessId: business.id,
+        name,
+        categoryId: null,
+      })),
+      skipDuplicates: true,
+    });
   }
 
   async function ensureCategoryByName(name: string, netAmount: number) {
@@ -328,7 +372,12 @@ export async function POST(req: NextRequest) {
   for (const info of rowInfos) {
     if (!info.norm) continue;
     const norm = info.norm;
-    let categoryId: string | null = info.ruleCategoryId;
+    // Precedence at write time:
+    //   1. ruleCategoryId (CategorizationRule)
+    //   2. vendorCategoryId (Vendor.categoryId — pinned vendor)
+    //   3. ensureCategoryByName(info.name) — explicit Category-column
+    //      value OR "Undefined Category" fallback
+    let categoryId: string | null = info.ruleCategoryId ?? info.vendorCategoryId;
     let isOneTime = false;
     if (!categoryId && info.name) {
       const cat = await ensureCategoryByName(info.name, netByName.get(info.name) ?? norm.amount);
