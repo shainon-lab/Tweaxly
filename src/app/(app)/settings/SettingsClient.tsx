@@ -437,20 +437,6 @@ export default function SettingsClient({
   }
 
   // "GENERAL" or a specific vendor - picks the category's primary vendor.
-  async function setPrimaryVendor(catId: string, raw: string) {
-    const primaryVendorId = raw === "__general__" ? null : raw;
-    setCats((cur) => cur.map((c) => (c.id === catId ? { ...c, primaryVendorId } : c)));
-    const res = await fetch("/api/categories", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: catId, primaryVendorId }),
-    });
-    if (!res.ok) {
-      alert(await res.text());
-      startTransition(() => router.refresh());
-      return;
-    }
-    startTransition(() => router.refresh());
-  }
 
   // Vendor → category assignment, with a special "__new__" sentinel that
   // prompts for a brand-new category name, creates it, and then assigns.
@@ -688,7 +674,6 @@ export default function SettingsClient({
                   <th className="text-right">Vendors</th>
                   <th className="text-right">Transactions</th>
                   <th className="text-right">Total</th>
-                  <th>Primary vendor</th>
                   <th>One-time?</th>
                   <th></th>
                 </tr>
@@ -708,19 +693,6 @@ export default function SettingsClient({
                       <td className="text-right text-slate-300">{c.transactionCount}</td>
                       <td className="text-right text-slate-300 font-mono text-xs">
                         {!c.totalAmount ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                      </td>
-                      <td>
-                        <select
-                          className="input max-w-[220px] py-1"
-                          value={c.primaryVendorId ?? "__general__"}
-                          onChange={(e) => setPrimaryVendor(c.id, e.target.value)}
-                          title="Primary vendor for this category. GENERAL means no specific vendor is highlighted."
-                        >
-                          <option value="__general__">GENERAL</option>
-                          {vends.map((v) => (
-                            <option key={v.id} value={v.id}>{v.name}</option>
-                          ))}
-                        </select>
                       </td>
                       <td>
                         <button
