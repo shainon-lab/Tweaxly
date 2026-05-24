@@ -1,6 +1,9 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import BulkCategoryPicker, { type PickerCategory } from "@/components/transactions/BulkCategoryPicker";
+import BulkVendorPicker, { type PickerVendor } from "@/components/transactions/BulkVendorPicker";
 
 type Txn = {
   id: string;
@@ -31,6 +34,7 @@ type Category = { id: string; name: string; kind: string };
 export default function TransactionsClient({
   txns,
   categories,
+  vendors,
   months,
   sources,
   currency,
@@ -38,6 +42,7 @@ export default function TransactionsClient({
 }: {
   txns: Txn[];
   categories: Category[];
+  vendors: PickerVendor[];
   months: string[];
   sources: string[];
   currency: string;
@@ -46,8 +51,48 @@ export default function TransactionsClient({
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
-  const [bulkCategory, setBulkCategory] = useState<string>("");
-  const [bulkVendor,   setBulkVendor]   = useState<string>("");
+  const [cats, setCats]     = useState<Category[]>(categories);
+  // Picker visibility
+  const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
+  const [vendorPickerOpen,   setVendorPickerOpen]   = useState(false);
+  // Sort state — column key + direction. Default = most-recent date first.
+  // Clicking the same column header toggles asc/desc; clicking a
+  // different column switches column and resets to default direction
+  // (desc for numeric/date columns, asc for text).
+  type SortKey = "date" | "month" | "source" | "description" | "vendor" | "amount" | "category" | "flags";
+  const [sortBy,  setSortBy]  = useState<SortKey>("date");
+  const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
+
+  function toggleSort(col: SortKey) {
+    if (col === sortBy) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortBy(col);
+      setSortDir(col === "date" || col === "amount" ? "desc" : "asc");
+    }
+  }
+
+  // Client-side sort of the current page of transactions. Server
+  // returns up to 500 rows; sorting in-memory keeps the interaction
+  // instant without another round-trip.
+  const sortedTxns = useMemo(() => {
+    const sign = sortDir === "asc" ? 1 : -1;
+    const arr = [...txns];
+    arr.sort((a, b) => {
+      const cmp =
+        sortBy === "date"        ? a.transactionDate.localeCompare(b.transactionDate)
+      : sortBy === "month"       ? a.accountingMonth.localeCompare(b.accountingMonth)
+      : sortBy === "source"      ? a.source.localeCompare(b.source)
+      : sortBy === "description" ? (a.description ?? "").localeCompare(b.description ?? "")
+      : sortBy === "vendor"      ? (a.vendor ?? "").localeCompare(b.vendor ?? "")
+      : sortBy === "amount"      ? a.amount - b.amount
+      : sortBy === "category"    ? a.categoryName.localeCompare(b.categoryName)
+      : sortBy === "flags"       ? flagWeight(a) - flagWeight(b)
+      :                            0;
+      return cmp * sign;
+    });
+    return arr;
+  }, [txns, sortBy, sortDir]);
   const [q, setQ] = useState(filters.q);
   const [src, setSrc] = useState(filters.source);
   const [ym, setYm] = useState(filters.ym);
@@ -93,7 +138,6 @@ export default function TransactionsClient({
       return;
     }
     setSelected(new Set());
-    setBulkCategory("");
     startTransition(() => router.refresh());
   }
 
@@ -118,19 +162,16 @@ export default function TransactionsClient({
     categoryName: string;
   } | null>(null);
 
-  // Bulk Apply Category — same path as the existing `bulk("setCategory")`
-  // call, but afterwards: if ALL selected rows share one vendor AND
-  // every row was previously uncategorized, surface the vendor-pin
-  // toast so the user can pin once and have future uploads + past
-  // rows from the same vendor auto-categorize.
-  async function applyBulkCategory() {
-    if (!bulkCategory) return;
-    const cat = categories.find((c) => c.id === bulkCategory);
-    const targetCategoryId = bulkCategory;
-    // Snapshot the selection BEFORE the bulk call clears it.
+  // Bulk Apply Category — fired by the BulkCategoryPicker after the
+  // user picks (or creates + picks) a category. Snapshots the
+  // selection first; after the bulk call, if every selected row
+  // was uncategorized AND they all share one vendor, surface the
+  // vendor-pin toast so the user can pin once and have future
+  // uploads + past rows auto-categorize.
+  async function applyBulkCategory(targetCategoryId: string, targetCategoryName: string) {
     const selectedTxns = txns.filter((t) => selected.has(t.id));
+    setCategoryPickerOpen(false);
     await bulk("setCategory", { categoryId: targetCategoryId });
-    if (!cat) return;
     const vendorNames = new Set(
       selectedTxns
         .map((t) => (t.vendor ?? t.description ?? "").trim())
@@ -146,9 +187,32 @@ export default function TransactionsClient({
         txnId:        selectedTxns[0].id,
         vendorName:   Array.from(vendorNames)[0],
         categoryId:   targetCategoryId,
-        categoryName: cat.name,
+        categoryName: targetCategoryName,
       });
     }
+  }
+
+  // Create-and-add a category from the picker. POSTs /api/categories,
+  // updates local list, returns the new row so the picker can
+  // auto-pick it.
+  async function createCategoryFromPicker(name: string, kind: "revenue" | "variable"): Promise<PickerCategory> {
+    const res = await fetch("/api/categories", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, kind, isOneTime: false }),
+    });
+    if (!res.ok) throw new Error(await res.text() || "create failed");
+    const created = await res.json();
+    const row: PickerCategory = { id: created.id, name: created.name, kind: created.kind };
+    setCats((cur) => [...cur, row]);
+    return row;
+  }
+
+  // Bulk Apply Vendor — fired by the BulkVendorPicker. The Vendor
+  // row is upserted server-side by the bulk endpoint, so we just
+  // pass the chosen name.
+  async function applyBulkVendor(vendorName: string) {
+    setVendorPickerOpen(false);
+    await bulk("setVendor", { vendor: vendorName });
   }
 
   async function applyVendorCategory(applyToPast: boolean) {
@@ -274,30 +338,23 @@ export default function TransactionsClient({
       {selected.size > 0 ? (
         <div className="card-tight mb-3 flex flex-wrap items-center gap-3">
           <div className="text-sm text-slate-300">{selected.size} selected</div>
-          <select className="input max-w-[260px]" value={bulkCategory} onChange={(e) => setBulkCategory(e.target.value)}>
-            <option value="">Set category…</option>
-            {categories.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.kind})</option>)}
-          </select>
-          <button className="btn-ghost" disabled={!bulkCategory || pending} onClick={applyBulkCategory}>Apply category</button>
-          {/* Vendor normalization — merge similar raw descriptions
-              under one vendor. The Vendor row gets upserted server-
-              side; if it already has a pinned category, still-
-              uncategorized rows inherit it on the same request. */}
-          <input
-            className="input max-w-[200px]"
-            value={bulkVendor}
-            onChange={(e) => setBulkVendor(e.target.value)}
-            placeholder="Set vendor (e.g. Bank Leumi)"
-          />
+          {/* Pickers replace the old inline category dropdown + vendor
+              input. Each opens a modal that searches existing items,
+              shows suggested commons (category only), and supports
+              create-then-pick in a single action. */}
           <button
             className="btn-ghost"
-            disabled={!bulkVendor.trim() || pending}
-            onClick={async () => {
-              await bulk("setVendor", { vendor: bulkVendor.trim() });
-              setBulkVendor("");
-            }}
+            disabled={pending}
+            onClick={() => setCategoryPickerOpen(true)}
           >
-            Apply vendor
+            Set category…
+          </button>
+          <button
+            className="btn-ghost"
+            disabled={pending}
+            onClick={() => setVendorPickerOpen(true)}
+          >
+            Set vendor…
           </button>
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("toggleOneTime", { value: true })}>Mark one-time</button>
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("toggleRecurring", { value: true })}>Mark recurring</button>
@@ -326,20 +383,20 @@ export default function TransactionsClient({
         <table className="table-base min-w-[1200px]">
           <thead>
             <tr>
-              <th className="w-8"><input type="checkbox" checked={selected.size === txns.length && txns.length > 0} onChange={toggleAll} /></th>
-              <th>Date</th>
-              <th>Acct. month</th>
-              <th>Source</th>
-              <th>Description</th>
-              <th>Vendor</th>
-              <th className="text-right">Amount</th>
-              <th>Category</th>
-              <th>Flags</th>
+              <th className="w-8"><input type="checkbox" checked={selected.size === sortedTxns.length && sortedTxns.length > 0} onChange={toggleAll} /></th>
+              <SortHeader col="date"        sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Date</SortHeader>
+              <SortHeader col="month"       sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Acct. month</SortHeader>
+              <SortHeader col="source"      sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Source</SortHeader>
+              <SortHeader col="description" sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Description</SortHeader>
+              <SortHeader col="vendor"      sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Vendor</SortHeader>
+              <SortHeader col="amount"      sortBy={sortBy} sortDir={sortDir} onClick={toggleSort} align="right">Amount</SortHeader>
+              <SortHeader col="category"    sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Category</SortHeader>
+              <SortHeader col="flags"       sortBy={sortBy} sortDir={sortDir} onClick={toggleSort}>Flags</SortHeader>
               <th className="text-right">Action</th>
             </tr>
           </thead>
           <tbody>
-            {txns.map((t) => {
+            {sortedTxns.map((t) => {
               const sign = t.amount >= 0;
               const ignored = t.isExcludedFromPnl;
               const rowTone = selected.has(t.id)
@@ -494,7 +551,7 @@ export default function TransactionsClient({
                 </tr>
               );
             })}
-            {txns.length === 0 ? (
+            {sortedTxns.length === 0 ? (
               <tr><td colSpan={9} className="text-center py-8 text-slate-400">No transactions match these filters.</td></tr>
             ) : null}
           </tbody>
@@ -595,6 +652,65 @@ export default function TransactionsClient({
           </div>
         </div>
       ) : null}
+
+      {/* Bulk category + vendor pickers. Both keep the new
+          "create-and-apply in one action" UX the spec requires. */}
+      <BulkCategoryPicker
+        open={categoryPickerOpen}
+        onClose={() => setCategoryPickerOpen(false)}
+        categories={cats}
+        onPick={(id, name) => applyBulkCategory(id, name)}
+        onCreate={(name, kind) => createCategoryFromPicker(name, kind)}
+      />
+      <BulkVendorPicker
+        open={vendorPickerOpen}
+        onClose={() => setVendorPickerOpen(false)}
+        vendors={vendors}
+        onPick={(name) => applyBulkVendor(name)}
+      />
     </>
   );
+}
+
+// Sortable column header. Renders a click-able button inside the th
+// with an indicator chevron: up for asc, down for desc, double for
+// "click me to sort". align="right" mirrors the alignment for the
+// Amount column.
+function SortHeader<K extends string>({
+  col, sortBy, sortDir, onClick, align = "left", children,
+}: {
+  col: K;
+  sortBy: K;
+  sortDir: "asc" | "desc";
+  onClick: (col: K) => void;
+  align?: "left" | "right";
+  children: React.ReactNode;
+}) {
+  const active = col === sortBy;
+  const Icon = !active ? ChevronsUpDown : sortDir === "asc" ? ChevronUp : ChevronDown;
+  return (
+    <th className={align === "right" ? "text-right" : ""}>
+      <button
+        type="button"
+        onClick={() => onClick(col)}
+        className={`inline-flex items-center gap-1 text-left transition ${
+          active ? "text-slate-100" : "text-slate-400 hover:text-slate-200"
+        }`}
+      >
+        <span>{children}</span>
+        <Icon size={12} strokeWidth={2.5} className={active ? "opacity-100" : "opacity-50"} />
+      </button>
+    </th>
+  );
+}
+
+// Numeric weight for the Flags column so it can be sorted by "how
+// noisy this row is": duplicates > excluded > one-time > recurring > 0.
+function flagWeight(t: { isDuplicateCandidate: boolean; isExcludedFromPnl: boolean; isOneTime: boolean; isRecurring: boolean }): number {
+  let w = 0;
+  if (t.isDuplicateCandidate) w += 8;
+  if (t.isExcludedFromPnl)    w += 4;
+  if (t.isOneTime)            w += 2;
+  if (t.isRecurring)          w += 1;
+  return w;
 }

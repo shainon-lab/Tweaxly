@@ -34,7 +34,7 @@ export default async function TransactionsPage({
     { category: { name: "Undefined Category" } },
   ];
 
-  const [txns, categoriesRaw, months, sources] = await Promise.all([
+  const [txns, categoriesRaw, vendorsRaw, months, sources] = await Promise.all([
     prisma.transaction.findMany({
       where,
       include: { category: true },
@@ -43,6 +43,11 @@ export default async function TransactionsPage({
     }),
     prisma.category.findMany({
       where: { businessId: business.id },
+    }),
+    prisma.vendor.findMany({
+      where: { businessId: business.id },
+      select: { id: true, name: true },
+      orderBy: { name: "asc" },
     }),
     prisma.transaction.findMany({
       where: { businessId: business.id },
@@ -104,6 +109,7 @@ export default async function TransactionsPage({
           categoryName: t.category?.name ?? "Uncategorized",
         }))}
         categories={categories.map((c) => ({ id: c.id, name: c.name, kind: c.kind }))}
+        vendors={vendorsRaw}
         months={months.map((m) => m.accountingMonth)}
         sources={sources.map((s) => s.source)}
         currency={business.currency}
