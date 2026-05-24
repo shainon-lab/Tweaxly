@@ -46,7 +46,7 @@ export default function TransactionsClient({
   months: string[];
   sources: string[];
   currency: string;
-  filters: { q: string; source: string; ym: string; uncategorized: boolean };
+  filters: { q: string; source: string; ym: string; uncategorized: boolean; unvendorized: boolean };
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -97,6 +97,7 @@ export default function TransactionsClient({
   const [src, setSrc] = useState(filters.source);
   const [ym, setYm] = useState(filters.ym);
   const [unc, setUnc] = useState(filters.uncategorized);
+  const [unv, setUnv] = useState(filters.unvendorized);
   const [ignoreTarget, setIgnoreTarget] = useState<IgnoreTarget | null>(null);
   const [ignoreNote, setIgnoreNote] = useState<string>("");
   const [ignoreSaving, setIgnoreSaving] = useState(false);
@@ -123,6 +124,7 @@ export default function TransactionsClient({
     if (src) sp.set("source", src);
     if (ym) sp.set("ym", ym);
     if (unc) sp.set("uncategorized", "1");
+    if (unv) sp.set("unvendorized", "1");
     router.push("/transactions" + (sp.toString() ? "?" + sp.toString() : ""));
   }
 
@@ -325,10 +327,14 @@ export default function TransactionsClient({
               {months.map((m) => <option key={m} value={m}>{m}</option>)}
             </select>
           </div>
-          <div className="flex items-end gap-2">
+          <div className="flex items-end gap-3 flex-wrap">
             <label className="flex items-center gap-2 text-sm text-slate-300 mb-2">
               <input type="checkbox" checked={unc} onChange={(e) => setUnc(e.target.checked)} />
               Uncategorized
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-300 mb-2" title="Show rows where Vendor isn't set yet — use the Set vendor bulk action to normalize them.">
+              <input type="checkbox" checked={unv} onChange={(e) => setUnv(e.target.checked)} />
+              Unvendorized
             </label>
             <button className="btn-primary mb-0" onClick={applyFilters}>Apply</button>
           </div>

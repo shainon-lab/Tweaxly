@@ -9,7 +9,7 @@ import TransactionsClient from "./TransactionsClient";
 
 export default async function TransactionsPage({
   searchParams,
-}: { searchParams: Promise<{ q?: string; source?: string; ym?: string; uncategorized?: string; vendor?: string }> }) {
+}: { searchParams: Promise<{ q?: string; source?: string; ym?: string; uncategorized?: string; unvendorized?: string; vendor?: string }> }) {
   const { business } = await requireBusiness();
   const { t } = await getServerT();
   const sp = await searchParams;
@@ -33,6 +33,20 @@ export default async function TransactionsPage({
     { category: { name: "Uncategorized" } },
     { category: { name: "Undefined Category" } },
   ];
+  // ?unvendorized=1 — matches rows where Transaction.vendor is null
+  // OR empty string. Used by the "Unvendorized only" filter chip so
+  // the owner can focus on rows that still need a vendor assigned.
+  if (sp.unvendorized === "1") {
+    const vendorClause = { OR: [{ vendor: null }, { vendor: "" }] };
+    // If both uncategorized + unvendorized are set, AND them together
+    // via the existing `where.OR` (becomes `AND` on the where root).
+    if (where.OR) {
+      where.AND = [{ OR: where.OR }, vendorClause];
+      delete where.OR;
+    } else {
+      where.OR = vendorClause.OR;
+    }
+  }
 
   const [txns, categoriesRaw, vendorsRaw, months, sources] = await Promise.all([
     prisma.transaction.findMany({
@@ -113,7 +127,7 @@ export default async function TransactionsPage({
         months={months.map((m) => m.accountingMonth)}
         sources={sources.map((s) => s.source)}
         currency={business.currency}
-        filters={{ q: sp.q ?? "", source: sp.source ?? "", ym: sp.ym ?? "", uncategorized: sp.uncategorized === "1" }}
+        filters={{ q: sp.q ?? "", source: sp.source ?? "", ym: sp.ym ?? "", uncategorized: sp.uncategorized === "1", unvendorized: sp.unvendorized === "1" }}
       />
     </>
   );
