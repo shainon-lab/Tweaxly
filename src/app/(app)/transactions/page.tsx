@@ -47,6 +47,14 @@ export default async function TransactionsPage({
       where.OR = vendorClause.OR;
     }
   }
+  // Hide ignored rows from the focus filters — once a user has
+  // explicitly marked a row as "not calculated", it's handled and
+  // shouldn't keep showing up in the uncategorized / unvendorized
+  // worklists. The default (neither chip checked) still shows
+  // everything so the user can find an ignored row by other filters.
+  if (sp.uncategorized === "1" || sp.unvendorized === "1") {
+    where.isExcludedFromPnl = false;
+  }
 
   const [txns, categoriesRaw, vendorsRaw, months, sources] = await Promise.all([
     prisma.transaction.findMany({
