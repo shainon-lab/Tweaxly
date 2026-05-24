@@ -78,15 +78,28 @@ export default async function SettingsPage() {
       .filter((v): v is typeof v & { categoryId: string } => v.categoryId != null)
       .map((v) => [v.categoryId, v._count._all]),
   );
-  // Build a names-per-category map so the Categories table can show
-  // "Stripe, PayPal, Bank Leumi (3)" instead of just a count. Sorted
-  // alphabetically inside each category for stable ordering.
+  // Build a names-per-category map sourced from the Transaction.vendor
+  // strings actually present on rows in each category (NOT from the
+  // Vendor.categoryId pins, which only cover vendors the user has
+  // explicitly pinned). This way the column reflects every vendor that
+  // currently has activity in the category, including ones still
+  // awaiting a pin.
+  const txnVendorPairs = await prisma.transaction.groupBy({
+    by: ["categoryId", "vendor"],
+    where: {
+      businessId: business.id,
+      categoryId: { not: null },
+      vendor:     { not: null },
+      isExcludedFromPnl: false,
+    },
+    _count: { _all: true },
+  });
   const vendorNamesByCategoryId = new Map<string, string[]>();
-  for (const v of vendors) {
-    if (!v.categoryId) continue;
-    const list = vendorNamesByCategoryId.get(v.categoryId) ?? [];
-    list.push(v.name);
-    vendorNamesByCategoryId.set(v.categoryId, list);
+  for (const row of txnVendorPairs) {
+    if (!row.categoryId || !row.vendor) continue;
+    const list = vendorNamesByCategoryId.get(row.categoryId) ?? [];
+    list.push(row.vendor);
+    vendorNamesByCategoryId.set(row.categoryId, list);
   }
   for (const list of vendorNamesByCategoryId.values()) {
     list.sort((a, b) => a.localeCompare(b));

@@ -698,7 +698,7 @@ export default function SettingsClient({
                           title={c.vendorNames.join("\n")}
                         >
                           <span className="line-clamp-2">{c.vendorNames.join(", ")}</span>
-                          <span className="text-slate-500"> ({c.vendorCount})</span>
+                          <span className="text-slate-500"> ({c.vendorNames.length})</span>
                         </span>
                       );
                   return (
