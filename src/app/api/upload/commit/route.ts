@@ -283,13 +283,34 @@ export async function POST(req: NextRequest) {
       source: body.source,
     });
 
+    // Per the spec: NEVER auto-create a category from a raw string.
+    // We only ever use a categoryId that's already a real workspace
+    // category, OR the single canonical "Undefined Category" bucket.
+    // This prevents "category explosion" where every distinct
+    // description (or Category-column value) spawns a new category.
     let name: string | null = null;
     let vendorCategoryId: string | null = null;
     if (!ruleApp) {
       const explicit = (norm.rawCategory ?? "").trim();
       if (explicit) {
-        // User mapped a Category column and the row had a value.
-        name = normalizeName(explicit);
+        // User mapped a Category column. Match the value against
+        // EXISTING workspace categories (case-insensitive). If the
+        // workspace doesn't have that category yet, fall to Undefined
+        // — the user can review on Transactions and either rename a
+        // category or create it explicitly, then bulk-assign.
+        const existing = await prisma.category.findFirst({
+          where: {
+            businessId: business.id,
+            name: { equals: explicit, mode: "insensitive" },
+          },
+          select: { id: true, isOneTime: true },
+        });
+        if (existing) {
+          vendorCategoryId = existing.id;
+          categoryCache.set(explicit.toLowerCase(), existing);
+        } else {
+          name = UNDEFINED_CATEGORY;
+        }
       } else if (vendorName) {
         // Look up the vendor's pinned category.
         const v = vendorByName.get(vendorName.toLowerCase());
@@ -340,26 +361,27 @@ export async function POST(req: NextRequest) {
       where: { businessId: business.id, name },
     });
     if (!cat) {
-      // Decide kind:
-      //   - Net inflow ⇒ revenue (income wins, even when the name happens to
-      //     match a non-revenue heuristic like "stripe" or "paypal")
-      //   - Net outflow + name matches a known expense bucket ⇒ that bucket
-      //   - Net outflow + unknown name ⇒ "other"
-      const heuristic = kindFromName(name);
+      // "Undefined Category" is the catch-all — always kind="other" so
+      // its net (which mixes income + expense rows) doesn't accidentally
+      // flip the bucket to revenue when inflows happen to dominate.
+      // For other names (legacy uploads), keep the original heuristic.
       let kind: string;
-      if (netAmount > 0) {
-        kind = "revenue";
-      } else if (heuristic.kind !== "other") {
-        kind = heuristic.kind;
-      } else {
+      let isOneTime = false;
+      if (name === UNDEFINED_CATEGORY) {
         kind = "other";
+      } else {
+        const heuristic = kindFromName(name);
+        isOneTime = heuristic.isOneTime;
+        if (netAmount > 0) kind = "revenue";
+        else if (heuristic.kind !== "other") kind = heuristic.kind;
+        else kind = "other";
       }
       cat = await prisma.category.create({
         data: {
           businessId: business.id,
           name,
           kind,
-          isOneTime: heuristic.isOneTime,
+          isOneTime,
         },
       });
     }

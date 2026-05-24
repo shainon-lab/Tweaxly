@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 export async function POST(req: NextRequest) {
   const { business, user } = await requireBusiness();
-  const body = await req.json() as { ids: string[]; action: string; categoryId?: string; value?: boolean; note?: string; reason?: string };
+  const body = await req.json() as { ids: string[]; action: string; categoryId?: string; value?: boolean; note?: string; reason?: string; vendor?: string };
   if (!Array.isArray(body.ids) || body.ids.length === 0) {
     return NextResponse.json({ error: "no ids" }, { status: 400 });
   }
@@ -62,6 +62,41 @@ export async function POST(req: NextRequest) {
         }
       }
       break;
+    }
+    case "setVendor": {
+      // Normalize many transaction rows under one vendor. Spec calls
+      // this "vendor normalization" — merging similar transaction
+      // descriptions (e.g. "Interest X", "Interest Y", "Interest Z")
+      // into a single canonical vendor ("Bank Leumi"). The Vendor row
+      // is upserted by name so future uploads + the categorize-toast
+      // flow find it. If the vendor already has a pinned category,
+      // we also auto-fill categoryId on any of the selected rows that
+      // are still uncategorized — manual categorizations on individual
+      // rows are NEVER overwritten.
+      const newVendorName = String(body.vendor ?? "").trim();
+      if (!newVendorName) return NextResponse.json({ error: "vendor required" }, { status: 400 });
+      const vendorRow = await prisma.vendor.upsert({
+        where:  { businessId_name: { businessId: business.id, name: newVendorName } },
+        create: { businessId: business.id, name: newVendorName, categoryId: null },
+        update: {},
+      });
+      await prisma.transaction.updateMany({ where, data: { vendor: newVendorName } });
+      let inheritedCount = 0;
+      if (vendorRow.categoryId) {
+        const inherit = await prisma.transaction.updateMany({
+          where: {
+            ...where,
+            OR: [
+              { categoryId: null },
+              { category: { name: "Uncategorized" } },
+              { category: { name: "Undefined Category" } },
+            ],
+          },
+          data: { categoryId: vendorRow.categoryId },
+        });
+        inheritedCount = inherit.count;
+      }
+      return NextResponse.json({ ok: true, vendorId: vendorRow.id, inheritedCategoryFor: inheritedCount });
     }
     case "trash": {
       // Move every selected row to the recycle bin. Soft-delete +

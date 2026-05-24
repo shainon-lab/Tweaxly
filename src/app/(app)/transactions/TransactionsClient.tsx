@@ -47,6 +47,7 @@ export default function TransactionsClient({
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [bulkCategory, setBulkCategory] = useState<string>("");
+  const [bulkVendor,   setBulkVendor]   = useState<string>("");
   const [q, setQ] = useState(filters.q);
   const [src, setSrc] = useState(filters.source);
   const [ym, setYm] = useState(filters.ym);
@@ -265,6 +266,26 @@ export default function TransactionsClient({
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.kind})</option>)}
           </select>
           <button className="btn-ghost" disabled={!bulkCategory || pending} onClick={() => bulk("setCategory", { categoryId: bulkCategory })}>Apply category</button>
+          {/* Vendor normalization — merge similar raw descriptions
+              under one vendor. The Vendor row gets upserted server-
+              side; if it already has a pinned category, still-
+              uncategorized rows inherit it on the same request. */}
+          <input
+            className="input max-w-[200px]"
+            value={bulkVendor}
+            onChange={(e) => setBulkVendor(e.target.value)}
+            placeholder="Set vendor (e.g. Bank Leumi)"
+          />
+          <button
+            className="btn-ghost"
+            disabled={!bulkVendor.trim() || pending}
+            onClick={async () => {
+              await bulk("setVendor", { vendor: bulkVendor.trim() });
+              setBulkVendor("");
+            }}
+          >
+            Apply vendor
+          </button>
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("toggleOneTime", { value: true })}>Mark one-time</button>
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("toggleRecurring", { value: true })}>Mark recurring</button>
           <button className="btn-ghost" disabled={pending} onClick={openIgnoreBulk}>Mark as ignore</button>
