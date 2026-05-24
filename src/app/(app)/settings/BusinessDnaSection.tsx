@@ -386,51 +386,41 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           </div>
         </div>
 
-        {/* Business models - multi-select chips */}
+        {/* Business models — multi-select card grid. Cards beat pill
+            chips for multi-select: the checkbox + label pattern is
+            instantly readable as "click to toggle" and the consistent
+            row heights make the section feel orderly even when labels
+            wrap. */}
         <div className="mt-5">
-          <label className="label">How does the business make money? <span className="text-slate-500 normal-case font-normal">(pick any)</span></label>
-          <div className="flex flex-wrap gap-2">
-            {BUSINESS_MODEL_OPTIONS.map((o) => {
-              const on = draft.businessModels.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => toggle("businessModels", o.value)}
-                  className={`text-xs px-3 py-1 rounded-full border transition ${
-                    on
-                      ? "border-accent/60 bg-accent-soft/50 text-accent"
-                      : "border-line bg-ink-950/40 text-slate-300 hover:border-accent/40 hover:text-slate-100"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              );
-            })}
+          <label className="label">
+            How does the business make money? <span className="text-slate-500 normal-case font-normal">(pick any)</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {BUSINESS_MODEL_OPTIONS.map((o) => (
+              <SelectCard
+                key={o.value}
+                selected={draft.businessModels.includes(o.value)}
+                onClick={() => toggle("businessModels", o.value)}
+                label={o.label}
+              />
+            ))}
           </div>
         </div>
 
-        {/* Important KPIs - multi-select chips */}
+        {/* Important KPIs — multi-select card grid (same pattern). */}
         <div className="mt-5">
-          <label className="label">KPIs that matter most <span className="text-slate-500 normal-case font-normal">(pick any)</span></label>
-          <div className="flex flex-wrap gap-2">
-            {KPI_OPTIONS.map((o) => {
-              const on = draft.importantKpis.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => toggle("importantKpis", o.value)}
-                  className={`text-xs px-3 py-1 rounded-full border transition ${
-                    on
-                      ? "border-accent/60 bg-accent-soft/50 text-accent"
-                      : "border-line bg-ink-950/40 text-slate-300 hover:border-accent/40 hover:text-slate-100"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              );
-            })}
+          <label className="label">
+            KPIs that matter most <span className="text-slate-500 normal-case font-normal">(pick any)</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {KPI_OPTIONS.map((o) => (
+              <SelectCard
+                key={o.value}
+                selected={draft.importantKpis.includes(o.value)}
+                onClick={() => toggle("importantKpis", o.value)}
+                label={o.label}
+              />
+            ))}
           </div>
         </div>
 
@@ -445,46 +435,47 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           />
         </div>
 
-        {/* AI Context Preferences (Phase 3) - the biases the owner
-            wants the advisor to honour. Renders as toggle chips +
-            a free-text note. */}
-        <div className="mt-7 pt-5 border-t border-line/50">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold mb-2">
-            AI Context Preferences
+      </div>
+
+      {/* ─── AI Context Preferences (own card, last on the page) ──
+          Pulled out of the Business profile card so the advisor-tuning
+          area reads as a distinct decision the owner is making —
+          "what should the AI keep in mind?" — rather than buried at
+          the bottom of the profile form. The Save button lives here
+          since this is the last section; saveAll() flushes the whole
+          shared draft (profile + AI prefs) in one POST. */}
+      <div className="card order-4">
+        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+          <div className="font-medium">AI Context Preferences</div>
+          <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold">
+            Optional
           </div>
-          <div className="text-xs text-slate-400 mb-3 leading-relaxed">
-            Optional biases the advisor will honour on every answer -
-            tone, ranking, and risk posture.
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {AI_PREFERENCE_TOGGLES.map((o) => {
-              const on = draft.prefToggles.includes(o.value);
-              return (
-                <button
-                  key={o.value}
-                  type="button"
-                  onClick={() => toggle("prefToggles", o.value)}
-                  className={`text-xs px-3 py-1 rounded-full border transition ${
-                    on
-                      ? "border-accent/60 bg-accent-soft/50 text-accent"
-                      : "border-line bg-ink-950/40 text-slate-300 hover:border-accent/40 hover:text-slate-100"
-                  }`}
-                >
-                  {o.label}
-                </button>
-              );
-            })}
-          </div>
-          <div className="mt-3">
-            <label className="label">Anything else for the AI to keep in mind?</label>
-            <textarea
-              className="input min-h-[60px]"
-              value={draft.prefNote}
-              onChange={(e) => setDraft({ ...draft, prefNote: e.target.value })}
-              placeholder="e.g. we're bootstrapped - never suggest taking on debt; lean toward retention over new-customer growth."
-              maxLength={1000}
+        </div>
+        <div className="text-xs text-slate-400 mb-4 leading-relaxed">
+          Biases the advisor will honour on every answer — tone, ranking,
+          and risk posture. Skip if you want the AI to stay neutral.
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {AI_PREFERENCE_TOGGLES.map((o) => (
+            <SelectCard
+              key={o.value}
+              selected={draft.prefToggles.includes(o.value)}
+              onClick={() => toggle("prefToggles", o.value)}
+              label={o.label}
             />
-          </div>
+          ))}
+        </div>
+
+        <div className="mt-4">
+          <label className="label">Anything else for the AI to keep in mind?</label>
+          <textarea
+            className="input min-h-[80px]"
+            value={draft.prefNote}
+            onChange={(e) => setDraft({ ...draft, prefNote: e.target.value })}
+            placeholder="e.g. we're bootstrapped - never suggest taking on debt; lean toward retention over new-customer growth."
+            maxLength={1000}
+          />
         </div>
 
         <div className="mt-5 flex items-center justify-end gap-3 flex-wrap">
@@ -501,5 +492,46 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+// ─── SelectCard ──────────────────────────────────────────────────────
+// Card-style multi-select option. Wraps a checkbox-look indicator + a
+// label inside a button so the whole row is the hit target. Used by
+// the Business model / KPI / AI preference toggles above to give the
+// section a calm grid look instead of a wall of pill chips.
+function SelectCard({
+  selected, onClick, label,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      role="checkbox"
+      aria-checked={selected}
+      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left transition ${
+        selected
+          ? "border-accent bg-accent-soft/30 text-slate-100"
+          : "border-line bg-ink-900/30 text-slate-300 hover:border-accent/40 hover:text-slate-100"
+      }`}
+    >
+      <span
+        aria-hidden="true"
+        className={`shrink-0 w-4 h-4 rounded border flex items-center justify-center transition ${
+          selected ? "border-accent bg-accent" : "border-line"
+        }`}
+      >
+        {selected ? (
+          <svg viewBox="0 0 12 12" className="w-2.5 h-2.5 text-white" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="2.5 6.5 5 9 9.5 3.5" />
+          </svg>
+        ) : null}
+      </span>
+      <span className="text-sm leading-tight">{label}</span>
+    </button>
   );
 }
