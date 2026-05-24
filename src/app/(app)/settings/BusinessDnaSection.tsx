@@ -267,8 +267,11 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
         </div>
       </div>
 
-      {/* ─── Patterns Tweaxly noticed (Smart Evolution) ─────────── */}
-      <div className="card order-3">
+      {/* ─── Patterns Tweaxly noticed (Smart Evolution) ───────────
+          Pinned to the bottom of the page (order-5) so it reads as
+          the "what the AI has learned" reveal after the owner has
+          filled in the form + AI prefs above. */}
+      <div className="card order-5">
         <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
           <div>
             <div className="font-medium">Patterns Tweaxly noticed</div>
