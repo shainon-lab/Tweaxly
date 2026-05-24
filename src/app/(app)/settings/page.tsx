@@ -78,6 +78,19 @@ export default async function SettingsPage() {
       .filter((v): v is typeof v & { categoryId: string } => v.categoryId != null)
       .map((v) => [v.categoryId, v._count._all]),
   );
+  // Build a names-per-category map so the Categories table can show
+  // "Stripe, PayPal, Bank Leumi (3)" instead of just a count. Sorted
+  // alphabetically inside each category for stable ordering.
+  const vendorNamesByCategoryId = new Map<string, string[]>();
+  for (const v of vendors) {
+    if (!v.categoryId) continue;
+    const list = vendorNamesByCategoryId.get(v.categoryId) ?? [];
+    list.push(v.name);
+    vendorNamesByCategoryId.set(v.categoryId, list);
+  }
+  for (const list of vendorNamesByCategoryId.values()) {
+    list.sort((a, b) => a.localeCompare(b));
+  }
 
   // ── Per-workspace billing data for the Business Profile tab ───
   // Plan + AI Credits live alongside the rest of the workspace's
@@ -166,6 +179,7 @@ export default async function SettingsPage() {
           transactionCount: categoryAggById.get(c.id)?.count ?? 0,
           totalAmount:      categoryAggById.get(c.id)?.sum ?? 0,
           vendorCount:      vendorCountByCategoryId.get(c.id) ?? 0,
+          vendorNames:      vendorNamesByCategoryId.get(c.id) ?? [],
         }))}
         vendors={vendors.map((v) => {
           const agg = vendorAggByName.get(v.name.toLowerCase());

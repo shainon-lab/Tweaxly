@@ -58,6 +58,7 @@ type Cat = {
   transactionCount: number;
   totalAmount:      number;   // signed sum of transaction.amount in base currency
   vendorCount:      number;
+  vendorNames:      string[]; // alphabetical, source for the "names (N)" cell
 };
 
 // Friendly type label derived from the internal kind field. The categories
@@ -318,6 +319,7 @@ export default function SettingsClient({
       transactionCount: 0,
       totalAmount:      0,
       vendorCount:      0,
+      vendorNames:      [],
     }]);
     setAddCatDraft({ name: "", isIncome: false, isOneTime: false });
     setAddCatOpen(false);
@@ -344,6 +346,7 @@ export default function SettingsClient({
         transactionCount: 0,
         totalAmount:      0,
         vendorCount:      0,
+        vendorNames:      [],
       }]);
       categoryId = created.id;
     } else if (addVendorDraft.categoryId && addVendorDraft.categoryId !== "__undefined__") {
@@ -671,7 +674,7 @@ export default function SettingsClient({
                 <tr>
                   <th>Category</th>
                   <th>Type</th>
-                  <th className="text-right">Vendors</th>
+                  <th>Vendors</th>
                   <th className="text-right">Transactions</th>
                   <th className="text-right">Total</th>
                   <th>One-time?</th>
@@ -681,6 +684,23 @@ export default function SettingsClient({
               <tbody>
                 {cats.map((c) => {
                   const unused = c.transactionCount === 0 && c.vendorCount === 0;
+                  // Vendors cell: list every vendor in this category
+                  // with the count in parens. Long lists are truncated
+                  // visually but the full set is in the hover title so
+                  // owners can still see everything without crowding
+                  // the row.
+                  const vendorLabel =
+                    c.vendorNames.length === 0
+                      ? <span className="text-slate-500 text-xs">—</span>
+                      : (
+                        <span
+                          className="text-slate-300 text-xs"
+                          title={c.vendorNames.join("\n")}
+                        >
+                          <span className="line-clamp-2">{c.vendorNames.join(", ")}</span>
+                          <span className="text-slate-500"> ({c.vendorCount})</span>
+                        </span>
+                      );
                   return (
                     <tr key={c.id}>
                       <td>{c.name}</td>
@@ -689,7 +709,7 @@ export default function SettingsClient({
                           {typeLabel(c.kind)}
                         </span>
                       </td>
-                      <td className="text-right text-slate-300">{c.vendorCount}</td>
+                      <td className="max-w-[320px]">{vendorLabel}</td>
                       <td className="text-right text-slate-300">{c.transactionCount}</td>
                       <td className="text-right text-slate-300 font-mono text-xs">
                         {!c.totalAmount ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
