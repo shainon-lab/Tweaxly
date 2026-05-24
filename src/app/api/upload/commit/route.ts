@@ -235,6 +235,11 @@ export async function POST(req: NextRequest) {
   const rowInfos: RowInfo[] = [];
   const netByName = new Map<string, number>();
   const forceDir = body.forceDirection;
+  // Canonical name for the catch-all bucket. Every imported row that
+  // doesn't get a category from (1) an explicit Category column in the
+  // file or (2) a CategorizationRule lands here. Surfaced as a banner
+  // on the dashboard / reports / data section so the owner can review.
+  const UNDEFINED_CATEGORY = "Undefined Category";
   for (const row of body.rows) {
     const norm = normalizeRow(row, body.mapping, body.source, business.currency, sign);
     if (!norm) {
@@ -257,11 +262,22 @@ export async function POST(req: NextRequest) {
       vendor: norm.vendor,
       source: body.source,
     });
+    // Category precedence per the user-facing spec:
+    //   1. CategorizationRule match — persisted automation
+    //   2. norm.rawCategory — the value in the Category column the user
+    //      mapped in the wizard, if any
+    //   3. UNDEFINED_CATEGORY — fallback bucket that triggers the
+    //      "transactions need categorizing" review alert.
+    // We no longer auto-create a category named after the vendor —
+    // explicit user intent or the catch-all bucket only.
     let name: string | null = null;
     if (!ruleApp) {
-      const raw = norm.vendor || norm.description || "";
-      const cleaned = normalizeName(raw);
-      if (cleaned) name = cleaned;
+      const explicit = (norm.rawCategory ?? "").trim();
+      if (explicit) {
+        name = normalizeName(explicit);
+      } else {
+        name = UNDEFINED_CATEGORY;
+      }
     }
     rowInfos.push({
       norm,

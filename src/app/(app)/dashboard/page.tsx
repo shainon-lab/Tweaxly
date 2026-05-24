@@ -5,6 +5,7 @@ import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import GetStartedBanner from "@/components/sources/GetStartedBanner";
 import PreviousMonthCatchUp from "@/components/sources/PreviousMonthCatchUp";
+import ReviewBanner from "@/components/ReviewBanner";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { activeEmployeeCost, trailingMonthsSummary } from "@/lib/metrics";
@@ -234,6 +235,7 @@ export default async function DashboardPage({
           <div className="mb-4">
             <PreviousMonthCatchUp />
             <GetStartedBanner />
+            <ReviewBanner businessId={business.id} surface="dashboard" />
             <HealthScoreWidget variant="compact" />
           </div>
 

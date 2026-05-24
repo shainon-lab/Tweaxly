@@ -20,7 +20,15 @@ export default async function TransactionsPage({
   ];
   if (sp.source) where.source = sp.source;
   if (sp.ym) where.accountingMonth = sp.ym;
-  if (sp.uncategorized === "1") where.OR = [{ categoryId: null }, { category: { name: "Uncategorized" } }];
+  // Uncategorized = no category OR catch-all bucket. Matches both the
+  // new "Undefined Category" name (assigned by the upload commit when
+  // no Category column was mapped) and the legacy "Uncategorized"
+  // name from older data.
+  if (sp.uncategorized === "1") where.OR = [
+    { categoryId: null },
+    { category: { name: "Uncategorized" } },
+    { category: { name: "Undefined Category" } },
+  ];
 
   const [txns, categoriesRaw, months, sources] = await Promise.all([
     prisma.transaction.findMany({
