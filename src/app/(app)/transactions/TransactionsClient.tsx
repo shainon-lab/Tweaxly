@@ -118,24 +118,37 @@ export default function TransactionsClient({
     categoryName: string;
   } | null>(null);
 
-  function maybePromptVendorPin(t: Txn, newCategoryId: string | null) {
-    if (!newCategoryId) return;
-    // Only prompt when the row was previously uncategorized — otherwise
-    // every routine category edit would trigger the toast.
-    const wasUncategorized = !t.categoryId
-      || t.categoryName === "Uncategorized"
-      || t.categoryName === "Undefined Category";
-    if (!wasUncategorized) return;
-    const cat = categories.find((c) => c.id === newCategoryId);
+  // Bulk Apply Category — same path as the existing `bulk("setCategory")`
+  // call, but afterwards: if ALL selected rows share one vendor AND
+  // every row was previously uncategorized, surface the vendor-pin
+  // toast so the user can pin once and have future uploads + past
+  // rows from the same vendor auto-categorize.
+  async function applyBulkCategory() {
+    if (!bulkCategory) return;
+    const cat = categories.find((c) => c.id === bulkCategory);
+    const targetCategoryId = bulkCategory;
+    // Snapshot the selection BEFORE the bulk call clears it.
+    const selectedTxns = txns.filter((t) => selected.has(t.id));
+    await bulk("setCategory", { categoryId: targetCategoryId });
     if (!cat) return;
-    const vendorName = (t.vendor ?? t.description ?? "").trim();
-    if (!vendorName) return;
-    setVendorPrompt({
-      txnId:        t.id,
-      vendorName,
-      categoryId:   newCategoryId,
-      categoryName: cat.name,
-    });
+    const vendorNames = new Set(
+      selectedTxns
+        .map((t) => (t.vendor ?? t.description ?? "").trim())
+        .filter((s): s is string => s.length > 0),
+    );
+    const allWereUncategorized = selectedTxns.every((t) =>
+      !t.categoryId
+      || t.categoryName === "Uncategorized"
+      || t.categoryName === "Undefined Category"
+    );
+    if (vendorNames.size === 1 && allWereUncategorized && selectedTxns.length > 0) {
+      setVendorPrompt({
+        txnId:        selectedTxns[0].id,
+        vendorName:   Array.from(vendorNames)[0],
+        categoryId:   targetCategoryId,
+        categoryName: cat.name,
+      });
+    }
   }
 
   async function applyVendorCategory(applyToPast: boolean) {
@@ -265,7 +278,7 @@ export default function TransactionsClient({
             <option value="">Set category…</option>
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name} ({c.kind})</option>)}
           </select>
-          <button className="btn-ghost" disabled={!bulkCategory || pending} onClick={() => bulk("setCategory", { categoryId: bulkCategory })}>Apply category</button>
+          <button className="btn-ghost" disabled={!bulkCategory || pending} onClick={applyBulkCategory}>Apply category</button>
           {/* Vendor normalization — merge similar raw descriptions
               under one vendor. The Vendor row gets upserted server-
               side; if it already has a pinned category, still-
@@ -401,19 +414,22 @@ export default function TransactionsClient({
                   <td className={`text-right font-medium whitespace-nowrap ${ignored ? "line-through text-slate-500" : sign ? "text-good" : "text-bad"}`}>
                     {sign ? "+" : "−"}{fmt.format(Math.abs(t.amount))}
                   </td>
-                  <td>
-                    <select
-                      className="input max-w-[200px] py-1"
-                      value={t.categoryId ?? ""}
-                      onChange={(e) => {
-                        const newId = e.target.value || null;
-                        updateOne(t.id, { categoryId: newId } as never);
-                        maybePromptVendorPin(t, newId);
-                      }}
-                    >
-                      <option value="">Uncategorized</option>
-                      {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-                    </select>
+                  <td className="max-w-[200px]">
+                    {/* Read-only category display. Per-row category
+                        edits were removed by spec — the user
+                        checkbox-selects rows and changes category in
+                        bulk via the action bar above. This makes
+                        accidental single-row mis-edits impossible
+                        and keeps the table calmer to read. */}
+                    {t.categoryId && t.categoryName !== "Uncategorized" && t.categoryName !== "Undefined Category" ? (
+                      <span className={`text-sm truncate block ${ignored ? "line-through text-slate-500" : "text-slate-200"}`} title={t.categoryName}>
+                        {t.categoryName}
+                      </span>
+                    ) : (
+                      <span className="text-xs italic text-slate-500" title="Select rows and use the 'Apply category' bulk action above to categorize.">
+                        Undefined Category
+                      </span>
+                    )}
                   </td>
                   <td className="space-x-1 whitespace-nowrap">
                     {t.isOneTime ? <span className="pill-warn">one-time</span> : null}
