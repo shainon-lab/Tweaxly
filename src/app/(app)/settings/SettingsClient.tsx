@@ -308,7 +308,17 @@ export default function SettingsClient({
     });
     if (!res.ok) { alert(await res.text()); return; }
     const c = await res.json();
-    setCats((cur) => [...cur, { ...c, primaryVendorId: c.primaryVendorId ?? null }]);
+    // Brand-new categories start with zero of everything — without
+    // these explicit defaults the table renderer crashes on
+    // c.totalAmount.toLocaleString() before the next router.refresh
+    // catches up with the server snapshot.
+    setCats((cur) => [...cur, {
+      ...c,
+      primaryVendorId:  c.primaryVendorId ?? null,
+      transactionCount: 0,
+      totalAmount:      0,
+      vendorCount:      0,
+    }]);
     setAddCatDraft({ name: "", isIncome: false, isOneTime: false });
     setAddCatOpen(false);
     startTransition(() => router.refresh());
@@ -328,7 +338,13 @@ export default function SettingsClient({
       });
       if (!res.ok) { alert(await res.text()); return; }
       const created = await res.json();
-      setCats((cur) => [...cur, { ...created, primaryVendorId: created.primaryVendorId ?? null }]);
+      setCats((cur) => [...cur, {
+        ...created,
+        primaryVendorId:  created.primaryVendorId ?? null,
+        transactionCount: 0,
+        totalAmount:      0,
+        vendorCount:      0,
+      }]);
       categoryId = created.id;
     } else if (addVendorDraft.categoryId && addVendorDraft.categoryId !== "__undefined__") {
       categoryId = addVendorDraft.categoryId;
@@ -343,10 +359,19 @@ export default function SettingsClient({
     });
     if (!res.ok) { alert(await res.text()); return; }
     const v = await res.json();
+    // Same defaults story as addCategoryFromModal — the Vendors table
+    // reads transactionCount / totalAmount / lastSeenAt and crashes
+    // on undefined. Brand-new vendors are zero of everything.
+    const withDefaults = {
+      ...v,
+      transactionCount: v.transactionCount ?? 0,
+      totalAmount:      v.totalAmount      ?? 0,
+      lastSeenAt:       v.lastSeenAt       ?? null,
+    };
     setVends((cur) => {
-      const existing = cur.find((x) => x.id === v.id);
-      if (existing) return cur.map((x) => (x.id === v.id ? v : x));
-      return [...cur, v];
+      const existing = cur.find((x) => x.id === withDefaults.id);
+      if (existing) return cur.map((x) => (x.id === withDefaults.id ? withDefaults : x));
+      return [...cur, withDefaults];
     });
     setAddVendorDraft({ name: "", categoryId: "__new__", isOneTime: false });
     setAddVendorOpen(false);
@@ -682,7 +707,7 @@ export default function SettingsClient({
                       <td className="text-right text-slate-300">{c.vendorCount}</td>
                       <td className="text-right text-slate-300">{c.transactionCount}</td>
                       <td className="text-right text-slate-300 font-mono text-xs">
-                        {c.totalAmount === 0 ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {!c.totalAmount ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
                       <td>
                         <select
@@ -785,7 +810,7 @@ export default function SettingsClient({
                     </td>
                     <td className="text-right text-slate-300">{v.transactionCount}</td>
                     <td className="text-right text-slate-300 font-mono text-xs">
-                      {v.transactionCount === 0 ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      {!v.transactionCount || !v.totalAmount ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </td>
                     <td className="text-slate-400 text-xs whitespace-nowrap">
                       {v.lastSeenAt ? new Date(v.lastSeenAt).toLocaleDateString() : "—"}
