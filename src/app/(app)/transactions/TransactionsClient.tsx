@@ -317,7 +317,8 @@ export default function TransactionsClient({
               <th>Date</th>
               <th>Acct. month</th>
               <th>Source</th>
-              <th>Description / Vendor</th>
+              <th>Description</th>
+              <th>Vendor</th>
               <th className="text-right">Amount</th>
               <th>Category</th>
               <th>Flags</th>
@@ -374,7 +375,6 @@ export default function TransactionsClient({
                         <div className={`truncate ${ignored ? "line-through text-slate-500" : "text-slate-100"}`} title={t.description}>
                           {t.description || "-"}
                         </div>
-                        {t.vendor ? <div className={`text-xs truncate ${ignored ? "text-slate-600" : "text-slate-400"}`}>{t.vendor}</div> : null}
                         {t.notes ? (
                           <div
                             className={`text-xs mt-0.5 italic flex items-start gap-1 ${ignored ? "text-slate-600" : "text-accent/80"}`}
@@ -386,6 +386,17 @@ export default function TransactionsClient({
                         ) : null}
                       </div>
                     </div>
+                  </td>
+                  <td className="max-w-[180px]">
+                    {t.vendor ? (
+                      <div className={`text-sm truncate ${ignored ? "line-through text-slate-500" : "text-slate-200"}`} title={t.vendor}>
+                        {t.vendor}
+                      </div>
+                    ) : (
+                      <span className="text-xs italic text-slate-500" title="No vendor column was mapped on this upload. Select rows and use the bulk 'Set vendor' input to normalize them.">
+                        not set yet
+                      </span>
+                    )}
                   </td>
                   <td className={`text-right font-medium whitespace-nowrap ${ignored ? "line-through text-slate-500" : sign ? "text-good" : "text-bad"}`}>
                     {sign ? "+" : "−"}{fmt.format(Math.abs(t.amount))}

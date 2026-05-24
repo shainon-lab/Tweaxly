@@ -244,6 +244,27 @@ export async function POST(req: NextRequest) {
       if (!vendorByName.has(k)) vendorByName.set(k, v);
     }
   }
+  // Load category names for every category any vendor is pinned to.
+  // Used to detect the "stale auto-category" pattern from before the
+  // category-explosion fix: if a vendor's pinned category has the
+  // EXACT SAME NAME as the vendor, the pin was almost certainly
+  // legacy auto-generated junk. We treat such pins as no-pin during
+  // upload, so new transactions for that vendor go to Undefined
+  // Category and the user can re-categorize cleanly.
+  const pinnedCategoryIds = Array.from(new Set(
+    existingVendors.map((v) => v.categoryId).filter((id): id is string => !!id),
+  ));
+  const pinnedCategories = pinnedCategoryIds.length === 0 ? [] : await prisma.category.findMany({
+    where: { id: { in: pinnedCategoryIds }, businessId: business.id },
+    select: { id: true, name: true },
+  });
+  const pinnedCategoryNameById = new Map(pinnedCategories.map((c) => [c.id, c.name]));
+  function isStalePinForVendor(vendor: { name: string; categoryId: string | null }): boolean {
+    if (!vendor.categoryId) return false;
+    const catName = pinnedCategoryNameById.get(vendor.categoryId);
+    if (!catName) return false;
+    return catName.toLowerCase() === vendor.name.toLowerCase();
+  }
   // Track every NEW vendor name we see in this import so we can create
   // the Vendor rows in one upsert pass after the row-processing loop.
   const newVendorNames = new Set<string>();
@@ -323,9 +344,13 @@ export async function POST(req: NextRequest) {
           name = UNDEFINED_CATEGORY;
         }
       } else if (vendorName) {
-        // Look up the vendor's pinned category.
+        // Look up the vendor's pinned category. Skip the pin when it
+        // matches the stale-auto-category pattern (category name ===
+        // vendor name) — that's legacy junk from before the category-
+        // explosion fix and the user wants those rows to start
+        // uncategorized so they can re-pin cleanly.
         const v = vendorByName.get(vendorName.toLowerCase());
-        if (v?.categoryId) {
+        if (v?.categoryId && !isStalePinForVendor(v)) {
           vendorCategoryId = v.categoryId;
         } else {
           name = UNDEFINED_CATEGORY;
