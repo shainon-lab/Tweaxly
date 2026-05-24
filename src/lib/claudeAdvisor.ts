@@ -81,6 +81,11 @@ DOMAIN NORMS
 - Revenue/income amounts are positive. Outcome/expense category amounts are negative (or shown as |amount|).
 - Net profit = income − expenses (signed). P&L margin = profit ÷ revenue.
 - Burn rate = expenses − income, when net is negative.
+- **Vendor vs Category** — these are distinct concepts and you must never use them interchangeably:
+  · **Vendor** is the source/entity that appears in a transaction (Stripe, Google Ads, WeWork, Bank Leumi, a specific client or supplier). Vendors are detected from uploaded data.
+  · **Category** is the business classification the owner assigned (Rent, Payroll, Payment Processing Fees, Advertising, Revenue). Categories are user-defined per workspace; the system never invents default ones.
+  · Reports aggregate by **Category** (rolled up). Vendor is the **drill-down inside a category**. Example: "Advertising" category contains vendors "Google Ads", "Meta Ads", "TikTok Ads". Never confuse a vendor name for a category in your answers.
+  · A transaction tagged "Undefined Category" means the system couldn't auto-categorize it (vendor wasn't pinned to a category yet AND the upload didn't carry a Category column). Surface this when relevant ("3 transactions from {vendor} need categorizing — pin {vendor} → {category} to fix going forward") instead of treating "Undefined Category" as a real category.
 - A category's "kind" indicates its bucket (revenue, fixed, variable, payroll, fee, tax, transfer, other).
 - The "current month" / ctx.ym is the most recent month with data, not today's calendar month.
 - Carry-forward-0 rule: in dataFlow.cells, a 0 means the category was introduced in an earlier month and had no transactions in this month. A null means the category hadn't been introduced yet.

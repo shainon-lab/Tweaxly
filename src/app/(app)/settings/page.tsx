@@ -36,6 +36,49 @@ export default async function SettingsPage() {
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
   const { t } = await getServerT();
 
+  // ── Aggregates for the Categories & Vendors screen ──────────────
+  // Counts + sums + last-seen-date per vendor (matched by the
+  // case-sensitive `Transaction.vendor` string) and per category.
+  // These power the spec's "# transactions / total amount / last
+  // seen" columns. All run in parallel, all scoped to non-excluded
+  // rows so excluded-from-P&L txns don't inflate the numbers.
+  const [vendorAggs, categoryAggs, vendorsByCategory] = await Promise.all([
+    prisma.transaction.groupBy({
+      by:    ["vendor"],
+      where: { businessId: business.id, vendor: { not: null }, isExcludedFromPnl: false },
+      _count: { _all: true },
+      _sum:   { amount: true },
+      _max:   { transactionDate: true },
+    }),
+    prisma.transaction.groupBy({
+      by:    ["categoryId"],
+      where: { businessId: business.id, categoryId: { not: null }, isExcludedFromPnl: false },
+      _count: { _all: true },
+      _sum:   { amount: true },
+    }),
+    prisma.vendor.groupBy({
+      by:    ["categoryId"],
+      where: { businessId: business.id, categoryId: { not: null } },
+      _count: { _all: true },
+    }),
+  ]);
+  // Lowercase index so the vendor.name lookup is case-insensitive.
+  const vendorAggByName = new Map(
+    vendorAggs
+      .filter((v): v is typeof v & { vendor: string } => v.vendor != null)
+      .map((v) => [v.vendor.toLowerCase(), { count: v._count._all, sum: v._sum.amount ?? 0, lastSeen: v._max.transactionDate?.toISOString() ?? null }]),
+  );
+  const categoryAggById = new Map(
+    categoryAggs
+      .filter((c): c is typeof c & { categoryId: string } => c.categoryId != null)
+      .map((c) => [c.categoryId, { count: c._count._all, sum: c._sum.amount ?? 0 }]),
+  );
+  const vendorCountByCategoryId = new Map(
+    vendorsByCategory
+      .filter((v): v is typeof v & { categoryId: string } => v.categoryId != null)
+      .map((v) => [v.categoryId, v._count._all]),
+  );
+
   // ── Per-workspace billing data for the Business Profile tab ───
   // Plan + AI Credits live alongside the rest of the workspace's
   // settings now. Account-level surfaces only see a cross-workspace
@@ -120,10 +163,19 @@ export default async function SettingsPage() {
         categories={categories.map((c) => ({
           id: c.id, name: c.name, kind: c.kind, isOneTime: c.isOneTime,
           primaryVendorId: c.primaryVendorId,
+          transactionCount: categoryAggById.get(c.id)?.count ?? 0,
+          totalAmount:      categoryAggById.get(c.id)?.sum ?? 0,
+          vendorCount:      vendorCountByCategoryId.get(c.id) ?? 0,
         }))}
-        vendors={vendors.map((v) => ({
-          id: v.id, name: v.name, categoryId: v.categoryId, isOneTime: v.isOneTime,
-        }))}
+        vendors={vendors.map((v) => {
+          const agg = vendorAggByName.get(v.name.toLowerCase());
+          return {
+            id: v.id, name: v.name, categoryId: v.categoryId, isOneTime: v.isOneTime,
+            transactionCount: agg?.count ?? 0,
+            totalAmount:      agg?.sum ?? 0,
+            lastSeenAt:       agg?.lastSeen ?? null,
+          };
+        })}
         rules={rules.map((r) => ({
           id: r.id, matchField: r.matchField, matchType: r.matchType, pattern: r.pattern,
           categoryId: r.categoryId, priority: r.priority,

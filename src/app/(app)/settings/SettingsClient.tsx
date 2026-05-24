@@ -53,6 +53,10 @@ type Biz = {
 type Cat = {
   id: string; name: string; kind: string; isOneTime: boolean;
   primaryVendorId: string | null;
+  // Spec-required aggregates surfaced on the Categories table:
+  transactionCount: number;
+  totalAmount:      number;   // signed sum of transaction.amount in base currency
+  vendorCount:      number;
 };
 
 // Friendly type label derived from the internal kind field. The categories
@@ -60,7 +64,45 @@ type Cat = {
 function typeLabel(kind: string): "Income" | "Outcome" {
   return kind === "revenue" ? "Income" : "Outcome";
 }
-type Vendor = { id: string; name: string; categoryId: string | null; isOneTime: boolean };
+type Vendor = {
+  id: string; name: string; categoryId: string | null; isOneTime: boolean;
+  // Spec-required aggregates surfaced on the Vendors table:
+  transactionCount: number;
+  totalAmount:      number;   // signed sum
+  lastSeenAt:       string | null; // ISO
+};
+
+// Suggested categories the spec mandates we offer (but never auto-
+// create). Surfaced as quick-pick chips in the Add Category modal —
+// clicking a chip pre-fills the name + type, the user still has to
+// click "Add category" to commit. The Income/Outcome split lets us
+// filter chips to whichever type tab the user is on.
+const SUGGESTED_EXPENSE_CATEGORIES = [
+  "Rent",
+  "Payroll",
+  "Payment Processing Fees",
+  "Advertising",
+  "Software",
+  "Accounting",
+  "Taxes",
+  "Government Fees",
+  "Utilities",
+  "Office Services",
+  "Internet & Telephony",
+  "Vehicle Expenses",
+  "Equipment",
+  "Travel",
+  "Professional Services",
+] as const;
+const SUGGESTED_INCOME_CATEGORIES = [
+  "Product Sales",
+  "Service Revenue",
+  "Subscription Revenue",
+  "Consulting Revenue",
+  "One-Time Payments",
+  "Refunds / Adjustments",
+  "Other Income",
+] as const;
 type View = "categories" | "vendors" | "all";
 
 
@@ -323,6 +365,34 @@ export default function SettingsClient({
     setVends((cur) => cur.filter((v) => v.id !== id));
     setCats((cur) => cur.map((c) => (c.primaryVendorId === id ? { ...c, primaryVendorId: null } : c)));
     startTransition(() => router.refresh());
+  }
+
+  // Merge: reassign every Transaction.vendor matching the source name
+  // to the target's name, copy categoryId/isOneTime if the source had
+  // them and the target didn't, then delete the source row.
+  const [mergeFrom, setMergeFrom] = useState<Vendor | null>(null);
+  const [mergeTargetId, setMergeTargetId] = useState<string>("");
+  const [mergeBusy, setMergeBusy] = useState(false);
+
+  async function doMerge() {
+    if (!mergeFrom || !mergeTargetId) return;
+    setMergeBusy(true);
+    try {
+      const res = await fetch("/api/vendors/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromVendorId: mergeFrom.id, toVendorId: mergeTargetId }),
+      });
+      if (!res.ok) { alert(await res.text()); return; }
+      const data = await res.json();
+      setVends((cur) => cur.filter((v) => v.id !== mergeFrom.id));
+      setMergeFrom(null);
+      setMergeTargetId("");
+      alert(`Merged. ${data.transactionsReassigned ?? 0} transaction${(data.transactionsReassigned ?? 0) === 1 ? "" : "s"} reassigned.`);
+      startTransition(() => router.refresh());
+    } finally {
+      setMergeBusy(false);
+    }
   }
 
   async function toggleVendorOneTime(v: Vendor) {
@@ -588,49 +658,71 @@ export default function SettingsClient({
               <thead>
                 <tr>
                   <th>Category</th>
-                  <th>Vendor</th>
                   <th>Type</th>
+                  <th className="text-right">Vendors</th>
+                  <th className="text-right">Transactions</th>
+                  <th className="text-right">Total</th>
+                  <th>Primary vendor</th>
                   <th>One-time?</th>
                   <th></th>
                 </tr>
               </thead>
               <tbody>
-                {cats.map((c) => (
-                  <tr key={c.id}>
-                    <td>{c.name}</td>
-                    <td>
-                      <select
-                        className="input max-w-[220px] py-1"
-                        value={c.primaryVendorId ?? "__general__"}
-                        onChange={(e) => setPrimaryVendor(c.id, e.target.value)}
-                        title="Primary vendor for this category. GENERAL means no specific vendor is highlighted."
-                      >
-                        <option value="__general__">GENERAL</option>
-                        {vends.map((v) => (
-                          <option key={v.id} value={v.id}>{v.name}</option>
-                        ))}
-                      </select>
-                    </td>
-                    <td>
-                      <span className={c.kind === "revenue" ? "pill-good" : "pill"}>
-                        {typeLabel(c.kind)}
-                      </span>
-                    </td>
-                    <td>
-                      <button
-                        type="button"
-                        onClick={() => toggleOneTime(c)}
-                        title="Click to toggle. The change applies wherever this category is used."
-                        className={c.isOneTime
-                          ? "pill-warn cursor-pointer hover:opacity-80"
-                          : "pill cursor-pointer hover:opacity-80"}
-                      >
-                        {c.isOneTime ? "YES" : "NO"}
-                      </button>
-                    </td>
-                    <td className="text-right"><button className="btn-danger py-1" onClick={() => removeCategory(c.id)}>Delete</button></td>
-                  </tr>
-                ))}
+                {cats.map((c) => {
+                  const unused = c.transactionCount === 0 && c.vendorCount === 0;
+                  return (
+                    <tr key={c.id}>
+                      <td>{c.name}</td>
+                      <td>
+                        <span className={c.kind === "revenue" ? "pill-good" : "pill"}>
+                          {typeLabel(c.kind)}
+                        </span>
+                      </td>
+                      <td className="text-right text-slate-300">{c.vendorCount}</td>
+                      <td className="text-right text-slate-300">{c.transactionCount}</td>
+                      <td className="text-right text-slate-300 font-mono text-xs">
+                        {c.totalAmount === 0 ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      </td>
+                      <td>
+                        <select
+                          className="input max-w-[220px] py-1"
+                          value={c.primaryVendorId ?? "__general__"}
+                          onChange={(e) => setPrimaryVendor(c.id, e.target.value)}
+                          title="Primary vendor for this category. GENERAL means no specific vendor is highlighted."
+                        >
+                          <option value="__general__">GENERAL</option>
+                          {vends.map((v) => (
+                            <option key={v.id} value={v.id}>{v.name}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td>
+                        <button
+                          type="button"
+                          onClick={() => toggleOneTime(c)}
+                          title="Click to toggle. The change applies wherever this category is used."
+                          className={c.isOneTime
+                            ? "pill-warn cursor-pointer hover:opacity-80"
+                            : "pill cursor-pointer hover:opacity-80"}
+                        >
+                          {c.isOneTime ? "YES" : "NO"}
+                        </button>
+                      </td>
+                      <td className="text-right">
+                        <button
+                          className="btn-danger py-1"
+                          onClick={() => removeCategory(c.id)}
+                          disabled={!unused}
+                          title={unused
+                            ? "Delete this category"
+                            : `Has ${c.transactionCount} transaction${c.transactionCount === 1 ? "" : "s"} / ${c.vendorCount} vendor${c.vendorCount === 1 ? "" : "s"} — reassign them first.`}
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </>
@@ -645,7 +737,11 @@ export default function SettingsClient({
               <thead>
                 <tr>
                   <th>Vendor</th>
+                  <th>Status</th>
                   <th>Category</th>
+                  <th className="text-right">Transactions</th>
+                  <th className="text-right">Total</th>
+                  <th>Last seen</th>
                   <th>One-time?</th>
                   <th></th>
                 </tr>
@@ -655,8 +751,15 @@ export default function SettingsClient({
                   <tr key={v.id}>
                     <td>{v.name}</td>
                     <td>
+                      {v.categoryId ? (
+                        <span className="pill text-[10px]">categorized</span>
+                      ) : (
+                        <span className="pill-warn text-[10px]">uncategorized</span>
+                      )}
+                    </td>
+                    <td>
                       <select
-                        className="input max-w-[280px] py-1"
+                        className="input max-w-[260px] py-1"
                         value={v.categoryId ?? "__undefined__"}
                         onChange={(e) => assignVendorCategory(v.id, e.target.value)}
                       >
@@ -666,6 +769,13 @@ export default function SettingsClient({
                         ))}
                         <option value="__new__">+ Add new category…</option>
                       </select>
+                    </td>
+                    <td className="text-right text-slate-300">{v.transactionCount}</td>
+                    <td className="text-right text-slate-300 font-mono text-xs">
+                      {v.transactionCount === 0 ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </td>
+                    <td className="text-slate-400 text-xs whitespace-nowrap">
+                      {v.lastSeenAt ? new Date(v.lastSeenAt).toLocaleDateString() : "—"}
                     </td>
                     <td>
                       <button
@@ -679,12 +789,22 @@ export default function SettingsClient({
                         {v.isOneTime ? "YES" : "NO"}
                       </button>
                     </td>
-                    <td className="text-right"><button className="btn-danger py-1" onClick={() => removeVendor(v.id)}>Delete</button></td>
+                    <td className="text-right space-x-1 whitespace-nowrap">
+                      <button
+                        type="button"
+                        className="btn-ghost py-1 text-xs"
+                        onClick={() => setMergeFrom(v)}
+                        title="Merge this vendor into another. Transactions are reassigned + this row is deleted."
+                      >
+                        Merge
+                      </button>
+                      <button className="btn-danger py-1 text-xs" onClick={() => removeVendor(v.id)}>Delete</button>
+                    </td>
                   </tr>
                 ))}
                 {vends.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center text-sm text-slate-400 py-6">
+                    <td colSpan={8} className="text-center text-sm text-slate-400 py-6">
                       No vendors yet. Use <span className="text-slate-200">+ Add vendor</span> above, or upload transactions with vendor names.
                     </td>
                   </tr>
@@ -711,6 +831,61 @@ export default function SettingsClient({
           categories={cats.map((c) => ({ id: c.id, name: c.name }))}
         />
       </div>
+
+      {/* Merge vendor modal — only mounted when the user clicked
+          "Merge" on a vendor row. Picks which other vendor to merge
+          INTO, then POSTs to /api/vendors/merge which reassigns the
+          transactions and deletes the source row. */}
+      {mergeFrom ? (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+          onClick={() => (mergeBusy ? null : (setMergeFrom(null), setMergeTargetId("")))}
+        >
+          <div className="card max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-semibold text-slate-100 mb-2">
+              Merge "{mergeFrom.name}" into…
+            </div>
+            <div className="text-sm text-slate-400 mb-3">
+              Every transaction whose vendor matches "{mergeFrom.name}" will be reassigned to the vendor you pick, and "{mergeFrom.name}" will be removed. This is irreversible.
+            </div>
+            <label className="label">Merge into</label>
+            <select
+              className="input"
+              value={mergeTargetId}
+              onChange={(e) => setMergeTargetId(e.target.value)}
+              disabled={mergeBusy}
+            >
+              <option value="">Pick a vendor…</option>
+              {vends
+                .filter((v) => v.id !== mergeFrom.id)
+                .map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                    {v.transactionCount > 0 ? ` (${v.transactionCount} txns)` : ""}
+                  </option>
+                ))}
+            </select>
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button
+                type="button"
+                className="btn-ghost text-sm"
+                onClick={() => { setMergeFrom(null); setMergeTargetId(""); }}
+                disabled={mergeBusy}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-primary text-sm disabled:opacity-50"
+                onClick={doMerge}
+                disabled={!mergeTargetId || mergeBusy}
+              >
+                {mergeBusy ? "Merging…" : "Merge"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
         </>
       ) : null}
 
@@ -723,6 +898,37 @@ export default function SettingsClient({
           onClose={() => setAddCatOpen(false)}
         >
           <div className="space-y-3">
+            {/* Suggestions row — filtered by the currently-selected
+                type (Income vs Outcome). Picks fill in the name; the
+                user still confirms before the category is created. */}
+            <div>
+              <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5">
+                Common {addCatDraft.isIncome ? "income" : "expense"} categories — pick to start
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {(addCatDraft.isIncome ? SUGGESTED_INCOME_CATEGORIES : SUGGESTED_EXPENSE_CATEGORIES).map((s) => {
+                  const taken = cats.some((c) => c.name.toLowerCase() === s.toLowerCase());
+                  return (
+                    <button
+                      key={s}
+                      type="button"
+                      disabled={taken}
+                      onClick={() => setAddCatDraft({ ...addCatDraft, name: s })}
+                      className={`text-[11px] px-2 py-1 rounded border transition ${
+                        taken
+                          ? "border-line/40 text-slate-600 bg-ink-900/30 cursor-not-allowed"
+                          : addCatDraft.name === s
+                            ? "border-accent bg-accent-soft/40 text-accent"
+                            : "border-line text-slate-300 hover:border-accent/40 hover:text-slate-100"
+                      }`}
+                      title={taken ? "Already exists in this workspace" : "Use as category name"}
+                    >
+                      {s}{taken ? " ✓" : ""}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
             <div>
               <label className="label">Category name</label>
               <input
