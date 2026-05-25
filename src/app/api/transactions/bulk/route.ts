@@ -49,9 +49,12 @@ export async function POST(req: NextRequest) {
       const groupIds = Array.from(new Set(
         txns.map((t) => t.duplicateGroupId).filter((g): g is string => !!g)
       ));
+      // duplicateDismissedAt is the sticky marker the upload-commit
+      // duplicate scan checks to skip rows the user already triaged.
+      // Once set, this row never appears in the duplicate review again.
       await prisma.transaction.updateMany({
         where,
-        data: { isDuplicateCandidate: false, duplicateGroupId: null },
+        data: { isDuplicateCandidate: false, duplicateGroupId: null, duplicateDismissedAt: new Date() },
       });
       for (const gid of groupIds) {
         const remaining = await prisma.transaction.count({

@@ -672,6 +672,10 @@ model Transaction {
   isRecurring          Boolean         @default(false)
   isOneTime            Boolean         @default(false)
   isDuplicateCandidate Boolean         @default(false)
+  // When set, the user explicitly dismissed this transaction's
+  // duplicate alert. Future uploads must skip it in the duplicate
+  // scan so we never re-flag a row the owner already triaged.
+  duplicateDismissedAt DateTime?
   isExcludedFromPnl    Boolean         @default(false)
   // Free-form note explaining WHY this transaction is excluded (e.g. "personal
   // purchase on shared bank account"). Shown as a hover tooltip on the

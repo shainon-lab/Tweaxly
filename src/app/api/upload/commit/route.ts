@@ -515,9 +515,15 @@ export async function POST(req: NextRequest) {
   }
 
   // Re-detect duplicates over a recent window (-90 days) to keep the work bounded.
+  // Skip rows the user has explicitly dismissed — once they triaged a row as
+  // "not a duplicate", we must never re-flag it on later uploads.
   const since = new Date(Date.now() - 90 * 86400000);
   const recent = await prisma.transaction.findMany({
-    where: { businessId: business.id, transactionDate: { gte: since } },
+    where: {
+      businessId: business.id,
+      transactionDate: { gte: since },
+      duplicateDismissedAt: null,
+    },
   });
   const groups = findDuplicateCandidates(recent);
 
