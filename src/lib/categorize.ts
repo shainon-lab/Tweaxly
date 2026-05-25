@@ -1,9 +1,16 @@
-// Apply CategorizationRule rows to a transaction. Higher priority wins.
-import type { CategorizationRule, Transaction } from "@prisma/client";
+// Apply CategorizationRule / VendorizationRule rows to a transaction.
+// Higher priority wins. Both rule types share the same match shape
+// (matchField + matchType + pattern); only the action differs.
+import type { CategorizationRule, VendorizationRule, Transaction } from "@prisma/client";
 
 export type RuleMatchInput = Pick<Transaction, "description" | "vendor" | "source">;
 
-export function matchRule(rule: CategorizationRule, txn: RuleMatchInput): boolean {
+// Generic matcher — works for either rule kind since both have the
+// same matchField / matchType / pattern columns.
+function matchPattern(
+  rule: { matchField: string; matchType: string; pattern: string },
+  txn: RuleMatchInput,
+): boolean {
   const fieldVal = (() => {
     switch (rule.matchField) {
       case "vendor": return txn.vendor ?? "";
@@ -24,6 +31,10 @@ export function matchRule(rule: CategorizationRule, txn: RuleMatchInput): boolea
   }
 }
 
+export function matchRule(rule: CategorizationRule, txn: RuleMatchInput): boolean {
+  return matchPattern(rule, txn);
+}
+
 export type RuleApplication = {
   categoryId: string;
   setRecurring: boolean;
@@ -36,8 +47,25 @@ export function findApplicableRule(
 ): RuleApplication | null {
   const sorted = [...rules].sort((a, b) => b.priority - a.priority);
   for (const r of sorted) {
-    if (matchRule(r, txn)) {
+    if (matchPattern(r, txn)) {
       return { categoryId: r.categoryId, setRecurring: r.setRecurring, setOneTime: r.setOneTime };
+    }
+  }
+  return null;
+}
+
+export type VendorRuleApplication = {
+  vendorName: string;
+};
+
+export function findApplicableVendorRule(
+  rules: VendorizationRule[],
+  txn: RuleMatchInput,
+): VendorRuleApplication | null {
+  const sorted = [...rules].sort((a, b) => b.priority - a.priority);
+  for (const r of sorted) {
+    if (matchPattern(r, txn)) {
+      return { vendorName: r.vendorName };
     }
   }
   return null;

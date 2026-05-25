@@ -18,11 +18,15 @@ export default async function SettingsPage() {
   // vendors get inserted.
   await syncVendorsFromTransactions(business.id);
 
-  const [categoriesRaw, rules, vendors] = await Promise.all([
+  const [categoriesRaw, rules, vendorizationRules, vendors] = await Promise.all([
     prisma.category.findMany({
       where: { businessId: business.id },
     }),
     prisma.categorizationRule.findMany({
+      where: { businessId: business.id },
+      orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+    }),
+    prisma.vendorizationRule.findMany({
       where: { businessId: business.id },
       orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
     }),
@@ -259,6 +263,10 @@ export default async function SettingsPage() {
           id: r.id, matchField: r.matchField, matchType: r.matchType, pattern: r.pattern,
           categoryId: r.categoryId, priority: r.priority,
           setRecurring: r.setRecurring, setOneTime: r.setOneTime,
+        }))}
+        vendorizationRules={vendorizationRules.map((r) => ({
+          id: r.id, matchField: r.matchField, matchType: r.matchType, pattern: r.pattern,
+          vendorName: r.vendorName, priority: r.priority,
         }))}
         billing={billing}
         businessDna={businessDna}

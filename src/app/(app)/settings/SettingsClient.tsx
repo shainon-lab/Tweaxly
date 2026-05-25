@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import RulesClient from "../rules/RulesClient";
+import VendorizationRulesClient from "../rules/VendorizationRulesClient";
 import IntegrationClient from "../integration/IntegrationClient";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
 import CurrencySection from "./CurrencySection";
@@ -40,6 +41,15 @@ type Rule = {
   priority: number;
   setRecurring: boolean;
   setOneTime: boolean;
+};
+
+type VendorizationRule = {
+  id: string;
+  matchField: string;
+  matchType: string;
+  pattern: string;
+  vendorName: string;
+  priority: number;
 };
 
 type Biz = {
@@ -144,6 +154,7 @@ export default function SettingsClient({
   categories,
   vendors,
   rules,
+  vendorizationRules,
   billing,
   businessDna,
 }: {
@@ -151,6 +162,7 @@ export default function SettingsClient({
   categories: Cat[];
   vendors: Vendor[];
   rules: Rule[];
+  vendorizationRules: VendorizationRule[];
   // Per-workspace billing payload. Rendered as a "Plan & Credits"
   // section inside the Business Profile tab - billing lives with the
   // workspace it belongs to, not at account level.
@@ -780,17 +792,24 @@ export default function SettingsClient({
                   ...vends.filter((v) => v.transactionCount > 0 && v.categoryId)].map((v) => {
                   // Category column source = the actual categories the
                   // vendor's transactions sit in (NOT just Vendor.categoryId).
-                  // Single → name; multiple → "Mixed (A, B)"; none → "Undefined".
+                  // None → italic warn "Undefined"; one or more → list every
+                  // category name comma-separated, with the count in parens
+                  // when there's more than one (matches the Categories
+                  // table's vendor-cell treatment).
                   const catLabel =
                     v.txnCategoryNames.length === 0
                       ? <span className="text-warn text-xs italic">Undefined</span>
-                      : v.txnCategoryNames.length === 1
-                        ? <span className="text-slate-200 text-xs">{v.txnCategoryNames[0]}</span>
-                        : (
-                          <span className="text-slate-200 text-xs" title={v.txnCategoryNames.join("\n")}>
-                            Mixed <span className="text-slate-500">({v.txnCategoryNames.length})</span>
-                          </span>
-                        );
+                      : (
+                        <span
+                          className="text-slate-200 text-xs"
+                          title={v.txnCategoryNames.join("\n")}
+                        >
+                          <span className="line-clamp-2">{v.txnCategoryNames.join(", ")}</span>
+                          {v.txnCategoryNames.length > 1 ? (
+                            <span className="text-slate-500"> ({v.txnCategoryNames.length})</span>
+                          ) : null}
+                        </span>
+                      );
                   // Transactions column = distinct descriptions for
                   // this vendor with the count in parens (matches the
                   // Categories table's vendor-name treatment).
@@ -822,24 +841,7 @@ export default function SettingsClient({
                       )}
                     </td>
                     <td className="max-w-[320px]">{txnLabel}</td>
-                    <td className="max-w-[200px]">
-                      <div>{catLabel}</div>
-                      {/* Inline category pin editor — sets Vendor.categoryId
-                          for future uploads. Doesn't touch existing
-                          transactions; bulk-rewrite via Transactions if needed. */}
-                      <select
-                        className="input max-w-[260px] py-1 mt-1"
-                        value={v.categoryId ?? "__undefined__"}
-                        onChange={(e) => assignVendorCategory(v.id, e.target.value)}
-                        title="Pin a category to this vendor for FUTURE uploads. Existing transactions are not changed."
-                      >
-                        <option value="__undefined__">No pin</option>
-                        {cats.map((c) => (
-                          <option key={c.id} value={c.id}>{c.name}</option>
-                        ))}
-                        <option value="__new__">+ Add new category…</option>
-                      </select>
-                    </td>
+                    <td className="max-w-[200px]">{catLabel}</td>
                     <td className="text-right text-slate-300 font-mono text-xs">
                       {!v.transactionCount || !v.totalAmount ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </td>
@@ -899,6 +901,23 @@ export default function SettingsClient({
         <RulesClient
           rules={rules}
           categories={cats.map((c) => ({ id: c.id, name: c.name }))}
+        />
+      </div>
+
+      {/* Vendorization rules — mirrors the categorization rules card,
+          but the target is a canonical vendor name. Patterns match
+          against description / vendor / source on upload and rewrite
+          Transaction.vendor before category rules run. */}
+      <div className="card mt-4">
+        <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
+          <div className="font-medium">Vendorization rules</div>
+          <p className="text-xs text-slate-400 max-w-md">
+            If a description or raw vendor matches your pattern, the system rewrites the transaction's vendor to the canonical name. Higher priority wins. Runs before categorization rules.
+          </p>
+        </div>
+        <VendorizationRulesClient
+          rules={vendorizationRules}
+          vendors={vends.map((v) => ({ id: v.id, name: v.name }))}
         />
       </div>
 

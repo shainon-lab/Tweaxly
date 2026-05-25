@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { normalizeRow, type ColumnMapping } from "@/lib/normalize";
-import { findApplicableRule } from "@/lib/categorize";
+import { findApplicableRule, findApplicableVendorRule } from "@/lib/categorize";
 import { findDuplicateCandidates } from "@/lib/duplicates";
 import { detectAllSettlements } from "@/lib/settlements";
 import { kindFromName, parseDate } from "@/lib/parsers";
@@ -218,6 +218,14 @@ export async function POST(req: NextRequest) {
   const rules = await prisma.categorizationRule.findMany({
     where: { businessId: business.id },
   });
+  // Vendorization rules — applied BEFORE the per-row category logic
+  // so the rewritten vendor name flows into the Vendor.categoryId
+  // lookup. Sorted by priority desc (matches CategorizationRule
+  // semantics: higher priority wins).
+  const vendorizationRules = await prisma.vendorizationRule.findMany({
+    where: { businessId: business.id },
+    orderBy: [{ priority: "desc" }, { createdAt: "asc" }],
+  });
 
   // In-memory cache of categories looked up / created during this commit, so
   // we don't hit the DB once per row when the same vendor appears repeatedly.
@@ -304,9 +312,24 @@ export async function POST(req: NextRequest) {
     }
     if (forceYM) norm.accountingMonth = forceYM;
 
+    // VENDORIZATION — apply owner-defined rules that rewrite the
+    // vendor name based on description / vendor / source patterns.
+    // Runs FIRST so the rewritten vendor name then flows into all the
+    // vendor-based logic below (Vendor.categoryId lookup, alias
+    // resolution, Vendor row auto-create). Higher priority wins.
+    const vendorizationApp = findApplicableVendorRule(vendorizationRules, {
+      description: norm.description,
+      vendor:      norm.vendor,
+      source:      body.source,
+    });
+    if (vendorizationApp) {
+      norm.vendor = vendorizationApp.vendorName;
+    }
+
     // Identify the vendor for this row — prefer the explicitly mapped
-    // vendor column; fall back to description if the file only had one
-    // merchant field. normalizeName trims + collapses whitespace.
+    // vendor column (now possibly overridden by a vendorization rule);
+    // fall back to description if the file only had one merchant field.
+    // normalizeName trims + collapses whitespace.
     const vendorName = normalizeName(norm.vendor || norm.description || "") || null;
 
     const ruleApp = findApplicableRule(rules, {

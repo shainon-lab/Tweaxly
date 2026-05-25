@@ -262,6 +262,7 @@ model Business {
   uploads             UploadBatch[]
   transactions        Transaction[]
   rules               CategorizationRule[]
+  vendorizationRules  VendorizationRule[]
   duplicateGroups     DuplicateGroup[]
   employees           Employee[]
   employeeEvents      EmployeeEvent[]
@@ -733,6 +734,31 @@ model CategorizationRule {
   setOneTime   Boolean  @default(false)
   priority     Int      @default(0)
   createdAt    DateTime @default(now())
+}
+
+// VendorizationRule — owner-defined pattern that rewrites
+// Transaction.vendor on upload. Mirror of CategorizationRule but the
+// target is a vendor name string instead of a category id. Runs
+// BEFORE categorization so the new vendor name can flow into vendor-
+// based category lookup. Examples:
+//   matchField=description, matchType=contains, pattern="VISA*ADS",
+//     vendorName="Google Ads"
+//   matchField=vendor, matchType=startsWith, pattern="Interest",
+//     vendorName="Bank Leumi"
+model VendorizationRule {
+  id          String   @id @default(cuid())
+  businessId  String
+  business    Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // matchField: description | vendor | source
+  matchField  String
+  // matchType: contains | equals | startsWith | regex
+  matchType   String
+  pattern     String
+  vendorName  String   // canonical vendor name to write
+  priority    Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  @@index([businessId, priority])
 }
 
 model DuplicateGroup {
