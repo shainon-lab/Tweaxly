@@ -97,7 +97,7 @@ export default async function DataLogPage() {
     <>
       <PageHeader
         title={t("page.dataLog.title")}
-        subtitle="Data log - every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
+        subtitle="Manual Data Log - every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
       />
       <DataTabs />
       <ReviewBanner businessId={business.id} surface="data" />

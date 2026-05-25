@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import RulesClient from "../rules/RulesClient";
 import VendorizationRulesClient from "../rules/VendorizationRulesClient";
+import DataTabs from "@/components/DataTabs";
 import IntegrationClient from "../integration/IntegrationClient";
 import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
 import CurrencySection from "./CurrencySection";
@@ -522,7 +523,10 @@ export default function SettingsClient({
 
   return (
     <>
-      <BusinessSettingsTabs />
+      {/* Categories & Vendors now lives in the Data section, so it
+          renders the DataTabs strip instead of BusinessSettingsTabs
+          (even though the URL is still /settings?tab=categories). */}
+      {tab === "categories" ? <DataTabs /> : <BusinessSettingsTabs />}
 
       {/* ─── Business Settings tab ─────────────────────────────── */}
       {tab === "settings" ? (

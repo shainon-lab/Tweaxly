@@ -1,13 +1,15 @@
 "use client";
 
-// Settings tab nav — configuration only. Data-ops tabs (Sources,
-// Import, Integration, Transactions, Data Log) moved to <DataTabs />
-// under the new /data sidebar section, so this strip is now four tabs:
-//   Business Settings · Business Profile · Business Plan · Categories
+// Settings tab nav — configuration only. Data-ops tabs (Manual Sources,
+// Import, Integration, Transactions, Manual Data Log, Categories &
+// Vendors) live under <DataTabs /> in the /data sidebar section, so
+// this strip is three tabs:
+//   Business Settings · Business Profile · Business Plan
 //
-// /settings uses a ?tab= query for the first three (settings is the
-// default with no param); /settings?tab=categories renders the
-// Categories & Vendors editor inside SettingsClient.
+// /settings uses a ?tab= query for the last two (settings is the
+// default with no param). The Categories & Vendors editor still lives
+// inside SettingsClient at /settings?tab=categories, but its tab pill
+// is rendered by <DataTabs /> from the Data section.
 
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
@@ -28,11 +30,6 @@ const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: st
     href: "/settings?tab=plan",
     tKey: "settings.tab.businessPlan",
     activeWhen: (path, tab) => path === "/settings" && tab === "plan",
-  },
-  {
-    href: "/settings?tab=categories",
-    tKey: "settings.tab.categories",
-    activeWhen: (path, tab) => path === "/settings" && tab === "categories",
   },
 ];
 

@@ -132,20 +132,21 @@ export const en: Dictionary = {
   "settings.tab.businessProfile":  "Business Profile",
   "settings.tab.businessPlan":     "Business Plan",
   "settings.tab.import": "Import Data",
-  "settings.tab.sources": "Sources",
+  "settings.tab.sources": "Manual Sources",
   "settings.tab.integration": "Integration",
   "settings.tab.categories": "Categories & Vendors",
   "settings.tab.transactions": "Transactions",
-  "settings.tab.dataLog": "Data Log",
+  "settings.tab.dataLog": "Manual Data Log",
   // ─── Data section tab labels ───────────────────────────────────
   // These mirror the legacy settings.tab.* keys but are namespaced
   // under data.* so future divergence (e.g. different label per
   // platform area) doesn't break the other surface.
-  "data.tab.sources":      "Sources",
+  "data.tab.sources":      "Manual Sources",
   "data.tab.import":       "Import Data",
   "data.tab.integration":  "Integration",
   "data.tab.transactions": "Transactions",
-  "data.tab.dataLog":      "Data Log",
+  "data.tab.categories":   "Categories & Vendors",
+  "data.tab.dataLog":      "Manual Data Log",
   "settings.tab.workspaces": "Workspaces",
   "settings.tab.billing":    "Billing & Credits",
 
@@ -169,7 +170,7 @@ export const en: Dictionary = {
   "page.trends.title": "Category Trends",
   "page.transactions.title": "Settings",
   "page.manualData.title": "Settings",
-  "page.dataLog.title": "Settings",
+  "page.dataLog.title": "Manual Data Log",
   "page.notifications.title": "Set notifications",
   "page.notifications.subtitle": "Get alerted when your revenue, expenses, net profit, or any category moves past a threshold you set.",
   "page.integration.title": "Integration",
