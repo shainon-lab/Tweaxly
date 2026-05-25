@@ -9,7 +9,7 @@ export default async function SourcesPage() {
   return (
     <>
       <PageHeader
-        title="Manual sources"
+        title="Data"
         subtitle="Bank accounts, credit cards, PayPal and other places your money moves. Every imported file is tagged to a source so the coverage matrix can show you what's uploaded and what's still missing."
       />
       <DataTabs />

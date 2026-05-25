@@ -146,12 +146,12 @@ export const he: Dictionary = {
   "page.charts.title": "תרשימים",
   "page.charts.subtitle": "פירוקים ויזואליים של העסק לאורך תקופה אחת.",
   "page.trends.title": "מגמות לפי קטגוריה",
-  "page.transactions.title": "הגדרות",
-  "page.manualData.title": "הגדרות",
-  "page.dataLog.title": "יומן נתונים ידני",
+  "page.transactions.title": "נתונים",
+  "page.manualData.title": "נתונים",
+  "page.dataLog.title": "נתונים",
   "page.notifications.title": "הגדרת התראות",
   "page.notifications.subtitle": "קבל התראה כשההכנסות, ההוצאות, הרווח הנקי או כל קטגוריה חוצים סף שהגדרת.",
-  "page.integration.title": "אינטגרציה",
+  "page.integration.title": "נתונים",
   "page.integration.subtitle": "משוך נתונים אוטומטית מהכלים שלך (בקרוב).",
 
   // ─── tabs ──────────────────────────────────────────────────────

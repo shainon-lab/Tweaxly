@@ -168,12 +168,12 @@ export const en: Dictionary = {
   "page.charts.title": "Charts",
   "page.charts.subtitle": "Visual breakdowns of your business across one chosen period.",
   "page.trends.title": "Category Trends",
-  "page.transactions.title": "Settings",
-  "page.manualData.title": "Settings",
-  "page.dataLog.title": "Manual Data Log",
+  "page.transactions.title": "Data",
+  "page.manualData.title": "Data",
+  "page.dataLog.title": "Data",
   "page.notifications.title": "Set notifications",
   "page.notifications.subtitle": "Get alerted when your revenue, expenses, net profit, or any category moves past a threshold you set.",
-  "page.integration.title": "Integration",
+  "page.integration.title": "Data",
   "page.integration.subtitle": "Pull data from your tools automatically (coming soon).",
 
   // ─── tabs (internal sub-tab nav) ───────────────────────────────

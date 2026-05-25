@@ -11,8 +11,15 @@ import {
 import SettingsClient from "./SettingsClient";
 import { getBusinessProfile } from "@/lib/businessProfile";
 
-export default async function SettingsPage() {
+export default async function SettingsPage({
+  searchParams,
+}: {
+  searchParams?: { tab?: string };
+}) {
   const { business } = await requireBusiness();
+  // Categories & Vendors moved into the Data section, so when that tab
+  // is active the page renders DataTabs and the H1 should say "Data".
+  const isCategoriesTab = searchParams?.tab === "categories";
   // Backfill / catch up the Vendor registry from the actual transactions
   // before we render. Existing assignments are preserved; only brand-new
   // vendors get inserted.
@@ -218,7 +225,7 @@ export default async function SettingsPage() {
   return (
     <>
       <PageHeader
-        title={t("settings.title")}
+        title={isCategoriesTab ? "Data" : t("settings.title")}
         subtitle={t("settings.subtitle")}
       />
       <SettingsClient
