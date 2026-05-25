@@ -61,6 +61,16 @@ export default function SourcesClient({ currency }: { currency: string }) {
   const [coverage, setCoverage] = useState<Coverage | null>(null);
   const [loading, setLoading]   = useState(true);
   const [editing, setEditing]   = useState<Source | "new" | null>(null);
+  // `from=upload` is set when the user landed here via the upload
+  // flow's "+ Create new source" option. We send them back to
+  // /manual-data with the new source's id once they save, so they
+  // resume the upload right where they left off.
+  const [returnToUpload, setReturnToUpload] = useState(false);
+  // Bumped after every save so the HealthScoreWidget + MonthlyChecklist
+  // (which fetch client-side, not via Next server data) remount and
+  // refetch — keeps the "missing months / coverage %" alerts in sync
+  // with the source we just added.
+  const [healthKey, setHealthKey] = useState(0);
 
   // Deep-link from the upload flow's "+ Create new source" picker:
   // /sources?new=1 auto-opens the Add modal once. We strip the query
@@ -69,6 +79,7 @@ export default function SourcesClient({ currency }: { currency: string }) {
   useEffect(() => {
     if (searchParams.get("new") === "1") {
       setEditing("new");
+      if (searchParams.get("from") === "upload") setReturnToUpload(true);
       router.replace("/sources");
     }
   }, [searchParams, router]);
@@ -96,8 +107,8 @@ export default function SourcesClient({ currency }: { currency: string }) {
 
   return (
     <>
-      <HealthScoreWidget variant="full" />
-      <MonthlyChecklist />
+      <HealthScoreWidget key={`health-${healthKey}`} variant="full" />
+      <MonthlyChecklist key={`checklist-${healthKey}`} />
       <div className="card mb-6">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>
@@ -185,7 +196,19 @@ export default function SourcesClient({ currency }: { currency: string }) {
           initial={editing === "new" ? null : editing}
           defaultCurrency={currency}
           onClose={() => setEditing(null)}
-          onSaved={async () => { setEditing(null); await refresh(); router.refresh(); }}
+          onSaved={async (createdId) => {
+            setEditing(null);
+            // Return-to-upload: came in via /sources?new=1&from=upload,
+            // so jump back to /manual-data with the new source pinned
+            // and let GuidedBankImport's effect re-select it.
+            if (returnToUpload && createdId) {
+              router.push(`/manual-data?source=${createdId}`);
+              return;
+            }
+            await refresh();
+            setHealthKey((k) => k + 1);
+            router.refresh();
+          }}
         />
       ) : null}
     </>
@@ -273,7 +296,10 @@ function SourceFormModal({
   initial: Source | null;
   defaultCurrency: string;
   onClose: () => void;
-  onSaved: () => void;
+  // `createdId` is the new source's id when this was a create (POST).
+  // null on edits. The parent uses it to deep-link back to the upload
+  // flow with the right source pre-selected.
+  onSaved: (createdId: string | null) => void;
 }) {
   const isEdit = !!initial;
   const [name, setName]         = useState(initial?.name ?? "");
@@ -303,7 +329,10 @@ function SourceFormModal({
         setError(msg || `Save failed (${res.status})`);
         return;
       }
-      onSaved();
+      // POST returns { id, name } — pass the id back for the
+      // upload-return flow. Edits get null.
+      const created = isEdit ? null : await res.json().catch(() => null);
+      onSaved(created?.id ?? null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Save failed");
     } finally {

@@ -15,7 +15,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowRight, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import BankImportWizard, { type WizardContext } from "./BankImportWizard";
 
@@ -37,6 +37,13 @@ type Intake = {
 type Phase = "intake" | "overlap" | "wizard";
 
 export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  // When the user returns here from "+ Create new source", SourcesClient
+  // appends ?source=<id>. We consume it once the source list arrives,
+  // then strip the query so a refresh doesn't keep re-applying it.
+  const pendingSourceId = searchParams.get("source");
+
   const [sources,  setSources]  = useState<Source[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
 
@@ -65,6 +72,18 @@ export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency:
     })();
     return () => { cancelled = true };
   }, []);
+
+  // Once sources have loaded, pre-select the one the user just created
+  // (return-from-Manual-Sources flow), then clear the query so this
+  // doesn't fire again on a manual refresh.
+  useEffect(() => {
+    if (!pendingSourceId || loadingSources) return;
+    const match = sources.find((s) => s.id === pendingSourceId);
+    if (match) {
+      setIntake((prev) => ({ ...prev, source: match }));
+    }
+    router.replace("/manual-data");
+  }, [pendingSourceId, loadingSources, sources, router]);
 
   const context: WizardContext | null = useMemo(() => {
     if (phase !== "wizard" || !intake.source) return null;
@@ -198,7 +217,10 @@ function IntakeStep({
                 // Sources tab with the Add-source modal pre-opened.
                 // They can come back here after creating it.
                 if (e.target.value === "__new__") {
-                  router.push("/sources?new=1");
+                  // `from=upload` tells SourcesClient to send the user
+                  // back here once the new source is saved, with the
+                  // created source pre-selected.
+                  router.push("/sources?new=1&from=upload");
                   return;
                 }
                 const s = sources.find((x) => x.id === e.target.value) ?? null;
