@@ -9,7 +9,7 @@ import TransactionsClient from "./TransactionsClient";
 
 export default async function TransactionsPage({
   searchParams,
-}: { searchParams: Promise<{ q?: string; source?: string; ym?: string; uncategorized?: string; unvendorized?: string; vendor?: string }> }) {
+}: { searchParams: Promise<{ q?: string; source?: string; ym?: string; uncategorized?: string; unvendorized?: string; vendor?: string; category?: string }> }) {
   const { business } = await requireBusiness();
   const { t } = await getServerT();
   const sp = await searchParams;
@@ -24,6 +24,10 @@ export default async function TransactionsPage({
   // string. Powers the "drill into transactions for this vendor" link
   // from Settings → Categories & Vendors → Vendors table.
   if (sp.vendor) where.vendor = { equals: sp.vendor, mode: "insensitive" };
+  // ?category=<id> — exact match on Transaction.categoryId. Powers the
+  // drill-down link from Settings → Categories & Vendors → Categories
+  // table (the mirror of the vendor drill-down).
+  if (sp.category) where.categoryId = sp.category;
   // Uncategorized = no category OR catch-all bucket. Matches both the
   // new "Undefined Category" name (assigned by the upload commit when
   // no Category column was mapped) and the legacy "Uncategorized"

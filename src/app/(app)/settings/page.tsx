@@ -142,12 +142,16 @@ export default async function SettingsPage({
     select: {
       vendor:      true,
       description: true,
-      category:    { select: { name: true } },
+      category:    { select: { name: true, kind: true } },
     },
   });
   const vendorCategoryNames    = new Map<string, Set<string>>();   // vendor → category names (excluding catch-all)
   const vendorDescriptionNames = new Map<string, Set<string>>();   // vendor → distinct descriptions
   const vendorTxnCount         = new Map<string, number>();        // vendor → total active txns
+  // Track the kinds of categories each vendor's transactions sit in so
+  // the Vendors table can show a Type pill that mirrors the Categories
+  // table. "revenue" + non-revenue together → Mixed.
+  const vendorCategoryKinds    = new Map<string, Set<string>>();
   for (const t of txnCategoryByVendor) {
     if (!t.vendor) continue;
     const key = t.vendor.toLowerCase();
@@ -155,6 +159,10 @@ export default async function SettingsPage({
     if (t.description && t.description.trim()) {
       if (!vendorDescriptionNames.has(key)) vendorDescriptionNames.set(key, new Set());
       vendorDescriptionNames.get(key)!.add(t.description.trim());
+    }
+    if (t.category?.kind) {
+      if (!vendorCategoryKinds.has(key)) vendorCategoryKinds.set(key, new Set());
+      vendorCategoryKinds.get(key)!.add(t.category.kind);
     }
     const cn = t.category?.name;
     if (cn && cn !== "Uncategorized" && cn !== "Undefined Category") {
@@ -258,12 +266,24 @@ export default async function SettingsPage({
           const agg = vendorAggByName.get(key);
           const descs = vendorDescriptionNames.get(key);
           const cats  = vendorCategoryNames.get(key);
+          const kinds = vendorCategoryKinds.get(key);
+          // Vendor Type derived from the kinds of categories its txns
+          // sit in. Lets the Vendors table show a Type pill that
+          // mirrors the Categories table's column. null when there are
+          // no categorized txns yet (rendered as "—").
+          const typeLabel: "Income" | "Outcome" | "Mixed" | null =
+            !kinds || kinds.size === 0 ? null
+            : kinds.size > 1            ? "Mixed"
+            : kinds.has("revenue")      ? "Income"
+            :                             "Outcome";
           return {
             id: v.id, name: v.name, categoryId: v.categoryId, isOneTime: v.isOneTime,
             transactionCount: agg?.count ?? 0,
             totalAmount:      agg?.sum ?? 0,
             lastSeenAt:       agg?.lastSeen ?? null,
-            // Distinct descriptions for the new Transactions column.
+            typeLabel,
+            // Distinct descriptions kept for the hover tooltip on the
+            // Transactions count cell.
             descriptions:     descs ? Array.from(descs).sort((a, b) => a.localeCompare(b)) : [],
             // Category names derived from the actual transactions
             // (NOT just the Vendor.categoryId pin). Lets the Category

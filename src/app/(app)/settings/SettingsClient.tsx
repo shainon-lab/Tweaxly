@@ -84,9 +84,12 @@ type Vendor = {
   transactionCount: number;
   totalAmount:      number;   // signed sum
   lastSeenAt:       string | null; // ISO
-  // Distinct transaction descriptions and category names derived from
-  // actual transactions for this vendor — powers the Transactions and
-  // (real) Category columns. Sorted alphabetically.
+  // Type pill derived from the kinds of categories this vendor's
+  // transactions sit in. Mirrors the Categories table's Type column so
+  // the two views read symmetrically.
+  typeLabel:        "Income" | "Outcome" | "Mixed" | null;
+  // Distinct transaction descriptions kept for the hover tooltip on
+  // the Transactions count cell.
   descriptions:     string[];
   txnCategoryNames: string[];
 };
@@ -742,7 +745,19 @@ export default function SettingsClient({
                       );
                   return (
                     <tr key={c.id}>
-                      <td>{c.name}</td>
+                      <td>
+                        {c.transactionCount > 0 ? (
+                          <Link
+                            href={`/transactions?category=${c.id}`}
+                            className="text-slate-100 hover:text-accent underline-offset-2 hover:underline"
+                            title="Drill into every transaction in this category"
+                          >
+                            {c.name}
+                          </Link>
+                        ) : (
+                          <span className="text-slate-300">{c.name}</span>
+                        )}
+                      </td>
                       <td>
                         <span className={c.kind === "revenue" ? "pill-good" : "pill"}>
                           {typeLabel(c.kind)}
@@ -798,12 +813,17 @@ export default function SettingsClient({
 
         {view === "vendors" ? (
           <>
-            <table className="table-base">
+            {/* Mirrors the Categories table column-for-column so the
+                two views read as the same idea with the lead entity
+                swapped. Lead | Type | Related | Transactions | Total |
+                Last seen | One-time? | Actions. */}
+            <table className="table-base mb-2">
               <thead>
                 <tr>
                   <th>Vendor</th>
-                  <th>Transactions</th>
-                  <th>Category</th>
+                  <th>Type</th>
+                  <th>Categories</th>
+                  <th className="text-right">Transactions</th>
                   <th className="text-right">Total</th>
                   <th>Last seen</th>
                   <th>One-time?</th>
@@ -819,41 +839,31 @@ export default function SettingsClient({
                     bubble up. */}
                 {[...vends.filter((v) => v.transactionCount > 0 && !v.categoryId),
                   ...vends.filter((v) => v.transactionCount > 0 && v.categoryId)].map((v) => {
-                  // Category column source = the actual categories the
-                  // vendor's transactions sit in (NOT just Vendor.categoryId).
-                  // None → italic warn "Undefined"; one or more → list every
-                  // category name comma-separated, with the count in parens
-                  // when there's more than one (matches the Categories
-                  // table's vendor-cell treatment).
+                  // Categories cell: list every category this vendor's
+                  // transactions sit in with the count in parens — the
+                  // mirror image of the Categories table's Vendors cell.
                   const catLabel =
                     v.txnCategoryNames.length === 0
-                      ? <span className="text-warn text-xs italic">Undefined</span>
-                      : (
-                        <span
-                          className="text-slate-200 text-xs"
-                          title={v.txnCategoryNames.join("\n")}
-                        >
-                          <span className="line-clamp-2">{v.txnCategoryNames.join(", ")}</span>
-                          {v.txnCategoryNames.length > 1 ? (
-                            <span className="text-slate-500"> ({v.txnCategoryNames.length})</span>
-                          ) : null}
-                        </span>
-                      );
-                  // Transactions column = distinct descriptions for
-                  // this vendor with the count in parens (matches the
-                  // Categories table's vendor-name treatment).
-                  const txnLabel =
-                    v.descriptions.length === 0
                       ? <span className="text-slate-500 text-xs">—</span>
                       : (
                         <span
                           className="text-slate-300 text-xs"
-                          title={v.descriptions.join("\n")}
+                          title={v.txnCategoryNames.join("\n")}
                         >
-                          <span className="line-clamp-2">{v.descriptions.join(", ")}</span>
-                          <span className="text-slate-500"> ({v.descriptions.length})</span>
+                          <span className="line-clamp-2">{v.txnCategoryNames.join(", ")}</span>
+                          <span className="text-slate-500"> ({v.txnCategoryNames.length})</span>
                         </span>
                       );
+                  // Type pill: Income (revenue-only), Outcome
+                  // (non-revenue-only), Mixed (both), or — when no
+                  // categorized txns yet.
+                  const typePill = v.typeLabel === "Income"
+                    ? <span className="pill-good">Income</span>
+                    : v.typeLabel === "Outcome"
+                    ? <span className="pill">Outcome</span>
+                    : v.typeLabel === "Mixed"
+                    ? <span className="pill">Mixed</span>
+                    : <span className="text-slate-500 text-xs">—</span>;
                   return (
                   <tr key={v.id}>
                     <td>
@@ -869,8 +879,14 @@ export default function SettingsClient({
                         <span className="text-slate-300">{v.name}</span>
                       )}
                     </td>
-                    <td className="max-w-[320px]">{txnLabel}</td>
-                    <td className="max-w-[200px]">{catLabel}</td>
+                    <td>{typePill}</td>
+                    <td className="max-w-[320px]">{catLabel}</td>
+                    <td
+                      className="text-right text-slate-300"
+                      title={v.descriptions.length > 0 ? v.descriptions.join("\n") : undefined}
+                    >
+                      {v.transactionCount}
+                    </td>
                     <td className="text-right text-slate-300 font-mono text-xs">
                       {!v.transactionCount || !v.totalAmount ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </td>
@@ -905,7 +921,7 @@ export default function SettingsClient({
                 })}
                 {vends.filter((v) => v.transactionCount > 0).length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="text-center text-sm text-slate-400 py-6">
+                    <td colSpan={8} className="text-center text-sm text-slate-400 py-6">
                       No vendors with active transactions yet. Use the <span className="text-slate-200">Set vendor…</span> bulk action on Transactions to normalize raw descriptions into vendors.
                     </td>
                   </tr>
