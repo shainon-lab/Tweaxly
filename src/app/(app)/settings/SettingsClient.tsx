@@ -122,7 +122,7 @@ const SUGGESTED_INCOME_CATEGORIES = [
   "Refunds / Adjustments",
   "Other Income",
 ] as const;
-type View = "categories" | "vendors" | "all";
+type View = "categories" | "vendors";
 
 
 const LOGO_ACCEPT = "image/png,image/jpeg,image/webp,image/svg+xml";
@@ -690,24 +690,14 @@ export default function SettingsClient({
       <div className="card mb-6">
         <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
           <div className="font-medium">Categories &amp; vendors</div>
-          <div className="inline-flex items-center rounded-md border border-line overflow-hidden text-xs">
-            {(["categories", "vendors", "all"] as View[]).map((v) => (
-              <button
-                key={v}
-                type="button"
-                onClick={() => setView(v)}
-                className={`px-3 py-1.5 transition ${
-                  view === v
-                    ? "bg-accent-soft text-accent"
-                    : "text-slate-300 hover:bg-ink-700"
-                }`}
-              >
-                {v === "categories" ? "Show only categories"
-                  : v === "vendors"  ? "Show only vendors"
-                  :                     "Show all"}
-              </button>
-            ))}
-          </div>
+          <select
+            className="input text-xs py-1 px-2 w-auto"
+            value={view}
+            onChange={(e) => setView(e.target.value as View)}
+          >
+            <option value="categories">Show by categories</option>
+            <option value="vendors">Show by vendors</option>
+          </select>
         </div>
 
         <div className="flex items-center justify-end gap-2 mb-4">
@@ -715,11 +705,8 @@ export default function SettingsClient({
           <button className="btn-ghost" onClick={() => setAddVendorOpen(true)}>+ Add vendor</button>
         </div>
 
-        {view === "categories" || view === "all" ? (
+        {view === "categories" ? (
           <>
-            {view === "all" ? (
-              <div className="text-xs uppercase tracking-wider text-slate-500 mb-2">Categories</div>
-            ) : null}
             <table className="table-base mb-2">
               <thead>
                 <tr>
@@ -809,11 +796,8 @@ export default function SettingsClient({
           </>
         ) : null}
 
-        {view === "vendors" || view === "all" ? (
+        {view === "vendors" ? (
           <>
-            {view === "all" ? (
-              <div className="text-xs uppercase tracking-wider text-slate-500 mt-6 mb-2">Vendors</div>
-            ) : null}
             <table className="table-base">
               <thead>
                 <tr>
