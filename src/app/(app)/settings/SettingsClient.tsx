@@ -68,6 +68,7 @@ type Cat = {
   // Spec-required aggregates surfaced on the Categories table:
   transactionCount: number;
   totalAmount:      number;   // signed sum of transaction.amount in base currency
+  lastSeenAt:       string | null; // ISO, max transactionDate over active txns
   vendorCount:      number;
   vendorNames:      string[]; // alphabetical, source for the "names (N)" cell
 };
@@ -423,6 +424,13 @@ export default function SettingsClient({
   const [mergeTargetId, setMergeTargetId] = useState<string>("");
   const [mergeBusy, setMergeBusy] = useState(false);
 
+  // Category merge mirrors the vendor merge UX. Re-points every
+  // Transaction.categoryId / Vendor.categoryId / CategorizationRule
+  // pointing at the source onto the target, then deletes the source.
+  const [mergeCategoryFrom, setMergeCategoryFrom] = useState<Cat | null>(null);
+  const [mergeCategoryTargetId, setMergeCategoryTargetId] = useState<string>("");
+  const [mergeCategoryBusy, setMergeCategoryBusy] = useState(false);
+
   async function doMerge() {
     if (!mergeFrom || !mergeTargetId) return;
     setMergeBusy(true);
@@ -441,6 +449,27 @@ export default function SettingsClient({
       startTransition(() => router.refresh());
     } finally {
       setMergeBusy(false);
+    }
+  }
+
+  async function doMergeCategory() {
+    if (!mergeCategoryFrom || !mergeCategoryTargetId) return;
+    setMergeCategoryBusy(true);
+    try {
+      const res = await fetch("/api/categories/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ fromCategoryId: mergeCategoryFrom.id, toCategoryId: mergeCategoryTargetId }),
+      });
+      if (!res.ok) { alert(await res.text()); return; }
+      const data = await res.json();
+      setCats((cur) => cur.filter((c) => c.id !== mergeCategoryFrom.id));
+      setMergeCategoryFrom(null);
+      setMergeCategoryTargetId("");
+      alert(`Merged. ${data.transactionsReassigned ?? 0} transaction${(data.transactionsReassigned ?? 0) === 1 ? "" : "s"} reassigned.`);
+      startTransition(() => router.refresh());
+    } finally {
+      setMergeCategoryBusy(false);
     }
   }
 
@@ -699,6 +728,7 @@ export default function SettingsClient({
                   <th>Vendors</th>
                   <th className="text-right">Transactions</th>
                   <th className="text-right">Total</th>
+                  <th>Last seen</th>
                   <th>One-time?</th>
                   <th></th>
                 </tr>
@@ -736,6 +766,9 @@ export default function SettingsClient({
                       <td className="text-right text-slate-300 font-mono text-xs">
                         {!c.totalAmount ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
+                      <td className="text-slate-400 text-xs whitespace-nowrap">
+                        {c.lastSeenAt ? new Date(c.lastSeenAt).toLocaleDateString() : "—"}
+                      </td>
                       <td>
                         <button
                           type="button"
@@ -748,9 +781,17 @@ export default function SettingsClient({
                           {c.isOneTime ? "YES" : "NO"}
                         </button>
                       </td>
-                      <td className="text-right">
+                      <td className="text-right space-x-1 whitespace-nowrap">
                         <button
-                          className="btn-danger py-1"
+                          type="button"
+                          className="btn-ghost py-1 text-xs"
+                          onClick={() => setMergeCategoryFrom(c)}
+                          title="Merge this category into another. Transactions, vendor pins, and rules are reassigned + this row is deleted."
+                        >
+                          Merge
+                        </button>
+                        <button
+                          className="btn-danger py-1 text-xs"
                           onClick={() => removeCategory(c.id)}
                           disabled={!unused}
                           title={unused
@@ -924,6 +965,61 @@ export default function SettingsClient({
           vendors={vends.map((v) => ({ id: v.id, name: v.name }))}
         />
       </div>
+
+      {/* Merge category modal — mirrors the vendor merge modal. Picks
+          a target category, then POSTs to /api/categories/merge which
+          reassigns transactions / vendor pins / rules and deletes the
+          source. */}
+      {mergeCategoryFrom ? (
+        <div
+          className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+          onClick={() => (mergeCategoryBusy ? null : (setMergeCategoryFrom(null), setMergeCategoryTargetId("")))}
+        >
+          <div className="card max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="text-base font-semibold text-slate-100 mb-2">
+              Merge &quot;{mergeCategoryFrom.name}&quot; into…
+            </div>
+            <div className="text-sm text-slate-400 mb-3">
+              Every transaction, vendor pin, and rule currently assigned to &quot;{mergeCategoryFrom.name}&quot; will be reassigned to the category you pick, and &quot;{mergeCategoryFrom.name}&quot; will be removed. This is irreversible.
+            </div>
+            <label className="label">Merge into</label>
+            <select
+              className="input"
+              value={mergeCategoryTargetId}
+              onChange={(e) => setMergeCategoryTargetId(e.target.value)}
+              disabled={mergeCategoryBusy}
+            >
+              <option value="">Pick a category…</option>
+              {cats
+                .filter((c) => c.id !== mergeCategoryFrom.id)
+                .map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                    {c.transactionCount > 0 ? ` (${c.transactionCount} txns)` : ""}
+                  </option>
+                ))}
+            </select>
+            <div className="flex items-center justify-end gap-2 mt-5">
+              <button
+                type="button"
+                className="btn-ghost text-sm"
+                onClick={() => { setMergeCategoryFrom(null); setMergeCategoryTargetId(""); }}
+                disabled={mergeCategoryBusy}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn-primary text-sm disabled:opacity-50"
+                onClick={doMergeCategory}
+                disabled={!mergeCategoryTargetId || mergeCategoryBusy}
+              >
+                {mergeCategoryBusy ? "Merging…" : "Merge"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {/* Merge vendor modal — only mounted when the user clicked
           "Merge" on a vendor row. Picks which other vendor to merge

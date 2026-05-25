@@ -66,6 +66,7 @@ export default async function SettingsPage({
       where: { businessId: business.id, categoryId: { not: null }, isExcludedFromPnl: false },
       _count: { _all: true },
       _sum:   { amount: true },
+      _max:   { transactionDate: true },
     }),
     prisma.vendor.groupBy({
       by:    ["categoryId"],
@@ -82,7 +83,11 @@ export default async function SettingsPage({
   const categoryAggById = new Map(
     categoryAggs
       .filter((c): c is typeof c & { categoryId: string } => c.categoryId != null)
-      .map((c) => [c.categoryId, { count: c._count._all, sum: c._sum.amount ?? 0 }]),
+      .map((c) => [c.categoryId, {
+        count:    c._count._all,
+        sum:      c._sum.amount ?? 0,
+        lastSeen: c._max.transactionDate?.toISOString() ?? null,
+      }]),
   );
   const vendorCountByCategoryId = new Map(
     vendorsByCategory
@@ -244,6 +249,7 @@ export default async function SettingsPage({
           primaryVendorId: c.primaryVendorId,
           transactionCount: categoryAggById.get(c.id)?.count ?? 0,
           totalAmount:      categoryAggById.get(c.id)?.sum ?? 0,
+          lastSeenAt:       categoryAggById.get(c.id)?.lastSeen ?? null,
           vendorCount:      vendorCountByCategoryId.get(c.id) ?? 0,
           vendorNames:      vendorNamesByCategoryId.get(c.id) ?? [],
         }))}
