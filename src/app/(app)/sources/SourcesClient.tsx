@@ -11,7 +11,7 @@
 // All actions are workspace-scoped via session — no cross-workspace UI.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Pencil, Archive, AlertTriangle } from "lucide-react";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
@@ -56,10 +56,22 @@ type Coverage = {
 
 export default function SourcesClient({ currency }: { currency: string }) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [sources, setSources]   = useState<Source[]>([]);
   const [coverage, setCoverage] = useState<Coverage | null>(null);
   const [loading, setLoading]   = useState(true);
   const [editing, setEditing]   = useState<Source | "new" | null>(null);
+
+  // Deep-link from the upload flow's "+ Create new source" picker:
+  // /sources?new=1 auto-opens the Add modal once. We strip the query
+  // after consuming it so a refresh / back-nav doesn't keep re-opening
+  // the modal.
+  useEffect(() => {
+    if (searchParams.get("new") === "1") {
+      setEditing("new");
+      router.replace("/sources");
+    }
+  }, [searchParams, router]);
 
   const refresh = useCallback(async () => {
     setLoading(true);

@@ -15,6 +15,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { AlertTriangle, ArrowRight, ExternalLink, Loader2, RefreshCw } from "lucide-react";
 import BankImportWizard, { type WizardContext } from "./BankImportWizard";
 
@@ -167,6 +168,7 @@ function IntakeStep({
   checking: boolean;
   onContinue: () => void;
 }) {
+  const router = useRouter();
   return (
     <div className="card mb-6">
       <div className="font-medium mb-1">Where does this file come from?</div>
@@ -183,7 +185,7 @@ function IntakeStep({
           ) : sources.length === 0 ? (
             <div className="rounded-md border border-warn/40 bg-warn/5 px-3 py-3 text-xs text-slate-200">
               No sources yet.
-              <Link href="/sources" className="ml-1 text-accent inline-flex items-center gap-0.5">
+              <Link href="/sources?new=1" className="ml-1 text-accent inline-flex items-center gap-0.5">
                 Add your first source <ExternalLink size={11} />
               </Link>
             </div>
@@ -192,6 +194,13 @@ function IntakeStep({
               className="input"
               value={intake.source?.id ?? ""}
               onChange={(e) => {
+                // Sentinel "__new__" jumps the user out to the Manual
+                // Sources tab with the Add-source modal pre-opened.
+                // They can come back here after creating it.
+                if (e.target.value === "__new__") {
+                  router.push("/sources?new=1");
+                  return;
+                }
                 const s = sources.find((x) => x.id === e.target.value) ?? null;
                 setIntake({ ...intake, source: s });
               }}
@@ -202,6 +211,7 @@ function IntakeStep({
                   {s.name} ({s.currency}{s.last4 ? ` ·${s.last4}` : ""})
                 </option>
               ))}
+              <option value="__new__">+ Create new source…</option>
             </select>
           )}
           {sources.length > 0 ? (
