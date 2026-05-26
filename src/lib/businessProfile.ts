@@ -22,6 +22,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { buildBusinessContext } from "./advisor";
+import { tierConfigForBusiness } from "./aiTier";
 import {
   INDUSTRY_OPTIONS, BUSINESS_CATEGORY_OPTIONS,
   BUSINESS_MODEL_OPTIONS, MAIN_GOAL_OPTIONS,
@@ -157,11 +158,13 @@ export async function generateBusinessSummary(businessId: string): Promise<{ sum
 
   if (looksReal) {
     try {
+      const tier = await tierConfigForBusiness(businessId, "business_profile");
       const client = new Anthropic({ apiKey: apiKey! });
       const res = await client.messages.create({
-        model:      "claude-opus-4-7",
-        max_tokens: 600,
-        thinking:   { type: "adaptive" },
+        model:      tier.model,
+        max_tokens: tier.maxTokens,
+        ...(tier.thinking ? { thinking: tier.thinking } : {}),
+        ...(tier.effort ? { output_config: { effort: tier.effort } } : {}),
         system: [
           { type: "text", text: SUMMARY_SYSTEM },
           { type: "text", text: `Owner-filled profile:\n\n\`\`\`json\n${profilePayload}\n\`\`\`\n\nLive financial snapshot:\n\n\`\`\`json\n${snapshotPayload}\n\`\`\`` },

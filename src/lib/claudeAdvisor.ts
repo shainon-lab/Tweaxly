@@ -18,6 +18,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { BusinessContext, ConsultationAnswer } from "./advisor";
 import { parseStructuredAdvice } from "./advisorTypes";
 import { getProfileForPrompt } from "./businessProfile";
+import { tierConfigForBusiness, tierConfigFor } from "./aiTier";
 
 export type ConsultationHistoryMessage = {
   role: "user" | "assistant";
@@ -206,11 +207,20 @@ export async function answerQuestionWithClaude(
     { role: "user" as const, content: message },
   ];
 
+  // Tiered model routing. Pro/Business get Opus + adaptive thinking +
+  // high effort + the full 16k output ceiling. Free (and the legacy
+  // no-businessId case that shouldn't reach here in production since
+  // consultations are credit-gated to Pro) get Haiku with a tighter
+  // ceiling — see src/lib/aiTier.ts for the surface budgets.
+  const tier = businessId
+    ? await tierConfigForBusiness(businessId, "consultation")
+    : tierConfigFor("free", "consultation");
+
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
-    max_tokens: 16000,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "high" },
+    model: tier.model,
+    max_tokens: tier.maxTokens,
+    ...(tier.thinking ? { thinking: tier.thinking } : {}),
+    ...(tier.effort ? { output_config: { effort: tier.effort } } : {}),
     system: [
       // Frozen instructions - identical every request, will cache.
       { type: "text", text: SYSTEM_INSTRUCTIONS },

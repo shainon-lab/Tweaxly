@@ -19,6 +19,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "./db";
 import { buildBusinessContext, recommendProactive, type BusinessContext } from "./advisor";
+import { tierConfigForBusiness } from "./aiTier";
 
 // Cap on how many observations we keep at once - more becomes noise
 // in the system prompt + visually overwhelming in the Settings
@@ -208,12 +209,14 @@ Output example: ["Revenue is concentrated in a few large invoices each month rat
 async function claudePolish(
   ctx: BusinessContext,
   deterministic: Detected[],
+  businessId: string,
 ): Promise<string[]> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const looksReal = !!apiKey && apiKey.length > 20 &&
     !/change-me|placeholder|todo|your[-_]key/i.test(apiKey);
   if (!looksReal) return [];
   try {
+    const tier = await tierConfigForBusiness(businessId, "derived_signals");
     const client = new Anthropic({ apiKey: apiKey! });
     const snapshot = JSON.stringify({
       ccy:          ctx.ccy,
@@ -230,9 +233,10 @@ async function claudePolish(
       forecast:     ctx.forecast,
     }, null, 2);
     const res = await client.messages.create({
-      model:      "claude-opus-4-7",
-      max_tokens: 500,
-      thinking:   { type: "adaptive" },
+      model:      tier.model,
+      max_tokens: tier.maxTokens,
+      ...(tier.thinking ? { thinking: tier.thinking } : {}),
+      ...(tier.effort ? { output_config: { effort: tier.effort } } : {}),
       system: [
         { type: "text", text: POLISH_SYSTEM },
         { type: "text", text: `Live business snapshot:\n\n\`\`\`json\n${snapshot}\n\`\`\`\n\nDeterministic observations already captured:\n${deterministic.map((d) => `- ${d.text}`).join("\n")}` },
@@ -269,7 +273,7 @@ export async function enrichDerivedSignals(businessId: string): Promise<{ signal
   await recommendProactive(businessId, ctx).catch(() => []);
 
   const detected = runDeterministic(ctx);
-  const polished = await claudePolish(ctx, detected);
+  const polished = await claudePolish(ctx, detected, businessId);
 
   // Rank the deterministic items, then append polished ones. Cap at
   // MAX_SIGNALS and dedupe by exact match.

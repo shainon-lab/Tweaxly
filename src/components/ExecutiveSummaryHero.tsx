@@ -82,9 +82,13 @@ export default function ExecutiveSummaryHero({
         </div>
         <span
           className="pill-accent text-xs px-3 py-1 font-semibold"
-          title="The summary above is generated from your business's own data."
+          title={
+            summary.source === "claude"
+              ? `${summary.tierLabel} — generated from your business data.`
+              : "Generated from your business data."
+          }
         >
-          {summary.source === "claude" ? "Analyzed by Claude AI" : "Analyzed from your data"}
+          {summary.source === "claude" ? summary.tierLabel : "From your data"}
         </span>
       </div>
 

@@ -13,6 +13,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { PeriodAggregate } from "./period";
 import { fmtMoney, fmtPct, ymToLabel } from "./format";
+import { tierConfigForBusiness, type AiTier } from "./aiTier";
 
 export type SummaryTimeframe = "monthly" | "quarterly" | "yearly" | "custom";
 
@@ -37,6 +38,11 @@ export type ExecutiveSummary = {
   bulletins: Bulletin[];
   source: "claude" | "deterministic";
   periodLabel: string;
+  // The platform brand label for whichever AI tier handled this call,
+  // OR "deterministic" when we fell back. Surfaced in the hero pill —
+  // never the raw model name.
+  tierLabel: string;
+  tier: AiTier;
 };
 
 export type TrailingMonth = {
@@ -74,19 +80,27 @@ export async function buildExecutiveSummary(
   const chips = buildChips(input);
   const bulletins = buildBulletins(input);
 
+  // Resolve the AI tier up front so the brand label is always
+  // available — even on the deterministic fallback path.
+  const tierConfig = input.businessId
+    ? await tierConfigForBusiness(input.businessId, "executive_summary")
+    : { tier: "free" as AiTier, label: "Pulse AI", model: "claude-haiku-4-5", maxTokens: 350, thinking: null, effort: null };
+
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const claudeEnabled =
     !!apiKey && apiKey.length > 20 && !/change-me|placeholder|todo|your[-_]key/i.test(apiKey);
 
   if (claudeEnabled) {
     try {
-      const narrative = await buildNarrativeWithClaude(input, apiKey!);
+      const narrative = await buildNarrativeWithClaude(input, apiKey!, tierConfig);
       if (narrative) {
         return {
           narrative,
           chips,
           bulletins,
           source: "claude",
+          tierLabel: tierConfig.label,
+          tier: tierConfig.tier,
           periodLabel: input.periodLabel,
         };
       }
@@ -101,6 +115,8 @@ export async function buildExecutiveSummary(
     chips,
     bulletins,
     source: "deterministic",
+    tierLabel: tierConfig.label,
+    tier: tierConfig.tier,
     periodLabel: input.periodLabel,
   };
 }
@@ -186,6 +202,7 @@ Examples to avoid:
 async function buildNarrativeWithClaude(
   input: SummaryInput,
   apiKey: string,
+  tier: { model: string; maxTokens: number; thinking: { type: "adaptive" } | null; effort: "low" | "medium" | "high" | "xhigh" | "max" | null; tier: "free" | "pro" },
 ): Promise<string | null> {
   const client = new Anthropic({ apiKey });
   const snapshot = buildSnapshotForPrompt(input);
@@ -201,13 +218,19 @@ async function buildNarrativeWithClaude(
     } catch { /* keep going without the profile */ }
   }
 
+  // Free-tier asks for an even tighter paragraph (≤3 sentences) so
+  // Haiku doesn't lean on padding to reach the existing 3-5 ceiling.
+  const tierNudge = tier.tier === "free"
+    ? "\nLength override for this run: write 2-3 sentences total. Keep one figure max, prose first."
+    : "";
+
   const response = await client.messages.create({
-    model: "claude-opus-4-7",
-    max_tokens: 600,
-    thinking: { type: "adaptive" },
-    output_config: { effort: "high" },
+    model:      tier.model,
+    max_tokens: tier.maxTokens,
+    ...(tier.thinking ? { thinking: tier.thinking } : {}),
+    ...(tier.effort ? { output_config: { effort: tier.effort } } : {}),
     system: [
-      { type: "text", text: SYSTEM_INSTRUCTIONS },
+      { type: "text", text: SYSTEM_INSTRUCTIONS + tierNudge },
       ...(profileBlock ? [{ type: "text" as const, text: profileBlock }] : []),
     ],
     messages: [
