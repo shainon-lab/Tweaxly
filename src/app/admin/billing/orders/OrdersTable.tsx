@@ -97,6 +97,11 @@ export default function OrdersTable() {
   const [downloading, setDownloading] = useState<Record<string, "loading" | "generating" | "error">>({});
   const [rowMessage,  setRowMessage]  = useState<Record<string, string>>({});
 
+  // Backfill UI state. Triggers a server-side sweep over Polar's
+  // orders.list and reports counts back to the admin.
+  const [backfillBusy, setBackfillBusy] = useState(false);
+  const [backfillMsg,  setBackfillMsg]  = useState<{ tone: "good" | "bad"; text: string } | null>(null);
+
   // Debounce email search (300ms). Avoids pummelling the server while
   // the admin is mid-type.
   useEffect(() => {
@@ -137,6 +142,29 @@ export default function OrdersTable() {
 
   useEffect(() => { load() /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [queryStr]);
 
+  async function runBackfill() {
+    setBackfillBusy(true);
+    setBackfillMsg(null);
+    try {
+      const res  = await fetch("/api/admin/billing/orders/backfill", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setBackfillMsg({ tone: "bad", text: data.message ?? "Backfill failed." });
+        return;
+      }
+      setBackfillMsg({
+        tone: "good",
+        text: `Backfill done. Fetched ${data.fetched}, created ${data.created}, updated ${data.updated}, unmapped ${data.unmapped}${data.errors ? `, errors ${data.errors}` : ""}.`,
+      });
+      // Refresh the table so newly-created rows surface immediately.
+      await load();
+    } catch {
+      setBackfillMsg({ tone: "bad", text: "Network error." });
+    } finally {
+      setBackfillBusy(false);
+    }
+  }
+
   async function downloadInvoice(orderId: string) {
     setDownloading((s) => ({ ...s, [orderId]: "loading" }));
     setRowMessage((s) => ({ ...s, [orderId]: "" }));
@@ -174,7 +202,22 @@ export default function OrdersTable() {
         <div className="text-xs text-slate-400">
           {pagination.total.toLocaleString()} order{pagination.total === 1 ? "" : "s"}
         </div>
+        <button
+          type="button"
+          onClick={runBackfill}
+          disabled={backfillBusy}
+          title="Pull every order from Polar and upsert into the local ledger. Use for one-off reconciliation after a webhook outage or to catch orders that pre-date this table."
+          className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-300 hover:bg-ink-700/40 transition disabled:opacity-50"
+        >
+          {backfillBusy ? "Backfilling…" : "Backfill from Polar"}
+        </button>
       </div>
+
+      {backfillMsg ? (
+        <div className={`text-xs ${backfillMsg.tone === "good" ? "text-good" : "text-bad"}`}>
+          {backfillMsg.text}
+        </div>
+      ) : null}
 
       {error ? (
         <div className="rounded-md border border-bad/40 bg-bad/10 px-3 py-2 text-sm text-bad">
