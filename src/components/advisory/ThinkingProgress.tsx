@@ -16,6 +16,7 @@
 // doesn't leak a setInterval into the background.
 
 import { useEffect, useState } from "react";
+import LoadingBar from "@/components/LoadingBar";
 
 // Status phrases the rotator cycles through. The first one is shown
 // for a beat longer than the rest because most requests resolve
@@ -74,11 +75,11 @@ export default function ThinkingProgress() {
         </div>
       </div>
 
-      {/* Indeterminate sweeping bar. The animation is defined inline
-          via a styled-jsx-style <style> so we don't need a global
-          keyframes entry in Tailwind config. */}
-      <div className="mt-5 h-1 rounded-full bg-ink-700/60 overflow-hidden relative">
-        <div className="absolute inset-y-0 left-0 w-1/3 rounded-full bg-gradient-to-r from-brand-purple via-accent to-brand-teal advisor-thinking-bar" />
+      {/* Indeterminate sweeping bar. Reuses the platform-wide
+          LoadingBar animation so consultations, uploads, and route
+          transitions all speak the same visual language. */}
+      <div className="mt-5">
+        <LoadingBar />
       </div>
 
       {/* Three faint placeholder lines below the bar so the card
@@ -89,16 +90,6 @@ export default function ThinkingProgress() {
         <div className="h-3 rounded bg-ink-700/40 w-3/4 animate-pulse" />
         <div className="h-3 rounded bg-ink-700/40 w-2/3 animate-pulse" />
       </div>
-
-      <style jsx>{`
-        @keyframes advisor-thinking-sweep {
-          0%   { transform: translateX(-100%); }
-          100% { transform: translateX(400%); }
-        }
-        :global(.advisor-thinking-bar) {
-          animation: advisor-thinking-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-      `}</style>
     </div>
   );
 }

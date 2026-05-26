@@ -14,6 +14,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Plus, Pencil, Archive, AlertTriangle } from "lucide-react";
 import CurrencyPicker from "@/components/CurrencyPicker";
+import LoadingBar from "@/components/LoadingBar";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import MonthlyChecklist from "@/components/sources/MonthlyChecklist";
 
@@ -108,6 +109,26 @@ export default function SourcesClient({ currency }: { currency: string }) {
   return (
     <>
       <HealthScoreWidget key={`health-${healthKey}`} variant="full" />
+
+      {/* Monthly coverage sits above the "Catch up on…" checklist
+          because it's the wide-angle view (every source × every month)
+          and the checklist is the focused last-month worklist. The
+          coverage card frames what's missing; the checklist is the
+          action list for the most-recent gap. */}
+      <div className="card mb-6">
+        <div className="font-medium mb-1">Monthly coverage</div>
+        <div className="text-xs text-slate-400 mb-4">
+          Which months have data for each source. Green = uploaded; orange = missing; grey = before this source started.
+        </div>
+        {coverage && coverage.sources.length > 0 ? (
+          <CoverageMatrix coverage={coverage} />
+        ) : (
+          <div className="text-sm text-slate-500 py-6 text-center">
+            Coverage appears here once you add a source and upload your first file.
+          </div>
+        )}
+      </div>
+
       <MonthlyChecklist key={`checklist-${healthKey}`} />
       <div className="card mb-6">
         <div className="flex items-start justify-between gap-3 mb-3">
@@ -127,7 +148,7 @@ export default function SourcesClient({ currency }: { currency: string }) {
         </div>
 
         {loading ? (
-          <div className="text-sm text-slate-500 py-6 text-center">Loading…</div>
+          <div className="py-4"><LoadingBar label="Loading sources…" /></div>
         ) : sources.length === 0 ? (
           <div className="text-sm text-slate-400 py-8 text-center">
             No sources yet. Add your first bank account, credit card, or payment provider above.
@@ -173,21 +194,6 @@ export default function SourcesClient({ currency }: { currency: string }) {
               ))}
             </tbody>
           </table>
-        )}
-      </div>
-
-      {/* Coverage matrix */}
-      <div className="card mb-6">
-        <div className="font-medium mb-1">Monthly coverage</div>
-        <div className="text-xs text-slate-400 mb-4">
-          Which months have data for each source. Green = uploaded; orange = missing; grey = before this source started.
-        </div>
-        {coverage && coverage.sources.length > 0 ? (
-          <CoverageMatrix coverage={coverage} />
-        ) : (
-          <div className="text-sm text-slate-500 py-6 text-center">
-            Coverage appears here once you add a source and upload your first file.
-          </div>
         )}
       </div>
 

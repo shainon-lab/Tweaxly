@@ -16,6 +16,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X as XIcon } from "lucide-react";
+import LoadingBar from "@/components/LoadingBar";
 
 interface InboxItem {
   id:           string;
@@ -190,7 +191,7 @@ export default function NotificationCenter({
         {/* List */}
         <div className="flex-1 overflow-y-auto">
           {loading && items.length === 0 ? (
-            <div className="p-6 text-sm text-slate-400 text-center">Loading…</div>
+            <div className="p-4"><LoadingBar label="Loading notifications…" /></div>
           ) : items.length === 0 ? (
             <div className="p-10 text-center">
               <div className="text-sm font-semibold text-slate-200 mb-1">Nothing here yet</div>

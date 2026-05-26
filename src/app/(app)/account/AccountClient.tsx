@@ -17,6 +17,7 @@ import { LanguagePreference } from "./LanguagePreference";
 import CommunicationPreferences from "./CommunicationPreferences";
 import { WorkspaceCard, type WorkspaceCardData } from "../workspaces/WorkspaceCard";
 import NotificationsPane from "./NotificationsPane";
+import LoadingBar from "@/components/LoadingBar";
 
 type AccountSubTab =
   | "workspaces"
@@ -400,7 +401,7 @@ function AccessLogsPane() {
         Recent sign-ins, sign-outs, uploads, source changes, and billing events across your workspaces.
       </div>
       {loading ? (
-        <div className="text-sm text-slate-500 py-6 text-center">Loading…</div>
+        <div className="py-2"><LoadingBar label="Loading activity…" /></div>
       ) : entries && entries.length > 0 ? (
         <table className="table-base">
           <thead>
