@@ -46,8 +46,12 @@ export async function openEmbeddedCheckout(
   try {
     // Dynamic import keeps the SDK out of the initial JS bundle.
     const { PolarEmbedCheckout } = await import("@polar-sh/checkout/embed");
+    // Default theme is "light" so the checkout card reads as a clean,
+    // bright surface even inside Tweaxly's dark app. The platform's
+    // dark theme already makes the surrounding page heavy; a dark
+    // checkout iframe on top of it stacks too much black.
     const instance = await PolarEmbedCheckout.create(checkoutUrl, {
-      theme: options.theme ?? "dark",
+      theme: options.theme ?? "light",
     });
 
     instance.addEventListener("success", (event) => {

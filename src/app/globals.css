@@ -14,6 +14,22 @@
   animation: tweaxly-loading-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+/* Polar embedded checkout iframe.
+   The SDK injects a full-viewport iframe with an inline 50% pure-black
+   backdrop. Override to a softer, warmer slate-tinted dim so the
+   surrounding app still feels present, add a hairline inset border
+   for a contained-surface hint, and a soft vignette so the eye lands
+   on the centered checkout card inside the iframe. Cross-origin
+   iframe content can't be styled from here; this only affects the
+   outer iframe element. */
+iframe[src*="polar.sh"][allow*="payment"] {
+  background-color: rgba(15, 23, 42, 0.55) !important;
+  box-shadow:
+    inset 0 0 0 1px rgba(148, 163, 184, 0.08),
+    inset 0 0 90px rgba(0, 0, 0, 0.25) !important;
+  backdrop-filter: blur(8px);
+}
+
 /* ── Theme tokens ─────────────────────────────────────────────────────────
    Each token is an "R G B" channel triplet so Tailwind utilities like
    `bg-ink-900/80` resolve via `rgb(var(--c-ink-900) / 0.8)` cleanly.
