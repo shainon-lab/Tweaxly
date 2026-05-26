@@ -6,6 +6,7 @@
 // user can see what they'd gain at a glance.
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import Link from "next/link";
 import UpgradeTriggerButton from "./UpgradeTriggerButton";
 import BuyCreditsTriggerButton from "./BuyCreditsTriggerButton";
@@ -79,6 +80,10 @@ export default function UsageModal({
   }, [open, onClose]);
 
   if (!open) return null;
+  // Same portal trick as UpgradeModal — escapes any transformed
+  // ancestor that would otherwise capture position:fixed and push
+  // the overlay behind the page chrome.
+  if (typeof document === "undefined") return null;
 
   // Treat any unknown plan string (including legacy "business") as
   // Pro - the entitlements layer normalises the same way.
@@ -92,7 +97,7 @@ export default function UsageModal({
     ? Math.max(0, Math.min(100, Math.round(((monthlyAllowance - balance) / monthlyAllowance) * 100)))
     : 0;
 
-  return (
+  const modal = (
     <div
       role="dialog"
       aria-modal="true"
@@ -225,6 +230,8 @@ export default function UsageModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
 
 function ComparisonRow({

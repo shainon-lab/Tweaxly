@@ -20,6 +20,7 @@
 //   />
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 interface UpgradeModalProps {
   open:        boolean;
@@ -95,7 +96,15 @@ export default function UpgradeModal({
   const planLabel = PLAN_LABEL[currentPlan ?? "free"] ?? currentPlan ?? "Free";
   const bullets   = benefits && benefits.length > 0 ? benefits : DEFAULT_BENEFITS;
 
-  return (
+  // Portal the modal to document.body so any ancestor with a
+  // `transform` / `filter` / `contain` style can't capture our
+  // `position: fixed` and make the overlay render behind the page
+  // chrome. Render-on-mount means we can't portal during SSR; guard
+  // with `typeof document` so the server renders nothing (the modal
+  // is only open after the user clicks, which is post-hydration).
+  if (typeof document === "undefined") return null;
+
+  const modal = (
     <div
       role="dialog"
       aria-modal="true"
@@ -183,4 +192,6 @@ export default function UpgradeModal({
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }

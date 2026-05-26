@@ -9,6 +9,7 @@
 // /api/billing/checkout/pack and redirects to Polar.
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 // Direct import from the plans submodule — not the @/lib/billing
 // barrel — because the barrel re-exports entitlements.ts which in turn
 // imports the Prisma client. Pulling the barrel from a client component
@@ -76,8 +77,11 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
   }
 
   if (!open) return null;
+  // Portal to document.body so any ancestor with transform/filter
+  // can't capture position:fixed — same fix as UpgradeModal.
+  if (typeof document === "undefined") return null;
 
-  return (
+  const modal = (
     <div
       role="dialog"
       aria-modal="true"
@@ -195,4 +199,6 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
       </div>
     </div>
   );
+
+  return createPortal(modal, document.body);
 }
