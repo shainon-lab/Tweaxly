@@ -182,7 +182,7 @@ export function BillingClient(props: BillingClientProps) {
         <div className="flex items-start justify-between gap-3 flex-wrap">
           <div>
             <div className="mt-2 flex items-center gap-3">
-              <span className="text-2xl font-semibold text-white">{PLAN_LABEL[props.plan] ?? props.plan}</span>
+              <span className="text-2xl font-semibold text-slate-100">{PLAN_LABEL[props.plan] ?? props.plan}</span>
               {props.planSource === "override" ? (
                 <span className="pill text-[10px]">Admin override</span>
               ) : props.planSource === "default" ? (

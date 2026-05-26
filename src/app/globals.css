@@ -97,6 +97,45 @@ html[data-theme="light"] .text-slate-600 { color: rgb(148 163 184) !important; }
    this minimal - most buttons override the color explicitly. */
 html[data-theme="light"] :where(.btn-ghost).text-white { color: rgb(15 23 42); }
 
+/* `text-white` is the single biggest source of white-on-white bugs in
+   light mode (plan name "Free" / "Pro", wallet balances, modal headlines,
+   sub-tab labels, etc.). Force any text-white inside a known light-surface
+   container to slate-900 UNLESS the element is a button / badge that sits
+   on its own colored background (in which case white text is what we want).
+   The :not(:is(...)) chain enumerates every colored-bg utility that ships
+   in the codebase + the platform's button classes. */
+html[data-theme="light"] :where(
+  .card, .card-tight,
+  [role="dialog"],
+  [class*="bg-ink-9"], [class*="bg-ink-8"], [class*="bg-ink-7"]
+) .text-white:not(:is(
+  .btn-primary, .btn-brand,
+  .btn-primary *, .btn-brand *,
+  [class*="bg-accent"], [class*="bg-brand"], [class*="bg-gradient"],
+  [class*="bg-good"], [class*="bg-bad"], [class*="bg-warn"],
+  [class*="bg-purple"], [class*="bg-red"], [class*="bg-emerald"], [class*="bg-amber"],
+  [class*="bg-accent"] *, [class*="bg-brand"] *, [class*="bg-gradient"] *,
+  [class*="bg-good"] *, [class*="bg-bad"] *, [class*="bg-warn"] *,
+  [class*="bg-purple"] *, [class*="bg-red"] *, [class*="bg-emerald"] *, [class*="bg-amber"] *
+)) {
+  color: rgb(15 23 42) !important;
+}
+
+/* hover:text-white on tab strips and nav items turns the label invisible
+   on hover in light mode (white-on-white-ish). Remap the hover color
+   too inside any non-colored container. */
+html[data-theme="light"] :where(
+  .card, .card-tight,
+  aside, nav,
+  [class*="bg-ink-9"], [class*="bg-ink-8"], [class*="bg-ink-7"]
+) .hover\:text-white:hover:not(:is(
+  .btn-primary, .btn-brand,
+  .btn-primary *, .btn-brand *,
+  [class*="bg-accent"], [class*="bg-brand"], [class*="bg-gradient"]
+)) {
+  color: rgb(15 23 42) !important;
+}
+
 /* ── Light-mode surface adjustments ───────────────────────────────────────
    The dark UI uses lots of partial-opacity surfaces (e.g. bg-ink-900/70)
    that almost vanish on a light page. Re-paint the high-impact surfaces
