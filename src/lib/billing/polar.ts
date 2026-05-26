@@ -127,11 +127,32 @@ export function getProProductId(): string | null {
 // custom pack we also stash the credit count so the webhook can
 // grant the exact amount we priced (the order's amount alone isn't
 // enough - the webhook needs credits, not cents).
+//
+// The "rich" fields (userId, businessName, productName, etc.) are
+// snapshot context that lets the PolarOrder ledger render the right
+// workspace / product label even after the underlying rows are
+// renamed or deleted. Polar's metadata is scalar-only (string/number/
+// boolean) so we store everything as strings and parse on the way
+// back in.
 export interface CheckoutMetadata {
   businessId: string;
   kind:       "subscription" | "pack";
   packSku?:   string;
   packCredits?: string;
+  // ── Workspace-aware context (snapshot at checkout time) ───────────
+  userId?:       string;
+  businessName?: string;
+  productId?:    string;
+  productName?:  string;
+  // "subscription" | "credits" | "addon" | "one_time"
+  productType?:  string;
+  // "new_subscription" | "renewal" | "upgrade" | "downgrade"
+  //   | "credits_purchase" | "one_time_purchase"
+  purchaseType?: string;
+  planId?:       string;
+  // Credits delivered by this purchase. Stringified because Polar
+  // serialises metadata as scalars only.
+  creditsAmount?: string;
 }
 
 export function buildSuccessUrl(appUrl: string): string {
@@ -142,13 +163,32 @@ export function buildSuccessUrl(appUrl: string): string {
 export async function createSubscriptionCheckout(args: {
   businessId:    string;
   customerEmail: string;
+  // Workspace-aware context. Optional so the existing call sites keep
+  // compiling, but the checkout routes pass all of these so the
+  // PolarOrder ledger has a full snapshot at write time.
+  userId?:       string;
+  businessName?: string;
+  // "new_subscription" defaults; pass "upgrade" / "downgrade" when the
+  // caller knows the workspace is moving between paid tiers.
+  purchaseType?: "new_subscription" | "upgrade" | "downgrade";
+  planId?:       string;
 }): Promise<{ url: string; checkoutId: string }> {
   const productId = getProProductId();
   if (!productId) throw new Error("POLAR_PRODUCT_PRO_ID is not set");
   const { appUrl } = getEnv();
   const polar = getPolar();
 
-  const metadata: CheckoutMetadata = { businessId: args.businessId, kind: "subscription" };
+  const metadata: CheckoutMetadata = {
+    businessId:   args.businessId,
+    kind:         "subscription",
+    userId:       args.userId,
+    businessName: args.businessName,
+    productId,
+    productName:  "Pro subscription",
+    productType:  "subscription",
+    purchaseType: args.purchaseType ?? "new_subscription",
+    planId:       args.planId ?? "pro",
+  };
 
   const checkout = await polar.checkouts.create({
     products:       [productId],
@@ -183,6 +223,10 @@ export async function createPackCheckout(args: {
   // already validated min + computed priceCents from credits.
   credits?:      number;
   priceCents?:   number;
+  // Workspace-aware context for the PolarOrder ledger.
+  userId?:       string;
+  businessName?: string;
+  productName?:  string;
 }): Promise<{ url: string; checkoutId: string }> {
   const productId = getPackProductId(args.packSku);
   if (!productId) throw new Error(`Polar product id for ${args.packSku} not set`);
@@ -190,10 +234,22 @@ export async function createPackCheckout(args: {
   const polar = getPolar();
 
   const isCustom = args.packSku === CUSTOM_PACK_SKU;
+  // Resolve credit count for the metadata snapshot. Custom packs
+  // pass it in via args.credits; fixed packs look it up from the
+  // pack catalog so the same metadata shape applies either way.
+  const fixedPack = CREDIT_PACKS.find((p) => p.sku === args.packSku);
+  const resolvedCredits = isCustom ? args.credits : fixedPack?.credits;
   const metadata: CheckoutMetadata = {
-    businessId: args.businessId,
-    kind:       "pack",
-    packSku:    args.packSku,
+    businessId:   args.businessId,
+    kind:         "pack",
+    packSku:      args.packSku,
+    userId:       args.userId,
+    businessName: args.businessName,
+    productId,
+    productName:  args.productName ?? (isCustom ? "AI Credits (custom pack)" : `AI Credits · ${args.packSku}`),
+    productType:  "credits",
+    purchaseType: "credits_purchase",
+    ...(resolvedCredits != null ? { creditsAmount: String(resolvedCredits) } : {}),
     ...(isCustom && args.credits != null ? { packCredits: String(args.credits) } : {}),
   };
 
@@ -226,4 +282,51 @@ export async function createCustomerPortalSession(args: {
     customerId: args.customerId,
   });
   return { url: session.customerPortalUrl };
+}
+
+// ────────────────────────────────────────────────────────────────────
+// Invoices
+// ────────────────────────────────────────────────────────────────────
+
+// Resolve a fresh, short-lived signed URL for the invoice PDF of a
+// given Polar order. If Polar hasn't generated the invoice yet, kick
+// off generation and retry once. Returns null when generation hasn't
+// caught up - the caller should surface that as "still generating".
+//
+// Why a single helper for both customer + admin: the only difference
+// between the two surfaces is the authorization check; the actual
+// Polar API call is identical, so collapsing it here means one place
+// to handle the 404-before-generation race.
+export async function fetchOrderInvoiceUrl(polarOrderId: string): Promise<
+  | { ok: true; url: string }
+  | { ok: false; reason: "generating" | "not_found" | "error"; message?: string }
+> {
+  const polar = getPolar();
+  try {
+    const invoice = await polar.orders.invoice({ id: polarOrderId });
+    if (invoice?.url) return { ok: true, url: invoice.url };
+    return { ok: false, reason: "not_found" };
+  } catch (err) {
+    // Polar returns 404 / NotGenerated when the invoice isn't built
+    // yet. Trigger generation and surface a "generating" status so
+    // the UI knows to poll.
+    const message = err instanceof Error ? err.message : String(err);
+    const is404 = /404|not[_ ]found|not[_ ]generated/i.test(message);
+    if (is404) {
+      try {
+        await polar.orders.generateInvoice({ id: polarOrderId });
+        // Best-effort second fetch. Polar's generation is usually
+        // fast but can be slow on the first request after a sub
+        // renewal - we don't block here, the customer-side route will
+        // tell the UI to poll.
+        const retry = await polar.orders.invoice({ id: polarOrderId }).catch(() => null);
+        if (retry?.url) return { ok: true, url: retry.url };
+        return { ok: false, reason: "generating" };
+      } catch (genErr) {
+        const genMessage = genErr instanceof Error ? genErr.message : String(genErr);
+        return { ok: false, reason: "error", message: genMessage };
+      }
+    }
+    return { ok: false, reason: "error", message };
+  }
 }

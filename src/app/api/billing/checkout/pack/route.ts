@@ -76,6 +76,9 @@ export async function POST(req: Request) {
         packSku:       CUSTOM_PACK_SKU,
         credits,
         priceCents,
+        userId:        user.id,
+        businessName:  business.name,
+        productName:   `AI Credits · ${credits} credits (custom)`,
       });
       return NextResponse.json({ url, credits, priceCents });
     } catch (err) {
@@ -94,6 +97,9 @@ export async function POST(req: Request) {
       businessId:    business.id,
       customerEmail: user.email,
       packSku:       pack.sku,
+      userId:        user.id,
+      businessName:  business.name,
+      productName:   `AI Credits · ${pack.credits} credits`,
     });
     return NextResponse.json({ url });
   } catch (err) {

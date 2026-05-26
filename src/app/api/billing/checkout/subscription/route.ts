@@ -9,6 +9,7 @@ import { NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { requireEmailVerified } from "@/lib/auth/verificationGate";
 import { createSubscriptionCheckout } from "@/lib/billing/polar";
+import { getEffectivePlan } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +26,23 @@ export async function POST() {
       message: "Please verify your email to upgrade.",
     }, { status: 403 });
   }
+
+  // Distinguish first-time subscription from a paid-to-paid upgrade
+  // for the order ledger. Today there's only one paid tier (Pro), so
+  // anyone leaving "free" is a new_subscription; the upgrade branch
+  // is wired for when we add a higher tier.
+  const effective = await getEffectivePlan(business.id);
+  const purchaseType: "new_subscription" | "upgrade" =
+    effective.plan === "free" ? "new_subscription" : "upgrade";
+
   try {
     const { url } = await createSubscriptionCheckout({
       businessId:    business.id,
       customerEmail: user.email,
+      userId:        user.id,
+      businessName:  business.name,
+      purchaseType,
+      planId:        "pro",
     });
     return NextResponse.json({ url });
   } catch (err) {

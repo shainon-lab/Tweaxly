@@ -18,22 +18,32 @@ const PLANNED_TILES = [
 export default function AdminBillingPage() {
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-xl font-semibold tracking-tight text-slate-100">Billing</h1>
-        <p className="text-xs text-slate-400 mt-1">
-          Revenue overview, MRR, churn, refunds, and failed payments.
-        </p>
+      <div className="flex items-end justify-between gap-3 flex-wrap">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Billing</h1>
+          <p className="text-xs text-slate-400 mt-1">
+            Revenue overview, MRR, churn, refunds, and failed payments.
+          </p>
+        </div>
+        <Link
+          href="/admin/billing/orders"
+          className="text-xs px-3 py-1.5 rounded-md border border-accent/40 text-accent hover:bg-accent/10 transition"
+        >
+          View Polar orders →
+        </Link>
       </div>
 
       <div className="rounded-xl border border-dashed border-line bg-ink-900/20 p-6">
         <div className="flex items-start justify-between gap-3 mb-2 flex-wrap">
-          <div className="text-slate-100 font-medium">No payments provider connected</div>
-          <span className="text-[10px] uppercase tracking-wider pill">not connected</span>
+          <div className="text-slate-100 font-medium">Aggregate metrics not connected yet</div>
+          <span className="text-[10px] uppercase tracking-wider pill">tiles pending</span>
         </div>
         <p className="text-sm text-slate-400 max-w-2xl">
-          Once Stripe (or another provider) is wired up, this page will pull subscriptions,
-          invoices, payments, refunds, and disputes directly from the source of truth. Plan
-          and trial-end metadata can already be set per account from{" "}
+          MRR, churn and net-revenue tiles below are placeholders until a batch job rolls them up
+          from the Polar order ledger. Per-order data is already live -{" "}
+          <Link href="/admin/billing/orders" className="text-accent hover:underline">view every order</Link>{" "}
+          (subscriptions, renewals, credit packs, refunds) with customer email search and Polar
+          invoice PDF downloads. Plan and trial-end metadata can be set per account from{" "}
           <Link href="/admin/accounts" className="text-accent hover:underline">Accounts</Link> →
           Customer 360.
         </p>

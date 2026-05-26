@@ -96,6 +96,7 @@ model User {
   createdCoupons            Coupon[]             @relation("CouponCreatedBy")
   targetedCoupons           Coupon[]             @relation("CouponTargetUser")
   couponRedemptions         CouponRedemption[]
+  polarOrders               PolarOrder[]
   // Real-Time Business Alerts (Premium)
   alertPreferences          AlertPreference[]
   pushSubscriptions         PushSubscription[]
@@ -311,6 +312,7 @@ model Business {
   creditTransactions  AiCreditTransaction[]
   targetedCoupons     Coupon[]              @relation("CouponTargetBusiness")
   couponRedemptions   CouponRedemption[]
+  polarOrders         PolarOrder[]
   profile             BusinessProfile?
   alertPreferences    AlertPreference[]
   alertNotifications  AlertNotification[]
@@ -1215,4 +1217,85 @@ model CouponRedemption {
   @@unique([couponId, userId, businessId])
   @@index([userId])
   @@index([businessId])
+}
+
+// Polar order ledger. Synced from the Polar webhook so the customer
+// Billing & Products page + the super-admin orders dashboard can show
+// every paid event (initial subscription, renewals, credit packs,
+// refunds) without calling Polar's API on every page load.
+//
+// Source of truth for amounts/status: the Polar webhook payload at
+// the time it fires. The invoice PDF URL is fetched on-demand via the
+// /api/billing/orders/[id]/invoice endpoint (Polar emits short-lived
+// signed URLs) so we don't cache stale links.
+model PolarOrder {
+  id                  String    @id @default(cuid())
+
+  // ── Polar identifiers ─────────────────────────────────────────────
+  polarOrderId        String    @unique
+  // Polar's human-facing invoice number ("INV-12345"). Distinct from
+  // polarOrderId which is the opaque UUID.
+  polarOrderNumber    String?
+  polarCustomerId     String?
+  polarCustomerEmail  String?
+  polarProductId      String?
+  // Null for one-time orders (credit packs). Set on subscription
+  // orders (initial + renewals).
+  polarSubscriptionId String?
+  polarCheckoutId     String?
+
+  // ── App context (snapshot at write time) ──────────────────────────
+  // Snapshot fields stay readable even if the underlying user/
+  // business is later renamed or deleted.
+  userId              String?
+  user                User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  businessId          String?
+  business            Business? @relation(fields: [businessId], references: [id], onDelete: SetNull)
+  businessName        String?
+
+  // ── Product context ───────────────────────────────────────────────
+  productName  String?
+  // "subscription" | "credits" | "addon" | "one_time"
+  productType  String
+  // "new_subscription" | "renewal" | "upgrade" | "downgrade"
+  // | "credits_purchase" | "one_time_purchase"
+  purchaseType String
+  planId       String?
+  creditsAmount Int?
+
+  // ── Money ─────────────────────────────────────────────────────────
+  // Total amount in cents (Polar's totalAmount). Currency is whatever
+  // Polar charged in (usually USD for this platform).
+  amountCents Int
+  currency    String @default("USD")
+
+  // ── Status ────────────────────────────────────────────────────────
+  // Mirrors Polar OrderStatus:
+  //   "paid" | "pending" | "refunded" | "partially_refunded" | "void"
+  status String
+
+  // ── Invoice ───────────────────────────────────────────────────────
+  invoiceNumber    String?
+  invoiceGenerated Boolean @default(false)
+  // Last-seen Polar invoice PDF URL. Polar emits short-lived signed
+  // URLs so we refresh on-demand via the invoice endpoint rather than
+  // rely on this column - it's mostly informational/forensic.
+  invoicePdfUrl    String?
+  // Raw Polar billingReason: "purchase" | "subscription_create"
+  // | "subscription_cycle" | "subscription_update".
+  billingReason    String?
+
+  // ── Forensics ─────────────────────────────────────────────────────
+  // Full checkout metadata as it landed on the webhook payload, kept
+  // for incident triage when something is mis-mapped to a workspace.
+  metadata Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([businessId, createdAt])
+  @@index([userId, createdAt])
+  @@index([polarCustomerEmail])
+  @@index([status])
+  @@index([createdAt])
 }
