@@ -176,6 +176,17 @@ html[data-theme="light"] .btn-ghost:hover { background-color: rgb(226 232 240); 
    tint so they read as pills, not blank chips. */
 html[data-theme="light"] .pill { background-color: rgb(241 245 249); color: rgb(30 41 59); }
 
+/* Toggle / switch off-state. The component pattern uses `bg-ink-700`
+   for OFF which maps to slate-100 in light mode (near-white on white
+   = invisible). Force any element with role="switch" + aria-checked
+   "false" to a clearly visible mid-grey so users see the track
+   against the card background. ON-state retains its branded color
+   (bg-accent / bg-brand-purple / etc.) via its own utility. */
+html[data-theme="light"] [role="switch"][aria-checked="false"] {
+  background-color: rgb(148 163 184) !important; /* slate-400 */
+  border-color: rgb(148 163 184) !important;
+}
+
 /* The recharts default axis stroke (#94a3b8) is too pale on white. Bump
    contrast in light mode. */
 html[data-theme="light"] .recharts-cartesian-axis-line,

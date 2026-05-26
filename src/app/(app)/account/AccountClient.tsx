@@ -470,25 +470,30 @@ function AccessibilityPane() {
     return onA11yWidgetToggle(({ enabled }) => setEnabled(enabled));
   }, []);
 
+  // The accessibility settings page must itself be accessible to the
+  // exact users it's designed for. Every text element on this pane
+  // uses a 19px minimum body size with proportionally larger headings
+  // and section titles. Reading line-height is bumped to 1.6 for
+  // comfort at the larger size.
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 text-[19px] leading-[1.6]">
       <div className="card">
-        <div className="font-medium mb-1">Accessibility</div>
-        <div className="text-sm text-slate-400 mb-5 leading-relaxed">
+        <h2 className="text-3xl font-semibold text-slate-100 mb-2">Accessibility</h2>
+        <p className="text-slate-300 mb-6">
           Tweaxly stays accessible by default — semantic HTML, keyboard
           navigation, visible focus states, and proper labels are
           maintained whether or not the widget below is on. The
           accessibility widget is an optional enhancement layer that
-          exposes additional reading + interaction tools when you need
-          them.
-        </div>
+          exposes additional reading and interaction tools when you
+          need them.
+        </p>
 
-        <div className="flex items-start justify-between gap-4 py-3 border-t border-line">
+        <div className="flex items-start justify-between gap-5 py-5 border-t border-line">
           <div className="min-w-0 flex-1">
-            <div className="text-sm font-medium text-slate-100">
+            <div className="text-[22px] font-semibold text-slate-100 leading-snug">
               Show accessibility widget in the interface
             </div>
-            <div className="text-xs text-slate-400 mt-1 leading-relaxed">
+            <div className="text-slate-300 mt-2">
               Enable the accessibility tools menu inside the application
               interface. When on, an &quot;Accessibility Widget&quot; item
               appears in the sidebar, below the theme toggle. Click it
@@ -496,20 +501,24 @@ function AccessibilityPane() {
               tools, and more.
             </div>
           </div>
+          {/* Larger touch target than the standard sidebar toggle - this
+              control specifically serves users who need bigger hit
+              areas, so it's roughly 50% larger than the platform's
+              default switch. */}
           <button
             type="button"
             role="switch"
             aria-checked={enabled}
             onClick={() => setA11yWidgetEnabled(!enabled)}
-            className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+            className={`shrink-0 relative inline-flex h-9 w-16 items-center rounded-full transition-colors ${
               enabled ? "bg-accent" : "bg-ink-700 border border-line"
             }`}
             aria-label="Show accessibility widget in the interface"
           >
             <span
               aria-hidden="true"
-              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                enabled ? "translate-x-6" : "translate-x-1"
+              className={`inline-block h-7 w-7 transform rounded-full bg-white shadow transition-transform ${
+                enabled ? "translate-x-8" : "translate-x-1"
               }`}
             />
           </button>
@@ -523,11 +532,11 @@ function AccessibilityPane() {
           the section visible (even with placeholder copy) so users
           discover it's coming. */}
       <div className="card">
-        <div className="font-medium mb-1">Native accessibility controls</div>
-        <div className="text-sm text-slate-400 mb-3 leading-relaxed">
+        <h3 className="text-3xl font-semibold text-slate-100 mb-2">Native accessibility controls</h3>
+        <p className="text-slate-300 mb-4">
           Coming soon — adjust these directly without enabling the widget:
-        </div>
-        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-400">
+        </p>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-3 text-slate-200">
           {[
             "High contrast mode",
             "Larger text",
@@ -536,8 +545,8 @@ function AccessibilityPane() {
             "Focus highlight",
             "Comfortable spacing",
           ].map((label) => (
-            <li key={label} className="flex items-center gap-2">
-              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" aria-hidden="true" />
+            <li key={label} className="flex items-center gap-3">
+              <span className="w-2 h-2 rounded-full bg-accent shrink-0" aria-hidden="true" />
               <span>{label}</span>
             </li>
           ))}
