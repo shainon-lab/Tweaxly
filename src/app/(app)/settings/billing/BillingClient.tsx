@@ -360,7 +360,7 @@ export function BillingClient(props: BillingClientProps) {
         </div>
         <div className="text-xs text-slate-400 mb-4">
           {props.plan === "free"
-            ? "Add-on credit packs are a Pro feature. Upgrade to Pro to receive 500 AI Credits every month and buy more credits anytime."
+            ? "Upgrade to Pro to get 500 AI Credits delivered every month. Pro also unlocks add-on credit packs whenever you want extra power on top of your monthly allowance, so you'll always have the credits you need on hand."
             : "Add-on credit packs add instantly, expire 12 months after purchase, and work on top of your monthly allowance."}
         </div>
         {props.plan !== "free" ? (
