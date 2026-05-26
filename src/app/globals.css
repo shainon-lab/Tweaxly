@@ -2,6 +2,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Platform-wide loading sweep. Used by uploads, AI consultations, route
+   transitions (app/loading.tsx), and any in-card client loading state.
+   Lives in global CSS so the same class works in both server and client
+   components without pulling in styled-jsx. */
+@keyframes tweaxly-loading-sweep {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(400%); }
+}
+.tweaxly-loading-sweep {
+  animation: tweaxly-loading-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
 /* ── Theme tokens ─────────────────────────────────────────────────────────
    Each token is an "R G B" channel triplet so Tailwind utilities like
    `bg-ink-900/80` resolve via `rgb(var(--c-ink-900) / 0.8)` cleanly.

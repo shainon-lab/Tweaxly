@@ -9,9 +9,10 @@
 //      written "Loading…".
 //   3. Wherever an in-card spinner used to live.
 //
-// CSS keyframes are inlined via styled-jsx so we don't need a global
-// tailwind config entry. The bar animates continuously regardless of
-// progress — it's a liveness signal, not a determinate %.
+// The .tweaxly-loading-sweep keyframes live in globals.css so this
+// component works in both server and client contexts without pulling
+// in styled-jsx. Animates continuously regardless of progress — it's
+// a liveness signal, not a determinate %.
 
 export default function LoadingBar({
   label,
@@ -37,15 +38,6 @@ export default function LoadingBar({
           ) : null}
         </div>
       ) : null}
-      <style jsx>{`
-        @keyframes tweaxly-loading-sweep {
-          0%   { transform: translateX(-100%); }
-          100% { transform: translateX(400%); }
-        }
-        :global(.tweaxly-loading-sweep) {
-          animation: tweaxly-loading-sweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-        }
-      `}</style>
     </div>
   );
 }
