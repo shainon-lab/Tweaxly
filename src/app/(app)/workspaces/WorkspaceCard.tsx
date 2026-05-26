@@ -72,8 +72,11 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
   }
 
   async function openWorkspaceBilling() {
+    // Land directly on the Business Plan tab so the user sees the
+    // plan + AI Credits view immediately — the upgrade flow lives
+    // there, not on the default Business Settings tab.
     if (card.isCurrent) {
-      startTransition(() => router.push("/settings"));
+      startTransition(() => router.push("/settings?tab=plan"));
       return;
     }
     setBusy(true);
@@ -84,7 +87,7 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
         body:    JSON.stringify({ businessId: card.id }),
       });
       if (!res.ok) { alert("Couldn't switch workspace."); setBusy(false); return; }
-      window.location.assign("/settings");
+      window.location.assign("/settings?tab=plan");
     } catch {
       alert("Network error.");
       setBusy(false);
