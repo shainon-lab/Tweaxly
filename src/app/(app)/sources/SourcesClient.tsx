@@ -110,11 +110,10 @@ export default function SourcesClient({ currency }: { currency: string }) {
     <>
       <HealthScoreWidget key={`health-${healthKey}`} variant="full" />
 
-      {/* Monthly coverage sits above the "Catch up on…" checklist
-          because it's the wide-angle view (every source × every month)
-          and the checklist is the focused last-month worklist. The
-          coverage card frames what's missing; the checklist is the
-          action list for the most-recent gap. */}
+      {/* Monthly coverage + Catch up live in one card now: coverage is
+          the wide-angle view (every source × every month), checklist is
+          the focused last-month worklist below a divider. Same data
+          source, one continuous reading path. */}
       <div className="card mb-6">
         <div className="font-medium mb-1">Monthly coverage</div>
         <div className="text-xs text-slate-400 mb-4">
@@ -127,9 +126,10 @@ export default function SourcesClient({ currency }: { currency: string }) {
             Coverage appears here once you add a source and upload your first file.
           </div>
         )}
+        <div className="border-t border-line mt-5 pt-5">
+          <MonthlyChecklist key={`checklist-${healthKey}`} bare />
+        </div>
       </div>
-
-      <MonthlyChecklist key={`checklist-${healthKey}`} />
       <div className="card mb-6">
         <div className="flex items-start justify-between gap-3 mb-3">
           <div>

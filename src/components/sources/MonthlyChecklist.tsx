@@ -40,7 +40,10 @@ const TYPE_LABEL: Record<string, string> = {
   other:            "Other",
 };
 
-export default function MonthlyChecklist() {
+export default function MonthlyChecklist({ bare = false }: { bare?: boolean } = {}) {
+  // `bare` drops the outer card chrome so the checklist can be embedded
+  // inside another card (used on /sources where Monthly coverage and
+  // Catch up live together in one box).
   const [coverage, setCoverage] = useState<CoverageResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -85,8 +88,8 @@ export default function MonthlyChecklist() {
   // /sources page still nudges them via the empty-state message.
   if (!anySourceExpected) return null;
 
-  return (
-    <div className="card mb-4">
+  const body = (
+    <>
       <div className="flex items-baseline justify-between gap-3 mb-1">
         <div className="font-medium">Catch up on {humanYm(prevYM)}</div>
         <Link href="/manual-data" className="text-xs text-accent">Start uploading →</Link>
@@ -128,8 +131,11 @@ export default function MonthlyChecklist() {
           ))}
         </ul>
       )}
-    </div>
+    </>
   );
+
+  if (bare) return body;
+  return <div className="card mb-4">{body}</div>;
 }
 
 function previousFullYm(): string {
