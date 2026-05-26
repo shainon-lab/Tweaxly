@@ -22,6 +22,48 @@ const TONE_CLASS: Record<NonNullable<Bulletin["tone"]>, string> = {
   neutral: "text-slate-100",
 };
 
+// Splits the narrative into a short lead paragraph + the remainder so
+// the hero reads less like a wall of text. Cuts at the first
+// sentence boundary at or after the 50th word, skipping any boundary
+// that falls inside a **emphasis** block (so we never tear a bolded
+// phrase in half). Returns ["", ""] when the body is short enough
+// that splitting doesn't help.
+function splitNarrative(text: string): [string, string] {
+  if (!text) return [text, ""];
+  const trimmed = text.trim();
+  const words = trimmed.split(/\s+/);
+  if (words.length <= 50) return [trimmed, ""];
+
+  // Char index immediately AFTER the 50th word.
+  let cursor = 0;
+  let wordsCounted = 0;
+  for (const w of words) {
+    const idx = trimmed.indexOf(w, cursor);
+    if (idx < 0) break;
+    cursor = idx + w.length;
+    wordsCounted++;
+    if (wordsCounted >= 50) break;
+  }
+
+  // Walk forward looking for a sentence terminator NOT inside **…**.
+  let inEm = false;
+  for (let i = cursor; i < trimmed.length; i++) {
+    if (trimmed[i] === "*" && trimmed[i + 1] === "*") { inEm = !inEm; i++; continue; }
+    if (inEm) continue;
+    if (/[.!?]/.test(trimmed[i])) {
+      const next = trimmed[i + 1];
+      // Treat as sentence end only when followed by whitespace or EOF —
+      // avoids splitting on "U.S." or "$1.2M".
+      if (next === undefined || /\s/.test(next)) {
+        const lead = trimmed.slice(0, i + 1).trim();
+        const rest = trimmed.slice(i + 1).trim();
+        return rest ? [lead, rest] : [trimmed, ""];
+      }
+    }
+  }
+  return [trimmed, ""];
+}
+
 // Parse a narrative paragraph for **emphasis** markers and render the
 // emphasized fragments with subtle bold + slightly brighter text. Plain
 // text passes through unchanged. This is intentionally not a full
@@ -95,9 +137,19 @@ export default function ExecutiveSummaryHero({
       {/* Two-column layout: narrative on the left, bulletins on the right.
           On mobile they stack with the narrative first. */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
-        <p className="md:col-span-8 text-sm md:text-base text-slate-200 leading-relaxed whitespace-pre-line">
-          {renderNarrative(summary.narrative)}
-        </p>
+        {/* Narrative typography: subtle positive letter-spacing + roomy
+            line-height makes the body easier to skim. Lead paragraph
+            sits above a blank-line gap so the user gets a digestible
+            opener instead of a single dense block. */}
+        {(() => {
+          const [lead, rest] = splitNarrative(summary.narrative);
+          return (
+            <div className="md:col-span-8 text-sm md:text-base text-slate-200 leading-[1.7] tracking-[0.01em] space-y-4">
+              <p>{renderNarrative(lead)}</p>
+              {rest ? <p>{renderNarrative(rest)}</p> : null}
+            </div>
+          );
+        })()}
 
         {summary.bulletins.length > 0 ? (
           <aside className="md:col-span-4">

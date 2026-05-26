@@ -14,6 +14,7 @@
 // an UpgradeModal trigger.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import LoadingBar from "@/components/LoadingBar";
 import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
 import {
   ALERT_CATEGORIES, SENSITIVITY_OPTIONS,
@@ -239,7 +240,7 @@ export default function NotificationsPane({ workspaces }: { workspaces: Workspac
   if (loading || !prefs) {
     return (
       <div className="card">
-        <div className="text-sm text-slate-400">Loading your notification preferences…</div>
+        <LoadingBar label="Loading your notification preferences…" />
       </div>
     );
   }
