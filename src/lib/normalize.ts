@@ -1,6 +1,7 @@
 // Normalize a parsed row into a Transaction record.
 import { parseAmount, parseDate, type ParsedRow } from "./parsers";
 import { dateToYM } from "./format";
+import { resolveCurrencyCode } from "./currencies";
 
 export type ColumnMapping = {
   date: string | null;
@@ -46,7 +47,14 @@ export function normalizeRow(
 
   const description = mapping.description ? String(row[mapping.description] ?? "") : "";
   const vendor = mapping.vendor ? String(row[mapping.vendor] ?? "") : null;
-  const currency = mapping.currency ? String(row[mapping.currency] ?? defaultCurrency) : defaultCurrency;
+  // Currency cell may contain an ISO code ("USD"), a symbol ("$"), or a
+  // local-language name ("שקל", "Euro"). resolveCurrencyCode maps any
+  // of those onto the canonical 3-letter ISO. Falls back to the
+  // workspace's base currency when the cell is empty / unrecognized so
+  // the row still imports (the validation pass at the top of commit
+  // is the gate that hard-blocks truly unsupported strings).
+  const currencyRaw = mapping.currency ? row[mapping.currency] : null;
+  const currency = resolveCurrencyCode(currencyRaw == null ? null : String(currencyRaw)) ?? defaultCurrency;
   const externalId = mapping.txnId ? String(row[mapping.txnId] ?? "") || null : null;
   const notes = mapping.notes ? String(row[mapping.notes] ?? "") || null : null;
   const rawCategory = mapping.category ? String(row[mapping.category] ?? "") || null : null;

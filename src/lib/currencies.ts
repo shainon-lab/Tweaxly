@@ -217,3 +217,109 @@ const ALL_INCLUDING_UNSUPPORTED: Currency[] = [
 export function currencyName(code: string): string {
   return ALL_INCLUDING_UNSUPPORTED.find((c) => c.code === code)?.name ?? code;
 }
+
+// ── Name / symbol → ISO code resolution ──────────────────────────────
+// Real-world CSVs often label the currency column with the local name
+// or the symbol instead of the ISO code (e.g. "שקל", "אירו", "$",
+// "Dollar", "Euro"). resolveCurrencyCode normalizes any of these to
+// the supported ISO code so the FX pipeline doesn't choke on the raw
+// label. Returns null when the input is empty or unrecognizable.
+//
+// Coverage: every supported (Frankfurter) currency, in English + the
+// most common Hebrew aliases. Extend as more locales are encountered.
+
+const CURRENCY_ALIASES: Record<string, string> = {
+  // ── English names + ISO codes ──────────────────────────────────
+  "usd":          "USD", "dollar":         "USD", "dollars":  "USD",
+  "usdollar":     "USD", "usdollars":      "USD",
+  "eur":          "EUR", "euro":           "EUR", "euros":    "EUR",
+  "gbp":          "GBP", "pound":          "GBP", "pounds":   "GBP",
+  "sterling":     "GBP", "britishpound":   "GBP",
+  "ils":          "ILS", "shekel":         "ILS", "shekels":  "ILS",
+  "israelishekel": "ILS", "newshekel":     "ILS", "nis":      "ILS",
+  "jpy":          "JPY", "yen":            "JPY", "japaneseyen": "JPY",
+  "chf":          "CHF", "franc":          "CHF", "swissfranc": "CHF",
+  "cad":          "CAD", "canadiandollar": "CAD",
+  "aud":          "AUD", "australiandollar": "AUD",
+  "nzd":          "NZD", "newzealanddollar": "NZD",
+  "cny":          "CNY", "yuan":           "CNY", "rmb":      "CNY", "renminbi": "CNY",
+  "inr":          "INR", "rupee":          "INR", "indianrupee": "INR",
+  "krw":          "KRW", "won":            "KRW", "koreanwon": "KRW",
+  "sek":          "SEK", "swedishkrona":   "SEK",
+  "nok":          "NOK", "norwegiankrone": "NOK",
+  "dkk":          "DKK", "danishkrone":    "DKK",
+  "isk":          "ISK", "icelandickrona": "ISK",
+  "pln":          "PLN", "zloty":          "PLN", "polishzloty": "PLN",
+  "huf":          "HUF", "forint":         "HUF",
+  "czk":          "CZK", "koruna":         "CZK",
+  "ron":          "RON", "leu":            "RON",
+  "try":          "TRY", "lira":           "TRY", "turkishlira": "TRY",
+  "brl":          "BRL", "real":           "BRL",
+  "mxn":          "MXN", "peso":           "MXN", "mexicanpeso": "MXN",
+  "zar":          "ZAR", "rand":           "ZAR",
+  "hkd":          "HKD", "hongkongdollar": "HKD",
+  "sgd":          "SGD", "singaporedollar": "SGD",
+  "thb":          "THB", "baht":           "THB",
+  "myr":          "MYR", "ringgit":        "MYR",
+  "idr":          "IDR", "rupiah":         "IDR",
+  "php":          "PHP", "philippinepeso": "PHP",
+  "bgn":          "BGN", "lev":            "BGN",
+
+  // ── Hebrew aliases ─────────────────────────────────────────────
+  "שקל":      "ILS", "שקלים":   "ILS",
+  "ש\"ח":     "ILS", "שח":      "ILS", "ש״ח": "ILS",
+  "שקלחדש":  "ILS",
+  "דולר":     "USD", "דולרים":  "USD",
+  "אירו":     "EUR", "יורו":    "EUR", "euros ": "EUR",
+  "ליש\"ט":   "GBP", "לישט":    "GBP", "ליש״ט": "GBP",
+  "פאונד":    "GBP", "פאונדים": "GBP", "פונט":  "GBP",
+  "פרנק":     "CHF",
+  "ין":       "JPY", "יין":     "JPY",
+  "יואן":     "CNY",
+};
+
+// Single-character currency symbols → ISO. Kept separate so we can
+// match them without stripping the symbol out as punctuation.
+const SYMBOL_MAP: Record<string, string> = {
+  "$":   "USD",
+  "€":   "EUR",
+  "£":   "GBP",
+  "₪":   "ILS",
+  "¥":   "JPY",
+  "₹":   "INR",
+  "₩":   "KRW",
+  "₺":   "TRY",
+  "R$":  "BRL",
+  "kr":  "SEK",
+  "zł":  "PLN",
+};
+
+export function resolveCurrencyCode(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const s0 = String(raw).trim();
+  if (!s0) return null;
+
+  // 1. Direct 3-letter ISO code — the typical, well-formed case.
+  const upper = s0.toUpperCase();
+  if (/^[A-Z]{3}$/.test(upper) && isSupportedCurrency(upper)) return upper;
+
+  // 2. Single-/short-symbol match (kept case-sensitive for "kr" / "zł").
+  if (SYMBOL_MAP[s0]) return SYMBOL_MAP[s0];
+
+  // 3. Strip whitespace + punctuation, try the alias map lowercase.
+  //    Quotes / dashes / underscores / dots all get peeled off so
+  //    things like `ש"ח`, `ש״ח`, `שח` all collapse to the same key.
+  const stripped = s0.replace(/[\s.,;:!?\-_/()\[\]'"’”״“]+/g, "").toLowerCase();
+  if (CURRENCY_ALIASES[stripped]) return CURRENCY_ALIASES[stripped];
+
+  // 4. Letters-only fallback for noisy strings like "USD$" or "ILS-".
+  const letters = s0.replace(/[^a-zA-Z]/g, "").toUpperCase();
+  if (letters.length === 3 && isSupportedCurrency(letters)) return letters;
+
+  // 5. Last-resort: exact ISO name match from the English dictionary.
+  const lower = s0.toLowerCase();
+  for (const c of ALL_INCLUDING_UNSUPPORTED) {
+    if (c.name.toLowerCase() === lower && isSupportedCurrency(c.code)) return c.code;
+  }
+  return null;
+}

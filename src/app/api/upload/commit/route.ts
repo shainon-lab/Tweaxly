@@ -8,7 +8,7 @@ import { findDuplicateCandidates } from "@/lib/duplicates";
 import { detectAllSettlements } from "@/lib/settlements";
 import { kindFromName, parseDate } from "@/lib/parsers";
 import { convertAmount } from "@/lib/fx";
-import { isSupportedCurrency } from "@/lib/currencies";
+import { isSupportedCurrency, resolveCurrencyCode } from "@/lib/currencies";
 
 export const runtime = "nodejs";
 
@@ -125,15 +125,20 @@ export async function POST(req: NextRequest) {
       error: `Business base currency ${business.currency} is not supported by our exchange-rate provider. Please update your base currency in Settings before uploading.`,
     }, { status: 400 });
   }
+  // Currency validation runs each cell through resolveCurrencyCode so
+  // local-language names ("שקל"), symbols ("$"), and English names
+  // ("Euro") get mapped to ISO before we decide if anything is truly
+  // unsupported. We only collect labels the resolver couldn't map at
+  // all — those are the rows the user actually has to fix.
   const unsupportedCodes = new Set<string>();
   const mappedCurrencyCol = body.mapping.currency;
   if (mappedCurrencyCol) {
     for (const row of body.rows) {
       const raw = row[mappedCurrencyCol];
       if (raw == null || raw === "") continue;
-      const code = String(raw).trim().toUpperCase();
-      if (code.length !== 3) continue;
-      if (!isSupportedCurrency(code)) unsupportedCodes.add(code);
+      const resolved = resolveCurrencyCode(String(raw));
+      if (resolved && isSupportedCurrency(resolved)) continue;
+      unsupportedCodes.add(String(raw).trim());
     }
   }
   if (unsupportedCodes.size > 0) {
