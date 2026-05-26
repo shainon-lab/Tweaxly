@@ -21,6 +21,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
+import { openEmbeddedCheckout } from "@/lib/billing/embedCheckout";
+import CheckoutSuccessToast, { type CheckoutSuccessKind } from "./CheckoutSuccessToast";
 
 interface UpgradeModalProps {
   open:        boolean;
@@ -51,14 +54,22 @@ const DEFAULT_BENEFITS = [
 export default function UpgradeModal({
   open, onClose, feature, currentPlan, benefits,
 }: UpgradeModalProps) {
+  const router = useRouter();
   const dialogRef = useRef<HTMLDivElement>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Success toast kind. Null = no toast showing. The toast renders
+  // even after the modal closes (portal'd to body) so the user gets
+  // confirmation feedback while router.refresh() pulls updated
+  // server state.
+  const [successKind, setSuccessKind] = useState<CheckoutSuccessKind | null>(null);
 
-  // Drops the user straight onto Polar's checkout for the current
-  // workspace's Pro subscription. Anything that opens this modal -
-  // anywhere on the platform - now flows through here so there's
-  // exactly one upgrade path.
+  // Embedded checkout flow: hit our server to create the Polar
+  // Checkout Session (which now includes embed_origin), then open
+  // the SDK's iframe overlay inside Tweaxly. The webhook is still
+  // the source of truth for unlocking premium features — frontend
+  // success just refreshes server-rendered state so the new plan
+  // lands in the UI without the user having to reload.
   async function startCheckout() {
     setError(null);
     setBusy(true);
@@ -67,12 +78,29 @@ export default function UpgradeModal({
       const data = await res.json().catch(() => ({} as { url?: string; message?: string }));
       if (!res.ok || !data.url) {
         setError(data.message ?? "Could not open checkout. Try again in a moment.");
+        setBusy(false);
         return;
       }
-      window.location.assign(data.url);
+      // Close the upgrade modal so the iframe overlay is the only
+      // thing on top of the page. The SDK manages its own backdrop.
+      onClose();
+      setBusy(false);
+      await openEmbeddedCheckout(data.url, {
+        onSuccess: () => {
+          setSuccessKind("subscription");
+          // Refresh the server-rendered subscription + wallet state.
+          // No full reload — preserves the user's place on the page.
+          router.refresh();
+        },
+        onClose: () => {
+          // User abandoned. No toast, no refresh needed.
+        },
+        onError: (msg) => {
+          setError(msg);
+        },
+      });
     } catch {
       setError("Network error - check your connection.");
-    } finally {
       setBusy(false);
     }
   }
@@ -91,7 +119,15 @@ export default function UpgradeModal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  // The success toast lives outside the open-gated modal — it needs
+  // to be visible AFTER the user closes the upgrade modal to start
+  // the embedded checkout. Rendered alongside the modal (or alone)
+  // so the user always sees confirmation.
+  const successToast = (
+    <CheckoutSuccessToast kind={successKind} onDismiss={() => setSuccessKind(null)} />
+  );
+
+  if (!open) return successToast;
 
   const planLabel = PLAN_LABEL[currentPlan ?? "free"] ?? currentPlan ?? "Free";
   const bullets   = benefits && benefits.length > 0 ? benefits : DEFAULT_BENEFITS;
@@ -193,5 +229,10 @@ export default function UpgradeModal({
     </div>
   );
 
-  return createPortal(modal, document.body);
+  return (
+    <>
+      {createPortal(modal, document.body)}
+      {successToast}
+    </>
+  );
 }

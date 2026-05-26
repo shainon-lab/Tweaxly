@@ -159,6 +159,13 @@ export async function createSubscriptionCheckout(args: {
     // Subscription objects automatically.
     metadata:       metadata as unknown as Record<string, string>,
     successUrl:     buildSuccessUrl(appUrl),
+    // embed_origin is the security boundary for the embedded iframe
+    // flow. Polar's checkout JS uses postMessage to talk to the parent
+    // window; without a matching embed_origin the iframe refuses to
+    // mount. Set to the workspace's APP_URL so the same origin that
+    // hosts the modal is the only origin that can receive the
+    // success/close/confirmed events.
+    embedOrigin:    appUrl,
   });
 
   return { url: checkout.url, checkoutId: checkout.id };
@@ -195,6 +202,7 @@ export async function createPackCheckout(args: {
     customerEmail: args.customerEmail,
     metadata:      metadata as unknown as Record<string, string>,
     successUrl:    buildSuccessUrl(appUrl),
+    embedOrigin:   appUrl,
     // For custom-priced products, Polar accepts `amount` to lock the
     // price for this specific checkout. We pre-compute it server-
     // side so the user doesn't get to edit the price on Polar's page.

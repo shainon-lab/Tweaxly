@@ -10,6 +10,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
+import { openEmbeddedCheckout } from "@/lib/billing/embedCheckout";
+import CheckoutSuccessToast, { type CheckoutSuccessKind } from "./CheckoutSuccessToast";
 // Direct import from the plans submodule - not the @/lib/billing
 // barrel - because the barrel re-exports entitlements.ts which in turn
 // imports the Prisma client. Pulling the barrel from a client component
@@ -31,9 +34,12 @@ function fmtUSD(cents: number): string {
 
 export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps) {
   const dialogRef = useRef<HTMLDivElement>(null);
+  const router = useRouter();
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [customCredits, setCustomCredits] = useState<string>(String(CUSTOM_PACK_MIN_CREDITS));
+  // Survives modal close so the "Credits added" toast still shows.
+  const [successKind, setSuccessKind] = useState<CheckoutSuccessKind | null>(null);
 
   // Live price preview for the custom input (mirrors the server's
   // calculateCustomPackPriceCents step-function so what the user
@@ -66,17 +72,37 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
       const data = await res.json().catch(() => ({} as { url?: string; message?: string }));
       if (!res.ok || !data.url) {
         setError(data.message ?? "Could not open checkout. Try again in a moment.");
+        setBusy(null);
         return;
       }
-      window.location.assign(data.url);
+      // Embedded flow: close the buy-credits modal first so the SDK's
+      // iframe sits cleanly on top of the page, then open Polar's
+      // checkout overlay. Webhook is the source of truth for credit
+      // grant; success here just refreshes the wallet UI.
+      onClose();
+      setBusy(null);
+      await openEmbeddedCheckout(data.url, {
+        onSuccess: () => {
+          setSuccessKind("pack");
+          router.refresh();
+        },
+        onError: (msg) => {
+          setError(msg);
+        },
+      });
     } catch {
       setError("Network error - check your connection.");
-    } finally {
       setBusy(null);
     }
   }
 
-  if (!open) return null;
+  // Toast survives modal close so the "Credits added" confirmation
+  // is visible after the user finishes checkout.
+  const successToast = (
+    <CheckoutSuccessToast kind={successKind} onDismiss={() => setSuccessKind(null)} />
+  );
+
+  if (!open) return successToast;
   // Portal to document.body so any ancestor with transform/filter
   // can't capture position:fixed - same fix as UpgradeModal.
   if (typeof document === "undefined") return null;
@@ -200,5 +226,10 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
     </div>
   );
 
-  return createPortal(modal, document.body);
+  return (
+    <>
+      {createPortal(modal, document.body)}
+      {successToast}
+    </>
+  );
 }
