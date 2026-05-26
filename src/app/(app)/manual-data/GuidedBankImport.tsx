@@ -39,10 +39,16 @@ type Phase = "intake" | "overlap" | "wizard";
 export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  // When the user returns here from "+ Create new source", SourcesClient
-  // appends ?source=<id>. We consume it once the source list arrives,
-  // then strip the query so a refresh doesn't keep re-applying it.
+  // Deep-link params consumed on first render after the source list
+  // loads, then stripped from the URL so a manual refresh doesn't
+  // keep re-applying them.
+  //   ?source=<id>  — set by SourcesClient on return from create-source,
+  //                   and by the missing-data checklist chips
+  //   ?month=YYYY-MM — set by the missing-data checklist chips so the
+  //                    period is pre-filled to the missing month
   const pendingSourceId = searchParams.get("source");
+  const pendingMonth    = searchParams.get("month");
+  const pendingMonthValid = pendingMonth && /^\d{4}-\d{2}$/.test(pendingMonth) ? pendingMonth : null;
 
   const [sources,  setSources]  = useState<Source[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
@@ -74,16 +80,28 @@ export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency:
   }, []);
 
   // Once sources have loaded, pre-select the one the user just created
-  // (return-from-Manual-Sources flow), then clear the query so this
-  // doesn't fire again on a manual refresh.
+  // (return-from-Manual-Sources flow) or clicked on the missing-data
+  // checklist. If ?month=YYYY-MM is also present we set the period
+  // to that single month. Then clear the query so this doesn't fire
+  // again on a manual refresh.
   useEffect(() => {
-    if (!pendingSourceId || loadingSources) return;
-    const match = sources.find((s) => s.id === pendingSourceId);
-    if (match) {
-      setIntake((prev) => ({ ...prev, source: match }));
-    }
+    if (loadingSources) return;
+    if (!pendingSourceId && !pendingMonthValid) return;
+    setIntake((prev) => {
+      const next = { ...prev };
+      if (pendingSourceId) {
+        const match = sources.find((s) => s.id === pendingSourceId);
+        if (match) next.source = match;
+      }
+      if (pendingMonthValid) {
+        next.periodKind  = "month";
+        next.periodStart = pendingMonthValid;
+        next.periodEnd   = pendingMonthValid;
+      }
+      return next;
+    });
     router.replace("/manual-data");
-  }, [pendingSourceId, loadingSources, sources, router]);
+  }, [pendingSourceId, pendingMonthValid, loadingSources, sources, router]);
 
   const context: WizardContext | null = useMemo(() => {
     if (phase !== "wizard" || !intake.source) return null;

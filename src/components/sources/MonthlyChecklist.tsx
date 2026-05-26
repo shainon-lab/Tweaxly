@@ -1,18 +1,24 @@
 "use client";
 
-// "Catch up on last month" checklist.
+// "Upload missing data" checklist.
 //
-// Shows the previous full month and, for every active source, whether
-// it's been uploaded yet. Rows are grouped by source type (Bank → Card
-// → PayPal → Other) which matches the recommended upload order. Each
-// missing row has a one-click "Upload now" link into the guided wizard.
-// Empty state: a clean "you're all caught up" card so finished workspaces
-// aren't pestered.
+// Surfaces every (source × month) cell across the coverage matrix
+// whose status is "missing" — not just the previous month — so the
+// owner sees the full backlog at a glance and can fix any gap.
+// Each missing month becomes a clickable chip that deep-links into
+// /manual-data with the source + period pre-selected.
+//
+// Rows are grouped per source so a workspace with one consistently-
+// missed source doesn't get a flat wall of "Source · Month" pairs.
+// Sources are ordered Bank → Card → PayPal → Other to match the
+// recommended upload sequence (settlement detection uses bank totals
+// to match card/paypal/provider settlements against).
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2 } from "lucide-react";
 
+type CoverageCell = { ym: string; status: "uploaded" | "missing" | "out_of_window" };
 type Source = {
   id:        string;
   name:      string;
@@ -20,7 +26,7 @@ type Source = {
   currency:  string;
   last4:     string | null;
   startMonth: string;
-  cells:     { ym: string; status: "uploaded" | "missing" | "out_of_window" }[];
+  cells:     CoverageCell[];
 };
 
 type CoverageResponse = {
@@ -40,10 +46,15 @@ const TYPE_LABEL: Record<string, string> = {
   other:            "Other",
 };
 
+type SourceGap = {
+  source:        Source;
+  missingMonths: string[]; // YM, descending (newest first)
+};
+
 export default function MonthlyChecklist({ bare = false }: { bare?: boolean } = {}) {
   // `bare` drops the outer card chrome so the checklist can be embedded
   // inside another card (used on /sources where Monthly coverage and
-  // Catch up live together in one box).
+  // the checklist share one box).
   const [coverage, setCoverage] = useState<CoverageResponse | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -61,72 +72,85 @@ export default function MonthlyChecklist({ bare = false }: { bare?: boolean } = 
     return () => { cancelled = true };
   }, []);
 
-  const { prevYM, items, allDone, anySourceExpected } = useMemo(() => {
-    if (!coverage) return { prevYM: previousFullYm(), items: [], allDone: true, anySourceExpected: false };
-    const prev = previousFullYm();
-    type Item = { source: Source; uploaded: boolean; expected: boolean };
-    const items: Item[] = coverage.sources.map((s) => {
-      const cell = s.cells.find((c) => c.ym === prev);
-      const expected = !!cell && cell.status !== "out_of_window";
-      const uploaded = !!cell && cell.status === "uploaded";
-      return { source: s, uploaded, expected };
-    });
-    items.sort((a, b) => {
+  const { gaps, totalMissing, allDone, anySourceExpected } = useMemo(() => {
+    if (!coverage) {
+      return { gaps: [] as SourceGap[], totalMissing: 0, allDone: true, anySourceExpected: false };
+    }
+    const gaps: SourceGap[] = [];
+    let anySourceExpected = false;
+    for (const s of coverage.sources) {
+      const expected = s.cells.filter((c) => c.status !== "out_of_window");
+      if (expected.length === 0) continue;
+      anySourceExpected = true;
+      const missing = expected
+        .filter((c) => c.status === "missing")
+        .map((c) => c.ym)
+        .sort((a, b) => b.localeCompare(a));
+      if (missing.length > 0) gaps.push({ source: s, missingMonths: missing });
+    }
+    gaps.sort((a, b) => {
       const ta = TYPE_ORDER[a.source.type] ?? 99;
       const tb = TYPE_ORDER[b.source.type] ?? 99;
       if (ta !== tb) return ta - tb;
       return a.source.name.localeCompare(b.source.name);
     });
-    const expectedItems = items.filter((i) => i.expected);
-    const allDone = expectedItems.length > 0 && expectedItems.every((i) => i.uploaded);
-    return { prevYM: prev, items: expectedItems, allDone, anySourceExpected: expectedItems.length > 0 };
+    const totalMissing = gaps.reduce((acc, g) => acc + g.missingMonths.length, 0);
+    return { gaps, totalMissing, allDone: totalMissing === 0, anySourceExpected };
   }, [coverage]);
 
   if (loading) return null;
-  // Hide when there are no sources expected for the previous month (e.g.
-  // a brand-new workspace whose first source starts this month). The
-  // /sources page still nudges them via the empty-state message.
+  // No active source has any expected months yet (e.g. a brand-new
+  // workspace whose first source starts next month). The /sources page
+  // still nudges them via the empty-state message.
   if (!anySourceExpected) return null;
 
   const body = (
     <>
       <div className="flex items-baseline justify-between gap-3 mb-1">
         <div className="font-medium">Upload missing data</div>
-        <Link href="/manual-data" className="text-xs text-accent">Start uploading →</Link>
+        {!allDone ? (
+          <Link href="/manual-data" className="text-xs text-accent">Start uploading →</Link>
+        ) : null}
       </div>
       <div className="text-xs text-slate-400 mb-3">
-        Some months have no data uploaded yet — start with {humanYm(prevYM)}. Recommended order: bank first (so settlement detection has totals to match against), then cards, then PayPal, then everything else.
+        {allDone
+          ? "Every active source has data for every expected month."
+          : `${totalMissing} month${totalMissing === 1 ? "" : "s"} across ${gaps.length} source${gaps.length === 1 ? "" : "s"} ${totalMissing === 1 ? "is" : "are"} missing data. Recommended upload order: bank first (so settlement detection has totals to match against), then cards, then PayPal, then everything else.`}
       </div>
+
       {allDone ? (
         <div className="rounded-md border border-good/30 bg-good/10 px-3 py-2 text-sm text-good inline-flex items-center gap-2">
-          <CheckCircle2 size={16} /> Every active source is up to date for {humanYm(prevYM)}.
+          <CheckCircle2 size={16} /> Every active source is up to date.
         </div>
       ) : (
-        <ul className="space-y-1.5">
-          {items.map((i) => (
-            <li
-              key={i.source.id}
-              className={`flex items-center gap-3 py-1.5 px-2 rounded ${i.uploaded ? "" : "hover:bg-ink-700/40"}`}
-            >
-              {i.uploaded
-                ? <CheckCircle2 size={16} className="text-good shrink-0" />
-                : <Circle size={16} className="text-slate-500 shrink-0" />}
-              <div className="flex-1 min-w-0">
-                <div className="text-sm text-slate-100 truncate">
-                  {i.source.name}
-                  {i.source.last4 ? <span className="text-slate-500 ml-2 font-mono text-xs">·{i.source.last4}</span> : null}
-                </div>
-                <div className="text-[11px] text-slate-500">
-                  {TYPE_LABEL[i.source.type] ?? i.source.type} · {i.source.currency}
+        <ul className="space-y-2.5">
+          {gaps.map((g) => (
+            <li key={g.source.id} className="rounded-md border border-line/60 bg-ink-900/30 px-3 py-2.5">
+              <div className="flex items-baseline justify-between gap-3 mb-1.5 flex-wrap">
+                <div className="min-w-0">
+                  <div className="text-sm text-slate-100 truncate">
+                    {g.source.name}
+                    {g.source.last4 ? <span className="text-slate-500 ml-2 font-mono text-xs">·{g.source.last4}</span> : null}
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    {TYPE_LABEL[g.source.type] ?? g.source.type} · {g.source.currency} · {g.missingMonths.length} missing
+                  </div>
                 </div>
               </div>
-              {i.uploaded ? (
-                <span className="text-[11px] text-good">Done</span>
-              ) : (
-                <Link href="/manual-data" className="text-xs font-medium text-accent hover:underline">
-                  Upload now →
-                </Link>
-              )}
+              {/* Missing months — one chip per month. Clicking jumps
+                  into the upload flow with source + period pre-set. */}
+              <div className="flex flex-wrap gap-1.5">
+                {g.missingMonths.map((ym) => (
+                  <Link
+                    key={ym}
+                    href={`/manual-data?source=${encodeURIComponent(g.source.id)}&month=${encodeURIComponent(ym)}`}
+                    className="inline-flex items-center gap-1 rounded-md border border-warn/40 bg-warn/10 px-2 py-0.5 text-[11px] font-medium text-warn hover:bg-warn/20 transition"
+                    title={`Upload ${g.source.name} for ${humanYm(ym)}`}
+                  >
+                    {shortYm(ym)} <span className="opacity-60">↑</span>
+                  </Link>
+                ))}
+              </div>
             </li>
           ))}
         </ul>
@@ -138,14 +162,12 @@ export default function MonthlyChecklist({ bare = false }: { bare?: boolean } = 
   return <div className="card mb-4">{body}</div>;
 }
 
-function previousFullYm(): string {
-  const d = new Date();
-  d.setUTCDate(1);
-  d.setUTCMonth(d.getUTCMonth() - 1);
-  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
-}
-
 function humanYm(ym: string): string {
   const [y, m] = ym.split("-").map(Number);
   return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+}
+
+function shortYm(ym: string): string {
+  const [y, m] = ym.split("-").map(Number);
+  return new Date(Date.UTC(y, m - 1, 1)).toLocaleDateString(undefined, { month: "short", year: "2-digit" });
 }
