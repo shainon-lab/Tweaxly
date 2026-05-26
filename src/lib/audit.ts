@@ -23,6 +23,7 @@ export type AuditAction =
   | "auth.email_verified"
   | "auth.verification_failed"
   | "auth.google_link"
+  | "auth.access_blocked_unverified"
   | "data.upload"
   | "source.created"
   | "billing.subscription_created"

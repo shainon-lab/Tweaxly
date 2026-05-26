@@ -377,6 +377,15 @@ export default function ConsultationClient({
         });
         return;
       }
+      // 403: server's email-verification gate. Send the user to the
+      // banner action without an alert dialog.
+      if (res.status === 403) {
+        const data = await res.json().catch(() => null);
+        if (data?.error === "email_unverified") {
+          alert("Please verify your email to use AI consultations. Use the Resend button in the banner at the top of the page.");
+          return;
+        }
+      }
       if (!res.ok) { alert(await res.text()); return; }
       const data = await res.json();
       const fresh = data.consultation as Active;

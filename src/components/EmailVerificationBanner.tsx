@@ -12,11 +12,22 @@
 //     must stay visible until verification completes.
 
 import { useEffect, useState } from "react";
-import { MailWarning, RefreshCw, CheckCircle2 } from "lucide-react";
+import { MailWarning, RefreshCw, CheckCircle2, ShieldAlert } from "lucide-react";
 
 const COOLDOWN_SECONDS = 60;
 
-export default function EmailVerificationBanner({ email }: { email: string }) {
+export default function EmailVerificationBanner({
+  email,
+  // Set to true by the layout when the 72-hour grace period has
+  // elapsed. Flips the banner to the "restricted" variant: stronger
+  // tone, sharper copy, and an explicit "your account is restricted"
+  // framing so the user understands why uploads / writes are now
+  // returning errors.
+  restricted = false,
+}: {
+  email: string;
+  restricted?: boolean;
+}) {
   const [busy, setBusy] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [message, setMessage] = useState<{ tone: "good" | "warn" | "bad"; text: string } | null>(null);
@@ -62,19 +73,37 @@ export default function EmailVerificationBanner({ email }: { email: string }) {
     : message?.tone === "bad"  ? "text-bad"
     : "";
 
+  // Restricted variant uses the platform's bad tone since the user
+  // now has features actively turning off (uploads, AI). The warn
+  // variant is the friendly nudge users see during the 72-hour
+  // grace window.
+  const containerCls = restricted
+    ? "relative z-30 flex items-center justify-between gap-3 px-4 py-2 text-xs sm:text-sm bg-bad/10 border-b border-bad/40 backdrop-blur"
+    : "relative z-30 flex items-center justify-between gap-3 px-4 py-2 text-xs sm:text-sm bg-warn/10 border-b border-warn/30 backdrop-blur";
+  const iconCls    = restricted ? "text-bad shrink-0" : "text-warn shrink-0";
+  const headline   = restricted ? "Account restricted - verify your email" : "Verify your email";
+  const sublineEnd = restricted
+    ? "to restore uploads, AI, and other features."
+    : "Click it to unlock all platform features.";
+  const buttonCls = restricted
+    ? "text-xs px-3 py-1 rounded-md border border-bad/50 text-bad hover:bg-bad/15 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+    : "text-xs px-3 py-1 rounded-md border border-warn/40 text-warn hover:bg-warn/15 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5";
+
   return (
     <div
       role="status"
       aria-live="polite"
-      className="relative z-30 flex items-center justify-between gap-3 px-4 py-2 text-xs sm:text-sm bg-warn/10 border-b border-warn/30 backdrop-blur"
+      className={containerCls}
     >
       <div className="flex items-center gap-3 min-w-0">
-        <MailWarning size={16} className="text-warn shrink-0" aria-hidden="true" />
+        {restricted
+          ? <ShieldAlert size={16} className={iconCls} aria-hidden="true" />
+          : <MailWarning size={16} className={iconCls} aria-hidden="true" />}
         <div className="min-w-0">
-          <span className="font-semibold text-slate-100">Verify your email</span>
+          <span className="font-semibold text-slate-100">{headline}</span>
           <span className="text-slate-400 mx-2">·</span>
           <span className="text-slate-300 truncate">
-            We sent a link to <span className="text-slate-100">{email}</span>. Click it to unlock all platform features.
+            We sent a link to <span className="text-slate-100">{email}</span>. {sublineEnd}
           </span>
         </div>
       </div>
@@ -86,7 +115,7 @@ export default function EmailVerificationBanner({ email }: { email: string }) {
           type="button"
           onClick={resend}
           disabled={busy || cooldown > 0}
-          className="text-xs px-3 py-1 rounded-md border border-warn/40 text-warn hover:bg-warn/15 transition disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1.5"
+          className={buttonCls}
         >
           {busy ? (
             <><RefreshCw size={12} className="animate-spin" /> Sending</>

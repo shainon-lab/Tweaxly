@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { recordAudit } from "@/lib/audit";
+import { requireEmailVerifiedOrWithinGrace } from "@/lib/auth/verificationGate";
 import { prisma } from "@/lib/db";
 import { normalizeRow, type ColumnMapping } from "@/lib/normalize";
 import { findApplicableRule, findApplicableVendorRule } from "@/lib/categorize";
@@ -64,6 +65,19 @@ function normalizeName(raw: string): string {
 
 export async function POST(req: NextRequest) {
   const { business, user } = await requireBusiness();
+  // Soft email-verification gate. Uploads are ALLOWED during the
+  // 72-hour grace period so new users can ingest data + see their
+  // first dashboard before verifying. Once grace expires we block
+  // until they verify. Aligns with the "quick onboarding, gradual
+  // enforcement" auth philosophy.
+  const gate = await requireEmailVerifiedOrWithinGrace(user, "upload/commit");
+  if (!gate.ok) {
+    return NextResponse.json({
+      error:   "email_unverified",
+      reason:  gate.reason,
+      message: "Please verify your email to keep importing data.",
+    }, { status: 403 });
+  }
   const body = (await req.json()) as Body;
   if (!body.mapping?.amount) {
     return NextResponse.json({ error: "Amount column is required." }, { status: 400 });

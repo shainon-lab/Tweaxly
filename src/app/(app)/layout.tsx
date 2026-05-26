@@ -4,6 +4,7 @@ import GlobalConsult from "@/components/GlobalConsult";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import BillingStatusBanner from "@/components/BillingStatusBanner";
 import EmailVerificationBanner from "@/components/EmailVerificationBanner";
+import { gracePeriodStatus } from "@/lib/auth/verificationGate";
 import { NotificationCenterProvider } from "@/components/notifications/NotificationCenterContext";
 import NotificationCenterMount from "@/components/notifications/NotificationCenterMount";
 import { requireBusiness } from "@/lib/auth";
@@ -113,9 +114,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           user clicks the link in the welcome email. Sits above the
           billing banner so the most-recent + most-actionable nudge
           is highest. Auto-disappears once `user.emailVerified` is
-          stamped by the verification flow. */}
+          stamped by the verification flow. After the 72-hour grace
+          period, the banner flips to its "restricted" variant
+          (stronger tone, sharper copy) to match the server-side
+          gates that are now blocking uploads + AI. */}
       {!user.emailVerified ? (
-        <EmailVerificationBanner email={user.email} />
+        <EmailVerificationBanner
+          email={user.email}
+          restricted={!gracePeriodStatus(user).withinGrace}
+        />
       ) : null}
 
       {/* Billing status - read-only banner or out-of-credits notice.

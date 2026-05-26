@@ -75,7 +75,15 @@ export default function UpgradeModal({
     setBusy(true);
     try {
       const res  = await fetch("/api/billing/checkout/subscription", { method: "POST" });
-      const data = await res.json().catch(() => ({} as { url?: string; message?: string }));
+      const data = await res.json().catch(() => ({} as { url?: string; message?: string; error?: string }));
+      // 403 from the server's email-verification gate. Surface a
+      // pointed message rather than the generic "could not open" so
+      // the user understands which action to take next.
+      if (res.status === 403 && data.error === "email_unverified") {
+        setError("Please verify your email to upgrade. Use the Resend button in the banner at the top of the page.");
+        setBusy(false);
+        return;
+      }
       if (!res.ok || !data.url) {
         setError(data.message ?? "Could not open checkout. Try again in a moment.");
         setBusy(false);

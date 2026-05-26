@@ -69,7 +69,12 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
         headers: { "content-type": "application/json" },
         body:    JSON.stringify(body),
       });
-      const data = await res.json().catch(() => ({} as { url?: string; message?: string }));
+      const data = await res.json().catch(() => ({} as { url?: string; message?: string; error?: string }));
+      if (res.status === 403 && data.error === "email_unverified") {
+        setError("Please verify your email to buy credits. Use the Resend button in the banner at the top of the page.");
+        setBusy(null);
+        return;
+      }
       if (!res.ok || !data.url) {
         setError(data.message ?? "Could not open checkout. Try again in a moment.");
         setBusy(null);

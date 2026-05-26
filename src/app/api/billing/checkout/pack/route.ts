@@ -13,11 +13,25 @@ import {
   calculateCustomPackPriceCents, getPlanFor,
 } from "@/lib/billing";
 import { createPackCheckout } from "@/lib/billing/polar";
+import { requireEmailVerified } from "@/lib/auth/verificationGate";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   const { business, user } = await requireBusiness();
+
+  // Email verification gate. Credit-pack purchases are blocked for
+  // unverified users regardless of grace period for the same reason
+  // as the subscription checkout - no money flow on unconfirmed
+  // identities.
+  const gate = await requireEmailVerified(user, "checkout/pack");
+  if (!gate.ok) {
+    return NextResponse.json({
+      error:   "email_unverified",
+      reason:  gate.reason,
+      message: "Please verify your email to buy credits.",
+    }, { status: 403 });
+  }
 
   let body: { sku?: unknown; credits?: unknown };
   try { body = await req.json() }

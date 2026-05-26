@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 import { requireBusiness } from "@/lib/auth";
+import { requireEmailVerified } from "@/lib/auth/verificationGate";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, answerQuestion, deriveTitle } from "@/lib/advisor";
 import {
@@ -27,7 +28,18 @@ export async function GET() {
 // POST - send a message. If no consultationId, creates a new thread.
 // Body: { consultationId?: string, message: string }
 export async function POST(req: NextRequest) {
-  const { business } = await requireBusiness();
+  const { business, user } = await requireBusiness();
+  // Email verification gate. AI surfaces are blocked for unverified
+  // users regardless of grace period - we don't want to spend Claude
+  // credits answering on behalf of an unconfirmed identity.
+  const gate = await requireEmailVerified(user, "consultation");
+  if (!gate.ok) {
+    return NextResponse.json({
+      error:   "email_unverified",
+      reason:  gate.reason,
+      message: "Please verify your email to use AI consultations.",
+    }, { status: 403 });
+  }
   const body = await req.json();
   const message = String(body.message ?? "").trim();
   if (!message) return NextResponse.json({ error: "message required" }, { status: 400 });
