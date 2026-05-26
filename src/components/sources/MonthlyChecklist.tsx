@@ -91,11 +91,11 @@ export default function MonthlyChecklist({ bare = false }: { bare?: boolean } = 
   const body = (
     <>
       <div className="flex items-baseline justify-between gap-3 mb-1">
-        <div className="font-medium">Catch up on {humanYm(prevYM)}</div>
+        <div className="font-medium">Upload missing data</div>
         <Link href="/manual-data" className="text-xs text-accent">Start uploading →</Link>
       </div>
       <div className="text-xs text-slate-400 mb-3">
-        Recommended monthly upload order — bank first (so settlement detection has totals to match against), then cards, then PayPal, then everything else.
+        Some months have no data uploaded yet — start with {humanYm(prevYM)}. Recommended order: bank first (so settlement detection has totals to match against), then cards, then PayPal, then everything else.
       </div>
       {allDone ? (
         <div className="rounded-md border border-good/30 bg-good/10 px-3 py-2 text-sm text-good inline-flex items-center gap-2">
