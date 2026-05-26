@@ -5,7 +5,8 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import PasswordInput from "@/components/PasswordInput";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+// GOOGLE_SIGNIN: kept on disk - re-enable when Google credentials land.
+// import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { getServerT } from "@/lib/i18n/server";
 
 // Error codes that arrive on /login?err=… from auth route bounces.
@@ -42,14 +43,19 @@ export default async function LoginPage({
           </div>
         ) : null}
 
-        {/* "Continue with Google" sits above the form per the auth
-            spec. Same endpoint handles signup + login transparently. */}
+        {/* GOOGLE_SIGNIN: hidden in the UI for now per product
+            decision. Backend (start + callback routes, helper, env
+            var support, schema columns) remains live - flip this
+            block back on once Google Cloud credentials are set up.
+            Re-enable by uncommenting the block + the
+            GoogleSignInButton import above.
         <GoogleSignInButton />
         <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-slate-500">
           <span className="flex-1 h-px bg-line" aria-hidden="true" />
           <span>or</span>
           <span className="flex-1 h-px bg-line" aria-hidden="true" />
         </div>
+        */}
 
         <form action="/api/auth/login" method="post" className="space-y-4">
           <div>

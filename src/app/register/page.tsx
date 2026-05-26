@@ -2,7 +2,8 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import { getServerT } from "@/lib/i18n/server";
 import RegisterForm from "./RegisterForm";
-import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
+// GOOGLE_SIGNIN: kept on disk - re-enable when Google credentials land.
+// import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 export default async function RegisterPage({
   searchParams,
@@ -35,15 +36,19 @@ export default async function RegisterPage({
             ) : null}
           </div>
         ) : null}
-        {/* "Continue with Google" sits above the form per the auth
-            spec. Google flow auto-verifies the email so the user
-            skips the welcome-email step entirely. */}
+        {/* GOOGLE_SIGNIN: hidden in the UI for now per product
+            decision. Backend (start + callback routes, helper, env
+            var support, schema columns) remains live - flip this
+            block back on once Google Cloud credentials are set up.
+            Re-enable by uncommenting the block + the
+            GoogleSignInButton import above.
         <GoogleSignInButton />
         <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-slate-500">
           <span className="flex-1 h-px bg-line" aria-hidden="true" />
           <span>or</span>
           <span className="flex-1 h-px bg-line" aria-hidden="true" />
         </div>
+        */}
 
         <RegisterForm
           labels={{
