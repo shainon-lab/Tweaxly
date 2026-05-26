@@ -112,11 +112,11 @@ function Hero() {
             <span className="text-brand-teal">Yield</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-            <span className="gradient-text">AI Financial Advisor</span> for Business Owners
+            <span className="gradient-text">AI That Understands</span> Your Business
           </h1>
           <p className="mt-8 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-xl">
-            Financial planning, forecasting, and AI-powered business insights
-            in one real-time platform.
+            Turn your business data into real-time insights, forecasts, signals,
+            and AI-powered decisions.
           </p>
           {/* Single primary CTA - the secondary \"Connect Your Business\"
               button was creating decision paralysis at the top of the
