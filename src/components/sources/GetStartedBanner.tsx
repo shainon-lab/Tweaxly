@@ -8,7 +8,7 @@
 // users never see it; new workspaces get a clean 3-step explainer.
 //
 // The "Add your first source" CTA jumps to /sources; from there the
-// AddSource modal asks the user to pick a startMonth — that's where
+// AddSource modal asks the user to pick a startMonth - that's where
 // "how far back to import" gets answered concretely (rather than as
 // a separate "3/6/12 months" abstract question).
 
@@ -27,7 +27,7 @@ export default function GetStartedBanner() {
         const d = await r.json();
         if (!cancelled) setHasSources((d.sources ?? []).length > 0);
       } catch {
-        if (!cancelled) setHasSources(true); // fail closed — hide on error
+        if (!cancelled) setHasSources(true); // fail closed - hide on error
       }
     })();
     return () => { cancelled = true };
@@ -56,7 +56,7 @@ export default function GetStartedBanner() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-        <Step n={1} Icon={Database} title="Add a source" body="Bank account, credit card, PayPal — anywhere money moves. Pick how far back you want to track (last 3, 6, or 12 months works for most owners)." />
+        <Step n={1} Icon={Database} title="Add a source" body="Bank account, credit card, PayPal - anywhere money moves. Pick how far back you want to track (last 3, 6, or 12 months works for most owners)." />
         <Step n={2} Icon={Upload} title="Upload statements" body="One file at a time. The guided wizard maps columns, confirms date format, and remembers your choices for next month." />
         <Step n={3} Icon={Calendar} title="See your coverage" body="The monthly grid shows what's loaded and what's missing. You'll get an alert when a source is overdue." />
       </div>

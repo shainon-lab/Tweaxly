@@ -68,13 +68,13 @@ export async function POST(req: NextRequest) {
     }
     case "setVendor": {
       // Normalize many transaction rows under one vendor. Spec calls
-      // this "vendor normalization" — merging similar transaction
+      // this "vendor normalization" - merging similar transaction
       // descriptions (e.g. "Interest X", "Interest Y", "Interest Z")
       // into a single canonical vendor ("Bank Leumi"). The Vendor row
       // is upserted by name so future uploads + the categorize-toast
       // flow find it. If the vendor already has a pinned category,
       // we also auto-fill categoryId on any of the selected rows that
-      // are still uncategorized — manual categorizations on individual
+      // are still uncategorized - manual categorizations on individual
       // rows are NEVER overwritten.
       const newVendorName = String(body.vendor ?? "").trim();
       if (!newVendorName) return NextResponse.json({ error: "vendor required" }, { status: 400 });

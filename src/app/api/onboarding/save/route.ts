@@ -3,7 +3,7 @@
 //
 // Persists the business basics collected by the trimmed onboarding
 // wizard and stamps onboardedAt to mark the wizard complete. Stage /
-// payroll / goals / Business DNA moved out of the critical path —
+// payroll / goals / Business DNA moved out of the critical path  - 
 // users can fill those in later via Settings without blocking entry.
 
 import { NextResponse } from "next/server";

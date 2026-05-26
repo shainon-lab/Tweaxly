@@ -9,7 +9,7 @@
 // notices when more than one thing needs attention; auto-hides when
 // nothing is pending.
 //
-// Server component on purpose — the counts come from the same place
+// Server component on purpose - the counts come from the same place
 // as getSidebarAlerts (cheap, one query per badge), so we render the
 // explanation server-side on every navigation without an extra client
 // fetch.
@@ -67,7 +67,7 @@ export default async function ReviewBanner({
 
   if (uncategorized > 0) {
     if (surface === "transactions") {
-      // On Transactions the row IS the fix surface — no CTA needed,
+      // On Transactions the row IS the fix surface - no CTA needed,
       // just point at the filter chip.
       notices.push(
         <Notice
@@ -89,7 +89,7 @@ export default async function ReviewBanner({
           title={`${uncategorized} transaction${uncategorized === 1 ? "" : "s"} need${uncategorized === 1 ? "s" : ""} a category`}
           body={
             <>
-              These are tagged <span className="text-slate-100 font-medium">Undefined Category</span> because the upload didn't include a category column. Reports still work — that bucket shows up as its own category until you reassign. Tighten by mapping a Category column on next upload, or fix in bulk on Transactions.
+              These are tagged <span className="text-slate-100 font-medium">Undefined Category</span> because the upload didn't include a category column. Reports still work - that bucket shows up as its own category until you reassign. Tighten by mapping a Category column on next upload, or fix in bulk on Transactions.
             </>
           }
           cta={{ href: "/transactions?uncategorized=1", label: "Review uncategorized" }}
@@ -108,7 +108,7 @@ export default async function ReviewBanner({
           body={
             <>
               Rows the system thinks may be the same transaction posted twice (same date · amount · vendor across sources). Each one has a{" "}
-              <span className="text-slate-100 font-medium">possible duplicate · dismiss</span> link in its row — click to confirm both are real charges, or use the row actions to ignore one side.
+              <span className="text-slate-100 font-medium">possible duplicate · dismiss</span> link in its row - click to confirm both are real charges, or use the row actions to ignore one side.
             </>
           }
         />
@@ -123,7 +123,7 @@ export default async function ReviewBanner({
           title={`${duplicateCandidates} transaction${duplicateCandidates === 1 ? "" : "s"} need${duplicateCandidates === 1 ? "s" : ""} duplicate review`}
           body={
             <>
-              Your latest import flagged rows that may be the same transaction posted twice across sources. Review them on Transactions — confirm each is unique or dismiss the alert.
+              Your latest import flagged rows that may be the same transaction posted twice across sources. Review them on Transactions - confirm each is unique or dismiss the alert.
             </>
           }
           cta={{ href: "/transactions", label: "Go to Transactions" }}

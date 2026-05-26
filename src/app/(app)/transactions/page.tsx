@@ -20,11 +20,11 @@ export default async function TransactionsPage({
   ];
   if (sp.source) where.source = sp.source;
   if (sp.ym) where.accountingMonth = sp.ym;
-  // ?vendor=X — exact (case-insensitive) match on the Transaction.vendor
+  // ?vendor=X - exact (case-insensitive) match on the Transaction.vendor
   // string. Powers the "drill into transactions for this vendor" link
   // from Settings → Categories & Vendors → Vendors table.
   if (sp.vendor) where.vendor = { equals: sp.vendor, mode: "insensitive" };
-  // ?category=<id> — exact match on Transaction.categoryId. Powers the
+  // ?category=<id> - exact match on Transaction.categoryId. Powers the
   // drill-down link from Settings → Categories & Vendors → Categories
   // table (the mirror of the vendor drill-down).
   if (sp.category) where.categoryId = sp.category;
@@ -37,7 +37,7 @@ export default async function TransactionsPage({
     { category: { name: "Uncategorized" } },
     { category: { name: "Undefined Category" } },
   ];
-  // ?unvendorized=1 — matches rows where Transaction.vendor is null
+  // ?unvendorized=1 - matches rows where Transaction.vendor is null
   // OR empty string. Used by the "Unvendorized only" filter chip so
   // the owner can focus on rows that still need a vendor assigned.
   if (sp.unvendorized === "1") {
@@ -51,7 +51,7 @@ export default async function TransactionsPage({
       where.OR = vendorClause.OR;
     }
   }
-  // Hide ignored rows from the focus filters — once a user has
+  // Hide ignored rows from the focus filters - once a user has
   // explicitly marked a row as "not calculated", it's handled and
   // shouldn't keep showing up in the uncategorized / unvendorized
   // worklists. The default (neither chip checked) still shows
@@ -91,7 +91,7 @@ export default async function TransactionsPage({
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
 
   // Surface a quick "Trash" link in the header when the workspace
-  // has anything in the recycle bin — owners might forget about
+  // has anything in the recycle bin - owners might forget about
   // batches they trashed last week.
   const trashCount = await prisma.trashBatch.count({ where: { businessId: business.id } });
 

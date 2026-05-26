@@ -1,5 +1,5 @@
 // App-wide loading fallback. Next.js renders this whenever a server
-// component under the (app) layout is streaming — workspace switches,
+// component under the (app) layout is streaming - workspace switches,
 // dashboard navigation, sub-tab clicks. Without it, the user sees the
 // previous page hang while the new one fetches, which feels broken.
 //

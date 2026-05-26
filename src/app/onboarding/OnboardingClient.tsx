@@ -1,11 +1,11 @@
 "use client";
 
-// Onboarding wizard — three steps, optimized for Time To First Value.
+// Onboarding wizard - three steps, optimized for Time To First Value.
 //
-//   0. Welcome — what Tweaxly does, in one sentence.
-//   1. Business basics — name, country, base currency, fiscal year
+//   0. Welcome - what Tweaxly does, in one sentence.
+//   1. Business basics - name, country, base currency, fiscal year
 //      (fiscal optional, defaults to January, editable in Settings).
-//   2. Data intro — "Start with your bank account." User can either
+//   2. Data intro - "Start with your bank account." User can either
 //      jump into the upload flow OR skip and enter the product. If
 //      they skip, every analytics surface renders an empty-state card
 //      pointing them back at the bank upload.
@@ -78,7 +78,7 @@ export function OnboardingClient({
       if (!res.ok) { setError("Couldn't save your business details. Try again."); return false; }
       return true;
     } catch {
-      setError("Network error — check your connection.");
+      setError("Network error - check your connection.");
       return false;
     }
   }
@@ -95,7 +95,7 @@ export function OnboardingClient({
     window.location.assign("/manual-data?onboarding=1");
   }
   function goDashboard() {
-    // Skip path — enter the product, empty states will point back at upload.
+    // Skip path - enter the product, empty states will point back at upload.
     window.location.assign("/dashboard");
   }
 
@@ -156,7 +156,7 @@ export function OnboardingClient({
                       value={form.country}
                       onChange={(e) => setForm({ ...form, country: e.target.value })}
                     >
-                      <option value="">—</option>
+                      <option value=""> - </option>
                       {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}
                     </select>
                   </Field>
@@ -241,7 +241,7 @@ export function OnboardingClient({
                 onClick={goDashboard}
                 className="text-sm text-slate-400 hover:text-slate-200"
               >
-                Skip for now — I'll upload later
+                Skip for now - I'll upload later
               </button>
               <button
                 type="button"
@@ -284,7 +284,7 @@ function Welcome({ onStart, busy }: { onStart: () => void; busy: boolean }) {
       </div>
 
       <div className="mt-6 text-xs text-slate-500 max-w-sm mx-auto">
-        Takes about a minute. No credit card required — the Free plan is forever; upgrade only when you need more.
+        Takes about a minute. No credit card required - the Free plan is forever; upgrade only when you need more.
       </div>
     </div>
   );

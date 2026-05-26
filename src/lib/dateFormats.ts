@@ -3,7 +3,7 @@
 // Why this exists: `new Date(str)` is locale-dependent and silently picks
 // MM/DD vs DD/MM. For financial imports a single misread row can move
 // thousands of dollars to the wrong month. The wizard never auto-commits
-// — it shows the user 5–10 sample dates and asks them to pick the format
+// - it shows the user 5–10 sample dates and asks them to pick the format
 // before we touch their data. This module is the engine behind that step.
 //
 // Two responsibilities:
@@ -40,7 +40,7 @@ function decompose(fmt: DateFormat): { sep: string; tokens: ("DD" | "MM" | "YYYY
 //   - day not valid for that month/year (handles leap years via Date roundtrip)
 export function parseDateWithFormat(value: unknown, fmt: DateFormat): Date | null {
   if (value == null) return null;
-  // XLSX cellDates: true gives us a Date directly — accept it.
+  // XLSX cellDates: true gives us a Date directly - accept it.
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   const raw = String(value).trim();
   if (!raw) return null;
@@ -48,7 +48,7 @@ export function parseDateWithFormat(value: unknown, fmt: DateFormat): Date | nul
   // Allow either / - . as separators (some files mix them); decompose by the
   // canonical separator of the chosen format but split the value on any of
   // the three so "03-04-2026" parses under DD/MM/YYYY too. The format is
-  // still authoritative about token *order* — only the punctuation is loose.
+  // still authoritative about token *order* - only the punctuation is loose.
   const parts = raw.split(/[\/\-.]/).map((s) => s.trim());
   const { tokens } = decompose(fmt);
   if (parts.length !== tokens.length) return null;
@@ -112,7 +112,7 @@ export function scoreFormat(samples: unknown[], fmt: DateFormat): FormatFit {
       for (let i = 0; i < tokens.length; i++) {
         if (tokens[i] === "DD" && parts[i] > 12) definitelyFits = true;
         if (tokens[i] === "MM" && parts[i] > 12) {
-          // Month part > 12 is invalid — parseDateWithFormat already
+          // Month part > 12 is invalid - parseDateWithFormat already
           // returned null above, so we never get here. Listed for clarity.
         }
       }
@@ -162,7 +162,7 @@ export function suggestDateFormat(samples: unknown[]): {
       candidates: scored,
     };
   }
-  // Nothing parses 100% — return whatever parsed the most.
+  // Nothing parses 100% - return whatever parsed the most.
   const best = scored.reduce((b, s) => (s.parsed > b.parsed ? s : b), scored[0]);
   return { suggested: best.format, ambiguous: true, candidates: scored };
 }

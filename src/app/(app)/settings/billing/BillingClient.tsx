@@ -12,7 +12,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-// Direct submodule import — see note in BuyCreditsModal.tsx. Importing
+// Direct submodule import - see note in BuyCreditsModal.tsx. Importing
 // from the @/lib/billing barrel pulls entitlements.ts which pulls
 // PrismaClient into the client bundle.
 import {
@@ -409,7 +409,7 @@ export function BillingClient(props: BillingClientProps) {
                 />
                 <span className="text-xs text-slate-400">credits</span>
                 <span className="text-sm text-slate-300 font-semibold tabular-nums min-w-[60px] text-right">
-                  {customValid ? fmtUSD(customPriceCents) : "—"}
+                  {customValid ? fmtUSD(customPriceCents) : " - "}
                 </span>
                 <button
                   type="button"
@@ -464,7 +464,7 @@ export function BillingClient(props: BillingClientProps) {
                   <tr key={t.id} className="border-t border-line/40">
                     <td className="px-3 py-2 text-slate-400 whitespace-nowrap">{fmtDateTime(t.createdAt)}</td>
                     <td className="px-3 py-2 text-slate-300">{KIND_LABEL[t.kind] ?? t.kind}</td>
-                    <td className="px-3 py-2 text-slate-400 max-w-xs truncate" title={t.reason ?? ""}>{t.reason ?? "—"}</td>
+                    <td className="px-3 py-2 text-slate-400 max-w-xs truncate" title={t.reason ?? ""}>{t.reason ?? " - "}</td>
                     <td className={`px-3 py-2 text-right tabular-nums font-medium ${t.delta < 0 ? "text-bad" : "text-good"}`}>
                       {t.delta > 0 ? "+" : ""}{t.delta.toLocaleString()}
                     </td>

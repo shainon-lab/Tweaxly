@@ -5,7 +5,7 @@ import type { CategorizationRule, VendorizationRule, Transaction } from "@prisma
 
 export type RuleMatchInput = Pick<Transaction, "description" | "vendor" | "source">;
 
-// Generic matcher — works for either rule kind since both have the
+// Generic matcher - works for either rule kind since both have the
 // same matchField / matchType / pattern columns.
 function matchPattern(
   rule: { matchField: string; matchType: string; pattern: string },

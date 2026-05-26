@@ -13,7 +13,7 @@ const ALLOWED = new Set([
   "excludeNote",
   "vendor",
   "notes",
-  // type — restricted to a known vocabulary below. Lets the settlement
+  // type - restricted to a known vocabulary below. Lets the settlement
   // undo flow flip an auto-detected credit_card_settlement back to
   // "expense" when the heuristic was wrong.
   "type",

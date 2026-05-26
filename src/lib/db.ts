@@ -10,7 +10,7 @@ import { PrismaClient } from "@prisma/client";
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient };
 
 // Base client. The exported `prisma` below extends it with a global
-// soft-delete filter on Transaction reads — trashed rows (deletedAt
+// soft-delete filter on Transaction reads - trashed rows (deletedAt
 // not null) are invisible to every findMany / findFirst / count /
 // aggregate / groupBy in the app. Writes pass through unchanged so
 // the trash API can still set deletedAt and the restore API can clear

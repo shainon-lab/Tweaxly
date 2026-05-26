@@ -4,7 +4,7 @@
    All visual a11y adjustments live here and key off data-a11y-*
    attributes set on <html> by the AccessibilityProvider (or its
    pre-paint init script). This file is loaded once, globally, and has
-   zero JS overhead — toggling a preference flips a data attribute, the
+   zero JS overhead - toggling a preference flips a data attribute, the
    browser repaints. CSS variables let us cascade font-size and motion
    speed cleanly through every component.
    ───────────────────────────────────────────────────────────────────── */
@@ -15,7 +15,7 @@
 
 html { font-size: calc(16px * var(--a11y-font-scale)); }
 
-/* Skip links — visually hidden until focused. Placed before the main
+/* Skip links - visually hidden until focused. Placed before the main
    landmark so keyboard users can jump past the header. */
 .skip-link {
   position: absolute;
@@ -40,7 +40,7 @@ html { font-size: calc(16px * var(--a11y-font-scale)); }
 
 /* ── Contrast modes ────────────────────────────────────────────────── */
 
-/* High contrast (over dark base) — boosts everything to near-pure tones */
+/* High contrast (over dark base) - boosts everything to near-pure tones */
 html[data-a11y-contrast="high"] {
   background: #000 !important;
   color: #fff !important;
@@ -73,7 +73,7 @@ html[data-a11y-contrast="high"] .input {
   border: 2px solid #fff !important;
 }
 
-/* Dark high-contrast — keeps the dark surface, pushes text/borders */
+/* Dark high-contrast - keeps the dark surface, pushes text/borders */
 html[data-a11y-contrast="dark-high"] {
   color: #fff !important;
 }
@@ -85,7 +85,7 @@ html[data-a11y-contrast="dark-high"] .card-tight {
   border-color: #fff !important;
 }
 
-/* Light high-contrast — white surface, near-black text */
+/* Light high-contrast - white surface, near-black text */
 html[data-a11y-contrast="light-high"] {
   background: #fff !important;
   color: #000 !important;
@@ -115,10 +115,10 @@ html[data-a11y-contrast="light-high"] .btn-ghost {
   border: 2px solid #000 !important;
 }
 
-/* Monochrome — desaturate everything (still legible, removes color cues) */
+/* Monochrome - desaturate everything (still legible, removes color cues) */
 html[data-a11y-contrast="monochrome"] { filter: grayscale(100%); }
 
-/* Inverted — flips colors but un-inverts images/videos so they stay correct */
+/* Inverted - flips colors but un-inverts images/videos so they stay correct */
 html[data-a11y-contrast="invert"] { filter: invert(1) hue-rotate(180deg); }
 html[data-a11y-contrast="invert"] img,
 html[data-a11y-contrast="invert"] video,
@@ -130,16 +130,16 @@ html[data-a11y-contrast="invert"] [data-no-invert] {
 
 /* ── Typography modes ──────────────────────────────────────────────── */
 
-/* Readable font — sets a wide, high-legibility system stack */
+/* Readable font - sets a wide, high-legibility system stack */
 html[data-a11y-readable-font="on"] body,
 html[data-a11y-readable-font="on"] * {
   font-family: "Atkinson Hyperlegible", "Inter", "Segoe UI", system-ui,
                -apple-system, BlinkMacSystemFont, Arial, sans-serif !important;
 }
 
-/* Dyslexia-friendly — uses OpenDyslexic if available, otherwise falls
+/* Dyslexia-friendly - uses OpenDyslexic if available, otherwise falls
    back to Comic Sans MS / Verdana which preserve glyph distinction.
-   Bundled font would balloon CSS — we rely on common system fonts. */
+   Bundled font would balloon CSS - we rely on common system fonts. */
 html[data-a11y-dyslexia-font="on"] body,
 html[data-a11y-dyslexia-font="on"] * {
   font-family: "OpenDyslexic", "Comic Sans MS", "Verdana", sans-serif !important;
@@ -210,7 +210,7 @@ html[data-a11y-no-flash="on"] .blink {
 
 /* ── Focus / keyboard ──────────────────────────────────────────────── */
 
-/* Always-on enhanced focus — visible even on click focus, not only kb */
+/* Always-on enhanced focus - visible even on click focus, not only kb */
 html[data-a11y-focus="on"] *:focus,
 html[data-a11y-focus="on"] *:focus-visible {
   outline: 3px solid #a78bfa !important;
@@ -218,7 +218,7 @@ html[data-a11y-focus="on"] *:focus-visible {
   box-shadow: 0 0 0 6px rgba(167, 139, 250, 0.25) !important;
 }
 
-/* Keyboard-only mode — same enhancement but only when focus came from kb */
+/* Keyboard-only mode - same enhancement but only when focus came from kb */
 html[data-a11y-keyboard="on"] *:focus-visible {
   outline: 3px solid #a78bfa !important;
   outline-offset: 3px !important;
@@ -253,7 +253,7 @@ html[data-a11y-big-cursor="xlarge"] * {
 
 /* ── Reading aids ──────────────────────────────────────────────────── */
 
-/* Reading guide — full-width horizontal bar that follows the pointer */
+/* Reading guide - full-width horizontal bar that follows the pointer */
 .a11y-reading-guide {
   position: fixed;
   left: 0;
@@ -267,7 +267,7 @@ html[data-a11y-big-cursor="xlarge"] * {
   transform: translateY(-50%);
 }
 
-/* Reading mask — dims everything except the 160px strip around cursor */
+/* Reading mask - dims everything except the 160px strip around cursor */
 .a11y-reading-mask {
   position: fixed;
   inset: 0;
@@ -322,7 +322,7 @@ html[data-a11y-big-cursor="xlarge"] * {
   outline-offset: 4px;
 }
 
-/* RTL support — anchor to the right edge instead. */
+/* RTL support - anchor to the right edge instead. */
 html[dir="rtl"] .a11y-fab {
   left: auto;
   right: calc(env(safe-area-inset-right, 0px) + 1rem);

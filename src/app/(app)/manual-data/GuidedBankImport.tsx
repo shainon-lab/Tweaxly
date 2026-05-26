@@ -3,7 +3,7 @@
 // Phase 1 of the Financial Data Pipeline. Wraps BankImportWizard with a
 // two-step intake:
 //
-//   1. Pick a source (or "+ Add source" — links to /sources)
+//   1. Pick a source (or "+ Add source" - links to /sources)
 //   2. Specific month OR historical range
 //
 // Then runs an overlap check against existing active UploadBatches for
@@ -42,9 +42,9 @@ export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency:
   // Deep-link params consumed on first render after the source list
   // loads, then stripped from the URL so a manual refresh doesn't
   // keep re-applying them.
-  //   ?source=<id>  — set by SourcesClient on return from create-source,
+  //   ?source=<id>  - set by SourcesClient on return from create-source,
   //                   and by the missing-data checklist chips
-  //   ?month=YYYY-MM — set by the missing-data checklist chips so the
+  //   ?month=YYYY-MM - set by the missing-data checklist chips so the
   //                    period is pre-filled to the missing month
   const pendingSourceId = searchParams.get("source");
   const pendingMonth    = searchParams.get("month");
@@ -150,7 +150,7 @@ export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency:
 
   return (
     <div>
-      {/* Intake — always visible as a context header once a source/period
+      {/* Intake - always visible as a context header once a source/period
           is chosen, so the user can see what they're uploading INTO. */}
       {phase === "intake" || phase === "overlap" ? (
         <IntakeStep

@@ -10,7 +10,7 @@ import { summariseCoupon } from "@/lib/billing";
 export const dynamic = "force-dynamic";
 
 function fmtDate(d: Date | null): string {
-  if (!d) return "—";
+  if (!d) return " - ";
   return d.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
 }
 

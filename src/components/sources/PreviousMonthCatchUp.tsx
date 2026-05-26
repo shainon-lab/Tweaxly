@@ -5,7 +5,7 @@
 //
 // Rule from the spec: if it's currently May and we don't have April
 // data from every source, the dashboard shouts about it. Even ONE
-// missing source counts — the workspace's reports are incomplete
+// missing source counts - the workspace's reports are incomplete
 // until every source has uploaded April. The current in-progress
 // month (May, in this example) is NOT counted as missing.
 //
@@ -48,7 +48,7 @@ export default function PreviousMonthCatchUp() {
   if (loading || !data) return null;
   // Filter to only sources that are missing the previous full month
   // specifically. A source can still have older gaps (surfaced by the
-  // HealthScoreWidget) without triggering this banner — the spec is
+  // HealthScoreWidget) without triggering this banner - the spec is
   // explicit that the urgent case is the just-completed month.
   const missingPrev = data.gaps.filter((g) => g.missingMonths.includes(data.previousMonth));
   if (missingPrev.length === 0) return null;

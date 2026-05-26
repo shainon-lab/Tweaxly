@@ -3,9 +3,9 @@
 // Compact widget for the financial-data Import Health Score.
 //
 // Two variants via the `variant` prop:
-//   "full"    — used on /sources page; shows the score, expected/uploaded
+//   "full"    - used on /sources page; shows the score, expected/uploaded
 //               counts, and the list of gaps (worst first)
-//   "compact" — used on /dashboard; just the percentage + a one-line
+//   "compact" - used on /dashboard; just the percentage + a one-line
 //               summary, links over to /sources for the breakdown
 //
 // Score color thresholds:
@@ -78,7 +78,7 @@ export default function HealthScoreWidget({ variant }: { variant: "full" | "comp
     );
   }
 
-  // Full variant — used at the top of /sources.
+  // Full variant - used at the top of /sources.
   return (
     <div className={`card mb-4 border ${toneCls}`}>
       <div className="flex items-start gap-4 flex-wrap">
@@ -103,7 +103,7 @@ export default function HealthScoreWidget({ variant }: { variant: "full" | "comp
                 {data.gaps.slice(0, 5).map((g) => (
                   <li key={g.sourceId}>
                     <span className="font-medium text-slate-100">{g.sourceName}</span>
-                    <span className="opacity-70"> — {g.missingMonths.slice(0, 4).map(humanYm).join(", ")}</span>
+                    <span className="opacity-70"> - {g.missingMonths.slice(0, 4).map(humanYm).join(", ")}</span>
                     {g.missingMonths.length > 4 ? <span className="opacity-60"> + {g.missingMonths.length - 4} more</span> : null}
                   </li>
                 ))}

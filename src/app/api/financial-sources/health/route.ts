@@ -1,4 +1,4 @@
-// Import Health Score — single percentage summarising how much of the
+// Import Health Score - single percentage summarising how much of the
 // expected (source × month) coverage matrix is actually uploaded.
 // Powers the widget on /sources and the compact tile on /dashboard.
 //
@@ -93,7 +93,7 @@ export async function GET() {
     }
   }
 
-  // Surface the most recent missing months per gap first — those are the
+  // Surface the most recent missing months per gap first - those are the
   // ones the owner most likely cares about catching up on.
   for (const g of gaps) g.missingMonths.sort((a, b) => b.localeCompare(a));
   // And put the worst-covered sources at the top of the list.

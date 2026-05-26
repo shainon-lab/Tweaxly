@@ -1,6 +1,6 @@
 "use client";
 
-// Vendorization rules editor — mirror of RulesClient but the target
+// Vendorization rules editor - mirror of RulesClient but the target
 // is a vendor name instead of a category id. Patterns match against
 // description / vendor / source; on upload, matching rows have their
 // Transaction.vendor rewritten to the rule's vendorName.
@@ -107,7 +107,7 @@ export default function VendorizationRulesClient({
         <div className="font-medium mb-3">Existing vendorization rules</div>
         {rules.length === 0 ? (
           <div className="text-sm text-slate-400 py-6 text-center">
-            No vendorization rules yet — bulk-vendor on the Transactions page also works.
+            No vendorization rules yet - bulk-vendor on the Transactions page also works.
           </div>
         ) : (
           <table className="table-base">

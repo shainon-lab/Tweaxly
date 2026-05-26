@@ -1,4 +1,4 @@
-// FinancialSource CRUD — workspace-scoped financial accounts (bank,
+// FinancialSource CRUD - workspace-scoped financial accounts (bank,
 // credit card, PayPal, etc.) the guided import wizard uploads into.
 
 import { NextRequest, NextResponse } from "next/server";

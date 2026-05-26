@@ -3,7 +3,7 @@
 // "Upload missing data" checklist.
 //
 // Surfaces every (source × month) cell across the coverage matrix
-// whose status is "missing" — not just the previous month — so the
+// whose status is "missing" - not just the previous month - so the
 // owner sees the full backlog at a glance and can fix any gap.
 // Each missing month becomes a clickable chip that deep-links into
 // /manual-data with the source + period pre-selected.
@@ -137,7 +137,7 @@ export default function MonthlyChecklist({ bare = false }: { bare?: boolean } = 
                   </div>
                 </div>
               </div>
-              {/* Missing months — one chip per month. Clicking jumps
+              {/* Missing months - one chip per month. Clicking jumps
                   into the upload flow with source + period pre-set. */}
               <div className="flex flex-wrap gap-1.5">
                 {g.missingMonths.map((ym) => (

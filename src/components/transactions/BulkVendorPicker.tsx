@@ -2,7 +2,7 @@
 
 // Picker modal for the Transactions bulk "Apply vendor" action.
 //
-// Same pattern as BulkCategoryPicker but simpler — there's no suggested
+// Same pattern as BulkCategoryPicker but simpler - there's no suggested
 // list (vendors are workspace-specific) and no "kind" toggle. The
 // search box doubles as the create input: typing a name not in the
 // list and clicking "Create new vendor" upserts the Vendor row and

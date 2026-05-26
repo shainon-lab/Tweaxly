@@ -80,7 +80,7 @@ export default function UsageModal({
   }, [open, onClose]);
 
   if (!open) return null;
-  // Same portal trick as UpgradeModal — escapes any transformed
+  // Same portal trick as UpgradeModal - escapes any transformed
   // ancestor that would otherwise capture position:fixed and push
   // the overlay behind the page chrome.
   if (typeof document === "undefined") return null;
@@ -249,7 +249,7 @@ function renderValue(v: string | boolean) {
   if (typeof v === "boolean") {
     return v
       ? <span className="text-good">✓ Included</span>
-      : <span className="text-slate-600">—</span>;
+      : <span className="text-slate-600"> - </span>;
   }
   return v;
 }

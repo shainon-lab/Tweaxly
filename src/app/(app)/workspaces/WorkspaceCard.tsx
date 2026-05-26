@@ -73,7 +73,7 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
 
   async function openWorkspaceBilling() {
     // Land directly on the Business Plan tab so the user sees the
-    // plan + AI Credits view immediately — the upgrade flow lives
+    // plan + AI Credits view immediately - the upgrade flow lives
     // there, not on the default Business Settings tab.
     if (card.isCurrent) {
       startTransition(() => router.push("/settings?tab=plan"));

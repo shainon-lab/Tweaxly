@@ -38,7 +38,7 @@ export async function GET() {
         take: 3,
         orderBy: { transactionDate: "desc" },
         // The Transaction reads are extension-filtered by deletedAt:null
-        // by default — pass an explicit non-null filter so the trash
+        // by default - pass an explicit non-null filter so the trash
         // page actually sees the trashed rows.
         where: { deletedAt: { not: null } },
         select: {

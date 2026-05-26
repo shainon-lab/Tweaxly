@@ -36,7 +36,7 @@ export async function sweepAndDispatch(
   businessId: string,
 ): Promise<{ skipped: boolean; dispatched: number }> {
   try {
-    // 0. Premium gate. Notifications (the whole alerts pipeline — bell,
+    // 0. Premium gate. Notifications (the whole alerts pipeline - bell,
     // push, email) are a paid-plan feature; free workspaces never sweep
     // and never accumulate notifications. The fetch is cheap (one
     // wallet/subscription row) and runs before throttle so we never

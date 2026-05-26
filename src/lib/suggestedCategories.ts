@@ -1,6 +1,6 @@
 // Suggested common business categories per the Vendor / Category spec.
 // Surfaced as quick-pick suggestions in the Add Category modal AND in
-// the Transactions bulk category picker. Suggestions only — nothing
+// the Transactions bulk category picker. Suggestions only - nothing
 // is ever auto-created from this list until the user picks one.
 
 export const SUGGESTED_EXPENSE_CATEGORIES = [

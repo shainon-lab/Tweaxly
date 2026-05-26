@@ -55,7 +55,7 @@ export default function TransactionsClient({
   // Picker visibility
   const [categoryPickerOpen, setCategoryPickerOpen] = useState(false);
   const [vendorPickerOpen,   setVendorPickerOpen]   = useState(false);
-  // Sort state — column key + direction. Default = most-recent date first.
+  // Sort state - column key + direction. Default = most-recent date first.
   // Clicking the same column header toggles asc/desc; clicking a
   // different column switches column and resets to default direction
   // (desc for numeric/date columns, asc for text).
@@ -164,7 +164,7 @@ export default function TransactionsClient({
     categoryName: string;
   } | null>(null);
 
-  // Bulk Apply Category — fired by the BulkCategoryPicker after the
+  // Bulk Apply Category - fired by the BulkCategoryPicker after the
   // user picks (or creates + picks) a category. Snapshots the
   // selection first; after the bulk call, if every selected row
   // was uncategorized AND they all share one vendor, surface the
@@ -209,7 +209,7 @@ export default function TransactionsClient({
     return row;
   }
 
-  // Bulk Apply Vendor — fired by the BulkVendorPicker. The Vendor
+  // Bulk Apply Vendor - fired by the BulkVendorPicker. The Vendor
   // row is upserted server-side by the bulk endpoint, so we just
   // pass the chosen name.
   async function applyBulkVendor(vendorName: string) {
@@ -332,7 +332,7 @@ export default function TransactionsClient({
               <input type="checkbox" checked={unc} onChange={(e) => setUnc(e.target.checked)} />
               Uncategorized
             </label>
-            <label className="flex items-center gap-2 text-sm text-slate-300 mb-2" title="Show rows where Vendor isn't set yet — use the Set vendor bulk action to normalize them.">
+            <label className="flex items-center gap-2 text-sm text-slate-300 mb-2" title="Show rows where Vendor isn't set yet - use the Set vendor bulk action to normalize them.">
               <input type="checkbox" checked={unv} onChange={(e) => setUnv(e.target.checked)} />
               Unvendorized
             </label>
@@ -366,7 +366,7 @@ export default function TransactionsClient({
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("toggleRecurring", { value: true })}>Mark recurring</button>
           <button className="btn-ghost" disabled={pending} onClick={openIgnoreBulk}>Mark as ignore</button>
           <button className="btn-ghost" disabled={pending} onClick={() => bulk("markIgnore", { value: false })}>Unignore (re-include)</button>
-          {/* Trash — sends selected rows to the 30-day recycle bin
+          {/* Trash - sends selected rows to the 30-day recycle bin
               (/transactions/trash). Restored as a single batch from
               the trash page. Visually separated from the editing
               actions to make destructive intent obvious. */}
@@ -479,7 +479,7 @@ export default function TransactionsClient({
                   </td>
                   <td className="max-w-[200px]">
                     {/* Read-only category display. Per-row category
-                        edits were removed by spec — the user
+                        edits were removed by spec - the user
                         checkbox-selects rows and changes category in
                         bulk via the action bar above. This makes
                         accidental single-row mis-edits impossible
@@ -620,7 +620,7 @@ export default function TransactionsClient({
         </div>
       ) : null}
 
-      {/* Vendor-pin toast — non-modal, bottom-right. Appears after the
+      {/* Vendor-pin toast - non-modal, bottom-right. Appears after the
           user categorizes a previously-uncategorized row; offers to
           remember the choice for the vendor (so future uploads auto-
           categorize) and optionally backfill past uncategorized rows

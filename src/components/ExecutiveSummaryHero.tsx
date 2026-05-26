@@ -52,7 +52,7 @@ function splitNarrative(text: string): [string, string] {
     if (inEm) continue;
     if (/[.!?]/.test(trimmed[i])) {
       const next = trimmed[i + 1];
-      // Treat as sentence end only when followed by whitespace or EOF —
+      // Treat as sentence end only when followed by whitespace or EOF  - 
       // avoids splitting on "U.S." or "$1.2M".
       if (next === undefined || /\s/.test(next)) {
         const lead = trimmed.slice(0, i + 1).trim();
@@ -126,7 +126,7 @@ export default function ExecutiveSummaryHero({
           className="pill-accent text-xs px-3 py-1 font-semibold"
           title={
             summary.source === "claude"
-              ? `${summary.tierLabel} — generated from your business data.`
+              ? `${summary.tierLabel} - generated from your business data.`
               : "Generated from your business data."
           }
         >

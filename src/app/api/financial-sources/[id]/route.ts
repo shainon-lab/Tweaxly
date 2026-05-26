@@ -1,4 +1,4 @@
-// Per-source PATCH (edit) and DELETE (archive — never hard-delete since
+// Per-source PATCH (edit) and DELETE (archive - never hard-delete since
 // historical uploads reference the source).
 
 import { NextRequest, NextResponse } from "next/server";
@@ -44,7 +44,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
-  // Soft archive — preserves the audit chain. To truly remove, the user
+  // Soft archive - preserves the audit chain. To truly remove, the user
   // must first delete all UploadBatches via the Data Log.
   try {
     const { business } = await requireBusiness();

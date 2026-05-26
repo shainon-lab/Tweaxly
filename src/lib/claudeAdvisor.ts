@@ -82,11 +82,11 @@ DOMAIN NORMS
 - Revenue/income amounts are positive. Outcome/expense category amounts are negative (or shown as |amount|).
 - Net profit = income − expenses (signed). P&L margin = profit ÷ revenue.
 - Burn rate = expenses − income, when net is negative.
-- **Vendor vs Category** — these are distinct concepts and you must never use them interchangeably:
+- **Vendor vs Category** - these are distinct concepts and you must never use them interchangeably:
   · **Vendor** is the source/entity that appears in a transaction (Stripe, Google Ads, WeWork, Bank Leumi, a specific client or supplier). Vendors are detected from uploaded data.
   · **Category** is the business classification the owner assigned (Rent, Payroll, Payment Processing Fees, Advertising, Revenue). Categories are user-defined per workspace; the system never invents default ones.
   · Reports aggregate by **Category** (rolled up). Vendor is the **drill-down inside a category**. Example: "Advertising" category contains vendors "Google Ads", "Meta Ads", "TikTok Ads". Never confuse a vendor name for a category in your answers.
-  · A transaction tagged "Undefined Category" means the system couldn't auto-categorize it (vendor wasn't pinned to a category yet AND the upload didn't carry a Category column). Surface this when relevant ("3 transactions from {vendor} need categorizing — pin {vendor} → {category} to fix going forward") instead of treating "Undefined Category" as a real category.
+  · A transaction tagged "Undefined Category" means the system couldn't auto-categorize it (vendor wasn't pinned to a category yet AND the upload didn't carry a Category column). Surface this when relevant ("3 transactions from {vendor} need categorizing - pin {vendor} → {category} to fix going forward") instead of treating "Undefined Category" as a real category.
 - A category's "kind" indicates its bucket (revenue, fixed, variable, payroll, fee, tax, transfer, other).
 - The "current month" / ctx.ym is the most recent month with data, not today's calendar month.
 - Carry-forward-0 rule: in dataFlow.cells, a 0 means the category was introduced in an earlier month and had no transactions in this month. A null means the category hadn't been introduced yet.
@@ -95,6 +95,8 @@ DOMAIN NORMS
 ═══════════════════════════════════════════════════════
 OUTPUT FORMAT - STRUCTURED JSON ONLY
 ═══════════════════════════════════════════════════════
+
+Punctuation rule (critical): NEVER use the em-dash character "—" (U+2014). Use a regular hyphen with spaces (" - ") instead in EVERY string field you produce (headline, recommendation, detail, basedOn, drivers, etc.). The em-dash is one of the strongest signals that text was AI-generated; avoid it entirely.
 
 Return ONE JSON object, wrapped in a single fenced \`\`\`json … \`\`\` block. No prose before or after. The object MUST conform to this schema:
 
@@ -146,7 +148,7 @@ TONE
 - You are a business operating advisor, not a chatbot. Sound operational, executive, analytical.
 - BANNED phrases (do not use): "I think", "probably", "seems like", "here's the read", "as an AI", "let me", "in conclusion", "great question", "happy to help", "feel free to".
 - When data is available, cite real numbers with currency + period. Generic claims like "marketing is a major expense" are worthless when the data has a specific answer.
-- For drivers grounded in data, populate dataAnchors. The UI shows these inline as little 📊 data chips so the user can see exactly which numbers backed each insight. Don't fabricate anchors — only cite figures you actually pulled from the business context block.
+- For drivers grounded in data, populate dataAnchors. The UI shows these inline as little 📊 data chips so the user can see exactly which numbers backed each insight. Don't fabricate anchors - only cite figures you actually pulled from the business context block.
 - Confidence scoring: be honest. A simple "what's my margin?" question gets 95% even on thin data. A "should I hire?" question on the same data might get 55%. A pure-knowledge question can be 70-85% based on principle quality even with dataCoverage=low.
 - Stance discipline: "yes"/"no" only when the data + context genuinely point that way. "conditional" when the decision depends on missingInputs. "wait" when timing matters. "info" for purely descriptive / educational answers.
 
@@ -211,7 +213,7 @@ export async function answerQuestionWithClaude(
   // high effort + the full 16k output ceiling. Free (and the legacy
   // no-businessId case that shouldn't reach here in production since
   // consultations are credit-gated to Pro) get Haiku with a tighter
-  // ceiling — see src/lib/aiTier.ts for the surface budgets.
+  // ceiling - see src/lib/aiTier.ts for the surface budgets.
   const tier = businessId
     ? await tierConfigForBusiness(businessId, "consultation")
     : tierConfigFor("free", "consultation");
@@ -252,9 +254,12 @@ export async function answerQuestionWithClaude(
 
   // Pull the JSON object out of the response. We instructed the model
   // to wrap it in a ```json fence; tolerate bare JSON too just in
-  // case the fence is missing.
-  const fenceMatch = raw.match(/```json\s*([\s\S]*?)```/i);
-  const jsonText   = (fenceMatch ? fenceMatch[1] : raw).trim();
+  // case the fence is missing. Also strip any em-dashes that slipped
+  // past the prompt rule so the parsed strings never contain them
+  // (voice rule: never let "—" reach the user).
+  const rawSanitized = raw.replace(/—/g, " - ");
+  const fenceMatch = rawSanitized.match(/```json\s*([\s\S]*?)```/i);
+  const jsonText   = (fenceMatch ? fenceMatch[1] : rawSanitized).trim();
 
   let structured;
   try {
@@ -265,10 +270,11 @@ export async function answerQuestionWithClaude(
   }
 
   // Always keep a markdown `content` fallback so older clients + the
-  // chat-history serialiser still have something to render.
+  // chat-history serialiser still have something to render. Use the
+  // sanitized raw (no em-dashes) on the fallback path too.
   const content = structured
     ? renderStructuredAsMarkdown(structured)
-    : raw;
+    : rawSanitized;
 
   return { content, structured };
 }

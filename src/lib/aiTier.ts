@@ -1,15 +1,15 @@
-// Tiered AI strategy — one helper, four call sites.
+// Tiered AI strategy - one helper, four call sites.
 //
 // Free workspaces hit a smaller, faster, cheaper model with tighter
 // output ceilings. Pro+ workspaces hit Opus with adaptive thinking and
 // deeper output. The platform's voice stays the same across both
-// tiers — we never expose the model name in the UI; instead the
+// tiers - we never expose the model name in the UI; instead the
 // experience is branded as:
 //
 //   Free      → "Pulse AI"      (basic intelligence layer)
 //   Pro/Biz   → "Strategic AI"  (advanced intelligence layer)
 //
-// The Free tier is NOT a degraded experience — it's the trust-building
+// The Free tier is NOT a degraded experience - it's the trust-building
 // layer of the product. Lower-cost inference is the trade-off, NOT
 // lower-quality insight. The system prompts for each call site can
 // additionally pass `tier` to ask for shorter / more focused output
@@ -33,7 +33,7 @@ export type AiSurface =
   | "consultation";         // free-form Q&A advisor
 
 // Tier-aware model / token / thinking config. Kept per-surface
-// because each call has its own natural ceiling — a tight 3-sentence
+// because each call has its own natural ceiling - a tight 3-sentence
 // summary needs far fewer tokens than an open-ended consultation.
 export type TierConfig = {
   model:     string;
@@ -41,7 +41,7 @@ export type TierConfig = {
   // Adaptive thinking is Opus-only in this codebase. On Haiku we omit
   // the `thinking` parameter entirely.
   thinking:  { type: "adaptive" } | null;
-  // Effort (Opus): higher = deeper reasoning. Haiku ignores this — we
+  // Effort (Opus): higher = deeper reasoning. Haiku ignores this - we
   // return null on Free so callers can spread the field conditionally.
   effort:    "low" | "medium" | "high" | "xhigh" | "max" | null;
   // UI-facing brand label for "who analyzed this".
@@ -86,7 +86,7 @@ export function tierConfigFor(tier: AiTier, surface: AiSurface): TierConfig {
 
 // Resolves the tier from a business id. Anything other than the "pro"
 // plan key (today: free) falls back to Free tier. This includes the
-// read-only state (canceled subs viewing their old data) — they
+// read-only state (canceled subs viewing their old data) - they
 // keep getting the Pulse AI tier because their subscription isn't
 // actively paying.
 export async function aiTierFor(businessId: string): Promise<AiTier> {
@@ -106,7 +106,7 @@ export async function tierConfigForBusiness(
   return { ...tierConfigFor(tier, surface), tier };
 }
 
-// Brand label only — server components pass this through to client
+// Brand label only - server components pass this through to client
 // components via props (this module is server-only because it
 // transitively imports billing helpers).
 export function aiBrandLabel(tier: AiTier): string {

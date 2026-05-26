@@ -31,7 +31,7 @@ export default async function ConsultationPage({
     prisma.transaction.count({ where: { businessId: business.id } }),
   ]);
   // Without transactions the advisor has nothing to ground its
-  // answers in — show the platform-wide bank-intelligence empty state
+  // answers in - show the platform-wide bank-intelligence empty state
   // instead of letting the user spend credits on context-free advice.
   const isEmpty = totalTxnCount === 0;
 

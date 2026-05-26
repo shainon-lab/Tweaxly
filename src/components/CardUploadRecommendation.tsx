@@ -7,7 +7,7 @@
 // The card explains what unlocking detailed card analysis does, names
 // the brand(s) we detected (Visa, MAX, Isracard, etc.), and links into
 // the upload flow with the right source-type pre-suggested. Hides
-// automatically once a card/paypal source exists — the settlement
+// automatically once a card/paypal source exists - the settlement
 // detector then takes over and replaces summarized bank charges with
 // the detailed card lines.
 
@@ -20,7 +20,7 @@ export default function CardUploadRecommendation({
 }: {
   signals: BankCardSignals;
 }) {
-  // Render guards — must have a bank source, missing card / paypal
+  // Render guards - must have a bank source, missing card / paypal
   // source, and at least one settlement-style hit detected.
   if (!signals.hasBankSource) return null;
   const needsCard   = signals.cardCandidates   > 0 && !signals.hasCardSource;

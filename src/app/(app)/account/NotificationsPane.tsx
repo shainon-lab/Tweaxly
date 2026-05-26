@@ -222,7 +222,7 @@ export default function NotificationsPane({ workspaces }: { workspaces: Workspac
       return;
     }
     if (data.sent === 0) {
-      setError("No device subscriptions yet — enable push above first.");
+      setError("No device subscriptions yet - enable push above first.");
     }
   }
 
@@ -254,7 +254,7 @@ export default function NotificationsPane({ workspaces }: { workspaces: Workspac
         <div className="card">
           <div className="font-medium mb-1">Workspace</div>
           <div className="text-xs text-slate-400 mb-3">
-            Notification settings are saved per workspace — pick the one to configure.
+            Notification settings are saved per workspace - pick the one to configure.
           </div>
           <select
             className="input max-w-md"
@@ -285,7 +285,7 @@ export default function NotificationsPane({ workspaces }: { workspaces: Workspac
                 : permission === "denied"
                 ? "Blocked in browser settings. Re-enable in your browser to use this."
                 : pushLocked
-                ? "Pro feature — Free workspaces see alerts inside Tweaxly only."
+                ? "Pro feature - Free workspaces see alerts inside Tweaxly only."
                 : "Receive real-time alerts even when Tweaxly isn't open."
             }
             value={prefs.pushEnabled}

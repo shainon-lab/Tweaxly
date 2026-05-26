@@ -1,6 +1,6 @@
 "use client";
 
-// Settings tab nav — configuration only. Data-ops tabs (Sources,
+// Settings tab nav - configuration only. Data-ops tabs (Sources,
 // Import, Integration, Transactions, Manual Data Log, Categories &
 // Vendors) live under <DataTabs /> in the /data sidebar section, so
 // this strip is three tabs:

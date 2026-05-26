@@ -270,7 +270,7 @@ export default async function SettingsPage({
           // Vendor Type derived from the kinds of categories its txns
           // sit in. Lets the Vendors table show a Type pill that
           // mirrors the Categories table's column. null when there are
-          // no categorized txns yet (rendered as "—").
+          // no categorized txns yet (rendered as " - ").
           const typeLabel: "Income" | "Outcome" | "Mixed" | null =
             !kinds || kinds.size === 0 ? null
             : kinds.size > 1            ? "Mixed"

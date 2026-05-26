@@ -35,7 +35,7 @@ import { recordAudit, type AuditAction } from "@/lib/audit";
 
 // Webhook helper: write an AuditLog row using the business owner as
 // the actor so the entry surfaces on the owner's Account → Access
-// Logs feed. Best-effort — failure here never blocks the webhook ack.
+// Logs feed. Best-effort - failure here never blocks the webhook ack.
 async function recordSubscriptionAudit(
   businessId: string,
   action: AuditAction,
@@ -79,7 +79,7 @@ function readMeta(meta: unknown): Partial<CheckoutMetadata> {
 export async function POST(req: Request) {
   // Read the secret that matches the current Polar env. polarEnv()
   // resolves to POLAR_WEBHOOK_SECRET_PROD when POLAR_ENV=production
-  // and POLAR_WEBHOOK_SECRET when sandbox — same pattern used by the
+  // and POLAR_WEBHOOK_SECRET when sandbox - same pattern used by the
   // access token and product ids.
   const secret = polarEnv("POLAR_WEBHOOK_SECRET");
   if (!secret) {

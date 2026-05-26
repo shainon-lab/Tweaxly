@@ -3,19 +3,19 @@
 // Bank Statement Import Wizard.
 //
 // Five-step flow for importing transaction-level bank exports:
-//   1. Upload        — drag-drop / file picker (.csv, .xls, .xlsx)
-//   2. Map columns   — table of detected columns ↔ Tweaxly fields, with
+//   1. Upload        - drag-drop / file picker (.csv, .xls, .xlsx)
+//   2. Map columns   - table of detected columns ↔ Tweaxly fields, with
 //                      sample values, confidence pills, and "apply saved
 //                      template" for repeat imports
-//   3. Validate      — counts valid rows, lists rows that can't normalize
-//   4. Confirm       — duplicate handling + optional "save template" name
-//   5. Done          — summary of imported / flagged-as-duplicate counts
+//   3. Validate      - counts valid rows, lists rows that can't normalize
+//   4. Confirm       - duplicate handling + optional "save template" name
+//   5. Done          - summary of imported / flagged-as-duplicate counts
 //
 // All imports are scoped to the currently active workspace; the wizard
 // never asks the user to choose one. Templates are saved per-workspace
 // (Prisma model: MappingTemplate, unique on (businessId, name)).
 //
-// The wizard talks to the existing API surface — no new endpoints other
+// The wizard talks to the existing API surface - no new endpoints other
 // than GET /api/upload/templates added in this PR. Heavy lifting (currency
 // conversion, categorization, duplicate detection) all happens server-side
 // in /api/upload/commit.
@@ -40,7 +40,7 @@ import {
 // ─── Field vocabulary ─────────────────────────────────────────────────────
 // What the user maps each file column to. "ignore" means the column is
 // skipped on import. "amount_combined" is what the parser synthesizes when
-// it sees split Debit/Credit columns — shown so the user knows the value
+// it sees split Debit/Credit columns - shown so the user knows the value
 // came from two source columns.
 type FieldKey =
   | "ignore"
@@ -181,7 +181,7 @@ export default function BankImportWizard({
     settlementBreakdown?: { cardCount: number; paypalCount: number; transferCount: number; providerCount: number };
   } | null>(null);
 
-  // Pull saved templates once — used in the Map step.
+  // Pull saved templates once - used in the Map step.
   useEffect(() => {
     let cancelled = false;
     (async () => {
@@ -282,7 +282,7 @@ export default function BankImportWizard({
     <div className="card mb-6">
       <div className="font-medium mb-1">Source statement import</div>
       <div className="text-xs text-slate-400 mb-4">
-        Upload a CSV, XLS, or XLSX export from any source — bank, credit card,
+        Upload a CSV, XLS, or XLSX export from any source - bank, credit card,
         PayPal, Stripe, and more. The wizard auto-detects the columns; you
         confirm the mapping and we handle currency conversion, categorization,
         and duplicate detection.
@@ -362,7 +362,7 @@ export default function BankImportWizard({
               let rows: Record<string, unknown>[] = preview.rows.filter((_, i) => !skipRows.has(i));
 
               // Rewrite the date column to ISO YYYY-MM-DD using the user-
-              // confirmed format. Deterministic — never relies on
+              // confirmed format. Deterministic - never relies on
               // browser/locale auto-parsing. Cells the format can't parse
               // pass through untouched so per-row validation flags them.
               const dateH = headerFor(assignments, "date");
@@ -406,7 +406,7 @@ export default function BankImportWizard({
                   rows,
                   mapping: mappingWithMeta,
                   saveTemplateName: saveAsName.trim() || null,
-                  // Phase 1 Financial Sources fields — passed through only
+                  // Phase 1 Financial Sources fields - passed through only
                   // when the guided wrapper supplied them.
                   financialSourceId: context?.sourceId ?? null,
                   periodStart:       context?.periodStart ?? null,
@@ -541,7 +541,7 @@ function UploadStep({
 
       {/* Optional: download the Tweaxly template. Used to be its own
           upload mode but it makes more sense as a "preparing your file"
-          aid here — the user can either drop their raw source export
+          aid here - the user can either drop their raw source export
           (mapping wizard handles it) or grab the template, fill it in,
           and skip the mapping step. */}
       <div className="mt-4 rounded-md border border-line/60 bg-ink-900/30 px-3 py-2.5 flex items-start gap-3 flex-wrap">
@@ -559,7 +559,7 @@ function UploadStep({
 
       {templateCount > 0 ? (
         <div className="mt-4 text-xs text-slate-400">
-          {templateCount} saved {templateCount === 1 ? "mapping" : "mappings"} available — if your file's
+          {templateCount} saved {templateCount === 1 ? "mapping" : "mappings"} available - if your file's
           column headers match a saved one, the mapping will be applied automatically.
         </div>
       ) : null}
@@ -663,7 +663,7 @@ function MapStep({
                   </td>
                   <td className="px-3 py-2 align-top">
                     {conf && conf.confidence > 0 ? <ConfidencePill value={conf.confidence} /> : (
-                      <span className="text-[11px] text-slate-600">—</span>
+                      <span className="text-[11px] text-slate-600"> - </span>
                     )}
                   </td>
                 </tr>
@@ -673,7 +673,7 @@ function MapStep({
         </table>
       </div>
 
-      {/* Default currency picker — only when no currency column is mapped */}
+      {/* Default currency picker - only when no currency column is mapped */}
       {!currencyMapped ? (
         <div className="mt-4 max-w-xs">
           <label className="label">Default currency for this file</label>
@@ -789,7 +789,7 @@ function DateFormatStep({
 
   const fmt: DateFormat = dateFormat ?? suggestion.suggested;
 
-  // Validate the current pick against all samples — if anything fails,
+  // Validate the current pick against all samples - if anything fails,
   // block Continue and surface the row so the user can switch formats.
   const validation = useMemo(() => {
     const fails: { sample: string; reason: string }[] = [];
@@ -825,7 +825,7 @@ function DateFormatStep({
     <div>
       <div className="text-sm text-slate-300 mb-3">
         Pick the date format used in <span className="font-medium text-slate-100">{dateHeader}</span>.
-        We never guess between DD/MM and MM/DD silently — confirm the format and we'll apply it to every row.
+        We never guess between DD/MM and MM/DD silently - confirm the format and we'll apply it to every row.
       </div>
 
       {suggestion.ambiguous ? (
@@ -897,7 +897,7 @@ function DateFormatStep({
           {validation.fails.slice(0, 5).map((f, i) => (
             <div key={i} className="text-xs text-bad inline-flex items-start gap-1.5">
               <XIcon size={14} className="mt-0.5 shrink-0" />
-              <span><span className="font-mono">{f.sample}</span> — {f.reason}</span>
+              <span><span className="font-mono">{f.sample}</span> - {f.reason}</span>
             </div>
           ))}
           {validation.fails.length > 5 ? (
@@ -948,7 +948,7 @@ function ValidateStep({
 
   // `addressed` tracks which error rows the user has explicitly resolved
   // (skip OR import-anyway). Lives in local state since it only matters
-  // while the user is on this step — the skip set carries forward via
+  // while the user is on this step - the skip set carries forward via
   // skipRows in parent state.
   const [addressed, setAddressed] = useState<Set<number>>(() => new Set(skipRows));
 
@@ -1004,7 +1004,7 @@ function ValidateStep({
               <span className="text-[11px] uppercase tracking-wider text-slate-500 mr-2">
                 Error {reviewedCount + 1} of {errorRows.length}
               </span>
-              Row <span className="font-mono">{currentIss.row + 1}</span> — <span className="text-warn">{currentIss.message}</span>
+              Row <span className="font-mono">{currentIss.row + 1}</span> - <span className="text-warn">{currentIss.message}</span>
             </div>
             <div className="flex items-center gap-2 text-xs">
               <button type="button" onClick={importAllPending} className="btn-ghost py-1 text-xs">Import all anyway</button>
@@ -1063,7 +1063,7 @@ function RowPreview({ row, assignments }: { row: Record<string, unknown>; assign
     <div className="rounded-md border border-line/60 bg-ink-900/40 px-3 py-2">
       <div className="space-y-1 text-xs">
         {mapped.length === 0 ? (
-          <div className="text-slate-500 italic">No columns are mapped — every cell will be ignored.</div>
+          <div className="text-slate-500 italic">No columns are mapped - every cell will be ignored.</div>
         ) : mapped.map(([header, field]) => (
           <div key={header} className="flex items-baseline gap-2">
             <span className="text-slate-500 w-28 shrink-0">{labelForField(field)}</span>
@@ -1082,7 +1082,7 @@ function labelForField(f: FieldKey): string {
 }
 
 function formatCell(v: unknown): string {
-  if (v == null || v === "") return "—";
+  if (v == null || v === "") return " - ";
   if (v instanceof Date) return v.toISOString().slice(0, 10);
   return String(v);
 }
@@ -1124,7 +1124,7 @@ function ConfirmStep({
 
   return (
     <div>
-      {/* Reconciliation preview — totals + counts */}
+      {/* Reconciliation preview - totals + counts */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
         <Stat label="To import"    value={summary.toImport.toLocaleString()} tone="good" />
         <Stat label="Skipped"      value={summary.skipped.toLocaleString()} tone={summary.skipped > 0 ? "warn" : "muted"} />
@@ -1152,7 +1152,7 @@ function ConfirmStep({
           <li className="inline-flex items-start gap-1.5">
             <span className="text-accent">⇆</span>
             <span>
-              Credit-card / PayPal <span className="font-medium">settlements</span> are auto-detected (matched against your other sources' monthly totals) and excluded from P&amp;L — the detailed lines count instead.
+              Credit-card / PayPal <span className="font-medium">settlements</span> are auto-detected (matched against your other sources' monthly totals) and excluded from P&amp;L - the detailed lines count instead.
             </span>
           </li>
           <li className="inline-flex items-start gap-1.5">
@@ -1227,7 +1227,7 @@ function buildReconciliation(
 }
 
 function fmtAmt(n: number): string {
-  if (!Number.isFinite(n)) return "—";
+  if (!Number.isFinite(n)) return " - ";
   return n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
@@ -1360,7 +1360,7 @@ function toServerMapping(a: Assignments): Record<string, string | null> {
     if (field === "ignore") continue;
     if (field === "income" || field === "expense") {
       // Handled by synthesizing a combined amount column on the rows before
-      // posting — see toServerRowsForIncomeExpense in the commit caller.
+      // posting - see toServerRowsForIncomeExpense in the commit caller.
       continue;
     }
     if (field === "balance") continue;
@@ -1401,7 +1401,7 @@ function computeValidation(a: Assignments, preview: PreviewResponse | null): Val
   if (dateCount > 1)     errors.push("Transaction date is mapped to more than one column.");
   if (descCount === 0)   errors.push("A Description or Vendor column is required.");
   if (amountCount > 1)   errors.push("Amount is mapped to more than one column.");
-  // Don't allow mixing — a single signed Amount column shouldn't coexist
+  // Don't allow mixing - a single signed Amount column shouldn't coexist
   // with separate Income/Outcome columns; the wizard wouldn't know which
   // sign to honor for each row.
   if (amountCount > 0 && (incomeCount > 0 || expenseCount > 0)) {
@@ -1413,10 +1413,10 @@ function computeValidation(a: Assignments, preview: PreviewResponse | null): Val
 
   // Soft warnings.
   if (incomeCount > 0 && expenseCount === 0 && amountCount === 0) {
-    warnings.push("Only Income mapped — every row will be imported as positive (income).");
+    warnings.push("Only Income mapped - every row will be imported as positive (income).");
   }
   if (expenseCount > 0 && incomeCount === 0 && amountCount === 0) {
-    warnings.push("Only Outcome mapped — every row will be imported as negative (outcome), regardless of how it appears in the file.");
+    warnings.push("Only Outcome mapped - every row will be imported as negative (outcome), regardless of how it appears in the file.");
   }
 
   return { ok: errors.length === 0, errors, warnings };
@@ -1451,7 +1451,7 @@ function dryRun(
     if (dateHeader) {
       const v = r[dateHeader];
       // With a user-confirmed format, use the deterministic parser. Without
-      // one (shouldn't happen — the wizard blocks Continue) fall back to
+      // one (shouldn't happen - the wizard blocks Continue) fall back to
       // the loose heuristic so we still produce a useful preview.
       const parsedOk = dateFormat
         ? parseDateWithFormat(v, dateFormat) !== null

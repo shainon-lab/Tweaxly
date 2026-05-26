@@ -133,7 +133,7 @@ export default async function ForecastPage({
     }),
     prisma.transaction.count({ where: { businessId: business.id } }),
   ]);
-  // True empty state — no transactions of any kind. Replaces the
+  // True empty state - no transactions of any kind. Replaces the
   // "Forecast unavailable" technical card with the platform-wide
   // bank-intelligence empty state, so this surface speaks the same
   // language as Dashboard / Insights / Consultation.
@@ -497,7 +497,7 @@ export default async function ForecastPage({
   );
 }
 
-// Scenarios tab — Free plan. Shows ONLY the upgrade flow; KPIs,
+// Scenarios tab - Free plan. Shows ONLY the upgrade flow; KPIs,
 // readiness, chart and table are all suppressed by the caller via the
 // `scenariosBare` short-circuit. Built on LockedOverlay so the user
 // gets the same upgrade modal as every other gated surface.
@@ -520,7 +520,7 @@ function ScenariosLockedCard({ plan, benefits }: { plan: string; benefits: strin
   );
 }
 
-// Scenarios tab — Pro plan, no assumptions saved yet. Single empty-
+// Scenarios tab - Pro plan, no assumptions saved yet. Single empty-
 // state card with an inline trigger that opens the Scenario Builder
 // side panel (mounted alongside so the event has a listener).
 function ScenariosEmptyCard({

@@ -6,7 +6,7 @@
 // and writes them to BusinessProfile.derivedSignals.
 //
 // Each observation is a single short, plain-English sentence the
-// owner could nod at: "Highly seasonal — Nov/Dec do ~2× the
+// owner could nod at: "Highly seasonal - Nov/Dec do ~2× the
 // average month." Persisted as String[] so the system prompt + the
 // Settings panel can both render the same list.
 //
@@ -86,7 +86,7 @@ function detectSeasonality(ctx: BusinessContext): Detected | null {
     .join("/");
   return {
     rank: 95,
-    text: `Highly seasonal — ${names} consistently run ~50%+ above the average month.`,
+    text: `Highly seasonal - ${names} consistently run ~50%+ above the average month.`,
   };
 }
 
@@ -100,10 +100,10 @@ function detectGrowthTrajectory(ctx: BusinessContext): Detected | null {
   if (firstAvg <= 0) return null;
   const change = (secondAvg - firstAvg) / firstAvg;
   if (change >= 0.25) {
-    return { rank: 90, text: `Revenue trending up — averaging ${pct(change)} higher in the last few months vs the prior half.` };
+    return { rank: 90, text: `Revenue trending up - averaging ${pct(change)} higher in the last few months vs the prior half.` };
   }
   if (change <= -0.20) {
-    return { rank: 92, text: `Revenue softening — averaging ${pct(Math.abs(change))} lower in the last few months vs the prior half.` };
+    return { rank: 92, text: `Revenue softening - averaging ${pct(Math.abs(change))} lower in the last few months vs the prior half.` };
   }
   return null;
 }
@@ -112,13 +112,13 @@ function detectMarketingDependence(ctx: BusinessContext): Detected | null {
   if (ctx.marketingRatio >= 0.15) {
     return {
       rank: 80,
-      text: `Marketing-heavy — paid acquisition runs at ~${pct(ctx.marketingRatio)} of revenue on average.`,
+      text: `Marketing-heavy - paid acquisition runs at ~${pct(ctx.marketingRatio)} of revenue on average.`,
     };
   }
   if (ctx.marketingRatio > 0 && ctx.marketingRatio < 0.02 && ctx.avgRevenue > 0) {
     return {
       rank: 60,
-      text: `Light on paid acquisition — marketing is under ${pct(ctx.marketingRatio)} of revenue.`,
+      text: `Light on paid acquisition - marketing is under ${pct(ctx.marketingRatio)} of revenue.`,
     };
   }
   return null;
@@ -128,7 +128,7 @@ function detectPayrollHeaviness(ctx: BusinessContext): Detected | null {
   if (ctx.avgRevenue <= 0) return null;
   const payrollRatio = ctx.avgPayroll / ctx.avgRevenue;
   if (payrollRatio >= 0.45) {
-    return { rank: 75, text: `Payroll-heavy — roughly ${pct(payrollRatio)} of revenue goes to staff.` };
+    return { rank: 75, text: `Payroll-heavy - roughly ${pct(payrollRatio)} of revenue goes to staff.` };
   }
   return null;
 }
@@ -136,10 +136,10 @@ function detectPayrollHeaviness(ctx: BusinessContext): Detected | null {
 function detectCashflowConcern(ctx: BusinessContext): Detected | null {
   const negativeMonths = ctx.trailing.filter((m) => m.net < 0).length;
   if (negativeMonths >= 3) {
-    return { rank: 88, text: `Cash flow under pressure — ${negativeMonths} of the last ${ctx.trailing.length} months ran negative.` };
+    return { rank: 88, text: `Cash flow under pressure - ${negativeMonths} of the last ${ctx.trailing.length} months ran negative.` };
   }
   if (ctx.forecast[0] && ctx.forecast[0].expectedNet < 0) {
-    return { rank: 85, text: `Forecast flags negative net next month — worth watching the burn closely.` };
+    return { rank: 85, text: `Forecast flags negative net next month - worth watching the burn closely.` };
   }
   return null;
 }
@@ -151,7 +151,7 @@ function detectVendorConcentration(ctx: BusinessContext): Detected | null {
   const top = ctx.topVendors[0];
   const share = Math.abs(top.amount) / totalSpend;
   if (share >= 0.35) {
-    return { rank: 70, text: `Vendor concentration — ${top.vendor} alone accounts for ~${pct(share)} of tracked spend.` };
+    return { rank: 70, text: `Vendor concentration - ${top.vendor} alone accounts for ~${pct(share)} of tracked spend.` };
   }
   return null;
 }
@@ -163,7 +163,7 @@ function detectCategoryConcentration(ctx: BusinessContext): Detected | null {
   const top = ctx.topCategories[0];
   const share = Math.abs(top.amount) / totalSpend;
   if (share >= 0.40) {
-    return { rank: 65, text: `Expense concentration — "${top.name}" makes up ~${pct(share)} of expense spend.` };
+    return { rank: 65, text: `Expense concentration - "${top.name}" makes up ~${pct(share)} of expense spend.` };
   }
   return null;
 }
@@ -203,8 +203,9 @@ Output rules:
 - Each string is a single sentence, plain English, owner-voice, ≤ 18 words.
 - DO NOT restate any deterministic observation; if you have nothing genuinely new to add, return [].
 - DO NOT include numbers you can't verify from the context. If you cite a percentage or dollar, it must be derivable.
+- NEVER use the em-dash character "—" (U+2014). Use a regular hyphen with spaces (" - ") instead.
 
-Output example: ["Revenue is concentrated in a few large invoices each month rather than steady volume.", "Margin held up despite revenue softening — costs flexed down well."]`;
+Output example: ["Revenue is concentrated in a few large invoices each month rather than steady volume.", "Margin held up despite revenue softening - costs flexed down well."]`;
 
 async function claudePolish(
   ctx: BusinessContext,
@@ -253,7 +254,8 @@ async function claudePolish(
     if (!Array.isArray(parsed)) return [];
     return parsed
       .filter((s) => typeof s === "string" && s.trim())
-      .map((s) => s.trim().slice(0, 200))
+      // Strip any em-dashes that slipped past the prompt rule.
+      .map((s) => s.replace(/—/g, " - ").trim().slice(0, 200))
       .slice(0, 2);
   } catch (err) {
     console.error("[businessProfileEnrichment] claude polish failed", err);

@@ -75,7 +75,7 @@ export default function DataLogClient({
         let msg = `${res.status} ${res.statusText}`;
         try { msg = JSON.parse(raw).error ?? msg; }
         catch {
-          if (raw.trim().startsWith("<")) msg = `Server returned ${res.status} — endpoint may be unavailable. Try again in a moment.`;
+          if (raw.trim().startsWith("<")) msg = `Server returned ${res.status} - endpoint may be unavailable. Try again in a moment.`;
           else msg = raw || msg;
         }
         alert(msg);
@@ -128,7 +128,7 @@ export default function DataLogClient({
                   <td>{sourcePill(r)}</td>
                   <td className="text-slate-200 max-w-[320px]">
                     <div className="truncate">{r.label}</div>
-                    {/* Audit-chain pills — surface replace history so
+                    {/* Audit-chain pills - surface replace history so
                         the user can trace what superseded what. */}
                     {r.financialSourceName || r.status === "replaced" || r.replacesCount > 0 ? (
                       <div className="flex items-center gap-1.5 flex-wrap mt-1">

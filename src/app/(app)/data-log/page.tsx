@@ -81,7 +81,7 @@ export default async function DataLogPage() {
         representsMonth: startYM,
         rowCount: 1,
         transactions: e._count.transactions,
-        // Manual entries don't have an audit chain — keep field shape
+        // Manual entries don't have an audit chain - keep field shape
         // consistent with upload rows so the client can render the
         // same Row type without an extra union branch.
         status: "active" as const,

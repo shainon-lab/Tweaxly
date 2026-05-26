@@ -2,7 +2,7 @@
 // (which calls Claude with thinking mode and can take 3-10 seconds)
 // doesn't block the rest of the dashboard from rendering.
 //
-// Sits inside a <Suspense> boundary on dashboard/page.tsx — the page
+// Sits inside a <Suspense> boundary on dashboard/page.tsx - the page
 // renders KPI tiles + charts immediately, and this hero slot streams
 // in once Claude responds.
 

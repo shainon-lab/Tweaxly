@@ -95,7 +95,7 @@ export default async function CouponDetailPage({ params }: { params: { id: strin
                       {r.creditsGranted   != null ? `+${r.creditsGranted.toLocaleString()} credits` :
                        r.trialDaysGranted != null ? `+${r.trialDaysGranted} trial days` :
                        r.discountAmount   != null ? (coupon.kind === "percentage" ? `${r.discountAmount}% off` : `$${(r.discountAmount/100).toFixed(2)} off`) :
-                       "—"}
+                       " - "}
                     </td>
                   </tr>
                 ))}

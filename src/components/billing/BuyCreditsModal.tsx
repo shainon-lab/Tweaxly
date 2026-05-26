@@ -10,8 +10,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-// Direct import from the plans submodule — not the @/lib/billing
-// barrel — because the barrel re-exports entitlements.ts which in turn
+// Direct import from the plans submodule - not the @/lib/billing
+// barrel - because the barrel re-exports entitlements.ts which in turn
 // imports the Prisma client. Pulling the barrel from a client component
 // drags @prisma/client into the browser bundle and crashes every
 // page at load time. See src/lib/db.ts (server-only guard).
@@ -78,7 +78,7 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
 
   if (!open) return null;
   // Portal to document.body so any ancestor with transform/filter
-  // can't capture position:fixed — same fix as UpgradeModal.
+  // can't capture position:fixed - same fix as UpgradeModal.
   if (typeof document === "undefined") return null;
 
   const modal = (
@@ -170,7 +170,7 @@ export default function BuyCreditsModal({ open, onClose }: BuyCreditsModalProps)
                   aria-label="Custom credit amount"
                 />
                 <span className="text-sm font-semibold text-accent tabular-nums min-w-[60px] text-right">
-                  {customValid ? fmtUSD(customPrice) : "—"}
+                  {customValid ? fmtUSD(customPrice) : " - "}
                 </span>
                 <button
                   type="button"

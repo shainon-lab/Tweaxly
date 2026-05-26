@@ -1,17 +1,17 @@
 // The platform-wide animated loading bar. Same sweeping gradient used
-// during file uploads and AI consultations — extracted so every
+// during file uploads and AI consultations - extracted so every
 // "something is happening" surface reads as a single visual language.
 //
 // Use it in three places:
 //   1. Route-level loading.tsx files (App Router streaming fallback).
-//   2. Client components with their own fetch + loading state — drop
+//   2. Client components with their own fetch + loading state - drop
 //      <LoadingBar label="Loading sources…" /> where you'd have
 //      written "Loading…".
 //   3. Wherever an in-card spinner used to live.
 //
 // The .tweaxly-loading-sweep keyframes live in globals.css so this
 // component works in both server and client contexts without pulling
-// in styled-jsx. Animates continuously regardless of progress — it's
+// in styled-jsx. Animates continuously regardless of progress - it's
 // a liveness signal, not a determinate %.
 
 export default function LoadingBar({

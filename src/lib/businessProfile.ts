@@ -110,6 +110,8 @@ export function isProfileSubstantive(p: { industry: string | null; businessModel
 
 const SUMMARY_SYSTEM = `You write the "About Your Business" paragraph that lives at the top of a small business's Tweaxly workspace. The owner just filled out a short profile (industry, business model, main goal, customer type, stage, biggest challenge, key KPIs) and you also have a live snapshot of their recent financial data.
 
+Punctuation rule (critical): NEVER use the em-dash character "—" (U+2014). Use a regular hyphen with spaces (" - ") instead. The em-dash is a giveaway that text was AI-generated; avoid it entirely.
+
 Write ONE paragraph, 80-200 words, in clean business English. Tone: professional but human - like a quick brief a smart analyst would write the first time they met the business. No emojis, no headers, no bullet lists. No phrases like "Here is", "I have", "As an AI", "based on the data provided". Just the paragraph itself.
 
 Lead with what kind of business this is (industry + model + customer type), then their stage + main focus, then 1-2 sentences that connect their challenge / KPI priorities to whatever the live financial snapshot shows (recent revenue level, margin, payroll, etc.). Be concrete about magnitudes when the data supports it ("a ~$30K/month operation"), hedge when it doesn't.
@@ -173,7 +175,10 @@ export async function generateBusinessSummary(businessId: string): Promise<{ sum
       });
       let text = "";
       for (const b of res.content) if (b.type === "text") text += b.text;
-      summary = text.trim() || mockSummary(profile);
+      // Strip any em-dashes that slipped past the prompt rule. Voice
+      // rule: never let "—" reach the user.
+      const sanitized = text.replace(/—/g, " - ").trim();
+      summary = sanitized || mockSummary(profile);
       mode = "claude";
     } catch (e) {
       console.error("[businessProfile.generateBusinessSummary] claude failed", e);

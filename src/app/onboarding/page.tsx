@@ -1,4 +1,4 @@
-// Onboarding wizard — three steps tuned for Time To First Value:
+// Onboarding wizard - three steps tuned for Time To First Value:
 //   1. Welcome
 //   2. Business basics (name, country, base currency, fiscal year)
 //   3. Data intro → upload bank OR skip into the product

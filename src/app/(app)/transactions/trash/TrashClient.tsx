@@ -136,7 +136,7 @@ export default function TrashClient({
                           <tr key={s.id}>
                             <td className="px-3 py-1 text-slate-400">{s.transactionDate.slice(0, 10)}</td>
                             <td className="px-3 py-1 text-slate-300 truncate max-w-[400px]">
-                              {s.vendor ?? s.description ?? "—"}
+                              {s.vendor ?? s.description ?? " - "}
                             </td>
                             <td className="px-3 py-1 text-right text-slate-300 font-mono">
                               {s.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })} {s.currency || currency}

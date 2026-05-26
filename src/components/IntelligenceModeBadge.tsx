@@ -12,7 +12,7 @@
 // Bank-only mode is the most common "I just started" state and is
 // labeled prominently. Once a card / paypal source is added the badge
 // upgrades to "Enhanced". The badge intentionally never shows
-// negative framing ("limited" / "partial") — it's a status indicator,
+// negative framing ("limited" / "partial") - it's a status indicator,
 // not a downgrade nudge. The CardUploadRecommendation surface handles
 // the nudge separately.
 

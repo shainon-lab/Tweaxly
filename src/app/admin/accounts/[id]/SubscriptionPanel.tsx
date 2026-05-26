@@ -339,6 +339,6 @@ function labelForKind(kind: string): string {
 
 function fmtDate(d: string | Date): string {
   const date = typeof d === "string" ? new Date(d) : d;
-  if (isNaN(date.getTime())) return "—";
+  if (isNaN(date.getTime())) return " - ";
   return date.toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" });
 }

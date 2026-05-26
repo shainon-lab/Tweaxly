@@ -217,7 +217,7 @@ export default function ManualDataClient({
 
   return (
     <>
-      {/* Recommended workflow — calm informational header, no warning
+      {/* Recommended workflow - calm informational header, no warning
           color. Tells owners how to use this page in order of priority
           so first-timers don't reach for the template / single-entry
           options when a bank statement is what they actually want. */}
@@ -230,7 +230,7 @@ export default function ManualDataClient({
           </li>
           <li>
             <span className="font-medium text-slate-100">Each month:</span>{" "}
-            upload last month's statement from each source — the coverage matrix and missing-month alerts will remind you.
+            upload last month's statement from each source - the coverage matrix and missing-month alerts will remind you.
           </li>
           <li>
             Inside Source statement, you can optionally download the{" "}
@@ -266,7 +266,7 @@ export default function ManualDataClient({
               <span className="font-medium text-slate-100">Source statement</span>
             </div>
             <div className="text-xs text-slate-400 leading-relaxed">
-              Upload an export from any source — bank, credit card, PayPal, Stripe, or others — in CSV, XLS, or XLSX. We auto-detect columns, you confirm the mapping, and we save it for next time.
+              Upload an export from any source - bank, credit card, PayPal, Stripe, or others - in CSV, XLS, or XLSX. We auto-detect columns, you confirm the mapping, and we save it for next time.
             </div>
           </button>
           <button
@@ -285,7 +285,7 @@ export default function ManualDataClient({
               <span className="font-medium text-slate-100">Single manual entry</span>
             </div>
             <div className="text-xs text-slate-400 leading-relaxed">
-              For items that won't appear in any upload — a personal-card business
+              For items that won't appear in any upload - a personal-card business
               purchase, a gift, or a one-off invoice settled outside the books.
             </div>
           </button>

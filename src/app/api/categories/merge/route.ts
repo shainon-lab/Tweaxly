@@ -1,6 +1,6 @@
 // POST /api/categories/merge
 //
-// Merge one category into another. Same shape as /api/vendors/merge —
+// Merge one category into another. Same shape as /api/vendors/merge  - 
 // used by the Categories & Vendors screen to collapse duplicates
 // (e.g. "Software" + "Software & SaaS" → "Software").
 //

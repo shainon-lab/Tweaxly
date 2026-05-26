@@ -3,12 +3,12 @@
 // Financial Sources management.
 //
 // Two stacked sections:
-//   1. Sources list  — add / edit / archive accounts (bank, card, etc.)
-//   2. Coverage matrix — sources × months grid, ✅ where data exists,
+//   1. Sources list  - add / edit / archive accounts (bank, card, etc.)
+//   2. Coverage matrix - sources × months grid, ✅ where data exists,
 //      ❌ where the month is missing, ─ where the month is before the
 //      source's startMonth (so we don't pester for data we never wanted).
 //
-// All actions are workspace-scoped via session — no cross-workspace UI.
+// All actions are workspace-scoped via session - no cross-workspace UI.
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -69,7 +69,7 @@ export default function SourcesClient({ currency }: { currency: string }) {
   const [returnToUpload, setReturnToUpload] = useState(false);
   // Bumped after every save so the HealthScoreWidget + MonthlyChecklist
   // (which fetch client-side, not via Next server data) remount and
-  // refetch — keeps the "missing months / coverage %" alerts in sync
+  // refetch - keeps the "missing months / coverage %" alerts in sync
   // with the source we just added.
   const [healthKey, setHealthKey] = useState(0);
 
@@ -180,7 +180,7 @@ export default function SourcesClient({ currency }: { currency: string }) {
                   <td className="py-2 text-slate-400 text-xs">
                     {s.lastImportAt
                       ? `${new Date(s.lastImportAt).toLocaleDateString()}${s.lastImportPeriod ? ` · ${s.lastImportPeriod}` : ""}`
-                      : "—"}
+                      : " - "}
                   </td>
                   <td className="py-2 text-right space-x-1">
                     <button type="button" onClick={() => setEditing(s)} className="btn-ghost text-xs p-1.5" title="Edit">
@@ -227,7 +227,7 @@ function labelForType(t: SourceType): string {
 
 // ─── Coverage matrix ──────────────────────────────────────────────────
 // Renders one row per source and one column per month. Cells are
-// compact — hover tooltip shows the underlying filename(s).
+// compact - hover tooltip shows the underlying filename(s).
 function CoverageMatrix({ coverage }: { coverage: Coverage }) {
   const months = coverage.months;
   // Reverse so the most recent month is on the left (closer to what
@@ -276,12 +276,12 @@ function CoverageCell({ cell, ym }: { cell: Coverage["sources"][number]["cells"]
   }
   if (cell.status === "missing") {
     return (
-      <td className="px-2 py-2 text-center" title={`${fmtYm(ym)} — missing`}>
+      <td className="px-2 py-2 text-center" title={`${fmtYm(ym)} - missing`}>
         <span className="inline-block w-5 h-5 rounded bg-warn/15 border border-warn/30 text-warn text-[10px] leading-5 font-semibold">×</span>
       </td>
     );
   }
-  const title = `${fmtYm(ym)} — ${cell.batches} import${(cell.batches ?? 0) === 1 ? "" : "s"}${cell.filenames && cell.filenames.length > 0 ? `\n${cell.filenames.join("\n")}` : ""}`;
+  const title = `${fmtYm(ym)} - ${cell.batches} import${(cell.batches ?? 0) === 1 ? "" : "s"}${cell.filenames && cell.filenames.length > 0 ? `\n${cell.filenames.join("\n")}` : ""}`;
   return (
     <td className="px-2 py-2 text-center" title={title}>
       <span className="inline-block w-5 h-5 rounded bg-good/15 border border-good/30 text-good text-[10px] leading-5 font-semibold">✓</span>
@@ -335,7 +335,7 @@ function SourceFormModal({
         setError(msg || `Save failed (${res.status})`);
         return;
       }
-      // POST returns { id, name } — pass the id back for the
+      // POST returns { id, name } - pass the id back for the
       // upload-return flow. Edits get null.
       const created = isEdit ? null : await res.json().catch(() => null);
       onSaved(created?.id ?? null);
@@ -434,7 +434,7 @@ function SourceFormModal({
           {isEdit ? (
             <div className="text-xs text-slate-500 inline-flex items-start gap-1.5">
               <AlertTriangle size={12} className="mt-0.5 text-warn" />
-              Type and currency can't be changed once a source is created — they're load-bearing for currency conversion.
+              Type and currency can't be changed once a source is created - they're load-bearing for currency conversion.
             </div>
           ) : null}
           {error ? <div className="text-sm text-bad">{error}</div> : null}

@@ -57,7 +57,7 @@ export async function GET() {
 
   // Determine the full month axis: earliest startMonth across all
   // sources to the previous full month, inclusive. The current
-  // in-progress month is intentionally excluded — statements only land
+  // in-progress month is intentionally excluded - statements only land
   // after a month closes. Capped at 36 months to keep the grid
   // manageable on the UI.
   const endN = ymToNum(previousFullYm());
@@ -66,7 +66,7 @@ export async function GET() {
   const start = Math.max(earliest, endN - 35);
   const months: string[] = [];
   // Guard against the edge case where every active source's startMonth
-  // is the current (or future) month — then there are no past months
+  // is the current (or future) month - then there are no past months
   // to render yet and we return an empty axis.
   if (start <= endN) {
     for (let n = start; n <= endN; n++) months.push(numToYm(n));

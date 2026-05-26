@@ -359,9 +359,9 @@ export default function NotificationsClient({
               value={draft.severity}
               onChange={(e) => setDraft({ ...draft, severity: e.target.value as typeof draft.severity })}
             >
-              <option value="critical">Critical — desktop push + in-app + email fallback</option>
-              <option value="important">Important — in-app, push when category is on</option>
-              <option value="info">Informational — in-app only</option>
+              <option value="critical">Critical - desktop push + in-app + email fallback</option>
+              <option value="important">Important - in-app, push when category is on</option>
+              <option value="info">Informational - in-app only</option>
             </select>
           </div>
 
@@ -428,7 +428,7 @@ export default function NotificationsClient({
     },
     {
       label: `Alert me if payroll exceeds ${fmtMoney.format(50000)}`,
-      helper: "In any month — set the value to match yours",
+      helper: "In any month - set the value to match yours",
       apply: () => {
         const payrollCat = categories.find((c) => c.kind === "payroll");
         setDraft({

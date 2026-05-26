@@ -162,7 +162,7 @@ export default function Sidebar({
               very first render before ensureMonthlyAllowance has run). */}
           {billing ? <SidebarCreditsPill billing={billing} /> : null}
           {/* Top-right corner: notifications bell + mobile close. The
-              bell is a Premium feature — only render it for paid
+              bell is a Premium feature - only render it for paid
               plans. Free workspaces don't accumulate notifications
               (the sweep skips them server-side too), so showing the
               bell would just be a permanently-empty UI affordance.

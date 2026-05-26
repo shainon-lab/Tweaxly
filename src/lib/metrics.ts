@@ -74,7 +74,7 @@ export async function trailingMonthsSummary(
     anchor = months[0] ?? todayYM();
   }
   // Walk backwards from the anchor to collect the month keys, then run
-  // every snapshot in parallel. Was sequential — added latency that
+  // every snapshot in parallel. Was sequential - added latency that
   // stacked on every dashboard render.
   const yms: string[] = [];
   let cursor = anchor;

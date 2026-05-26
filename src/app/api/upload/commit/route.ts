@@ -51,7 +51,7 @@ function currentYM(): string {
 // Conservative: trim, collapse whitespace, drop trailing reference numbers
 // that look like "#12345" or "REF1234567".
 //
-// Every transaction is still saved as its own row with its own date —
+// Every transaction is still saved as its own row with its own date  - 
 // grouping happens at the category level so monthly reports can show
 // one line per (category × month) instead of one line per raw bank
 // description.
@@ -129,7 +129,7 @@ export async function POST(req: NextRequest) {
   // local-language names ("שקל"), symbols ("$"), and English names
   // ("Euro") get mapped to ISO before we decide if anything is truly
   // unsupported. We only collect labels the resolver couldn't map at
-  // all — those are the rows the user actually has to fix.
+  // all - those are the rows the user actually has to fix.
   const unsupportedCodes = new Set<string>();
   const mappedCurrencyCol = body.mapping.currency;
   if (mappedCurrencyCol) {
@@ -224,7 +224,7 @@ export async function POST(req: NextRequest) {
   const rules = await prisma.categorizationRule.findMany({
     where: { businessId: business.id },
   });
-  // Vendorization rules — applied BEFORE the per-row category logic
+  // Vendorization rules - applied BEFORE the per-row category logic
   // so the rewritten vendor name flows into the Vendor.categoryId
   // lookup. Sorted by priority desc (matches CategorizationRule
   // semantics: higher priority wins).
@@ -240,7 +240,7 @@ export async function POST(req: NextRequest) {
   // Pre-load every existing vendor in the workspace so we can look up
   // "have we seen this vendor before, and if so what category did the
   // user pin to it?" in memory. Lookups go via canonical name AND any
-  // alias the vendor absorbed in past merges — so an "Interest X"
+  // alias the vendor absorbed in past merges - so an "Interest X"
   // upload finds the canonical "Bank Leumi" vendor even if the user
   // merged it weeks ago.
   const existingVendors = await prisma.vendor.findMany({
@@ -252,7 +252,7 @@ export async function POST(req: NextRequest) {
     vendorByName.set(v.name.toLowerCase(), v);
     for (const alias of v.aliases) {
       const k = alias.toLowerCase();
-      // If the same alias somehow points at two vendors (shouldn't —
+      // If the same alias somehow points at two vendors (shouldn't  - 
       // merges enforce uniqueness), the older vendor wins. Don't
       // overwrite the canonical name with an alias.
       if (!vendorByName.has(k)) vendorByName.set(k, v);
@@ -318,7 +318,7 @@ export async function POST(req: NextRequest) {
     }
     if (forceYM) norm.accountingMonth = forceYM;
 
-    // VENDORIZATION — apply owner-defined rules that rewrite the
+    // VENDORIZATION - apply owner-defined rules that rewrite the
     // vendor name based on description / vendor / source patterns.
     // Runs FIRST so the rewritten vendor name then flows into all the
     // vendor-based logic below (Vendor.categoryId lookup, alias
@@ -332,7 +332,7 @@ export async function POST(req: NextRequest) {
       norm.vendor = vendorizationApp.vendorName;
     }
 
-    // Identify the vendor for this row — prefer the explicitly mapped
+    // Identify the vendor for this row - prefer the explicitly mapped
     // vendor column (now possibly overridden by a vendorization rule);
     // fall back to description if the file only had one merchant field.
     // normalizeName trims + collapses whitespace.
@@ -357,7 +357,7 @@ export async function POST(req: NextRequest) {
         // User mapped a Category column. Match the value against
         // EXISTING workspace categories (case-insensitive). If the
         // workspace doesn't have that category yet, fall to Undefined
-        // — the user can review on Transactions and either rename a
+        // - the user can review on Transactions and either rename a
         // category or create it explicitly, then bulk-assign.
         const existing = await prisma.category.findFirst({
           where: {
@@ -375,7 +375,7 @@ export async function POST(req: NextRequest) {
       } else if (vendorName) {
         // Look up the vendor's pinned category. Skip the pin when it
         // matches the stale-auto-category pattern (category name ===
-        // vendor name) — that's legacy junk from before the category-
+        // vendor name) - that's legacy junk from before the category-
         // explosion fix and the user wants those rows to start
         // uncategorized so they can re-pin cleanly.
         const v = vendorByName.get(vendorName.toLowerCase());
@@ -388,7 +388,7 @@ export async function POST(req: NextRequest) {
           if (!v) newVendorNames.add(vendorName);
         }
       } else {
-        // No vendor / description either — still send to the catch-all
+        // No vendor / description either - still send to the catch-all
         // so the row stays reviewable.
         name = UNDEFINED_CATEGORY;
       }
@@ -426,7 +426,7 @@ export async function POST(req: NextRequest) {
       where: { businessId: business.id, name },
     });
     if (!cat) {
-      // "Undefined Category" is the catch-all — always kind="other" so
+      // "Undefined Category" is the catch-all - always kind="other" so
       // its net (which mixes income + expense rows) doesn't accidentally
       // flip the bucket to revenue when inflows happen to dominate.
       // For other names (legacy uploads), keep the original heuristic.
@@ -461,8 +461,8 @@ export async function POST(req: NextRequest) {
     const norm = info.norm;
     // Precedence at write time:
     //   1. ruleCategoryId (CategorizationRule)
-    //   2. vendorCategoryId (Vendor.categoryId — pinned vendor)
-    //   3. ensureCategoryByName(info.name) — explicit Category-column
+    //   2. vendorCategoryId (Vendor.categoryId - pinned vendor)
+    //   3. ensureCategoryByName(info.name) - explicit Category-column
     //      value OR "Undefined Category" fallback
     let categoryId: string | null = info.ruleCategoryId ?? info.vendorCategoryId;
     let isOneTime = false;
@@ -521,7 +521,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Re-detect duplicates over a recent window (-90 days) to keep the work bounded.
-  // Skip rows the user has explicitly dismissed — once they triaged a row as
+  // Skip rows the user has explicitly dismissed - once they triaged a row as
   // "not a duplicate", we must never re-flag it on later uploads.
   const since = new Date(Date.now() - 90 * 86400000);
   const recent = await prisma.transaction.findMany({
@@ -580,10 +580,10 @@ export async function POST(req: NextRequest) {
     });
   }
 
-  // Settlement detection — runs ALL three passes (credit-card / PayPal,
+  // Settlement detection - runs ALL three passes (credit-card / PayPal,
   // bank-to-bank transfers, payment-provider payouts) symmetrically
   // regardless of which source was just uploaded. Idempotent. Wrapped
-  // in try/catch so a detection failure never breaks the import — the
+  // in try/catch so a detection failure never breaks the import - the
   // user can correct individual rows from the Transactions page.
   let settlementsApplied = 0;
   let settlementSamples: { source: string; ym: string; amount: number; kind?: string }[] = [];

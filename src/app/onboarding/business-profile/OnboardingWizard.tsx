@@ -203,7 +203,7 @@ export default function OnboardingWizard({ businessName, initial }: Props) {
             ) : null}
 
             {step === 2 ? (
-              <StepFrame title="What kind of business is it, exactly?" helper="Start typing and pick from the list — or enter your own.">
+              <StepFrame title="What kind of business is it, exactly?" helper="Start typing and pick from the list - or enter your own.">
                 <Typeahead
                   options={[...BUSINESS_CATEGORY_OPTIONS]}
                   value={draft.businessCategory}
@@ -487,7 +487,7 @@ function Typeahead({
           <div className="border-t border-line/50 px-3 py-1.5 text-[11px] text-slate-500">
             {value.trim()
               ? "Pick a suggestion or keep your custom entry."
-              : "Type to filter — your own wording is fine too."}
+              : "Type to filter - your own wording is fine too."}
           </div>
         </div>
       ) : null}

@@ -299,7 +299,7 @@ export function resolveCurrencyCode(raw: string | null | undefined): string | nu
   const s0 = String(raw).trim();
   if (!s0) return null;
 
-  // 1. Direct 3-letter ISO code — the typical, well-formed case.
+  // 1. Direct 3-letter ISO code - the typical, well-formed case.
   const upper = s0.toUpperCase();
   if (/^[A-Z]{3}$/.test(upper) && isSupportedCurrency(upper)) return upper;
 

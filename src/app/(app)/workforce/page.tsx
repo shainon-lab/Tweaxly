@@ -70,7 +70,7 @@ export default async function WorkforcePage() {
           <div className="card min-h-[320px] flex flex-col items-center justify-center text-center">
             <div className="text-base font-semibold text-slate-100 mb-2">Workforce Planning</div>
             <div className="text-sm text-slate-400 max-w-md">
-              Financial intelligence about your team — how much it costs, how fast
+              Financial intelligence about your team - how much it costs, how fast
               payroll is growing, and what hires you can afford.
             </div>
           </div>

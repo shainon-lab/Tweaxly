@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       // Backfill: every past transaction whose vendor matches AND
       // whose current category is null OR the catch-all bucket gets
       // re-pointed at the user's chosen category. Already-categorized
-      // rows are left alone — the user might have manually corrected
+      // rows are left alone - the user might have manually corrected
       // them and we shouldn't undo that.
       const res = await prisma.transaction.updateMany({
         where: {

@@ -254,10 +254,10 @@ function buildDrivers(result: ForecastResult): Driver[] {
     title: "Data Coverage",
     impact: coverage >= 0.9 ? "positive" : coverage >= 0.6 ? "neutral" : "warning",
     detail: coverage >= 0.9
-      ? `Strong history — ${monthsWithData} of ${monthsResolved} months populated.`
+      ? `Strong history - ${monthsWithData} of ${monthsResolved} months populated.`
       : coverage >= 0.6
-      ? `Partial history — ${monthsWithData} of ${monthsResolved} months populated.`
-      : `Limited history — only ${monthsWithData} of ${monthsResolved} months populated.`,
+      ? `Partial history - ${monthsWithData} of ${monthsResolved} months populated.`
+      : `Limited history - only ${monthsWithData} of ${monthsResolved} months populated.`,
   });
 
   // ── Volatility ──
@@ -270,10 +270,10 @@ function buildDrivers(result: ForecastResult): Driver[] {
           : result.confidence === "medium" ? "neutral"
           : "warning",
     detail: result.confidence === "high"
-      ? "Stable month-to-month results — low variation."
+      ? "Stable month-to-month results - low variation."
       : result.confidence === "medium"
       ? `Moderate variation across the baseline${expenseOutliers + incomeOutliers > 0 ? `, ${expenseOutliers + incomeOutliers} month${expenseOutliers + incomeOutliers === 1 ? "" : "s"} flagged` : ""}.`
-      : `High volatility — ${volatility.toLowerCase()} variation in the baseline.`,
+      : `High volatility - ${volatility.toLowerCase()} variation in the baseline.`,
   });
 
   // ── Recurring revenue / cost base ──
@@ -288,7 +288,7 @@ function buildDrivers(result: ForecastResult): Driver[] {
     drivers.push({
       title: "Recurring Items",
       impact: "neutral",
-      detail: "No recurring patterns detected — forecast leans on the trailing average.",
+      detail: "No recurring patterns detected - forecast leans on the trailing average.",
     });
   }
 
@@ -298,7 +298,7 @@ function buildDrivers(result: ForecastResult): Driver[] {
     impact: result.seasonalityApplied ? "positive" : "neutral",
     detail: result.seasonalityApplied
       ? "Seasonal pattern detected and applied to upcoming months."
-      : "No seasonal pattern applied — not enough history yet, or trend is flat.",
+      : "No seasonal pattern applied - not enough history yet, or trend is flat.",
   });
 
   // ── Outliers ──
@@ -323,7 +323,7 @@ function buildDrivers(result: ForecastResult): Driver[] {
       title: "Scenarios",
       impact: result.scenariosApplied > 3 ? "warning" : "neutral",
       detail: result.scenariosApplied > 3
-        ? `${result.scenariosApplied} scenario assumptions stacked — uncertainty grows.`
+        ? `${result.scenariosApplied} scenario assumptions stacked - uncertainty grows.`
         : `${result.scenariosApplied} scenario assumption${result.scenariosApplied === 1 ? "" : "s"} applied on top of the baseline.`,
     });
   }

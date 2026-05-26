@@ -260,7 +260,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
                 {summarySaving ? "Saving…" : "Save summary"}
               </button>
               <span className="text-[11px] text-warn">
-                Unsaved edits — Regenerate will overwrite them.
+                Unsaved edits - Regenerate will overwrite them.
               </span>
             </>
           ) : null}
@@ -357,7 +357,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
               value={draft.revenueStage}
               onChange={(e) => setDraft({ ...draft, revenueStage: e.target.value })}
             >
-              <option value="">— pick one —</option>
+              <option value=""> -  pick one  - </option>
               {REVENUE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
@@ -370,7 +370,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
               value={draft.mainGoal}
               onChange={(e) => setDraft({ ...draft, mainGoal: e.target.value })}
             >
-              <option value="">— pick one —</option>
+              <option value=""> -  pick one  - </option>
               {MAIN_GOAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
@@ -383,13 +383,13 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
               value={draft.customerType}
               onChange={(e) => setDraft({ ...draft, customerType: e.target.value })}
             >
-              <option value="">— pick one —</option>
+              <option value=""> -  pick one  - </option>
               {CUSTOMER_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           </div>
         </div>
 
-        {/* Business models — multi-select card grid. Cards beat pill
+        {/* Business models - multi-select card grid. Cards beat pill
             chips for multi-select: the checkbox + label pattern is
             instantly readable as "click to toggle" and the consistent
             row heights make the section feel orderly even when labels
@@ -410,7 +410,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           </div>
         </div>
 
-        {/* Important KPIs — multi-select card grid (same pattern). */}
+        {/* Important KPIs - multi-select card grid (same pattern). */}
         <div className="mt-5">
           <label className="label">
             KPIs that matter most <span className="text-slate-500 normal-case font-normal">(pick any)</span>
@@ -442,8 +442,8 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
 
       {/* ─── AI Context Preferences (own card, last on the page) ──
           Pulled out of the Business profile card so the advisor-tuning
-          area reads as a distinct decision the owner is making —
-          "what should the AI keep in mind?" — rather than buried at
+          area reads as a distinct decision the owner is making  - 
+          "what should the AI keep in mind?" - rather than buried at
           the bottom of the profile form. The Save button lives here
           since this is the last section; saveAll() flushes the whole
           shared draft (profile + AI prefs) in one POST. */}
@@ -455,7 +455,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           </div>
         </div>
         <div className="text-xs text-slate-400 mb-4 leading-relaxed">
-          Biases the advisor will honour on every answer — tone, ranking,
+          Biases the advisor will honour on every answer - tone, ranking,
           and risk posture. Skip if you want the AI to stay neutral.
         </div>
 

@@ -39,7 +39,7 @@ export type ExecutiveSummary = {
   source: "claude" | "deterministic";
   periodLabel: string;
   // The platform brand label for whichever AI tier handled this call,
-  // OR "deterministic" when we fell back. Surfaced in the hero pill —
+  // OR "deterministic" when we fell back. Surfaced in the hero pill  - 
   // never the raw model name.
   tierLabel: string;
   tier: AiTier;
@@ -81,7 +81,7 @@ export async function buildExecutiveSummary(
   const bulletins = buildBulletins(input);
 
   // Resolve the AI tier up front so the brand label is always
-  // available — even on the deterministic fallback path.
+  // available - even on the deterministic fallback path.
   const tierConfig = input.businessId
     ? await tierConfigForBusiness(input.businessId, "executive_summary")
     : { tier: "free" as AiTier, label: "Pulse AI", model: "claude-haiku-4-5", maxTokens: 350, thinking: null, effort: null };
@@ -166,6 +166,9 @@ Honesty rules:
 - Avoid percentages in every sentence - one or two grounded numbers in the paragraph is enough. Prose first, figures sparingly.
 - If the picture is genuinely mixed (revenue up but margin down; profit positive but cash flow softening), say so plainly. Mixed reads as more credible than uniformly positive or negative.
 
+Punctuation rule (critical):
+- NEVER use the em-dash character "—" (U+2014). Use a regular hyphen with spaces (" - ") instead. The em-dash is one of the strongest "this was written by AI" signals; avoid it entirely.
+
 Vendor vs Category - never use these interchangeably:
 - **Vendor** = the source/entity in a transaction (e.g. Stripe, Google Ads, WeWork). Detected from upload data.
 - **Category** = the owner-assigned classification (e.g. Rent, Payroll, Advertising). Workspace-defined.
@@ -245,7 +248,15 @@ async function buildNarrativeWithClaude(
   for (const block of response.content) {
     if (block.type === "text") text += block.text;
   }
-  const cleaned = text.trim().replace(/^["“”]|["“”]$/g, "").trim();
+  // Strip wrapping quotes, then enforce the no-em-dash rule as a
+  // belt-and-braces safety net (the system prompt already asks for
+  // it, but the platform's voice rule says "never").
+  const cleaned = text.trim()
+    .replace(/^["“”]|["“”]$/g, "")
+    .replace(/—/g, " - ")
+    .replace(/ {2,}-/g, " -")
+    .replace(/- {2,}/g, "- ")
+    .trim();
   return cleaned || null;
 }
 

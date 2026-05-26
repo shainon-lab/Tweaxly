@@ -7,7 +7,7 @@
 //   2. AuditLog rows where actorUserId = user OR
 //      targetBusinessId is one of the user's workspaces
 //
-// Sorted desc by createdAt, capped at 100 entries — the table is for
+// Sorted desc by createdAt, capped at 100 entries - the table is for
 // recent-activity scanning, not deep history exploration.
 
 import { NextResponse } from "next/server";
@@ -33,7 +33,7 @@ type Entry = {
 export async function GET() {
   const user = await requireUser();
 
-  // Workspaces the user has access to — their owned businesses + any
+  // Workspaces the user has access to - their owned businesses + any
   // active memberships. Used both for the auditLog scope and to attach
   // a friendly business name to each entry.
   const businesses = await prisma.business.findMany({

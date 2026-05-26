@@ -41,7 +41,7 @@ export async function GET(req: Request) {
   // (membership check is enforced server-side via requireBusiness above,
   // so a malicious id only ever sees their OWN notifications anyway).
   if (businessId === "all") {
-    // no-op — leave businessId unscoped
+    // no-op - leave businessId unscoped
   } else if (businessId) {
     where.businessId = businessId;
   } else {

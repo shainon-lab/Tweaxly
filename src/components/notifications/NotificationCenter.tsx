@@ -70,7 +70,7 @@ export default function NotificationCenter({
   const [loading,  setLoading]  = useState(false);
   const [severity, setSeverity] = useState<SeverityFilter>("all");
   const [businessId, setBusinessId] = useState<string>("all");
-  // Portal target — set after mount so SSR stays clean. The Sidebar
+  // Portal target - set after mount so SSR stays clean. The Sidebar
   // ancestor uses `transform`, which traps `position: fixed` children
   // inside its 256px box; rendering into document.body escapes that.
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
@@ -196,7 +196,7 @@ export default function NotificationCenter({
             <div className="p-10 text-center">
               <div className="text-sm font-semibold text-slate-200 mb-1">Nothing here yet</div>
               <div className="text-xs text-slate-400 max-w-xs mx-auto">
-                Alerts that fire — AI signals, your monitors, weekly summaries — land in this inbox.
+                Alerts that fire - AI signals, your monitors, weekly summaries - land in this inbox.
               </div>
             </div>
           ) : (

@@ -17,7 +17,7 @@
 // instead of the bank summary.
 //
 // The detection is workspace-scoped, idempotent (running twice produces
-// the same result), and reversible — clearing the type back to "expense"
+// the same result), and reversible - clearing the type back to "expense"
 // + isExcludedFromPnl=false restores the bank row to P&L if the user
 // rejects a match.
 
@@ -157,7 +157,7 @@ export async function detectSettlements(businessId: string): Promise<SettlementM
     const isCardHint   = CARD_HINTS.some(({ re }) => re.test(desc));
     const isPayPalHint = PAYPAL_HINTS.some(({ re }) => re.test(desc));
     // Look for an explicit name/last4 match against a card/paypal source
-    // — catches files where the bank labels the row "MASTERCARD 1234".
+    // - catches files where the bank labels the row "MASTERCARD 1234".
     const nameMatch = [...cardSources, ...paypalSources].find((s) =>
       (s.last4 && new RegExp(`\\b${s.last4}\\b`).test(desc)) ||
       new RegExp(`\\b${escapeRegex(s.name)}\\b`, "i").test(desc),
@@ -207,7 +207,7 @@ export async function detectSettlements(businessId: string): Promise<SettlementM
 }
 
 // Apply the matches: flip the bank-side rows to settlement type and
-// exclude them from P&L. Returns the count applied. Idempotent — rows
+// exclude them from P&L. Returns the count applied. Idempotent - rows
 // already classified are skipped by detectSettlements upstream.
 export async function applySettlements(
   businessId: string,
@@ -221,7 +221,7 @@ export async function applySettlements(
       data: {
         type,
         isExcludedFromPnl: true,
-        excludeNote: `Auto-detected ${m.matchedKind === "paypal" ? "PayPal" : "credit-card"} settlement — ${m.reason}. The detailed card/PayPal lines count instead.`,
+        excludeNote: `Auto-detected ${m.matchedKind === "paypal" ? "PayPal" : "credit-card"} settlement - ${m.reason}. The detailed card/PayPal lines count instead.`,
       },
     });
     applied += res.count;
@@ -232,12 +232,12 @@ export async function applySettlements(
 // ── Bank-to-bank transfer detection ─────────────────────────────────
 // When the owner has 2+ bank sources, internal transfers between them
 // (savings ⇄ checking, ILS bank ⇄ USD bank, etc.) should NOT count as
-// either income or expense — they're balance moves, not P&L events.
+// either income or expense - they're balance moves, not P&L events.
 //
 // Heuristic: for every recent bank-side outflow, look for an opposing
 // inflow on a DIFFERENT bank source with the same absolute amount
 // (within ±$1 / 0.5%) dated within ±3 days. Description hints
-// (TRANSFER/WIRE/ZELLE/ACH/העברה) boost confidence — pairs without
+// (TRANSFER/WIRE/ZELLE/ACH/העברה) boost confidence - pairs without
 // any hint are still matched but only when both date and amount are
 // dead-on (±1 day, exact amount).
 
@@ -319,7 +319,7 @@ export async function detectBankTransfers(businessId: string): Promise<TransferM
       const diff = Math.abs(inn.amount - mag);
       if (diff > tolerance)                continue;
       // Require AT LEAST one side to have a hint when the dates are
-      // looser than ±1 — defends against random coincidence on round
+      // looser than ±1 - defends against random coincidence on round
       // amounts (e.g. $500 in/out at unrelated vendors).
       if (days > 1 && !inn.hasHint && !out.hasHint) continue;
       if (!best || diff < best.diff || (diff === best.diff && days < best.days)) {
@@ -349,9 +349,9 @@ export async function detectBankTransfers(businessId: string): Promise<TransferM
 export async function applyBankTransfers(businessId: string, matches: TransferMatch[]): Promise<number> {
   let applied = 0;
   for (const m of matches) {
-    // Mark BOTH sides — owner sees one settlement pill per row and the
+    // Mark BOTH sides - owner sees one settlement pill per row and the
     // pair is excluded from P&L symmetrically.
-    const note = `Auto-detected bank transfer — ${m.reason}. Internal account-to-account move, not income or expense.`;
+    const note = `Auto-detected bank transfer - ${m.reason}. Internal account-to-account move, not income or expense.`;
     const res = await prisma.transaction.updateMany({
       where: { id: { in: [m.outflowTxnId, m.inflowTxnId] }, businessId },
       data: {
@@ -420,7 +420,7 @@ export async function detectPaymentProviderSettlements(businessId: string): Prom
     },
   });
 
-  // Compute per-(provider, ym) net income — what the provider would
+  // Compute per-(provider, ym) net income - what the provider would
   // payout. Net = sum(amount) including fees (negative rows reduce it).
   type Net = { sourceId: string; ym: string; net: number; sourceName: string };
   const netByKey = new Map<string, Net>();
@@ -493,7 +493,7 @@ export async function applyPaymentProviderSettlements(
       data: {
         type:              "payment_provider_settlement",
         isExcludedFromPnl: true,
-        excludeNote:       `Auto-detected ${m.providerSourceName} payout — ${m.reason}. The detailed provider lines count as revenue instead.`,
+        excludeNote:       `Auto-detected ${m.providerSourceName} payout - ${m.reason}. The detailed provider lines count as revenue instead.`,
       },
     });
     applied += res.count;
@@ -614,7 +614,7 @@ export async function scanBankCardSignals(businessId: string): Promise<BankCardS
     // Skip rows already classified as settlements (avoids double-counting
     // when the matched flow already replaced them).
     if (t.type === "credit_card_settlement" || t.type === "paypal_settlement") continue;
-    // Only bank-side rows are candidates — uploads to a card source
+    // Only bank-side rows are candidates - uploads to a card source
     // shouldn't trigger the "upload your card" nudge.
     if (t.source !== "bank") continue;
     const desc = `${t.vendor ?? ""} ${t.description ?? ""}`.trim();

@@ -1,6 +1,6 @@
 "use client";
 
-// Data section tab nav — six operational surfaces:
+// Data section tab nav - six operational surfaces:
 //   Import Data · Sources · Transactions · Categories & Vendors
 //   · Manual Data Log · Integration
 //

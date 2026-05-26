@@ -19,7 +19,7 @@ export async function POST(req: Request) {
 
   const where: Record<string, unknown> = { userId: user.id, readAt: null };
   if (businessId === "all") {
-    // no-op — leave businessId unscoped
+    // no-op - leave businessId unscoped
   } else if (businessId) {
     where.businessId = businessId;
   } else {

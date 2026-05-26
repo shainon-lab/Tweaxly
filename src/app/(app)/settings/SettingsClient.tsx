@@ -95,7 +95,7 @@ type Vendor = {
 };
 
 // Suggested categories the spec mandates we offer (but never auto-
-// create). Surfaced as quick-pick chips in the Add Category modal —
+// create). Surfaced as quick-pick chips in the Add Category modal  - 
 // clicking a chip pre-fills the name + type, the user still has to
 // click "Add category" to commit. The Income/Outcome split lets us
 // filter chips to whichever type tab the user is on.
@@ -331,7 +331,7 @@ export default function SettingsClient({
     });
     if (!res.ok) { alert(await res.text()); return; }
     const c = await res.json();
-    // Brand-new categories start with zero of everything — without
+    // Brand-new categories start with zero of everything - without
     // these explicit defaults the table renderer crashes on
     // c.totalAmount.toLocaleString() before the next router.refresh
     // catches up with the server snapshot.
@@ -384,7 +384,7 @@ export default function SettingsClient({
     });
     if (!res.ok) { alert(await res.text()); return; }
     const v = await res.json();
-    // Same defaults story as addCategoryFromModal — the Vendors table
+    // Same defaults story as addCategoryFromModal - the Vendors table
     // reads transactionCount / totalAmount / lastSeenAt and crashes
     // on undefined. Brand-new vendors are zero of everything.
     const withDefaults = {
@@ -733,7 +733,7 @@ export default function SettingsClient({
                   // the row.
                   const vendorLabel =
                     c.vendorNames.length === 0
-                      ? <span className="text-slate-500 text-xs">—</span>
+                      ? <span className="text-slate-500 text-xs"> - </span>
                       : (
                         <span
                           className="text-slate-300 text-xs"
@@ -766,10 +766,10 @@ export default function SettingsClient({
                       <td className="max-w-[320px]">{vendorLabel}</td>
                       <td className="text-right text-slate-300">{c.transactionCount}</td>
                       <td className="text-right text-slate-300 font-mono text-xs">
-                        {!c.totalAmount ? "—" : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        {!c.totalAmount ? " - " : c.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </td>
                       <td className="text-slate-400 text-xs whitespace-nowrap">
-                        {c.lastSeenAt ? new Date(c.lastSeenAt).toLocaleDateString() : "—"}
+                        {c.lastSeenAt ? new Date(c.lastSeenAt).toLocaleDateString() : " - "}
                       </td>
                       <td>
                         <button
@@ -798,7 +798,7 @@ export default function SettingsClient({
                           disabled={!unused}
                           title={unused
                             ? "Delete this category"
-                            : `Has ${c.transactionCount} transaction${c.transactionCount === 1 ? "" : "s"} / ${c.vendorCount} vendor${c.vendorCount === 1 ? "" : "s"} — reassign them first.`}
+                            : `Has ${c.transactionCount} transaction${c.transactionCount === 1 ? "" : "s"} / ${c.vendorCount} vendor${c.vendorCount === 1 ? "" : "s"} - reassign them first.`}
                         >
                           Delete
                         </button>
@@ -840,11 +840,11 @@ export default function SettingsClient({
                 {[...vends.filter((v) => v.transactionCount > 0 && !v.categoryId),
                   ...vends.filter((v) => v.transactionCount > 0 && v.categoryId)].map((v) => {
                   // Categories cell: list every category this vendor's
-                  // transactions sit in with the count in parens — the
+                  // transactions sit in with the count in parens - the
                   // mirror image of the Categories table's Vendors cell.
                   const catLabel =
                     v.txnCategoryNames.length === 0
-                      ? <span className="text-slate-500 text-xs">—</span>
+                      ? <span className="text-slate-500 text-xs"> - </span>
                       : (
                         <span
                           className="text-slate-300 text-xs"
@@ -855,7 +855,7 @@ export default function SettingsClient({
                         </span>
                       );
                   // Type pill: Income (revenue-only), Outcome
-                  // (non-revenue-only), Mixed (both), or — when no
+                  // (non-revenue-only), Mixed (both), or - when no
                   // categorized txns yet.
                   const typePill = v.typeLabel === "Income"
                     ? <span className="pill-good">Income</span>
@@ -863,7 +863,7 @@ export default function SettingsClient({
                     ? <span className="pill">Outcome</span>
                     : v.typeLabel === "Mixed"
                     ? <span className="pill">Mixed</span>
-                    : <span className="text-slate-500 text-xs">—</span>;
+                    : <span className="text-slate-500 text-xs"> - </span>;
                   return (
                   <tr key={v.id}>
                     <td>
@@ -888,10 +888,10 @@ export default function SettingsClient({
                       {v.transactionCount}
                     </td>
                     <td className="text-right text-slate-300 font-mono text-xs">
-                      {!v.transactionCount || !v.totalAmount ? "—" : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      {!v.transactionCount || !v.totalAmount ? " - " : v.totalAmount.toLocaleString(undefined, { maximumFractionDigits: 0 })}
                     </td>
                     <td className="text-slate-400 text-xs whitespace-nowrap">
-                      {v.lastSeenAt ? new Date(v.lastSeenAt).toLocaleDateString() : "—"}
+                      {v.lastSeenAt ? new Date(v.lastSeenAt).toLocaleDateString() : " - "}
                     </td>
                     <td>
                       <button
@@ -949,7 +949,7 @@ export default function SettingsClient({
         />
       </div>
 
-      {/* Vendorization rules — mirrors the categorization rules card,
+      {/* Vendorization rules - mirrors the categorization rules card,
           but the target is a canonical vendor name. Patterns match
           against description / vendor / source on upload and rewrite
           Transaction.vendor before category rules run. */}
@@ -966,7 +966,7 @@ export default function SettingsClient({
         />
       </div>
 
-      {/* Merge category modal — mirrors the vendor merge modal. Picks
+      {/* Merge category modal - mirrors the vendor merge modal. Picks
           a target category, then POSTs to /api/categories/merge which
           reassigns transactions / vendor pins / rules and deletes the
           source. */}
@@ -1021,7 +1021,7 @@ export default function SettingsClient({
         </div>
       ) : null}
 
-      {/* Merge vendor modal — only mounted when the user clicked
+      {/* Merge vendor modal - only mounted when the user clicked
           "Merge" on a vendor row. Picks which other vendor to merge
           INTO, then POSTs to /api/vendors/merge which reassigns the
           transactions and deletes the source row. */}
@@ -1087,12 +1087,12 @@ export default function SettingsClient({
           onClose={() => setAddCatOpen(false)}
         >
           <div className="space-y-3">
-            {/* Suggestions row — filtered by the currently-selected
+            {/* Suggestions row - filtered by the currently-selected
                 type (Income vs Outcome). Picks fill in the name; the
                 user still confirms before the category is created. */}
             <div>
               <div className="text-[10px] uppercase tracking-wider text-slate-500 mb-1.5">
-                Common {addCatDraft.isIncome ? "income" : "expense"} categories — pick to start
+                Common {addCatDraft.isIncome ? "income" : "expense"} categories - pick to start
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {(addCatDraft.isIncome ? SUGGESTED_INCOME_CATEGORIES : SUGGESTED_EXPENSE_CATEGORIES).map((s) => {

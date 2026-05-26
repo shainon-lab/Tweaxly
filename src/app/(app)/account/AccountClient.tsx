@@ -320,7 +320,7 @@ type AccessLogEntry = {
 };
 
 // Human-readable label + tone per audit/login action key. Anything not
-// listed falls back to the raw key with a neutral tone — so newly-added
+// listed falls back to the raw key with a neutral tone - so newly-added
 // action types still appear on the feed without code changes.
 const ACTION_LABELS: Record<string, { label: string; tone: "good" | "warn" | "bad" | "neutral" }> = {
   "auth.login":                     { label: "Signed in",            tone: "good" },
@@ -424,10 +424,10 @@ function AccessLogsPane() {
                   </td>
                   <td className={`text-xs font-medium ${TONE_CLASS[def.tone]}`}>{def.label}</td>
                   <td className="text-slate-300 text-xs max-w-[280px]">
-                    <span className="line-clamp-2">{detail ?? "—"}</span>
+                    <span className="line-clamp-2">{detail ?? " - "}</span>
                   </td>
-                  <td className="text-slate-400 text-xs whitespace-nowrap">{e.businessName ?? "—"}</td>
-                  <td className="text-slate-500 text-xs font-mono">{e.ipAddress ?? "—"}</td>
+                  <td className="text-slate-400 text-xs whitespace-nowrap">{e.businessName ?? " - "}</td>
+                  <td className="text-slate-500 text-xs font-mono">{e.ipAddress ?? " - "}</td>
                 </tr>
               );
             })}

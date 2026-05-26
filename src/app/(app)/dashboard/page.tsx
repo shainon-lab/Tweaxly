@@ -225,12 +225,12 @@ export default async function DashboardPage({
           </Suspense>
 
           {/* Financial Data Pipeline surfaces, in order of urgency:
-              1. PreviousMonthCatchUp — full warning card when any
+              1. PreviousMonthCatchUp - full warning card when any
                  source is missing the previous full month's data.
                  Auto-hides when the previous month is fully covered.
-              2. GetStartedBanner — only for workspaces with zero
+              2. GetStartedBanner - only for workspaces with zero
                  financial sources (first-run).
-              3. HealthScoreWidget (compact) — running completeness %
+              3. HealthScoreWidget (compact) - running completeness %
                  tile, always visible once at least one source exists.
               All three are client-fetched so the server-render path
               stays unchanged. */}

@@ -13,7 +13,7 @@
 //
 // Required env vars (each has a `_PROD` twin used when POLAR_ENV=production
 // so the sandbox + production credentials can coexist on the same
-// deployment — sandbox values stay under the unsuffixed names for
+// deployment - sandbox values stay under the unsuffixed names for
 // local dev / preview, prod values live under the _PROD names so
 // Vercel doesn't ask you to overwrite the existing sandbox vars):
 //   POLAR_ENV                   - "sandbox" | "production" (defaults to sandbox)
@@ -48,7 +48,7 @@ export function isPolarProduction(): boolean {
 //   sandbox    → process.env[base]
 //   production → process.env[base + "_PROD"] (with fallback to base)
 // The fallback exists so a deployment that hasn't migrated to the
-// _PROD-suffixed names yet still works after flipping POLAR_ENV — no
+// _PROD-suffixed names yet still works after flipping POLAR_ENV - no
 // silent breakage on the migration window.
 export function polarEnv(baseName: string): string | undefined {
   if (isPolarProduction()) {

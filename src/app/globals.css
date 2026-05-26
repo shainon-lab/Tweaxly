@@ -64,7 +64,7 @@ html, body {
    Backgrounds on dark surfaces (e.g. inside the chevron-X logo panel)
    keep their original light text via inline color overrides where needed. */
 /* !important here so these beat Tailwind's `!text-slate-…` utilities (which
-   themselves emit `!important`) — without that, headers tagged with
+   themselves emit `!important`) - without that, headers tagged with
    `!text-slate-100` for emphasis stay near-white on a white card. */
 html[data-theme="light"] .text-slate-50  { color: rgb(15 23 42) !important; }
 html[data-theme="light"] .text-slate-100 { color: rgb(15 23 42) !important; }
@@ -78,7 +78,7 @@ html[data-theme="light"] .text-slate-600 { color: rgb(148 163 184) !important; }
    sit on a colored or dark background. But muted "white on dark" usages
    in light mode become unreadable; the rule below only re-colors text-white
    that isn't paired with a known colored/dark background utility. We keep
-   this minimal — most buttons override the color explicitly. */
+   this minimal - most buttons override the color explicitly. */
 html[data-theme="light"] :where(.btn-ghost).text-white { color: rgb(15 23 42); }
 
 /* ── Light-mode surface adjustments ───────────────────────────────────────
@@ -92,7 +92,7 @@ html[data-theme="light"] aside.w-60 {
   border-color: rgb(226 232 240) !important;
 }
 
-/* Cards / card-tights — force full white and a subtle border in light mode. */
+/* Cards / card-tights - force full white and a subtle border in light mode. */
 html[data-theme="light"] .card,
 html[data-theme="light"] .card-tight {
   background-color: rgb(255 255 255) !important;
@@ -101,7 +101,7 @@ html[data-theme="light"] .card-tight {
 }
 
 /* The Categorization-rules pill background uses `bg-accent-soft` for the
-   sidebar nav active state — already swapped via the var to light purple. */
+   sidebar nav active state - already swapped via the var to light purple. */
 
 /* Inputs sit inside white cards in light mode; make sure their border &
    placeholder are visible. */
@@ -245,7 +245,7 @@ html[data-theme="light"] .auth-shell .card {
   .table-base tbody tr:hover { @apply bg-ink-700/40; }
 }
 
-/* Recharts tooltip — must adapt to theme so the popup stays legible. */
+/* Recharts tooltip - must adapt to theme so the popup stays legible. */
 .recharts-default-tooltip {
   background: rgb(var(--c-ink-800)) !important;
   border-color: rgb(var(--c-line)) !important;
@@ -253,13 +253,13 @@ html[data-theme="light"] .auth-shell .card {
   border-radius: 8px !important;
 }
 
-/* Global Consult panel slide-in. Subtle, fast — premium pacing. */
+/* Global Consult panel slide-in. Subtle, fast - premium pacing. */
 @keyframes slideInRight {
   from { transform: translateX(100%); opacity: 0; }
   to   { transform: translateX(0);    opacity: 1; }
 }
 
-/* Mirrored variant used when the document direction is RTL — the
+/* Mirrored variant used when the document direction is RTL - the
    panel anchors to the left edge and enters from there. */
 @keyframes slideInLeft {
   from { transform: translateX(-100%); opacity: 0; }
@@ -285,7 +285,7 @@ html[data-theme="light"] .auth-shell .card {
 }
 
 @media print {
-  /* Print-time defaults — light background, dark text for legibility. */
+  /* Print-time defaults - light background, dark text for legibility. */
   html, body {
     background: #ffffff !important;
     color: #111111 !important;

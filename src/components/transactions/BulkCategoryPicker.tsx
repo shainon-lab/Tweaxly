@@ -5,7 +5,7 @@
 // Single search box at the top filters BOTH existing workspace
 // categories AND suggested common categories (from the spec). Clicking
 // an existing category fires onPick immediately. Suggested categories
-// that don't exist yet show "+ Create" — click to POST /api/categories
+// that don't exist yet show "+ Create" - click to POST /api/categories
 // then auto-pick.
 //
 // A standalone "+ Create new category" row at the bottom opens an

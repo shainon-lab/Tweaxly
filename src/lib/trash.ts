@@ -16,7 +16,7 @@ import { prisma } from "./db";
 
 // Writes go through the extended client too. The $extends in db.ts
 // only intercepts reads (findMany/findFirst/count/aggregate/groupBy)
-// — updateMany/create/delete/$transaction pass through unchanged,
+// - updateMany/create/delete/$transaction pass through unchanged,
 // so soft-delete + restore + purge all work as expected without a
 // second PrismaClient instance (which would cause the @prisma/client
 // package to be pulled into the client bundle).
@@ -77,7 +77,7 @@ export async function restoreBatch(input: {
         deleteBatchId: null,
       },
     });
-    // Remove the batch row itself — restored items aren't trash anymore.
+    // Remove the batch row itself - restored items aren't trash anymore.
     await tx.trashBatch.delete({ where: { id: input.batchId } });
     return { restored: res.count };
   });
