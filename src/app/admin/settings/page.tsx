@@ -75,7 +75,7 @@ export default async function AdminSettingsPage() {
           <IntegrationCard
             name="Resend"
             description="Transactional email (password resets)"
-            connected={!!process.env.RESEND_API_KEY}
+            connected={!!(process.env.RESEND_API_KEY_APP ?? process.env.RESEND_API_KEY)}
           />
           <IntegrationCard
             name="Anthropic Claude"
