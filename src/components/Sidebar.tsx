@@ -275,7 +275,7 @@ export default function Sidebar({
             <button
               type="button"
               onClick={() => { setMobileOpen(false); requestA11yWidgetOpen(); }}
-              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-line px-3 py-1.5 text-xs text-slate-300 hover:bg-ink-700 hover:border-slate-500 hover:text-white transition"
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-accent/40 bg-accent-soft/40 px-3 py-1.5 text-xs font-medium text-accent hover:bg-accent-soft hover:border-accent hover:text-white transition"
               aria-label="Open accessibility widget"
             >
               <Accessibility size={14} strokeWidth={1.75} aria-hidden="true" />
