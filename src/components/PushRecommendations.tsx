@@ -475,22 +475,35 @@ export default function PushRecommendations({
           </div>
         </div>
       ) : (
-        <SignalDeck
-          recs={visibleRecs}
-          currency={currency}
-          lifecycles={lifecycles}
-          selectedId={selectedId}
-          onSelect={selectSignal}
-        />
+        // Deck + detail panel live in a flex row so the two columns
+        // naturally share the same height. Was: panel was a `fixed`
+        // overlay anchored to top-0/right-0, which made its height
+        // independent of (and visually mismatched with) the signals
+        // card on the left. Now opening a card grows / shrinks both
+        // columns together.
+        <div className="flex-1 flex flex-col lg:flex-row gap-4 min-h-0">
+          <div className={selectedRec ? "flex-1 min-w-0" : "w-full"}>
+            <SignalDeck
+              recs={visibleRecs}
+              currency={currency}
+              lifecycles={lifecycles}
+              selectedId={selectedId}
+              onSelect={selectSignal}
+            />
+          </div>
+          {selectedRec ? (
+            <div className="w-full lg:w-[420px] xl:w-[460px] shrink-0">
+              <SignalDetailPanel
+                rec={selectedRec}
+                lifecycle={lifecycles[selectedRec.id]}
+                currency={currency}
+                onClose={closePanel}
+                onResolve={() => resolveSignal(selectedRec)}
+              />
+            </div>
+          ) : null}
+        </div>
       )}
-
-      <SignalDetailPanel
-        rec={selectedRec}
-        lifecycle={selectedRec ? lifecycles[selectedRec.id] : undefined}
-        currency={currency}
-        onClose={closePanel}
-        onResolve={selectedRec ? () => resolveSignal(selectedRec) : () => {}}
-      />
     </div>
   );
 }
@@ -529,27 +542,19 @@ function SignalDeck({
     return la - lb;
   });
 
-  // When the detail panel is open, shrink the grid to make room
-  // on the right so cards are pushed aside / down (reflowed into
-  // fewer columns) instead of being hidden behind the panel.
-  // The panel itself is `sm:w-[420px] lg:w-[38vw] xl:w-[34vw]
-  // max-w-[560px]` (see SignalDetailPanel), so the right padding
-  // mirrors that.
+  // The detail panel is now an inline flex sibling (see the parent
+  // PushRecommendations layout), so we no longer need to pad the deck
+  // to avoid a fixed-positioned overlay. Just reflow the columns:
+  // when the panel is open the deck has less horizontal room, so we
+  // drop from 3 cols → 2 cols at lg+. Without the panel we use the
+  // full 3-col layout.
   const panelOpen = selectedId != null;
-  const padForPanel = panelOpen
-    ? "sm:pr-[420px] lg:pr-[38vw] xl:pr-[34vw]"
-    : "";
-  // Drop one column when the panel is open so the remaining cards
-  // reflow neatly: lg used to be 3-wide, becomes 2-wide; md stays
-  // 2-wide regardless; small screens stack to 1. Combined with the
-  // right padding above, this gives the user a "cards move aside +
-  // wrap to next row" feel rather than "cards disappear".
   const cols = panelOpen
-    ? "grid-cols-1 lg:grid-cols-2"
+    ? "grid-cols-1 md:grid-cols-2 lg:grid-cols-2"
     : "grid-cols-1 md:grid-cols-2 lg:grid-cols-3";
 
   return (
-    <div className={`transition-[padding] duration-200 ${padForPanel}`}>
+    <div>
       <div
         className={`grid gap-4 transition-[grid-template-columns] duration-200 ${cols}`}
         style={{ gridAutoFlow: "dense" }}
@@ -730,11 +735,12 @@ function SignalDetailPanel({
     <aside
       role="dialog"
       aria-label={`Signal details - ${display.title}`}
-      // Panel sizes to its content: when content is short, the box
-      // ends right under the action buttons (no empty area below).
-      // `max-h-screen` caps at viewport height so taller content
-      // scrolls inside the box instead of overflowing offscreen.
-      className="fixed top-0 right-0 max-h-screen w-full sm:w-[420px] lg:w-[38vw] xl:w-[34vw] max-w-[560px] bg-ink-900 border-l border-b border-line shadow-2xl shadow-black/40 z-40 overflow-y-auto animate-[slideInRight_220ms_ease-out] rounded-bl-2xl"
+      // Sits as a flex sibling next to the signals deck inside the
+      // outer card, so it shares the deck's height naturally and stops
+      // overhanging the bottom edge. The parent wrapper controls width;
+      // `h-full` makes the aside fill that flex column. Inner overflow
+      // keeps long content scrollable without growing the parent.
+      className="h-full bg-ink-900/60 border border-line rounded-xl shadow-lg shadow-black/30 overflow-y-auto animate-[slideInRight_220ms_ease-out]"
     >
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-5 border-b border-line">
