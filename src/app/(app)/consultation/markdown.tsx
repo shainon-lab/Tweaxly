@@ -38,7 +38,7 @@ export function renderMarkdown(text: string) {
   const flushPara = () => {
     if (buf.length) {
       blocks.push(
-        <p key={blocks.length} className="text-sm leading-relaxed text-slate-200">
+        <p key={blocks.length} className="text-sm leading-[1.7] tracking-[0.01em] text-slate-200">
           {inline(buf.join(" "))}
         </p>,
       );

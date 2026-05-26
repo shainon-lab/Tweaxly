@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
 import { CONSULT_OPEN_EVENT, DETAIL_PANEL_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
+import NarrativeBody from "./NarrativeBody";
 
 // Open the floating Consult panel pre-loaded with a question and a
 // per-signal title/subtitle.
@@ -844,9 +845,15 @@ function PanelSection({
       <div className={`text-[10px] uppercase tracking-wider mb-1.5 font-medium ${accent ? "text-accent" : "text-slate-500"}`}>
         {label}
       </div>
-      <div className={`text-sm leading-relaxed ${accent ? "text-slate-100" : "text-slate-300"}`}>
-        {body}
-      </div>
+      {/* Shared NarrativeBody: same paragraph-split + tracking + leading
+          as the dashboard summary. Three sections in the panel already
+          give the user vertical rhythm, so we leave the per-section
+          splitting on - long observations still get a break. */}
+      <NarrativeBody
+        text={body}
+        size="sm"
+        className={accent ? "text-slate-100" : "text-slate-300"}
+      />
     </div>
   );
 }

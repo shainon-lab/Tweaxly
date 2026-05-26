@@ -14,6 +14,7 @@
 import { useState } from "react";
 import { fmtMoney } from "@/lib/format";
 import type { ForecastResult } from "@/lib/forecastEngine";
+import NarrativeBody from "@/components/NarrativeBody";
 
 type Tone = "positive" | "warning" | "neutral";
 
@@ -166,11 +167,10 @@ export default function ForecastExplanationPanel({
             </div>
 
             {/* Engine narrative - kept here for accountants who want
-                the full chain of reasoning. */}
+                the full chain of reasoning. Shared NarrativeBody so
+                the typography + paragraph-split matches the dashboard. */}
             {result.explanationText ? (
-              <div className="text-sm text-slate-300 leading-relaxed">
-                {result.explanationText}
-              </div>
+              <NarrativeBody text={result.explanationText} size="sm" />
             ) : null}
 
             {result.recurringDetected.length > 0 ? (

@@ -229,8 +229,13 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           insights and forecasting. Edit freely or regenerate once your
           profile changes.
         </div>
+        {/* Same typography as the dashboard's NarrativeBody for
+            reading consistency. The textarea is the editable surface
+            (vs. the display-only NarrativeBody used on dashboards);
+            we match leading + tracking so the read/write feel doesn't
+            shift between the two. */}
         <textarea
-          className="input min-h-[140px] leading-relaxed"
+          className="input min-h-[140px] leading-[1.7] tracking-[0.01em]"
           value={summary}
           onChange={(e) => { setSummary(e.target.value); setSummaryDirty(true) }}
           placeholder={hasMinimum

@@ -97,7 +97,7 @@ function ResponseBriefing({
             {briefing.takeaway.headline}
           </div>
           {briefing.takeaway.subhead ? (
-            <div className="text-sm text-slate-300 mt-1.5 leading-relaxed">
+            <div className="text-sm text-slate-300 mt-1.5 leading-[1.7] tracking-[0.01em]">
               {briefing.takeaway.subhead}
             </div>
           ) : null}
