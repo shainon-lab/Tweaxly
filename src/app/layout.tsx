@@ -5,7 +5,7 @@ import "./consent.css";
 import { getServerLocale } from "@/lib/i18n/server";
 import { dirFor } from "@/lib/i18n";
 import { I18nProvider } from "@/lib/i18n/client";
-import { AccessibilityProvider, AccessibilityWidget, A11Y_INIT_SCRIPT } from "@/lib/a11y";
+import { AccessibilityProvider, AccessibilityWidgetGate, A11Y_INIT_SCRIPT } from "@/lib/a11y";
 import {
   ConsentProvider, ConsentBanner, PreferencesModal, CONSENT_INIT_SCRIPT,
 } from "@/lib/consent";
@@ -47,7 +47,12 @@ export default async function RootLayout({
           <ConsentProvider region={region}>
             <AccessibilityProvider>
               {children}
-              <AccessibilityWidget />
+              {/* WidgetGate decides at render time whether to show the
+                  floating accessibility FAB (auth + public surfaces),
+                  the controlled-mode dialog (inside the logged-in app
+                  when the user opted in), or nothing at all. Keeps
+                  the in-app workspace clean by default. */}
+              <AccessibilityWidgetGate />
               <ConsentBanner />
               <PreferencesModal />
             </AccessibilityProvider>

@@ -7,6 +7,7 @@
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useA11y } from "./provider";
+import { onA11yWidgetOpenRequest } from "./visibilityStore";
 import type { A11yPrefs, ContrastMode, FontScale, CursorSize } from "./types";
 
 const FONT_STEPS: FontScale[] = [100, 110, 125, 150, 175, 200];
@@ -26,13 +27,34 @@ const CURSOR_OPTIONS: { id: CursorSize; label: string }[] = [
   { id: "xlarge",  label: "L" },
 ];
 
-export default function AccessibilityWidget() {
+export default function AccessibilityWidget({
+  mode = "fab",
+}: {
+  // "fab"        - default. Renders a floating action button + the
+  //                dialog. Used on the public auth surface (login,
+  //                register, setup, onboarding) where the FAB is the
+  //                only way to access the widget.
+  // "controlled" - renders ONLY the dialog. Opens via the visibility
+  //                store's requestA11yWidgetOpen() event. Used in
+  //                the logged-in app surface where the user opens
+  //                the dialog from a sidebar nav item.
+  mode?: "fab" | "controlled";
+} = {}) {
   const { prefs, set, reset } = useA11y();
   const [open, setOpen] = useState(false);
   const titleId = useId();
   const fabRef    = useRef<HTMLButtonElement>(null);
   const dialogRef = useRef<HTMLDivElement>(null);
   const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  // External open trigger - used by the sidebar item when mode is
+  // "controlled". The store fires a synthetic event we subscribe to
+  // here so multiple call sites (sidebar, account settings, future
+  // skip-link) can all open the dialog without prop drilling.
+  useEffect(() => {
+    if (mode !== "controlled") return;
+    return onA11yWidgetOpenRequest(() => setOpen(true));
+  }, [mode]);
 
   // Reading guide / mask handlers - driven by pointer.
   useEffect(() => {
@@ -131,18 +153,23 @@ export default function AccessibilityWidget() {
 
   return (
     <>
-      <button
-        ref={fabRef}
-        type="button"
-        className="a11y-fab"
-        aria-label="Open accessibility options"
-        aria-expanded={open}
-        aria-controls="a11y-dialog"
-        onClick={() => setOpen((v) => !v)}
-        title="Accessibility options"
-      >
-        <AccessibilityGlyph />
-      </button>
+      {/* Floating action button. Suppressed in "controlled" mode -
+          the app surface uses the sidebar nav item to open the
+          dialog instead, so the workspace stays clean. */}
+      {mode === "fab" ? (
+        <button
+          ref={fabRef}
+          type="button"
+          className="a11y-fab"
+          aria-label="Open accessibility options"
+          aria-expanded={open}
+          aria-controls="a11y-dialog"
+          onClick={() => setOpen((v) => !v)}
+          title="Accessibility options"
+        >
+          <AccessibilityGlyph />
+        </button>
+      ) : null}
 
       {open ? (
         <>

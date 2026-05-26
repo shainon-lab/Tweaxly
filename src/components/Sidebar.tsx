@@ -12,10 +12,16 @@ import {
   CircleUser,
   Database,
   Shield,
+  Accessibility,
   type LucideIcon,
 } from "lucide-react";
 import Logo from "./Logo";
 import ThemeToggle from "./ThemeToggle";
+import {
+  onA11yWidgetToggle,
+  readA11yWidgetEnabled,
+  requestA11yWidgetOpen,
+} from "@/lib/a11y/visibilityStore";
 import BusinessSwitcher, { type SwitcherWorkspace } from "./BusinessSwitcher";
 import UsageModal from "./billing/UsageModal";
 import BellButton from "./notifications/BellButton";
@@ -78,6 +84,14 @@ export default function Sidebar({
   const path = usePathname();
   const hasCustomLogo = !!logoData;
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Accessibility-widget toggle. Drives whether the "Accessibility
+  // Widget" sidebar item shows below ThemeToggle. Default off per the
+  // spec; user opts in from Account Settings → Accessibility.
+  const [a11yEnabled, setA11yEnabled] = useState(false);
+  useEffect(() => {
+    setA11yEnabled(readA11yWidgetEnabled());
+    return onA11yWidgetToggle(({ enabled }) => setA11yEnabled(enabled));
+  }, []);
 
   // Close the drawer whenever the user navigates so it doesn't sit open
   // over the new page.
@@ -251,6 +265,21 @@ export default function Sidebar({
           ) : null}
         </nav>
         <ThemeToggle />
+        {/* Accessibility Widget entry. Only shows when the user has
+            opted in via Account Settings → Accessibility. Clicking
+            opens the controlled-mode accessibility dialog (no
+            floating FAB - the workspace stays clean by default). */}
+        {a11yEnabled ? (
+          <button
+            type="button"
+            onClick={() => { setMobileOpen(false); requestA11yWidgetOpen(); }}
+            className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-slate-300 hover:bg-accent-soft/40 hover:text-white transition border-t border-line"
+            aria-label="Open accessibility widget"
+          >
+            <Accessibility size={16} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
+            <span className="flex-1 text-left">Accessibility Widget</span>
+          </button>
+        ) : null}
         <form action="/logout" method="post" className="px-4 py-3 border-t border-line">
           <button className="btn-ghost w-full" type="submit">{t("common.signOut")}</button>
         </form>

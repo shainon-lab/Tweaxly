@@ -18,6 +18,11 @@ import CommunicationPreferences from "./CommunicationPreferences";
 import { WorkspaceCard, type WorkspaceCardData } from "../workspaces/WorkspaceCard";
 import NotificationsPane from "./NotificationsPane";
 import LoadingBar from "@/components/LoadingBar";
+import {
+  readA11yWidgetEnabled,
+  setA11yWidgetEnabled,
+  onA11yWidgetToggle,
+} from "@/lib/a11y/visibilityStore";
 
 type AccountSubTab =
   | "workspaces"
@@ -26,6 +31,7 @@ type AccountSubTab =
   | "password"
   | "preferences"
   | "communications"
+  | "accessibility"
   | "access_logs"
   | "close_account";
 
@@ -52,6 +58,7 @@ export default function AccountClient({
     { value: "password",      label: t("account.tab.password") },
     { value: "preferences",   label: t("account.tab.preferences") },
     { value: "communications", label: "Communication Preferences" },
+    { value: "accessibility", label: "Accessibility" },
     { value: "access_logs",   label: t("account.tab.accessLog") },
     { value: "close_account", label: t("account.tab.danger") },
   ];
@@ -87,6 +94,7 @@ export default function AccountClient({
         />
       ) : null}
       {tab === "communications" ? <CommunicationPreferences /> : null}
+      {tab === "accessibility" ? <AccessibilityPane /> : null}
       {tab === "access_logs"   ? <AccessLogsPane /> : null}
       {tab === "close_account" ? <CloseAccountPane /> : null}
     </>
@@ -441,6 +449,100 @@ function AccessLogsPane() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Accessibility pane. Today: a single toggle for the accessibility
+// widget that shows the floating tools menu inside the app. Designed
+// future-ready so native a11y controls (high-contrast / larger text /
+// reduced motion / etc.) can slot in alongside without restructuring
+// the tab. Persistence is browser-local for now via the visibility
+// store; a future enhancement can sync to a server-side user
+// preference column.
+function AccessibilityPane() {
+  const [enabled, setEnabled] = useState(false);
+  // Hydrate on mount to avoid the server/client mismatch around
+  // localStorage. The store fires a custom event on every change so
+  // we re-read here when other surfaces (sidebar) flip it too.
+  useEffect(() => {
+    setEnabled(readA11yWidgetEnabled());
+    return onA11yWidgetToggle(({ enabled }) => setEnabled(enabled));
+  }, []);
+
+  return (
+    <div className="space-y-4">
+      <div className="card">
+        <div className="font-medium mb-1">Accessibility</div>
+        <div className="text-sm text-slate-400 mb-5 leading-relaxed">
+          Tweaxly stays accessible by default — semantic HTML, keyboard
+          navigation, visible focus states, and proper labels are
+          maintained whether or not the widget below is on. The
+          accessibility widget is an optional enhancement layer that
+          exposes additional reading + interaction tools when you need
+          them.
+        </div>
+
+        <div className="flex items-start justify-between gap-4 py-3 border-t border-line">
+          <div className="min-w-0 flex-1">
+            <div className="text-sm font-medium text-slate-100">
+              Show accessibility widget in the interface
+            </div>
+            <div className="text-xs text-slate-400 mt-1 leading-relaxed">
+              Enable the accessibility tools menu inside the application
+              interface. When on, an &quot;Accessibility Widget&quot; item
+              appears in the sidebar, below the theme toggle. Click it
+              to open the panel and adjust contrast, font size, reading
+              tools, and more.
+            </div>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={enabled}
+            onClick={() => setA11yWidgetEnabled(!enabled)}
+            className={`shrink-0 relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+              enabled ? "bg-accent" : "bg-ink-700 border border-line"
+            }`}
+            aria-label="Show accessibility widget in the interface"
+          >
+            <span
+              aria-hidden="true"
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                enabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+      </div>
+
+      {/* Future-ready section. Native accessibility controls will land
+          here as separate toggles independent of the widget itself —
+          per the spec: high contrast, larger text, reduced motion,
+          readable font, focus highlight, comfortable spacing. Keep
+          the section visible (even with placeholder copy) so users
+          discover it's coming. */}
+      <div className="card">
+        <div className="font-medium mb-1">Native accessibility controls</div>
+        <div className="text-sm text-slate-400 mb-3 leading-relaxed">
+          Coming soon — adjust these directly without enabling the widget:
+        </div>
+        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-400">
+          {[
+            "High contrast mode",
+            "Larger text",
+            "Reduced motion",
+            "Readable font",
+            "Focus highlight",
+            "Comfortable spacing",
+          ].map((label) => (
+            <li key={label} className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-slate-600" aria-hidden="true" />
+              <span>{label}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
     </div>
   );
 }
