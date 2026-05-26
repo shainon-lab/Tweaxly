@@ -30,7 +30,7 @@ import {
   CUSTOM_PACK_MIN_CREDITS,
   normalizePlan,
 } from "@/lib/billing";
-import { POLAR_PROVIDER, type CheckoutMetadata } from "@/lib/billing/polar";
+import { POLAR_PROVIDER, polarEnv, type CheckoutMetadata } from "@/lib/billing/polar";
 import { recordAudit, type AuditAction } from "@/lib/audit";
 
 // Webhook helper: write an AuditLog row using the business owner as
@@ -77,7 +77,11 @@ function readMeta(meta: unknown): Partial<CheckoutMetadata> {
 }
 
 export async function POST(req: Request) {
-  const secret = process.env.POLAR_WEBHOOK_SECRET;
+  // Read the secret that matches the current Polar env. polarEnv()
+  // resolves to POLAR_WEBHOOK_SECRET_PROD when POLAR_ENV=production
+  // and POLAR_WEBHOOK_SECRET when sandbox — same pattern used by the
+  // access token and product ids.
+  const secret = polarEnv("POLAR_WEBHOOK_SECRET");
   if (!secret) {
     return NextResponse.json({ error: "webhook_secret_not_configured" }, { status: 500 });
   }

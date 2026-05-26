@@ -11,14 +11,19 @@
 //                                     are per-workspace, matching the
 //                                     in-product mental model.
 //
-// Required env vars:
-//   POLAR_ACCESS_TOKEN          - server-side org access token
-//   POLAR_WEBHOOK_SECRET        - shared secret for webhook signature verification
+// Required env vars (each has a `_PROD` twin used when POLAR_ENV=production
+// so the sandbox + production credentials can coexist on the same
+// deployment — sandbox values stay under the unsuffixed names for
+// local dev / preview, prod values live under the _PROD names so
+// Vercel doesn't ask you to overwrite the existing sandbox vars):
 //   POLAR_ENV                   - "sandbox" | "production" (defaults to sandbox)
-//   POLAR_PRODUCT_PRO_ID        - product id for the $49/mo Pro subscription
-//   POLAR_PRODUCT_PACK_100_ID   - product id for the +100 AI Credits pack
-//   POLAR_PRODUCT_PACK_500_ID   - product id for the +500 AI Credits pack
+//   POLAR_ACCESS_TOKEN[_PROD]   - server-side org access token
+//   POLAR_WEBHOOK_SECRET[_PROD] - shared secret for webhook signature verification
+//   POLAR_PRODUCT_PRO_ID[_PROD] - product id for the $49/mo Pro subscription
+//   POLAR_PRODUCT_PACK_<n>_ID[_PROD] - product id per AI-credit pack SKU
+//   POLAR_PRODUCT_PACK_CUSTOM_ID[_PROD] - product id for the custom-amount pack
 //   APP_URL                     - public app origin used for redirect URLs
+//                                 (one value; same for sandbox + prod)
 
 import { Polar } from "@polar-sh/sdk";
 import { HTTPClient } from "@polar-sh/sdk";
@@ -33,13 +38,32 @@ import { CREDIT_PACKS, CUSTOM_PACK_SKU } from "./plans";
 
 export const POLAR_PROVIDER = "polar" as const;
 
+// Returns true when the deployment is configured for the live Polar org.
+// Drives which set of credentials / product ids is read out of process.env.
+export function isPolarProduction(): boolean {
+  return process.env.POLAR_ENV === "production";
+}
+
+// Pick the right env var for the current Polar environment:
+//   sandbox    → process.env[base]
+//   production → process.env[base + "_PROD"] (with fallback to base)
+// The fallback exists so a deployment that hasn't migrated to the
+// _PROD-suffixed names yet still works after flipping POLAR_ENV — no
+// silent breakage on the migration window.
+export function polarEnv(baseName: string): string | undefined {
+  if (isPolarProduction()) {
+    return process.env[baseName + "_PROD"] ?? process.env[baseName];
+  }
+  return process.env[baseName];
+}
+
 // One shared client. Throws fast if the env isn't configured so a
 // stray UI button doesn't silently 500 in production.
 function getEnv(): { token: string; server: "sandbox" | "production"; appUrl: string } {
-  const token  = process.env.POLAR_ACCESS_TOKEN;
-  const server = process.env.POLAR_ENV === "production" ? "production" : "sandbox";
+  const token  = polarEnv("POLAR_ACCESS_TOKEN");
+  const server = isPolarProduction() ? "production" : "sandbox";
   const appUrl = process.env.APP_URL ?? "https://app.tweaxly.com";
-  if (!token) throw new Error("POLAR_ACCESS_TOKEN is not set");
+  if (!token) throw new Error(`POLAR_ACCESS_TOKEN${isPolarProduction() ? "_PROD" : ""} is not set`);
   return { token, server, appUrl };
 }
 
@@ -80,17 +104,17 @@ export function getPolar(): Polar {
 // POLAR_PRODUCT_PACK_<n>_ID env var alongside.
 export function getPackProductId(sku: string): string | null {
   if (sku === CUSTOM_PACK_SKU) {
-    return process.env.POLAR_PRODUCT_PACK_CUSTOM_ID ?? null;
+    return polarEnv("POLAR_PRODUCT_PACK_CUSTOM_ID") ?? null;
   }
   const pack = CREDIT_PACKS.find((p) => p.sku === sku);
   if (!pack) return null;
-  // pack_100 -> POLAR_PRODUCT_PACK_100_ID
+  // pack_100 -> POLAR_PRODUCT_PACK_100_ID (or _PROD variant in prod)
   const envKey = `POLAR_PRODUCT_PACK_${pack.sku.replace(/^pack_/, "")}_ID`;
-  return process.env[envKey] ?? null;
+  return polarEnv(envKey) ?? null;
 }
 
 export function getProProductId(): string | null {
-  return process.env.POLAR_PRODUCT_PRO_ID ?? null;
+  return polarEnv("POLAR_PRODUCT_PRO_ID") ?? null;
 }
 
 // ────────────────────────────────────────────────────────────────────
