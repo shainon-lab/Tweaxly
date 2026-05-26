@@ -16,7 +16,14 @@ export type AuditAction =
   | "impersonation.allow_writes"
   | "impersonation.deny_writes"
   | "account.status_change"
-  | "account.viewed";
+  | "account.viewed"
+  // Surfaced on the user's Account → Access Logs feed:
+  | "auth.logout"
+  | "data.upload"
+  | "source.created"
+  | "billing.subscription_created"
+  | "billing.subscription_updated"
+  | "billing.subscription_canceled";
 
 export async function recordAudit(input: {
   actorUserId: string;

@@ -31,6 +31,32 @@ import {
   normalizePlan,
 } from "@/lib/billing";
 import { POLAR_PROVIDER, type CheckoutMetadata } from "@/lib/billing/polar";
+import { recordAudit, type AuditAction } from "@/lib/audit";
+
+// Webhook helper: write an AuditLog row using the business owner as
+// the actor so the entry surfaces on the owner's Account → Access
+// Logs feed. Best-effort — failure here never blocks the webhook ack.
+async function recordSubscriptionAudit(
+  businessId: string,
+  action: AuditAction,
+  metadata: Record<string, unknown>,
+) {
+  try {
+    const biz = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { ownerId: true },
+    });
+    if (!biz) return;
+    await recordAudit({
+      actorUserId: biz.ownerId,
+      action,
+      targetBusinessId: businessId,
+      metadata,
+    });
+  } catch (err) {
+    console.error("[polar webhook] audit write failed", err);
+  }
+}
 
 // Polar requires the *raw* request body to verify the HMAC. Next 14
 // app router gives us req.text() which preserves it byte-for-byte.
@@ -94,9 +120,15 @@ export async function POST(req: Request) {
         };
         if (existingId) {
           await prisma.subscription.update({ where: { id: existingId }, data });
+          await recordSubscriptionAudit(meta.businessId, "billing.subscription_updated", {
+            plan: data.plan, externalSubscriptionId: sub.id, eventType: event.type,
+          });
         } else {
           await prisma.subscription.create({
             data: { businessId: meta.businessId, ...data },
+          });
+          await recordSubscriptionAudit(meta.businessId, "billing.subscription_created", {
+            plan: data.plan, externalSubscriptionId: sub.id, eventType: event.type,
           });
         }
         // Bootstrap the wallet + month's allowance immediately so the
@@ -118,6 +150,12 @@ export async function POST(req: Request) {
             status:             mapSubStatus(sub.status),
           },
         });
+        const meta = readMeta(sub.metadata);
+        if (meta.businessId) {
+          await recordSubscriptionAudit(meta.businessId, "billing.subscription_updated", {
+            externalSubscriptionId: sub.id, status: mapSubStatus(sub.status),
+          });
+        }
         break;
       }
 
@@ -133,6 +171,14 @@ export async function POST(req: Request) {
             cancelledAt:       event.type === "subscription.canceled" ? new Date() : null,
           },
         });
+        const meta = readMeta(sub.metadata);
+        if (meta.businessId) {
+          await recordSubscriptionAudit(
+            meta.businessId,
+            event.type === "subscription.canceled" ? "billing.subscription_canceled" : "billing.subscription_updated",
+            { externalSubscriptionId: sub.id, eventType: event.type },
+          );
+        }
         break;
       }
 

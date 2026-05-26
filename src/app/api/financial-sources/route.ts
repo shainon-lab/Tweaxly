@@ -4,6 +4,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { recordAudit } from "@/lib/audit";
 
 export const runtime = "nodejs";
 
@@ -51,7 +52,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const { business } = await requireBusiness();
+    const { business, user } = await requireBusiness();
     const body = await req.json();
     const name = String(body.name ?? "").trim();
     const type = String(body.type ?? "").trim();
@@ -73,6 +74,13 @@ export async function POST(req: NextRequest) {
     }
     const created = await prisma.financialSource.create({
       data: { businessId: business.id, name, type, currency, last4, startMonth },
+    });
+    await recordAudit({
+      actorUserId: user.id,
+      action: "source.created",
+      targetBusinessId: business.id,
+      metadata: { sourceId: created.id, name, type, currency, last4, startMonth },
+      request: req,
     });
     return NextResponse.json({ id: created.id, name: created.name });
   } catch (err) {

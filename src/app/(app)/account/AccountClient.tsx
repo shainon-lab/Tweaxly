@@ -10,7 +10,7 @@
 // billing (purchases, ledger, plan changes) lives inside each
 // workspace's own Settings → Business Profile.
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useT } from "@/lib/i18n/client";
 import { LanguagePreference } from "./LanguagePreference";
@@ -307,19 +307,139 @@ function PasswordPane({ user }: { user: { email: string; createdAt: string } }) 
   );
 }
 
+type AccessLogEntry = {
+  id:        string;
+  action:    string;
+  createdAt: string;
+  metadata:  Record<string, unknown> | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  businessId:   string | null;
+  businessName: string | null;
+};
+
+// Human-readable label + tone per audit/login action key. Anything not
+// listed falls back to the raw key with a neutral tone — so newly-added
+// action types still appear on the feed without code changes.
+const ACTION_LABELS: Record<string, { label: string; tone: "good" | "warn" | "bad" | "neutral" }> = {
+  "auth.login":                     { label: "Signed in",            tone: "good" },
+  "auth.login_failed":              { label: "Failed sign-in",       tone: "bad" },
+  "auth.logout":                    { label: "Signed out",           tone: "neutral" },
+  "data.upload":                    { label: "Uploaded data",        tone: "good" },
+  "source.created":                 { label: "Created source",       tone: "good" },
+  "billing.subscription_created":   { label: "Subscription started", tone: "good" },
+  "billing.subscription_updated":   { label: "Subscription updated", tone: "neutral" },
+  "billing.subscription_canceled":  { label: "Subscription canceled", tone: "warn" },
+  "account.status_change":          { label: "Account status changed", tone: "warn" },
+  "impersonation.enter":            { label: "Support session started", tone: "warn" },
+  "impersonation.exit":             { label: "Support session ended",   tone: "neutral" },
+};
+
+const TONE_CLASS: Record<"good" | "warn" | "bad" | "neutral", string> = {
+  good:    "text-good",
+  warn:    "text-warn",
+  bad:     "text-bad",
+  neutral: "text-slate-300",
+};
+
+function describeEntry(e: AccessLogEntry): string | null {
+  const m = e.metadata ?? {};
+  switch (e.action) {
+    case "data.upload": {
+      const filename = typeof m.filename === "string" ? m.filename : null;
+      const imported = typeof m.imported === "number" ? m.imported : null;
+      if (filename && imported != null) return `${filename} · ${imported} row${imported === 1 ? "" : "s"}`;
+      if (filename) return filename;
+      return null;
+    }
+    case "source.created": {
+      const name = typeof m.name === "string" ? m.name : null;
+      const type = typeof m.type === "string" ? m.type : null;
+      return [name, type].filter(Boolean).join(" · ") || null;
+    }
+    case "billing.subscription_created":
+    case "billing.subscription_updated":
+    case "billing.subscription_canceled": {
+      const plan = typeof m.plan === "string" ? m.plan : null;
+      return plan ? `Plan: ${plan}` : null;
+    }
+    case "auth.login":
+    case "auth.login_failed": {
+      const email = typeof m.email === "string" ? m.email : null;
+      return email;
+    }
+    default:
+      return null;
+  }
+}
+
 function AccessLogsPane() {
+  const [entries, setEntries] = useState<AccessLogEntry[] | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/account/access-logs");
+        const d = await r.json();
+        if (!cancelled) setEntries(d.entries ?? []);
+      } catch {
+        if (!cancelled) setEntries([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true };
+  }, []);
+
   return (
     <div className="card">
       <div className="font-medium mb-1">Access Logs</div>
       <div className="text-sm text-slate-400 mb-4 leading-relaxed">
-        Recent sign-ins and security events on your account.
+        Recent sign-ins, sign-outs, uploads, source changes, and billing events across your workspaces.
       </div>
-      <div className="rounded-xl border border-dashed border-line bg-ink-900/30 p-6 text-center">
-        <div className="text-sm font-medium text-slate-200 mb-1">Access log will appear here</div>
-        <div className="text-xs text-slate-400 max-w-md mx-auto">
-          We&apos;ll surface sign-in events, password changes, device fingerprints, and unusual-location alerts here as part of the production security release.
+      {loading ? (
+        <div className="text-sm text-slate-500 py-6 text-center">Loading…</div>
+      ) : entries && entries.length > 0 ? (
+        <table className="table-base">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Event</th>
+              <th>Detail</th>
+              <th>Workspace</th>
+              <th>IP</th>
+            </tr>
+          </thead>
+          <tbody>
+            {entries.map((e) => {
+              const def = ACTION_LABELS[e.action] ?? { label: e.action, tone: "neutral" as const };
+              const detail = describeEntry(e);
+              return (
+                <tr key={e.id}>
+                  <td className="text-slate-400 text-xs whitespace-nowrap">
+                    {new Date(e.createdAt).toLocaleString()}
+                  </td>
+                  <td className={`text-xs font-medium ${TONE_CLASS[def.tone]}`}>{def.label}</td>
+                  <td className="text-slate-300 text-xs max-w-[280px]">
+                    <span className="line-clamp-2">{detail ?? "—"}</span>
+                  </td>
+                  <td className="text-slate-400 text-xs whitespace-nowrap">{e.businessName ?? "—"}</td>
+                  <td className="text-slate-500 text-xs font-mono">{e.ipAddress ?? "—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      ) : (
+        <div className="rounded-xl border border-dashed border-line bg-ink-900/30 p-6 text-center">
+          <div className="text-sm font-medium text-slate-200 mb-1">No activity recorded yet</div>
+          <div className="text-xs text-slate-400 max-w-md mx-auto">
+            Sign-ins, uploads, source changes, and billing events will appear here as you use the platform.
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

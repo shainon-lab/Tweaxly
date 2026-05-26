@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
+import { recordAudit } from "@/lib/audit";
 import { prisma } from "@/lib/db";
 import { normalizeRow, type ColumnMapping } from "@/lib/normalize";
 import { findApplicableRule, findApplicableVendorRule } from "@/lib/categorize";
@@ -62,7 +63,7 @@ function normalizeName(raw: string): string {
 }
 
 export async function POST(req: NextRequest) {
-  const { business } = await requireBusiness();
+  const { business, user } = await requireBusiness();
   const body = (await req.json()) as Body;
   if (!body.mapping?.amount) {
     return NextResponse.json({ error: "Amount column is required." }, { status: 400 });
@@ -596,6 +597,23 @@ export async function POST(req: NextRequest) {
   } catch (err) {
     console.error("[/api/upload/commit] settlement detection failed", err);
   }
+
+  // Audit feed entry for the Account → Access Logs surface.
+  await recordAudit({
+    actorUserId: user.id,
+    action: "data.upload",
+    targetBusinessId: business.id,
+    metadata: {
+      filename: body.filename,
+      source: body.source,
+      rowCount: body.rows.length,
+      imported: created.length,
+      periodStart,
+      periodEnd,
+      replaced: body.replaceBatchIds?.length ?? 0,
+    },
+    request: req,
+  });
 
   return NextResponse.json({
     imported: created.length,
