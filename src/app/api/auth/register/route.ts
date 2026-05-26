@@ -17,6 +17,7 @@ import {
   generateUnsubscribeToken, MARKETING_POLICY_VERSION,
 } from "@/lib/communications";
 import { recordAudit } from "@/lib/audit";
+import { generateAndStoreVerificationToken, sendVerificationEmail } from "@/lib/auth/verification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -148,6 +149,28 @@ export async function POST(req: NextRequest) {
     },
     request: req,
   });
+
+  // Fire-and-forget verification email. The user is logged in and
+  // dropped into onboarding regardless of whether the email lands -
+  // the spec mandates partial access without a hard verification
+  // wall. We swallow errors so a Resend outage / quota issue never
+  // blocks signup.
+  try {
+    const token = await generateAndStoreVerificationToken(user.id);
+    const result = await sendVerificationEmail({
+      to:    user.email,
+      name:  user.name,
+      token,
+    });
+    await recordAudit({
+      actorUserId: user.id,
+      action:      "auth.verification_email_sent",
+      metadata:    { trigger: "signup", ok: result.ok, error: result.error ?? null },
+      request:     req,
+    });
+  } catch (err) {
+    console.error("[register] verification email failed", err);
+  }
 
   // Drop the new user into the adaptive onboarding wizard, which
   // ends by routing them to /manual-data (Import Your Business Data)

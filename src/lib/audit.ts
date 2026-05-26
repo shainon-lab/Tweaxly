@@ -19,6 +19,9 @@ export type AuditAction =
   | "account.viewed"
   // Surfaced on the user's Account → Access Logs feed:
   | "auth.logout"
+  | "auth.verification_email_sent"
+  | "auth.email_verified"
+  | "auth.verification_failed"
   | "data.upload"
   | "source.created"
   | "billing.subscription_created"

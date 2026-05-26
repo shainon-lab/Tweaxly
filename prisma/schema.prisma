@@ -23,6 +23,23 @@ model User {
   // Stamped on every successful /api/auth/login. Drives 'last login'
   // columns in the admin Customer 360.
   lastLoginAt               DateTime?
+  // ── Email verification ────────────────────────────────────────────
+  // Stamped once when the user clicks the verification link in the
+  // welcome email. Null = not verified yet. Drives the persistent
+  // "verify your email" banner inside the app + (future) gating of
+  // premium features once the grace period expires.
+  emailVerified                DateTime?
+  // Hashed verification token (SHA-256). The plaintext token lives
+  // ONLY in the email body + the verify-email URL. We store the hash
+  // so a database leak doesn't compromise verification flows. Cleared
+  // after a successful verification.
+  emailVerificationTokenHash   String?
+  // 24-hour token expiry. After this, the token is rejected and the
+  // user has to hit Resend to get a fresh one.
+  emailVerificationExpiresAt   DateTime?
+  // Stamped every time we send a verification email. Used for the
+  // 60-second resend cooldown enforced server-side.
+  emailVerificationSentAt      DateTime?
   // BCP-47 / two-letter language code for the UI. 'en' = English,
   // 'he' = Hebrew (RTL). Falls back to 'en' for any locale missing
   // from the dictionary.

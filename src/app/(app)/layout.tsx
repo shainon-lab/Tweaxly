@@ -3,6 +3,7 @@ import Sidebar from "@/components/Sidebar";
 import GlobalConsult from "@/components/GlobalConsult";
 import ImpersonationBanner from "@/components/ImpersonationBanner";
 import BillingStatusBanner from "@/components/BillingStatusBanner";
+import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { NotificationCenterProvider } from "@/components/notifications/NotificationCenterContext";
 import NotificationCenterMount from "@/components/notifications/NotificationCenterMount";
 import { requireBusiness } from "@/lib/auth";
@@ -108,6 +109,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           allowWrites={impersonationAllowWrites}
         />
       ) : null}
+      {/* Email-verification banner - persistent (no dismiss) until the
+          user clicks the link in the welcome email. Sits above the
+          billing banner so the most-recent + most-actionable nudge
+          is highest. Auto-disappears once `user.emailVerified` is
+          stamped by the verification flow. */}
+      {!user.emailVerified ? (
+        <EmailVerificationBanner email={user.email} />
+      ) : null}
+
       {/* Billing status - read-only banner or out-of-credits notice.
           Renders null when the workspace is healthy. */}
       <BillingStatusBanner
