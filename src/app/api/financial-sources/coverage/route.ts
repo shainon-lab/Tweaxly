@@ -18,8 +18,15 @@ function numToYm(n: number): string {
   const m = (n % 12) + 1;
   return `${y}-${String(m).padStart(2, "0")}`;
 }
-function currentYm(): string {
+// The coverage matrix stops at the previous full month, NOT the
+// in-progress current month. Statements / exports only exist after a
+// month closes, so flagging the current month as "missing" would be a
+// false alarm. Matches the same convention the health-score endpoint
+// uses.
+function previousFullYm(): string {
   const d = new Date();
+  d.setUTCDate(1);
+  d.setUTCMonth(d.getUTCMonth() - 1);
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
@@ -48,15 +55,22 @@ export async function GET() {
     }),
   ]);
 
-  // Determine the full month axis: earliest startMonth across all sources
-  // to the current month, inclusive. Capped at 36 months to keep the
-  // grid manageable on the UI.
-  const nowN = ymToNum(currentYm());
-  let earliest = nowN;
+  // Determine the full month axis: earliest startMonth across all
+  // sources to the previous full month, inclusive. The current
+  // in-progress month is intentionally excluded — statements only land
+  // after a month closes. Capped at 36 months to keep the grid
+  // manageable on the UI.
+  const endN = ymToNum(previousFullYm());
+  let earliest = endN;
   for (const s of sources) earliest = Math.min(earliest, ymToNum(s.startMonth));
-  const start = Math.max(earliest, nowN - 35);
+  const start = Math.max(earliest, endN - 35);
   const months: string[] = [];
-  for (let n = start; n <= nowN; n++) months.push(numToYm(n));
+  // Guard against the edge case where every active source's startMonth
+  // is the current (or future) month — then there are no past months
+  // to render yet and we return an empty axis.
+  if (start <= endN) {
+    for (let n = start; n <= endN; n++) months.push(numToYm(n));
+  }
 
   // Index batches by (sourceId, ym).
   const cells: Record<string, Record<string, { batches: number; filenames: string[] }>> = {};
