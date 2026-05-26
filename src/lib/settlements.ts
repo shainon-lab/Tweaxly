@@ -34,29 +34,36 @@ const TOLERANCE_ABS   = 1.0;
 const SCAN_WINDOW_DAYS = 90;
 
 // Description keywords that hint a bank-side row is a card payment.
-// Order matters for `firstMatch`-style logging only.
-const CARD_HINTS = [
-  /visa/i,
-  /master\s*card/i,
-  /mastercard/i,
-  /amex/i,
-  /american\s*express/i,
-  /isracard/i,
-  /diners/i,
-  /credit\s*card/i,
-  /card\s*payment/i,
-  /ויזה/,
-  /מסטרקארד/,
-  /אמקס/,
-  /אמריקן\s*אקספרס/,
-  /ישראכרט/,
-  /דיינרס/,
-  /כרטיס\s*אשראי/,
+// Order matters for `firstMatch`-style logging only. The corresponding
+// brand label is used by the upload-card-statement recommendation
+// surfaced on the dashboard.
+const CARD_HINTS: { re: RegExp; label: string }[] = [
+  { re: /visa/i,                  label: "Visa" },
+  { re: /master\s*card/i,         label: "Mastercard" },
+  { re: /mastercard/i,            label: "Mastercard" },
+  { re: /amex/i,                  label: "Amex" },
+  { re: /american\s*express/i,    label: "Amex" },
+  { re: /isracard/i,              label: "Isracard" },
+  { re: /diners/i,                label: "Diners" },
+  { re: /\bmax\b/i,               label: "MAX" },
+  { re: /max\s*it/i,              label: "MAX" },
+  { re: /\bcal\b/i,               label: "Cal" },
+  { re: /leumi\s*card/i,          label: "Leumi Card" },
+  { re: /credit\s*card/i,         label: "Credit card" },
+  { re: /card\s*payment/i,        label: "Credit card" },
+  { re: /ויזה/,                   label: "Visa" },
+  { re: /מסטרקארד/,               label: "Mastercard" },
+  { re: /אמקס/,                   label: "Amex" },
+  { re: /אמריקן\s*אקספרס/,        label: "Amex" },
+  { re: /ישראכרט/,                label: "Isracard" },
+  { re: /דיינרס/,                 label: "Diners" },
+  { re: /מקס/,                    label: "MAX" },
+  { re: /כרטיס\s*אשראי/,          label: "Credit card" },
 ];
 
-const PAYPAL_HINTS = [
-  /paypal/i,
-  /פייפאל/,
+const PAYPAL_HINTS: { re: RegExp; label: string }[] = [
+  { re: /paypal/i,  label: "PayPal" },
+  { re: /פייפאל/,   label: "PayPal" },
 ];
 
 export type SettlementMatch = {
@@ -147,8 +154,8 @@ export async function detectSettlements(businessId: string): Promise<SettlementM
     if (t.type === "credit_card_settlement" || t.type === "paypal_settlement") continue; // already classified
     if (t.isExcludedFromPnl) continue;
     const desc = `${t.vendor ?? ""} ${t.description ?? ""}`.trim();
-    const isCardHint   = CARD_HINTS.some((re) => re.test(desc));
-    const isPayPalHint = PAYPAL_HINTS.some((re) => re.test(desc));
+    const isCardHint   = CARD_HINTS.some(({ re }) => re.test(desc));
+    const isPayPalHint = PAYPAL_HINTS.some(({ re }) => re.test(desc));
     // Look for an explicit name/last4 match against a card/paypal source
     // — catches files where the bank labels the row "MASTERCARD 1234".
     const nameMatch = [...cardSources, ...paypalSources].find((s) =>
@@ -558,4 +565,83 @@ function shiftYm(ym: string, by: number): string {
 }
 function escapeRegex(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+// ─── Pre-emptive scan for the "upload your credit card" recommendation ─
+// Powers the dashboard recommendation card that nudges bank-only
+// workspaces to upload card statements too. Counts bank-side outflows
+// whose description matches a card/paypal brand hint, even when the
+// user hasn't created a credit-card source yet. Returns null when
+// there's nothing to recommend (no bank source, or no candidates).
+
+export type BankCardSignals = {
+  hasBankSource:     boolean;
+  hasCardSource:     boolean;
+  hasPaypalSource:   boolean;
+  cardCandidates:    number;
+  paypalCandidates:  number;
+  // Distinct brand labels detected ("Visa", "MAX", "Isracard"…), in
+  // descending frequency. Capped at 4 for UI brevity.
+  detectedBrands:    string[];
+};
+
+export async function scanBankCardSignals(businessId: string): Promise<BankCardSignals> {
+  const [sources, txns] = await Promise.all([
+    prisma.financialSource.findMany({
+      where: { businessId, status: "active" },
+      select: { id: true, type: true },
+    }),
+    prisma.transaction.findMany({
+      where: {
+        businessId,
+        amount: { lt: 0 },
+        isExcludedFromPnl: false,
+        transactionDate: { gte: new Date(Date.now() - SCAN_WINDOW_DAYS * 86400_000) },
+      },
+      select: { source: true, vendor: true, description: true, type: true },
+    }),
+  ]);
+
+  const hasBankSource   = sources.some((s) => s.type === "bank");
+  const hasCardSource   = sources.some((s) => s.type === "credit_card");
+  const hasPaypalSource = sources.some((s) => s.type === "paypal");
+
+  // Tally hits per brand label, deduping by regex group.
+  const brandCounts = new Map<string, number>();
+  let cardCandidates = 0;
+  let paypalCandidates = 0;
+  for (const t of txns) {
+    // Skip rows already classified as settlements (avoids double-counting
+    // when the matched flow already replaced them).
+    if (t.type === "credit_card_settlement" || t.type === "paypal_settlement") continue;
+    // Only bank-side rows are candidates — uploads to a card source
+    // shouldn't trigger the "upload your card" nudge.
+    if (t.source !== "bank") continue;
+    const desc = `${t.vendor ?? ""} ${t.description ?? ""}`.trim();
+    if (!desc) continue;
+    const cardHit = CARD_HINTS.find(({ re }) => re.test(desc));
+    if (cardHit) {
+      cardCandidates++;
+      brandCounts.set(cardHit.label, (brandCounts.get(cardHit.label) ?? 0) + 1);
+      continue;
+    }
+    const paypalHit = PAYPAL_HINTS.find(({ re }) => re.test(desc));
+    if (paypalHit) {
+      paypalCandidates++;
+      brandCounts.set(paypalHit.label, (brandCounts.get(paypalHit.label) ?? 0) + 1);
+    }
+  }
+  const detectedBrands = Array.from(brandCounts.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([label]) => label);
+
+  return {
+    hasBankSource,
+    hasCardSource,
+    hasPaypalSource,
+    cardCandidates,
+    paypalCandidates,
+    detectedBrands,
+  };
 }

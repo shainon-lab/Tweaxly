@@ -4,6 +4,9 @@ import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryStream, { ExecutiveSummarySkeleton } from "./ExecutiveSummaryStream";
 import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
+import CardUploadRecommendation from "@/components/CardUploadRecommendation";
+import IntelligenceModeBadge from "@/components/IntelligenceModeBadge";
+import { scanBankCardSignals } from "@/lib/settlements";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import GetStartedBanner from "@/components/sources/GetStartedBanner";
 import PreviousMonthCatchUp from "@/components/sources/PreviousMonthCatchUp";
@@ -136,6 +139,11 @@ export default async function DashboardPage({
     where: { businessId: business.id },
   });
   const empty = totalTxnCount === 0;
+  // Pre-emptive scan for card / PayPal settlement charges in bank
+  // activity. Powers the "Unlock detailed credit-card analysis"
+  // recommendation card when the workspace has bank data but no card
+  // / paypal source. Cheap query; only runs when we already have data.
+  const cardSignals = empty ? null : await scanBankCardSignals(business.id);
 
   // The AI-generated executive narrative is rendered via a separate
   // streaming server component wrapped in <Suspense> below. That call
@@ -183,6 +191,16 @@ export default async function DashboardPage({
         />
       ) : null}
 
+      {/* Intelligence-mode badge sits right under the header so the
+          owner sees which mode the platform is operating in. Hidden
+          when the workspace has no bank source yet (the empty state
+          below already explains what's required). */}
+      {!empty && cardSignals ? (
+        <div className="mb-3 -mt-2">
+          <IntelligenceModeBadge signals={cardSignals} />
+        </div>
+      ) : null}
+
       {empty ? (
         <BankIntelligenceEmptyState surface="dashboard" />
       ) : (
@@ -221,6 +239,7 @@ export default async function DashboardPage({
             <GetStartedBanner />
             <ReviewBanner businessId={business.id} surface="dashboard" />
             <HealthScoreWidget variant="compact" />
+            {cardSignals ? <CardUploadRecommendation signals={cardSignals} /> : null}
           </div>
 
           {/* All Overview tiles share a single StatGroup so opening one
