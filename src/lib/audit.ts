@@ -22,6 +22,7 @@ export type AuditAction =
   | "auth.verification_email_sent"
   | "auth.email_verified"
   | "auth.verification_failed"
+  | "auth.google_link"
   | "data.upload"
   | "source.created"
   | "billing.subscription_created"

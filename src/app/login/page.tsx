@@ -5,7 +5,20 @@
 import Link from "next/link";
 import Logo from "@/components/Logo";
 import PasswordInput from "@/components/PasswordInput";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 import { getServerT } from "@/lib/i18n/server";
+
+// Error codes that arrive on /login?err=… from auth route bounces.
+// Mapped to plain-English copy so the user sees something actionable
+// instead of a slug.
+const ERROR_COPY: Record<string, string> = {
+  google_unavailable:      "Google sign-in is not configured. Use email and password.",
+  google_canceled:         "Google sign-in was canceled. Try again or use email and password.",
+  google_missing_params:   "Google didn't return the expected response. Please try again.",
+  google_state_mismatch:   "The sign-in link expired. Please try again.",
+  google_exchange_failed:  "Google sign-in failed midway. Please try again.",
+  google_email_unverified: "The Google account's email isn't verified. Verify it in Google first, then retry.",
+};
 
 export default async function LoginPage({
   searchParams,
@@ -25,9 +38,19 @@ export default async function LoginPage({
         ) : null}
         {err ? (
           <div className="mb-4 rounded-md border border-bad/40 bg-bad/10 text-bad text-sm px-3 py-2">
-            {t("auth.invalidCredentials")}
+            {ERROR_COPY[err] ?? t("auth.invalidCredentials")}
           </div>
         ) : null}
+
+        {/* "Continue with Google" sits above the form per the auth
+            spec. Same endpoint handles signup + login transparently. */}
+        <GoogleSignInButton />
+        <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-slate-500">
+          <span className="flex-1 h-px bg-line" aria-hidden="true" />
+          <span>or</span>
+          <span className="flex-1 h-px bg-line" aria-hidden="true" />
+        </div>
+
         <form action="/api/auth/login" method="post" className="space-y-4">
           <div>
             <label className="label">{t("common.email")}</label>

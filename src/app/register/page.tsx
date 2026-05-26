@@ -2,6 +2,7 @@ import Link from "next/link";
 import Logo from "@/components/Logo";
 import { getServerT } from "@/lib/i18n/server";
 import RegisterForm from "./RegisterForm";
+import GoogleSignInButton from "@/components/auth/GoogleSignInButton";
 
 export default async function RegisterPage({
   searchParams,
@@ -34,6 +35,16 @@ export default async function RegisterPage({
             ) : null}
           </div>
         ) : null}
+        {/* "Continue with Google" sits above the form per the auth
+            spec. Google flow auto-verifies the email so the user
+            skips the welcome-email step entirely. */}
+        <GoogleSignInButton />
+        <div className="my-4 flex items-center gap-3 text-[11px] uppercase tracking-wider text-slate-500">
+          <span className="flex-1 h-px bg-line" aria-hidden="true" />
+          <span>or</span>
+          <span className="flex-1 h-px bg-line" aria-hidden="true" />
+        </div>
+
         <RegisterForm
           labels={{
             businessName: t("auth.businessName"),

@@ -40,6 +40,16 @@ model User {
   // Stamped every time we send a verification email. Used for the
   // 60-second resend cooldown enforced server-side.
   emailVerificationSentAt      DateTime?
+  // ── Google OAuth ──────────────────────────────────────────────────
+  // Google's stable "sub" claim - never email, never display name.
+  // Unique so we can look up an existing Google-linked user by it,
+  // and so account-linking can detect collisions. Null for users
+  // who only signed in via email/password.
+  googleId                     String? @unique
+  // Snapshot of the user's Google profile picture URL captured at
+  // first sign-in. Optional - the UI uses it where useful (workspace
+  // switcher initials, etc.) and falls back to initials when null.
+  avatarUrl                    String?
   // BCP-47 / two-letter language code for the UI. 'en' = English,
   // 'he' = Hebrew (RTL). Falls back to 'en' for any locale missing
   // from the dictionary.
