@@ -41,6 +41,7 @@ import { type RosterMember } from "./ScenarioBuilder";
 import ScenarioBuilderPanel from "./ScenarioBuilderPanel";
 import ScenarioBuilderTrigger from "./ScenarioBuilderTrigger";
 import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
+import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
   return (
@@ -120,7 +121,7 @@ export default async function ForecastPage({
     horizon.months <= 6  ? "6m" as const :
     horizon.months <= 12 ? "12m" as const : "24m" as const;
 
-  const [baseline, assumptionRows, employees] = await Promise.all([
+  const [baseline, assumptionRows, employees, totalTxnCount] = await Promise.all([
     loadBaseline(business.id, range.fromYM, range.toYM, range.label),
     prisma.forecastAssumption.findMany({
       where: { businessId: business.id },
@@ -130,7 +131,13 @@ export default async function ForecastPage({
       where: { businessId: business.id },
       orderBy: { name: "asc" },
     }),
+    prisma.transaction.count({ where: { businessId: business.id } }),
   ]);
+  // True empty state — no transactions of any kind. Replaces the
+  // "Forecast unavailable" technical card with the platform-wide
+  // bank-intelligence empty state, so this surface speaks the same
+  // language as Dashboard / Insights / Consultation.
+  const isEmpty = totalTxnCount === 0;
 
   // The Scenario Builder uses this roster to constrain "Terminate employee",
   // "Remove contractor", and the "Specific employee" salary-increase mode -
@@ -268,14 +275,12 @@ export default async function ForecastPage({
 
       {scenariosBare ? null : (<>
 
-      {/* When the engine reports the forecast is unavailable (custom
-          range under 90 days, missing dates, empty range, or
-          insufficient history), render ONLY the prominent
-          unavailable card and suppress everything else - readiness
-          banner, explanation panel, KPIs, chart, table, insights.
-          The user sees one clear message and immediately understands
-          they need to pick a different historical period. */}
-      {!engineResult.ok ? (
+      {/* No transactions at all → platform-wide empty state. Replaces
+          the technical "Forecast unavailable" card and points the user
+          directly at the bank upload flow with consistent copy. */}
+      {isEmpty ? (
+        <BankIntelligenceEmptyState surface="forecast" />
+      ) : !engineResult.ok ? (
         <div className="card mb-6 border-warn/40 bg-warn/10 px-6 py-8">
           <div className="text-base font-semibold text-warn mb-2 uppercase tracking-wide">
             Forecast unavailable

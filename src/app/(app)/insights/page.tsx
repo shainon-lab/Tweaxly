@@ -2,7 +2,9 @@ import PageHeader from "@/components/PageHeader";
 import ReportsTabs from "@/components/ReportsTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
+import { prisma } from "@/lib/db";
 import DashboardInsights from "../dashboard/DashboardInsights";
+import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
 
 // "Charts" tab in the Reports umbrella. Renders the seven-chart period
 // grid (Trend, Cash flow, Top expense categories, Revenue channel,
@@ -22,6 +24,9 @@ export default async function ChartsPage({
   const { business } = await requireBusiness();
   const { t } = await getServerT();
   const sp = await searchParams;
+  const totalTxnCount = await prisma.transaction.count({
+    where: { businessId: business.id },
+  });
   return (
     <>
       <PageHeader
@@ -29,14 +34,18 @@ export default async function ChartsPage({
         subtitle={t("page.charts.subtitle")}
       />
       <ReportsTabs />
-      <DashboardInsights
-        businessId={business.id}
-        currency={business.currency}
-        granularity={sp.insights_gran}
-        anchor={sp.insights_period}
-        from={sp.insights_from}
-        to={sp.insights_to}
-      />
+      {totalTxnCount === 0 ? (
+        <BankIntelligenceEmptyState surface="insights" />
+      ) : (
+        <DashboardInsights
+          businessId={business.id}
+          currency={business.currency}
+          granularity={sp.insights_gran}
+          anchor={sp.insights_period}
+          from={sp.insights_from}
+          to={sp.insights_to}
+        />
+      )}
     </>
   );
 }

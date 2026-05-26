@@ -1,22 +1,15 @@
 // POST /api/onboarding/save
-//   body: { businessName, businessFormat, currency, country, industry,
-//           businessStage, hasAnnualReports?, paysSalaries?, goals[] }
+//   body: { businessName, currency, country?, fiscalStartMonth? }
 //
-// Persists every field collected by the adaptive onboarding wizard
-// onto the user's current Business, and stamps onboardedAt to mark
-// the wizard complete. Goals are stored as a comma-joined string in
-// Business.goals; downstream readers split on comma.
+// Persists the business basics collected by the trimmed onboarding
+// wizard and stamps onboardedAt to mark the wizard complete. Stage /
+// payroll / goals / Business DNA moved out of the critical path —
+// users can fill those in later via Settings without blocking entry.
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireBusiness } from "@/lib/auth";
 import { isRegionCode } from "@/lib/regions";
-
-const ALLOWED_STAGES  = new Set(["new", "growing", "established"]);
-const ALLOWED_FORMATS = new Set(["sole_prop", "llc", "partnership", "other"]);
-const ALLOWED_GOALS = new Set([
-  "profitability", "expenses", "cashflow", "trends", "growth", "certainty",
-]);
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,14 +19,9 @@ export async function POST(req: Request) {
 
   let body: {
     businessName?: string;
-    businessFormat?: string;
     currency?: string;
     country?: string;
-    industry?: string;
-    businessStage?: string;
-    hasAnnualReports?: boolean | null;
-    paysSalaries?: boolean | null;
-    goals?: string[];
+    fiscalStartMonth?: number;
   };
   try { body = await req.json(); } catch { return NextResponse.json({ error: "invalid_json" }, { status: 400 }); }
 
@@ -41,32 +29,14 @@ export async function POST(req: Request) {
   if (body.businessName && body.businessName.trim()) {
     data.name = body.businessName.trim().slice(0, 120);
   }
-  if (body.businessFormat && ALLOWED_FORMATS.has(body.businessFormat)) {
-    data.businessFormat = body.businessFormat;
-  }
   if (body.currency && /^[A-Z]{3}$/.test(body.currency)) {
     data.currency = body.currency;
   }
   if (body.country && isRegionCode(body.country)) {
     data.country = body.country;
   }
-  if (body.industry && typeof body.industry === "string") {
-    const v = body.industry.trim();
-    data.industry = v ? v.slice(0, 80) : null;
-  }
-  if (body.businessStage && ALLOWED_STAGES.has(body.businessStage)) {
-    data.businessStage = body.businessStage;
-  }
-  if (body.hasAnnualReports === true || body.hasAnnualReports === false) {
-    data.hasAnnualReports = body.hasAnnualReports;
-  }
-  if (body.paysSalaries === true || body.paysSalaries === false) {
-    data.paysSalaries = body.paysSalaries;
-  }
-  if (Array.isArray(body.goals)) {
-    const cleaned = body.goals
-      .filter((g): g is string => typeof g === "string" && ALLOWED_GOALS.has(g));
-    data.goals = cleaned.length ? cleaned.join(",") : null;
+  if (typeof body.fiscalStartMonth === "number" && body.fiscalStartMonth >= 1 && body.fiscalStartMonth <= 12) {
+    data.fiscalStartMonth = body.fiscalStartMonth;
   }
 
   data.onboardedAt = new Date();

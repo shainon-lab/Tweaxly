@@ -1,12 +1,23 @@
 "use client";
 
-// Adaptive onboarding wizard. The whole experience is a single client
-// component so transitions stay snappy (no full page reloads between
-// steps). Saves once at the end via /api/onboarding/save, then sends
-// the user to /manual-data (Import Your Business Data).
+// Onboarding wizard — three steps, optimized for Time To First Value.
+//
+//   0. Welcome — what Tweaxly does, in one sentence.
+//   1. Business basics — name, country, base currency, fiscal year
+//      (fiscal optional, defaults to January, editable in Settings).
+//   2. Data intro — "Start with your bank account." User can either
+//      jump into the upload flow OR skip and enter the product. If
+//      they skip, every analytics surface renders an empty-state card
+//      pointing them back at the bank upload.
+//
+// What we removed vs the old flow: business stage, financial-history
+// Y/N, payroll Y/N, goals multi-select, and the 8-step Business DNA
+// wizard. Those used to be required to reach the dashboard; they're
+// now post-signup polish that lives in Settings → Business Profile
+// for users who want deeper personalization.
 
 import { useState } from "react";
-import { ArrowRight, Sparkles, Building2, TrendingUp, Target, FileSpreadsheet } from "lucide-react";
+import { ArrowRight, Sparkles, Building2, Upload } from "lucide-react";
 import Logo from "@/components/Logo";
 import { REGIONS } from "@/lib/regions";
 
@@ -15,50 +26,20 @@ type Business = {
   name: string;
   currency: string;
   country: string | null;
-  industry: string | null;
-  businessFormat: string | null;
-  businessStage: string | null;
-  hasAnnualReports: boolean | null;
-  paysSalaries: boolean | null;
-  goals: string | null;
+  fiscalStartMonth: number;
 };
 
-type Stage = "new" | "growing" | "established";
-type Format = "sole_prop" | "llc" | "partnership" | "other";
-
-const FORMATS: { value: Format; label: string; hint: string }[] = [
-  { value: "sole_prop",   label: "Sole Proprietor / Freelancer", hint: "It's just you." },
-  { value: "llc",         label: "LLC / Company",                hint: "Registered legal entity." },
-  { value: "partnership", label: "Partnership",                  hint: "Two or more owners." },
-];
-
-const STAGES: { value: Stage; title: string; hint: string }[] = [
-  { value: "new",         title: "New Business",         hint: "No annual financial reports yet." },
-  { value: "growing",     title: "Growing Business",     hint: "Existing activity with some financial history." },
-  { value: "established", title: "Established Business", hint: "Multiple years of financial activity and reports." },
-];
-
-const GOALS: { value: string; label: string }[] = [
-  { value: "profitability", label: "Improve profitability" },
-  { value: "expenses",      label: "Control expenses" },
-  { value: "cashflow",      label: "Forecast cash flow" },
-  { value: "trends",        label: "Understand business trends" },
-  { value: "growth",        label: "Prepare for growth" },
-  { value: "certainty",     label: "Reduce uncertainty" },
-];
-
 const CURRENCIES = ["USD", "EUR", "GBP", "ILS", "CAD", "AUD", "INR", "JPY", "CHF", "BRL", "MXN", "SGD"];
+const MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December",
+];
 
 type Form = {
   businessName: string;
-  businessFormat: Format | "";
-  currency: string;
-  country: string;
-  industry: string;
-  businessStage: Stage | "";
-  hasAnnualReports: boolean | null;
-  paysSalaries: boolean | null;
-  goals: string[];
+  currency:     string;
+  country:      string;
+  fiscalStartMonth: number;
 };
 
 export function OnboardingClient({
@@ -69,52 +50,19 @@ export function OnboardingClient({
   detectedCountry: string | null;
 }) {
   const [form, setForm] = useState<Form>({
-    businessName:     business.name,
-    businessFormat:   (business.businessFormat as Format | null) ?? "",
-    currency:         business.currency || "USD",
-    country:          business.country ?? detectedCountry ?? "",
-    industry:         business.industry ?? "",
-    businessStage:    (business.businessStage as Stage | null) ?? "",
-    hasAnnualReports: business.hasAnnualReports,
-    paysSalaries:     business.paysSalaries,
-    goals:            business.goals ? business.goals.split(",").filter(Boolean) : [],
+    businessName: business.name,
+    currency:     business.currency || "USD",
+    country:      business.country ?? detectedCountry ?? "",
+    fiscalStartMonth: business.fiscalStartMonth || 1,
   });
 
-  // Steps:
-  //   0 welcome
-  //   1 basics
-  //   2 stage
-  //   3 financial history (skipped if stage='new')
-  //   4 payroll
-  //   5 goals
-  //   6 wrap → demo or save
   const [step, setStep] = useState<number>(0);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Adaptive: New Business skips financial history.
-  function nextStep() {
-    setError(null);
-    let next = step + 1;
-    if (next === 3 && form.businessStage === "new") next = 4;
-    setStep(next);
-  }
-  function prevStep() {
-    setError(null);
-    let next = step - 1;
-    if (next === 3 && form.businessStage === "new") next = 2;
-    setStep(Math.max(0, next));
-  }
-
-  function toggleGoal(g: string) {
-    setForm((f) => ({
-      ...f,
-      goals: f.goals.includes(g) ? f.goals.filter((x) => x !== g) : [...f.goals, g],
-    }));
-  }
-
-  async function finish() {
-    setBusy(true);
+  // Persists the business basics. Always called before we leave step 1
+  // so the workspace is saved even if the user bounces out of step 2.
+  async function saveBasics(): Promise<boolean> {
     setError(null);
     try {
       const res = await fetch("/api/onboarding/save", {
@@ -122,41 +70,41 @@ export function OnboardingClient({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           businessName:     form.businessName,
-          businessFormat:   form.businessFormat || undefined,
           currency:         form.currency,
           country:          form.country || undefined,
-          industry:         form.industry || undefined,
-          businessStage:    form.businessStage || undefined,
-          hasAnnualReports: form.hasAnnualReports,
-          paysSalaries:     form.paysSalaries,
-          goals:            form.goals,
+          fiscalStartMonth: form.fiscalStartMonth,
         }),
       });
-      if (!res.ok) { setError("Couldn't save your answers. Try again."); setBusy(false); return; }
-      // Chain into the Business DNA wizard before showing the manual-
-      // data step. Both wizards are short (~2 min each); together
-      // they form the new onboarding spine. The DNA wizard
-      // self-redirects to /dashboard on completion, so after this
-      // chain the user lands on the dashboard.
-      window.location.assign("/onboarding/business-profile");
+      if (!res.ok) { setError("Couldn't save your business details. Try again."); return false; }
+      return true;
     } catch {
-      setError("Network error - check your connection.");
-      setBusy(false);
+      setError("Network error — check your connection.");
+      return false;
     }
   }
 
-  // Build the visible step list (so progress dots reflect adaptive skip).
-  const visibleSteps = form.businessStage === "new" ? [1, 2, 4, 5] : [1, 2, 3, 4, 5];
+  async function continueFromBasics() {
+    setBusy(true);
+    const ok = await saveBasics();
+    setBusy(false);
+    if (ok) setStep(2);
+  }
+
+  function goUpload() {
+    // Lands them on the import flow with the onboarding banner shown.
+    window.location.assign("/manual-data?onboarding=1");
+  }
+  function goDashboard() {
+    // Skip path — enter the product, empty states will point back at upload.
+    window.location.assign("/dashboard");
+  }
+
+  const visibleSteps = [1, 2];
   const visibleIndex = visibleSteps.indexOf(step);
 
-  // Validation per step → controls Continue enablement.
   const canContinue: boolean =
-    step === 1 ? form.businessName.trim().length > 0 :
-    step === 2 ? !!form.businessStage :
-    step === 3 ? form.hasAnnualReports !== null :
-    step === 4 ? form.paysSalaries !== null :
-    step === 5 ? form.goals.length > 0 :
-                 true;
+    step === 1 ? form.businessName.trim().length > 0 && form.currency.length === 3 :
+    true;
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -190,7 +138,7 @@ export function OnboardingClient({
               icon={<Building2 size={20} strokeWidth={1.75} />}
               eyebrow="01 · Business basics"
               title="Tell us about your business."
-              subtitle="We use this to label currency, dates, and regional benchmarks."
+              subtitle="We use this to label currency, dates, and regional benchmarks. You can change any of this later in Settings."
             >
               <div className="space-y-4">
                 <Field label="Business name">
@@ -201,27 +149,18 @@ export function OnboardingClient({
                     autoFocus
                   />
                 </Field>
-                <Field label="Business type">
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                    {FORMATS.map((f) => (
-                      <button
-                        key={f.value}
-                        type="button"
-                        onClick={() => setForm({ ...form, businessFormat: f.value })}
-                        className={`rounded-lg border p-3 text-left transition ${
-                          form.businessFormat === f.value
-                            ? "border-brand-purple bg-accent-soft/30"
-                            : "border-line hover:border-slate-500"
-                        }`}
-                      >
-                        <div className="text-sm font-medium text-slate-100">{f.label}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{f.hint}</div>
-                      </button>
-                    ))}
-                  </div>
-                </Field>
                 <div className="grid grid-cols-2 gap-3">
-                  <Field label="Currency">
+                  <Field label="Country">
+                    <select
+                      className="input"
+                      value={form.country}
+                      onChange={(e) => setForm({ ...form, country: e.target.value })}
+                    >
+                      <option value="">—</option>
+                      {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}
+                    </select>
+                  </Field>
+                  <Field label="Base currency">
                     <select
                       className="input"
                       value={form.currency}
@@ -230,24 +169,18 @@ export function OnboardingClient({
                       {CURRENCIES.map((c) => <option key={c} value={c}>{c}</option>)}
                     </select>
                   </Field>
-                  <Field label="Country">
-                    <select
-                      className="input"
-                      value={form.country}
-                      onChange={(e) => setForm({ ...form, country: e.target.value })}
-                    >
-                      <option value="">-</option>
-                      {REGIONS.map((r) => <option key={r.code} value={r.code}>{r.name}</option>)}
-                    </select>
-                  </Field>
                 </div>
-                <Field label="Industry">
-                  <input
+                <Field label={<>Fiscal year starts <span className="text-slate-500 font-normal">(optional)</span></>}>
+                  <select
                     className="input"
-                    value={form.industry}
-                    onChange={(e) => setForm({ ...form, industry: e.target.value })}
-                    placeholder="e.g. Digital Agency, SaaS, Retail"
-                  />
+                    value={form.fiscalStartMonth}
+                    onChange={(e) => setForm({ ...form, fiscalStartMonth: Number(e.target.value) })}
+                  >
+                    {MONTHS.map((m, i) => <option key={i} value={i + 1}>{m}</option>)}
+                  </select>
+                  <div className="text-xs text-slate-500 mt-1">
+                    Default is January. Change it any time in Settings.
+                  </div>
                 </Field>
               </div>
             </StepShell>
@@ -255,116 +188,69 @@ export function OnboardingClient({
 
           {step === 2 ? (
             <StepShell
-              icon={<TrendingUp size={20} strokeWidth={1.75} />}
-              eyebrow="02 · Business stage"
-              title="What stage is your business currently in?"
-              subtitle="We tailor the signals and forecast tone to where you actually are."
+              icon={<Upload size={20} strokeWidth={1.75} />}
+              eyebrow="02 · First data"
+              title="Start with your bank account."
+              subtitle="The fastest way to start using Tweaxly is by uploading the last 3 months of transactions from your business bank account."
             >
-              <div className="space-y-2">
-                {STAGES.map((s) => (
-                  <button
-                    key={s.value}
-                    type="button"
-                    onClick={() => setForm({ ...form, businessStage: s.value })}
-                    className={`w-full rounded-lg border p-4 text-left transition ${
-                      form.businessStage === s.value
-                        ? "border-brand-purple bg-accent-soft/30"
-                        : "border-line hover:border-slate-500"
-                    }`}
-                  >
-                    <div className="text-base font-medium text-slate-100">{s.title}</div>
-                    <div className="text-xs text-slate-400 mt-1">{s.hint}</div>
-                  </button>
-                ))}
+              <div className="space-y-4">
+                <div className="rounded-xl border border-line bg-ink-900/40 p-4">
+                  <p className="text-sm text-slate-200 leading-relaxed">
+                    Your bank account already reflects nearly all business activity: income,
+                    expenses, transfers, salaries, subscriptions and credit-card payments.
+                  </p>
+                  <p className="text-sm text-slate-400 mt-3 leading-relaxed">
+                    You can upload additional sources later to unlock deeper analysis and
+                    improve forecasting accuracy.
+                  </p>
+                </div>
+                <div className="rounded-md border border-line/60 bg-ink-900/20 px-3 py-2 text-xs text-slate-400">
+                  <span className="text-slate-300 font-medium">Recommended:</span> 3–12 months of history.
+                  <span className="text-slate-500"> · Minimum: 90 days.</span>
+                </div>
               </div>
             </StepShell>
           ) : null}
 
-          {step === 3 ? (
-            <StepShell
-              icon={<FileSpreadsheet size={20} strokeWidth={1.75} />}
-              eyebrow="03 · Financial history"
-              title="Do you have an annual financial report available?"
-              subtitle="Uploading annual reports improves forecasting accuracy and long-term analysis."
-            >
-              <YesNo
-                value={form.hasAnnualReports}
-                onChange={(v) => setForm({ ...form, hasAnnualReports: v })}
-              />
-            </StepShell>
-          ) : null}
-
-          {step === 4 ? (
-            <StepShell
-              icon={<Building2 size={20} strokeWidth={1.75} />}
-              eyebrow={form.businessStage === "new" ? "03 · Payroll structure" : "04 · Payroll structure"}
-              title="Does your business currently pay salaries?"
-              subtitle="If you pay yourself a salary, select 'Yes'."
-            >
-              <YesNo
-                value={form.paysSalaries}
-                onChange={(v) => setForm({ ...form, paysSalaries: v })}
-              />
-            </StepShell>
-          ) : null}
-
-          {step === 5 ? (
-            <StepShell
-              icon={<Target size={20} strokeWidth={1.75} />}
-              eyebrow={form.businessStage === "new" ? "04 · Business goals" : "05 · Business goals"}
-              title="What would you like to improve most?"
-              subtitle="Pick anything that resonates - we'll personalize Quick Overview, Signals, and Consultation around these."
-            >
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {GOALS.map((g) => (
-                  <button
-                    key={g.value}
-                    type="button"
-                    onClick={() => toggleGoal(g.value)}
-                    className={`rounded-lg border p-3 text-left text-sm transition ${
-                      form.goals.includes(g.value)
-                        ? "border-brand-purple bg-accent-soft/30 text-slate-100"
-                        : "border-line text-slate-300 hover:border-slate-500"
-                    }`}
-                  >
-                    <span className="font-medium">{g.label}</span>
-                  </button>
-                ))}
-              </div>
-            </StepShell>
-          ) : null}
-
-          {step > 0 ? (
+          {step === 1 ? (
             <div className="mt-6 flex items-center justify-between gap-3">
               <button
                 type="button"
-                onClick={prevStep}
+                onClick={() => setStep(0)}
                 className="btn-ghost text-sm"
-                disabled={step <= 1 || busy}
+                disabled={busy}
               >
                 ← Back
               </button>
-              {step === 5 ? (
-                <button
-                  type="button"
-                  onClick={finish}
-                  disabled={!canContinue || busy}
-                  className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-50"
-                >
-                  {busy ? "Saving…" : "Finish setup"}
-                  {busy ? null : <ArrowRight size={14} strokeWidth={2} />}
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  onClick={nextStep}
-                  disabled={!canContinue}
-                  className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-50"
-                >
-                  Continue
-                  <ArrowRight size={14} strokeWidth={2} />
-                </button>
-              )}
+              <button
+                type="button"
+                onClick={continueFromBasics}
+                disabled={!canContinue || busy}
+                className="btn-primary text-sm inline-flex items-center gap-2 disabled:opacity-50"
+              >
+                {busy ? "Saving…" : "Continue"}
+                {busy ? null : <ArrowRight size={14} strokeWidth={2} />}
+              </button>
+            </div>
+          ) : null}
+
+          {step === 2 ? (
+            <div className="mt-6 flex items-center justify-between gap-3 flex-wrap">
+              <button
+                type="button"
+                onClick={goDashboard}
+                className="text-sm text-slate-400 hover:text-slate-200"
+              >
+                Skip for now — I'll upload later
+              </button>
+              <button
+                type="button"
+                onClick={goUpload}
+                className="btn-primary text-sm inline-flex items-center gap-2"
+              >
+                Upload Bank Statement
+                <ArrowRight size={14} strokeWidth={2} />
+              </button>
             </div>
           ) : null}
         </div>
@@ -381,11 +267,8 @@ function Welcome({ onStart, busy }: { onStart: () => void; busy: boolean }) {
       </div>
       <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-slate-50">Welcome to Tweaxly</h1>
       <p className="mt-3 text-base text-slate-300 max-w-md mx-auto">
-        AI-powered business intelligence for modern business owners.
-      </p>
-      <p className="mt-2 text-sm text-slate-400 max-w-md mx-auto">
-        Connect your business activity and start receiving business signals,
-        forecasts, and AI-powered consultation.
+        Tweaxly analyzes your business financial activity and turns it into forecasts,
+        insights, alerts, and AI-powered recommendations.
       </p>
 
       <div className="mt-8 flex items-center justify-center">
@@ -401,8 +284,7 @@ function Welcome({ onStart, busy }: { onStart: () => void; busy: boolean }) {
       </div>
 
       <div className="mt-6 text-xs text-slate-500 max-w-sm mx-auto">
-        Takes about 5 minutes. No credit card required - the Free plan is
-        forever; upgrade only when you need more.
+        Takes about a minute. No credit card required — the Free plan is forever; upgrade only when you need more.
       </div>
     </div>
   );
@@ -432,36 +314,11 @@ function StepShell({
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({ label, children }: { label: React.ReactNode; children: React.ReactNode }) {
   return (
     <div>
       <label className="label">{label}</label>
       {children}
-    </div>
-  );
-}
-
-function YesNo({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
-  return (
-    <div className="grid grid-cols-2 gap-3">
-      <button
-        type="button"
-        onClick={() => onChange(true)}
-        className={`rounded-lg border p-5 text-center transition ${
-          value === true ? "border-brand-purple bg-accent-soft/30 text-slate-100" : "border-line text-slate-300 hover:border-slate-500"
-        }`}
-      >
-        <div className="text-lg font-semibold">Yes</div>
-      </button>
-      <button
-        type="button"
-        onClick={() => onChange(false)}
-        className={`rounded-lg border p-5 text-center transition ${
-          value === false ? "border-brand-purple bg-accent-soft/30 text-slate-100" : "border-line text-slate-300 hover:border-slate-500"
-        }`}
-      >
-        <div className="text-lg font-semibold">No</div>
-      </button>
     </div>
   );
 }

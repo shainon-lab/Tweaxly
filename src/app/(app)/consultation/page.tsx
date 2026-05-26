@@ -14,6 +14,7 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ConsultationClient from "./ConsultationClient";
 import ConsultationTabs from "./ConsultationTabs";
+import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
 
 export default async function ConsultationPage({
   searchParams,
@@ -23,9 +24,16 @@ export default async function ConsultationPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
 
-  const totalQuestions = await prisma.consultationMessage.count({
-    where: { consultation: { businessId: business.id }, role: "user" },
-  });
+  const [totalQuestions, totalTxnCount] = await Promise.all([
+    prisma.consultationMessage.count({
+      where: { consultation: { businessId: business.id }, role: "user" },
+    }),
+    prisma.transaction.count({ where: { businessId: business.id } }),
+  ]);
+  // Without transactions the advisor has nothing to ground its
+  // answers in — show the platform-wide bank-intelligence empty state
+  // instead of letting the user spend credits on context-free advice.
+  const isEmpty = totalTxnCount === 0;
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const claudeEnabled =
@@ -46,13 +54,17 @@ export default async function ConsultationPage({
         subtitle={t("page.advisory.subtitle")}
       />
       <ConsultationTabs historyCount={totalQuestions} />
-      <ConsultationClient
-        currency={business.currency}
-        claudeEnabled={claudeEnabled}
-        active={null}
-        initialDraft={initialDraft}
-        autoSubmit={autoSubmit}
-      />
+      {isEmpty ? (
+        <BankIntelligenceEmptyState surface="consultation" />
+      ) : (
+        <ConsultationClient
+          currency={business.currency}
+          claudeEnabled={claudeEnabled}
+          active={null}
+          initialDraft={initialDraft}
+          autoSubmit={autoSubmit}
+        />
+      )}
     </>
   );
 }

@@ -1,11 +1,7 @@
-// Adaptive AI onboarding. Multi-step wizard:
-//   1. Welcome  (Start setup vs. Explore demo business)
-//   2. Business basics       (name, format, currency, country, industry)
-//   3. Business stage        (new / growing / established)
-//   4. Financial history     (yes/no - skipped on stage='new')
-//   5. Payroll structure     (yes/no)
-//   6. Business goals        (multi-select)
-//   7. → /manual-data         (Import Your Business Data)
+// Onboarding wizard — three steps tuned for Time To First Value:
+//   1. Welcome
+//   2. Business basics (name, country, base currency, fiscal year)
+//   3. Data intro → upload bank OR skip into the product
 //
 // Server-side: bootstraps the wizard with the current business
 // values so saved answers persist across reloads. If the business
@@ -32,12 +28,7 @@ export default async function OnboardingPage() {
         name:             business.name,
         currency:         business.currency,
         country:          business.country,
-        industry:         business.industry,
-        businessFormat:   business.businessFormat,
-        businessStage:    business.businessStage,
-        hasAnnualReports: business.hasAnnualReports,
-        paysSalaries:     business.paysSalaries,
-        goals:            business.goals,
+        fiscalStartMonth: business.fiscalStartMonth,
       }}
       detectedCountry={detectedCountry}
     />

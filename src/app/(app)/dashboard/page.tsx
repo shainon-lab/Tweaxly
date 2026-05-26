@@ -3,6 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryStream, { ExecutiveSummarySkeleton } from "./ExecutiveSummaryStream";
+import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import GetStartedBanner from "@/components/sources/GetStartedBanner";
 import PreviousMonthCatchUp from "@/components/sources/PreviousMonthCatchUp";
@@ -183,20 +184,7 @@ export default async function DashboardPage({
       ) : null}
 
       {empty ? (
-        <div className="card text-center py-12">
-          <div className="text-lg font-medium">No data yet</div>
-          <div className="text-sm text-slate-400 mt-1">
-            Add a manual entry or bulk-upload a CSV from your bank/PayPal/Stripe to get started.
-          </div>
-          <div className="flex gap-2 justify-center mt-4">
-            <Link href="/manual-data" className="btn-primary">
-              Add data
-            </Link>
-            <Link href="/integration" className="btn-ghost">
-              See integrations
-            </Link>
-          </div>
-        </div>
+        <BankIntelligenceEmptyState surface="dashboard" />
       ) : (
         <>
           {/* Summary hero - the AI-generated executive narrative is the
