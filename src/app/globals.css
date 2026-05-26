@@ -107,14 +107,15 @@ html[data-theme="light"] :where(.btn-ghost).text-white { color: rgb(15 23 42); }
 html[data-theme="light"] :where(
   .card, .card-tight,
   [role="dialog"],
+  [class*="bg-gradient"],
   [class*="bg-ink-9"], [class*="bg-ink-8"], [class*="bg-ink-7"]
 ) .text-white:not(:is(
   .btn-primary, .btn-brand,
   .btn-primary *, .btn-brand *,
-  [class*="bg-accent"], [class*="bg-brand"], [class*="bg-gradient"],
+  [class*="bg-accent"], [class*="bg-brand"],
   [class*="bg-good"], [class*="bg-bad"], [class*="bg-warn"],
   [class*="bg-purple"], [class*="bg-red"], [class*="bg-emerald"], [class*="bg-amber"],
-  [class*="bg-accent"] *, [class*="bg-brand"] *, [class*="bg-gradient"] *,
+  [class*="bg-accent"] *, [class*="bg-brand"] *,
   [class*="bg-good"] *, [class*="bg-bad"] *, [class*="bg-warn"] *,
   [class*="bg-purple"] *, [class*="bg-red"] *, [class*="bg-emerald"] *, [class*="bg-amber"] *
 )) {
