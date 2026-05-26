@@ -12,30 +12,33 @@ import { ExecutiveOverviewMock } from "@/components/mocks/ExecutiveOverview";
 // full title verbatim (no " | Tweaxly" suffix appended by the
 // root template; the brand already sits at the end of this title).
 export const metadata: Metadata = {
-  title: { absolute: "Your AI Business Pulse for Business Owners | Tweaxly" },
+  title: { absolute: "AI That Understands Your Business | Tweaxly" },
   description:
-    "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+    "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
   keywords: [
-    "AI financial intelligence",
-    "AI financial advisor",
+    "AI business intelligence",
+    "AI for business owners",
+    "business data insights",
+    "real-time business insights",
+    "AI business decisions",
     "financial forecasting",
     "cash flow forecasting",
-    "business insights",
-    "financial dashboard",
+    "business signals",
+    "AI financial advisor",
   ],
   alternates: { canonical: "/" },
   openGraph: {
-    title: "Your AI Business Pulse for Business Owners | Tweaxly",
+    title: "AI That Understands Your Business | Tweaxly",
     description:
-      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+      "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
     url: "/",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Your AI Business Pulse for Business Owners | Tweaxly",
+    title: "AI That Understands Your Business | Tweaxly",
     description:
-      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+      "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
   },
 };
 
@@ -130,7 +133,7 @@ function Hero() {
             </a>
           </div>
           <div className="mt-8 text-xs text-slate-500 leading-relaxed max-w-xl">
-            AI Financial Advisor · Financial Forecasting · Cash Flow Intelligence · Business Insights
+            Real-Time Business Insights · AI Forecasting · Business Signals · AI Business Intelligence
           </div>
           <div className="mt-4 flex items-center gap-2 text-xs text-slate-500">
             <span className="w-1.5 h-1.5 rounded-full bg-good" />

@@ -45,7 +45,7 @@ const SITE_URL = "https://tweaxly.com";
 const SITE_LOGO_URL = `${SITE_URL}/og-image.svg`;
 
 const SITE_DESCRIPTION =
-  "AI-powered business intelligence platform for SMBs that transforms financial data into actionable insights, forecasts, alerts, and business signals.";
+  "AI that understands your business. Turn your data into real-time insights, forecasts, signals, and AI-powered decisions - built for SMB owners.";
 
 const SITE_ORG_SCHEMA = {
   "@context": "https://schema.org",
@@ -103,7 +103,7 @@ const SITE_SOFTWARE_APP_SCHEMA = {
     name:    "United States",
   },
   inLanguage:  "en-US",
-  description: "AI-powered financial intelligence platform for SMB owners. Analyze revenue, expenses, cash flow, forecasts, trends, and business signals in real time.",
+  description: "AI that understands your business. Tweaxly turns SMB data into real-time insights, forecasts, signals, and AI-powered decisions on revenue, expenses, cash flow, and trends.",
 };
 
 export const metadata: Metadata = {
@@ -112,19 +112,22 @@ export const metadata: Metadata = {
     // Per-page metadata can override the full title via the
     // `absolute` key, or pass just the page title and the template
     // appends " | Tweaxly" automatically.
-    default:  "Your AI Business Pulse for Business Owners | Tweaxly",
+    default:  "AI That Understands Your Business | Tweaxly",
     template: "%s | Tweaxly",
   },
   description:
-    "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+    "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
   applicationName: "Tweaxly",
   keywords: [
-    "AI financial intelligence",
-    "AI financial advisor",
+    "AI business intelligence",
+    "AI for business owners",
+    "business data insights",
+    "real-time business insights",
+    "AI business decisions",
     "financial forecasting",
     "cash flow forecasting",
-    "business insights",
-    "financial dashboard",
+    "business signals",
+    "AI financial advisor",
     "AI CFO",
     "small business financial software",
   ],
@@ -133,17 +136,17 @@ export const metadata: Metadata = {
     type: "website",
     siteName: "Tweaxly",
     url: SITE_URL,
-    title: "Your AI Business Pulse for Business Owners | Tweaxly",
+    title: "AI That Understands Your Business | Tweaxly",
     description:
-      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly - Your AI Business Pulse" }],
+      "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
+    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly - AI That Understands Your Business" }],
     locale: "en_US",
   },
   twitter: {
     card: "summary_large_image",
-    title: "Your AI Business Pulse for Business Owners | Tweaxly",
+    title: "AI That Understands Your Business | Tweaxly",
     description:
-      "Tweaxly helps business owners turn financial activity into forecasts, cash flow insights, business signals, and AI-powered financial advisory.",
+      "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
     images: ["/og-image.svg"],
   },
   robots: { index: true, follow: true },
