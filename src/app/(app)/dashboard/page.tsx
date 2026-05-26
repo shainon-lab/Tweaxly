@@ -1,7 +1,8 @@
+import { Suspense } from "react";
 import PageHeader from "@/components/PageHeader";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
-import ExecutiveSummaryHero from "@/components/ExecutiveSummaryHero";
+import ExecutiveSummaryStream, { ExecutiveSummarySkeleton } from "./ExecutiveSummaryStream";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import GetStartedBanner from "@/components/sources/GetStartedBanner";
 import PreviousMonthCatchUp from "@/components/sources/PreviousMonthCatchUp";
@@ -17,11 +18,6 @@ import {
   type DashboardRange,
   type CompareMode,
 } from "@/lib/period";
-import {
-  buildExecutiveSummary,
-  timeframeForRange,
-  periodLabelForHero,
-} from "@/lib/executiveSummary";
 import { fmtMoney, fmtMoneyWhole, fmtMoneyExact, fmtPct } from "@/lib/format";
 import { prisma } from "@/lib/db";
 import { buildDashboardBreakdowns } from "@/lib/dashboardBreakdowns";
@@ -140,25 +136,12 @@ export default async function DashboardPage({
   });
   const empty = totalTxnCount === 0;
 
-  // AI-generated executive narrative. Built server-side so it lands
-  // with the rest of the page. Falls back to a deterministic narrative
-  // when no API key is configured or the model call errors. We skip the
-  // call entirely when the business has no data - there's nothing to
-  // narrate yet, and the empty-state card below covers that case.
-  const summary = empty
-    ? null
-    : await buildExecutiveSummary({
-        ccy,
-        businessName: business.name,
-        rangeLabel: DASHBOARD_RANGE_LABEL[range],
-        periodLabel: periodLabelForHero(resolved.fromYM, resolved.toYM),
-        timeframe: timeframeForRange(range),
-        current,
-        prev,
-        trailing,
-        employeeCostMonthly: employeeCost.total,
-        businessId: business.id,
-      });
+  // The AI-generated executive narrative is rendered via a separate
+  // streaming server component wrapped in <Suspense> below. That call
+  // hits Claude with thinking mode (3-10s); blocking the dashboard on
+  // it makes every workspace switch / Overview click feel sluggish.
+  // Streaming lets the KPI tiles + charts paint instantly while the
+  // hero fills in.
 
   // Default custom-range start/end fed into the picker - used when user
   // switches to "custom" and we need initial values.
@@ -220,7 +203,20 @@ export default async function DashboardPage({
               primary entry point of the dashboard. Sits above the stat
               tiles so the user reads the interpretation before the
               numbers. */}
-          {summary ? <ExecutiveSummaryHero summary={summary} /> : null}
+          <Suspense fallback={<ExecutiveSummarySkeleton />}>
+            <ExecutiveSummaryStream
+              ccy={ccy}
+              businessId={business.id}
+              businessName={business.name}
+              range={range}
+              fromYM={resolved.fromYM}
+              toYM={resolved.toYM}
+              current={current}
+              prev={prev}
+              trailing={trailing}
+              employeeCostMonthly={employeeCost.total}
+            />
+          </Suspense>
 
           {/* Financial Data Pipeline surfaces, in order of urgency:
               1. PreviousMonthCatchUp — full warning card when any

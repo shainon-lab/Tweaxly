@@ -73,14 +73,22 @@ export async function trailingMonthsSummary(
     const months = await listAccountingMonths(businessId);
     anchor = months[0] ?? todayYM();
   }
-  const out: { ym: string; income: number; expenses: number; net: number }[] = [];
-  let ym = anchor;
+  // Walk backwards from the anchor to collect the month keys, then run
+  // every snapshot in parallel. Was sequential — added latency that
+  // stacked on every dashboard render.
+  const yms: string[] = [];
+  let cursor = anchor;
   for (let i = 0; i < n; i++) {
-    const snap = await buildMonthSnapshot(businessId, ym);
-    out.unshift({ ym, income: snap.income, expenses: snap.expenses, net: snap.netProfit });
-    ym = shiftYM(ym, -1);
+    yms.unshift(cursor);
+    cursor = shiftYM(cursor, -1);
   }
-  return out;
+  const snaps = await Promise.all(yms.map((ym) => buildMonthSnapshot(businessId, ym)));
+  return yms.map((ym, i) => ({
+    ym,
+    income:   snaps[i].income,
+    expenses: snaps[i].expenses,
+    net:      snaps[i].netProfit,
+  }));
 }
 
 export async function listAccountingMonths(businessId: string): Promise<string[]> {
