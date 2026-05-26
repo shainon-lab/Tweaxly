@@ -266,19 +266,22 @@ export default function Sidebar({
         </nav>
         <ThemeToggle />
         {/* Accessibility Widget entry. Only shows when the user has
-            opted in via Account Settings → Accessibility. Clicking
-            opens the controlled-mode accessibility dialog (no
-            floating FAB - the workspace stays clean by default). */}
+            opted in via Account Settings → Accessibility. Styled as a
+            bordered button (matching the ThemeToggle's inline button
+            group above it) instead of a full-width banner row so it
+            reads as a clickable control, not a section header. */}
         {a11yEnabled ? (
-          <button
-            type="button"
-            onClick={() => { setMobileOpen(false); requestA11yWidgetOpen(); }}
-            className="flex items-center gap-2.5 w-full px-4 py-2 text-sm text-slate-300 hover:bg-accent-soft/40 hover:text-white transition border-t border-line"
-            aria-label="Open accessibility widget"
-          >
-            <Accessibility size={16} strokeWidth={1.5} className="shrink-0" aria-hidden="true" />
-            <span className="flex-1 text-left">Accessibility Widget</span>
-          </button>
+          <div className="px-4 py-3 border-t border-line">
+            <button
+              type="button"
+              onClick={() => { setMobileOpen(false); requestA11yWidgetOpen(); }}
+              className="w-full inline-flex items-center justify-center gap-2 rounded-md border border-line px-3 py-1.5 text-xs text-slate-300 hover:bg-ink-700 hover:border-slate-500 hover:text-white transition"
+              aria-label="Open accessibility widget"
+            >
+              <Accessibility size={14} strokeWidth={1.75} aria-hidden="true" />
+              <span>Accessibility Widget</span>
+            </button>
+          </div>
         ) : null}
         <form action="/logout" method="post" className="px-4 py-3 border-t border-line">
           <button className="btn-ghost w-full" type="submit">{t("common.signOut")}</button>
