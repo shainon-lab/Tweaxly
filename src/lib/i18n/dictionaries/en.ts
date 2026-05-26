@@ -132,7 +132,7 @@ export const en: Dictionary = {
   "settings.tab.businessProfile":  "Business Profile",
   "settings.tab.businessPlan":     "Business Plan",
   "settings.tab.import": "Import Data",
-  "settings.tab.sources": "Manual Sources",
+  "settings.tab.sources": "Sources",
   "settings.tab.integration": "Integration",
   "settings.tab.categories": "Categories & Vendors",
   "settings.tab.transactions": "Transactions",
@@ -141,7 +141,7 @@ export const en: Dictionary = {
   // These mirror the legacy settings.tab.* keys but are namespaced
   // under data.* so future divergence (e.g. different label per
   // platform area) doesn't break the other surface.
-  "data.tab.sources":      "Manual Sources",
+  "data.tab.sources":      "Sources",
   "data.tab.import":       "Import Data",
   "data.tab.integration":  "Integration",
   "data.tab.transactions": "Transactions",

@@ -1,7 +1,7 @@
 "use client";
 
 // Data section tab nav — six operational surfaces:
-//   Import Data · Manual Sources · Transactions · Categories & Vendors
+//   Import Data · Sources · Transactions · Categories & Vendors
 //   · Manual Data Log · Integration
 //
 // The sidebar's "Data" entry is the visual home; each tab is its own
