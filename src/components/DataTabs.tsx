@@ -92,11 +92,11 @@ export default function DataTabs() {
   }, [advancedOpen]);
 
   return (
-    // Sticky just under the compact PageHeader (~56px) so the user
-    // keeps tab context while scrolling long data tables. The full-
-    // width background + extended horizontal padding prevent content
-    // from showing through during scroll.
-    <div className="sticky top-14 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950/95 backdrop-blur pt-1 mb-6">
+    // Sticky directly under the PageHeader (which is ~85px tall in
+    // its single fixed form). Solid bg-ink-950 + border so content
+    // can never show through during scroll. No transitions, no
+    // scroll-driven state - the strip stays in the DOM at all times.
+    <div className="sticky top-[85px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40">
       <div className="flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {PRIMARY_TABS.map((d) => {
         const active = d.activeWhen(path, tab);

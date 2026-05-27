@@ -313,16 +313,19 @@ html[data-theme="light"] .auth-shell .card {
 
   /* Opt-in sticky table header. Apply to <table> when the column
      names should stay visible during vertical scroll of a long
-     dataset (transactions, billing orders, admin tables). The thead
-     sticks below the PageHeader + tabs at top-28 (112px) — adjust the
-     `top` if a specific table sits below additional sticky bars. */
+     dataset (transactions, billing orders, admin tables).
+     Top offsets match the app's sticky chrome:
+       - PageHeader alone:  85px
+       - PageHeader + tabs: 140px
+     Solid background (no transparency) so scrolling cells never
+     bleed through the column-name row. */
   .sticky-thead thead th {
-    @apply sticky z-10 top-28 bg-ink-950/95 backdrop-blur;
+    @apply sticky z-10 bg-ink-950;
+    top: 140px;
   }
-  /* Variant for tables whose enclosing page only has a sticky
-     PageHeader (no tab strip) - sticks higher. */
   .sticky-thead-tight thead th {
-    @apply sticky z-10 top-14 bg-ink-950/95 backdrop-blur;
+    @apply sticky z-10 bg-ink-950;
+    top: 85px;
   }
 }
 

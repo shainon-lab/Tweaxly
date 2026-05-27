@@ -242,7 +242,7 @@ export default function OrdersTable() {
         <>
           <div className="rounded-lg border border-line overflow-x-auto">
             <table className="w-full text-xs">
-              <thead className="bg-ink-900/95 backdrop-blur text-left text-[10px] uppercase tracking-wider text-slate-400 sticky top-28 z-10">
+              <thead className="bg-ink-950 text-left text-[10px] uppercase tracking-wider text-slate-400 sticky top-[85px] z-10">
                 <tr>
                   <th className="px-3 py-2 font-medium">Order #</th>
                   <th className="px-3 py-2 font-medium">Date</th>
