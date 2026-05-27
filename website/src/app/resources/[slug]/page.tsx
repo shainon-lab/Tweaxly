@@ -72,7 +72,7 @@ function ArticleStructuredData({ article }: { article: ArticleModule }) {
       logo: { "@type": "ImageObject", url: "https://tweaxly.com/og-image.svg" },
     },
     mainEntityOfPage: { "@type": "WebPage", "@id": `https://tweaxly.com/resources/${article.meta.slug}` },
-    image: ["https://tweaxly.com/og-image.svg"],
+    image: ["https://tweaxly.com/og-share.png"],
     keywords: article.meta.seo.keywords.join(", "),
     articleSection: article.meta.category,
   };

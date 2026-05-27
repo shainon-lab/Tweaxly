@@ -139,7 +139,11 @@ export const metadata: Metadata = {
     title: "AI That Understands Your Business | Tweaxly",
     description:
       "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
-    images: [{ url: "/og-image.svg", width: 1200, height: 630, alt: "Tweaxly - AI That Understands Your Business" }],
+    // og-share.png is the branded 1200x630 share card (TWEAXLY logo
+    // + dashboard mockups). og-image.svg stays as the small brand
+    // logo used in JSON-LD Organization schema (different role,
+    // different file).
+    images: [{ url: "/og-share.png", width: 1200, height: 630, alt: "Tweaxly - AI That Understands Your Business" }],
     locale: "en_US",
   },
   twitter: {
@@ -147,7 +151,7 @@ export const metadata: Metadata = {
     title: "AI That Understands Your Business | Tweaxly",
     description:
       "Turn your business data into real-time insights, forecasts, signals, and AI-powered decisions. Tweaxly is the AI that understands your business.",
-    images: ["/og-image.svg"],
+    images: ["/og-share.png"],
   },
   robots: { index: true, follow: true },
 };
