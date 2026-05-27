@@ -1,5 +1,21 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <rect width="64" height="64" rx="12" fill="#0a1428"/>
-  <polyline points="14,14 32,32 14,50" fill="none" stroke="#A78BFA" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
-  <polyline points="50,14 32,32 50,50" fill="none" stroke="#22D3EE" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Tweaxly favicon. Solid black circle with a gradient X mark.
+       Matches the branded share image (og-share.png) so the favicon
+       and link previews read as the same identity. The two strokes
+       use crossed gradients (purple→teal one way, teal→purple the
+       other) so the intersection darkens naturally where they meet,
+       mirroring the rendered logo. -->
+  <defs>
+    <linearGradient id="tw-x-a" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#A78BFA"/>
+      <stop offset="100%" stop-color="#22D3EE"/>
+    </linearGradient>
+    <linearGradient id="tw-x-b" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%"   stop-color="#22D3EE"/>
+      <stop offset="100%" stop-color="#A78BFA"/>
+    </linearGradient>
+  </defs>
+  <circle cx="32" cy="32" r="32" fill="#000000"/>
+  <line x1="20" y1="20" x2="44" y2="44" stroke="url(#tw-x-a)" stroke-width="9" stroke-linecap="round"/>
+  <line x1="44" y1="20" x2="20" y2="44" stroke="url(#tw-x-b)" stroke-width="9" stroke-linecap="round"/>
 </svg>
