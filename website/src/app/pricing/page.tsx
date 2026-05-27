@@ -99,6 +99,7 @@ const PLANS: Plan[] = [
     bullets: [
       "Owner + up to 2 team members with role-based access",
       "Buy add-on AI Credit packs anytime as you scale",
+      "Advanced AI analysis & faster responses",
       "Real-Time Business Alerts (desktop push + custom monitors)",
       "Unlimited historical data + custom date ranges",
       "Unlimited business signals + smart alerts",
