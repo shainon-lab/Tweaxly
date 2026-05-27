@@ -1,8 +1,22 @@
 // Minimal markdown-ish renderer shared by the live Chat view and the
-// Chat history accordion. Handles ###, **bold**, _italic_, > blockquote,
-// and paragraphs separated by blank lines. Sufficient for advisor output.
+// Chat history viewer. Handles ###, **bold**, _italic_, > blockquote,
+// and paragraphs separated by blank lines. Sufficient for advisor
+// output.
+//
+// Paragraphs longer than ~50 words are auto-split at the next sentence
+// boundary so neither the live consult nor the history surface ever
+// renders a wall of unbroken text - the advisor sometimes ships its
+// reasoning as one long paragraph and that was making the History tab
+// in particular hard to read.
 
 import React from "react";
+
+// Soft target for paragraph length. Once a running word count crosses
+// this number we break at the next period / question mark / exclamation
+// mark followed by whitespace. Tuned for ~3-4 sentences per paragraph
+// at typical advisor sentence length, which keeps each paragraph
+// readable on phone widths and large desktops alike.
+const PARAGRAPH_TARGET_WORDS = 50;
 
 function inline(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
@@ -31,19 +45,57 @@ function inline(text: string): React.ReactNode {
   return parts;
 }
 
+// Split a single long paragraph into smaller paragraph-sized chunks at
+// sentence boundaries. Each chunk grows until its running word count
+// crosses PARAGRAPH_TARGET_WORDS, at which point the NEXT sentence
+// boundary closes the chunk. Returns one entry if the input is already
+// short enough.
+function splitLongParagraph(text: string): string[] {
+  const trimmed = text.trim();
+  if (!trimmed) return [];
+  if (trimmed.split(/\s+/).length <= PARAGRAPH_TARGET_WORDS) return [trimmed];
+
+  // Capture sentences with their terminating punctuation. Anything
+  // without a terminator at the end (e.g. trailing fragment) lands
+  // in the final group.
+  const sentences = trimmed.match(/[^.!?]+[.!?]+(\s+|$)|[^.!?]+$/g) ?? [trimmed];
+
+  const out: string[] = [];
+  let buf: string[] = [];
+  let count = 0;
+  for (const raw of sentences) {
+    const s = raw.trim();
+    if (!s) continue;
+    buf.push(s);
+    count += s.split(/\s+/).length;
+    if (count >= PARAGRAPH_TARGET_WORDS) {
+      out.push(buf.join(" "));
+      buf = [];
+      count = 0;
+    }
+  }
+  if (buf.length) out.push(buf.join(" "));
+  return out;
+}
+
 export function renderMarkdown(text: string) {
   const lines = text.split("\n");
   const blocks: React.ReactNode[] = [];
   let buf: string[] = [];
   const flushPara = () => {
-    if (buf.length) {
+    if (!buf.length) return;
+    const joined = buf.join(" ");
+    // Each "paragraph" the source emitted may itself be too long; the
+    // 50-word split handles that case. Short paragraphs come back as
+    // a single-element array, so the loop is safe either way.
+    for (const chunk of splitLongParagraph(joined)) {
       blocks.push(
         <p key={blocks.length} className="text-sm leading-[1.7] tracking-[0.01em] text-slate-200">
-          {inline(buf.join(" "))}
+          {inline(chunk)}
         </p>,
       );
-      buf = [];
     }
+    buf = [];
   };
   for (const raw of lines) {
     const line = raw.trimEnd();
