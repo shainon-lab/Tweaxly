@@ -11,6 +11,7 @@ import {
   INDUSTRY_OPTIONS, BUSINESS_MODEL_OPTIONS, MAIN_GOAL_OPTIONS,
   CUSTOMER_TYPE_OPTIONS, REVENUE_STAGE_OPTIONS, KPI_OPTIONS,
   AI_PREFERENCE_TOGGLES,
+  BUSINESS_CHALLENGE_OPTIONS, BUSINESS_CHALLENGE_MAX,
   type AiContextPreferences,
 } from "@/lib/businessProfile";
 
@@ -30,6 +31,7 @@ const CUSTOMER_VALUES       = new Set<string>(CUSTOMER_TYPE_OPTIONS.map((o) => o
 const STAGE_VALUES          = new Set<string>(REVENUE_STAGE_OPTIONS.map((o) => o.value));
 const INDUSTRY_VALUES       = new Set<string>(INDUSTRY_OPTIONS);
 const PREF_TOGGLE_VALUES    = new Set<string>(AI_PREFERENCE_TOGGLES.map((o) => o.value));
+const CHALLENGE_VALUES      = new Set<string>(BUSINESS_CHALLENGE_OPTIONS.map((o) => o.value));
 
 function asStr(v: unknown): string | undefined {
   return typeof v === "string" ? v.trim().slice(0, 500) : undefined;
@@ -95,6 +97,12 @@ export async function PATCH(req: Request) {
     customerType:     customerRaw === undefined ? undefined : (customerRaw === "" ? null : CUSTOMER_VALUES.has(customerRaw) ? customerRaw : null),
     revenueStage:     stageRaw    === undefined ? undefined : (stageRaw    === "" ? null : STAGE_VALUES.has(stageRaw) ? stageRaw : null),
     biggestChallenge: challengeRaw === undefined ? undefined : (challengeRaw === "" ? null : challengeRaw),
+    // Server-side enforce the max-3 cap so a tampered client can't
+    // stuff in more. asArrFiltered also dedupes + drops unknowns.
+    businessChallenges: (() => {
+      const arr = asArrFiltered(body.businessChallenges, CHALLENGE_VALUES);
+      return arr === undefined ? undefined : arr.slice(0, BUSINESS_CHALLENGE_MAX);
+    })(),
     importantKpis:    asArrFiltered(body.importantKpis, KPI_VALUES),
     aiContextPreferences,
   });

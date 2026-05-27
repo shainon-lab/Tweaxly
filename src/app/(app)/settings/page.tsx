@@ -227,6 +227,7 @@ export default async function SettingsPage({
     customerType:       profile.customerType,
     revenueStage:       profile.revenueStage,
     biggestChallenge:   profile.biggestChallenge,
+    businessChallenges: profile.businessChallenges,
     importantKpis:      profile.importantKpis,
     aiSummary:          profile.aiSummary,
     aiSummaryUpdatedAt: profile.aiSummaryUpdatedAt?.toISOString() ?? null,

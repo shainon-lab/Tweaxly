@@ -22,38 +22,41 @@ import {
   BUSINESS_MODEL_OPTIONS, MAIN_GOAL_OPTIONS,
   CUSTOMER_TYPE_OPTIONS, REVENUE_STAGE_OPTIONS, KPI_OPTIONS,
   AI_PREFERENCE_TOGGLES,
+  BUSINESS_CHALLENGE_OPTIONS, BUSINESS_CHALLENGE_OTHER, BUSINESS_CHALLENGE_MAX,
 } from "@/lib/businessProfileOptions";
 
 export interface BusinessDnaProps {
   initial: {
-    industry:         string | null;
-    businessCategory: string | null;
-    businessModels:   string[];
-    mainGoal:         string | null;
-    customerType:     string | null;
-    revenueStage:     string | null;
-    biggestChallenge: string | null;
-    importantKpis:    string[];
-    aiSummary:        string | null;
+    industry:           string | null;
+    businessCategory:   string | null;
+    businessModels:     string[];
+    mainGoal:           string | null;
+    customerType:       string | null;
+    revenueStage:       string | null;
+    biggestChallenge:   string | null;
+    businessChallenges: string[];
+    importantKpis:      string[];
+    aiSummary:          string | null;
     aiSummaryUpdatedAt: string | null;
     aiContextPreferences: { toggles?: string[]; freeformNote?: string } | null;
-    derivedSignals:   string[];
-    lastDerivedAt:    string | null;
+    derivedSignals:     string[];
+    lastDerivedAt:      string | null;
   } | null;
 }
 
 export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
   const [draft, setDraft] = useState(() => ({
-    industry:         initial?.industry ?? "",
-    businessCategory: initial?.businessCategory ?? "",
-    businessModels:   initial?.businessModels ?? [],
-    mainGoal:         initial?.mainGoal ?? "",
-    customerType:     initial?.customerType ?? "",
-    revenueStage:     initial?.revenueStage ?? "",
-    biggestChallenge: initial?.biggestChallenge ?? "",
-    importantKpis:    initial?.importantKpis ?? [],
-    prefToggles:      initial?.aiContextPreferences?.toggles ?? [],
-    prefNote:         initial?.aiContextPreferences?.freeformNote ?? "",
+    industry:           initial?.industry ?? "",
+    businessCategory:   initial?.businessCategory ?? "",
+    businessModels:     initial?.businessModels ?? [],
+    mainGoal:           initial?.mainGoal ?? "",
+    customerType:       initial?.customerType ?? "",
+    revenueStage:       initial?.revenueStage ?? "",
+    biggestChallenge:   initial?.biggestChallenge ?? "",
+    businessChallenges: initial?.businessChallenges ?? [],
+    importantKpis:      initial?.importantKpis ?? [],
+    prefToggles:        initial?.aiContextPreferences?.toggles ?? [],
+    prefNote:           initial?.aiContextPreferences?.freeformNote ?? "",
   }));
   const [summary, setSummary]               = useState(initial?.aiSummary ?? "");
   const [summaryUpdatedAt, setSummaryAt]    = useState(initial?.aiSummaryUpdatedAt ?? null);
@@ -138,6 +141,25 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
     });
   }
 
+  // Separate toggle for businessChallenges - enforces the max-3 cap and
+  // clears the biggestChallenge free-text when "other" is deselected
+  // so we don't keep a hidden value around.
+  function toggleChallenge(value: string) {
+    setDraft((d) => {
+      const set = new Set(d.businessChallenges);
+      if (set.has(value)) {
+        set.delete(value);
+        if (value === BUSINESS_CHALLENGE_OTHER) {
+          return { ...d, businessChallenges: Array.from(set), biggestChallenge: "" };
+        }
+      } else {
+        if (set.size >= BUSINESS_CHALLENGE_MAX) return d;
+        set.add(value);
+      }
+      return { ...d, businessChallenges: Array.from(set) };
+    });
+  }
+
   async function saveAll() {
     setSaving(true);
     setErr(null);
@@ -208,18 +230,18 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
   }
 
   return (
-    // Accordion layout. Six sections, each its own collapsible panel.
+    // Accordion layout. Seven sections, each its own collapsible panel.
     // Order + default-open state per design:
-    //   1. Business profile          - OPEN
-    //   2. About Your Business       - OPEN
-    //   3. How does the business
-    //      make money?               - CLOSED
-    //   4. KPIs that matter most     - CLOSED
-    //   5. AI Context Preferences    - CLOSED
-    //   6. Patterns Tweaxly noticed  - CLOSED
+    //   1. Business profile           - OPEN
+    //   2. About Your Business        - OPEN
+    //   3. Business Biggest Challenges - CLOSED  (pick up to 3 + Other)
+    //   4. How does the business make money? - CLOSED
+    //   5. KPIs that matter most      - CLOSED
+    //   6. AI Context Preferences     - CLOSED
+    //   7. Patterns Tweaxly noticed   - CLOSED
     //
-    // Save button moves to a sticky footer below all sections so it's
-    // always reachable, regardless of which panels are open.
+    // Save button lives in a footer below all sections so it's always
+    // reachable, regardless of which panels are open.
     <div className="flex flex-col gap-3">
       {/* 1. Business profile (open) ─────────────────────────────── */}
       <AccordionCard title="Business profile" defaultOpen>
@@ -294,15 +316,6 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           </div>
         </div>
 
-        <div className="mt-5">
-          <label className="label">Biggest current challenge</label>
-          <textarea
-            className="input min-h-[80px]"
-            value={draft.biggestChallenge}
-            onChange={(e) => setDraft({ ...draft, biggestChallenge: e.target.value })}
-            placeholder="e.g. customer acquisition is getting expensive, churn is creeping up, hiring the right tech is slow…"
-          />
-        </div>
       </AccordionCard>
 
       {/* 2. About Your Business (open) ──────────────────────────── */}
@@ -357,7 +370,52 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
         </div>
       </AccordionCard>
 
-      {/* 3. How does the business make money? (closed) ──────────── */}
+      {/* 3. Business Biggest Challenges (closed) ───────────────────
+          Multi-select with a max of 3. The final "Other" option, when
+          selected, reveals the biggestChallenge free-text field so the
+          owner can describe a challenge that doesn't fit a preset. */}
+      <AccordionCard
+        title="Business Biggest Challenges"
+        aside={
+          <span className="text-[11px] text-slate-500">
+            (up to {BUSINESS_CHALLENGE_MAX}) · {draft.businessChallenges.length}/{BUSINESS_CHALLENGE_MAX}
+          </span>
+        }
+      >
+        <div className="text-xs text-slate-400 mb-3 leading-relaxed">
+          Pick up to {BUSINESS_CHALLENGE_MAX} that match your reality. The AI weighs every answer against these.
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {BUSINESS_CHALLENGE_OPTIONS.map((o) => {
+            const selected   = draft.businessChallenges.includes(o.value);
+            const atCap      = draft.businessChallenges.length >= BUSINESS_CHALLENGE_MAX;
+            const disabled   = !selected && atCap;
+            return (
+              <SelectCard
+                key={o.value}
+                selected={selected}
+                disabled={disabled}
+                onClick={() => toggleChallenge(o.value)}
+                label={o.label}
+              />
+            );
+          })}
+        </div>
+        {draft.businessChallenges.includes(BUSINESS_CHALLENGE_OTHER) ? (
+          <div className="mt-4">
+            <label className="label">Describe your "other" challenge</label>
+            <textarea
+              className="input min-h-[80px]"
+              value={draft.biggestChallenge}
+              onChange={(e) => setDraft({ ...draft, biggestChallenge: e.target.value })}
+              placeholder="e.g. customer acquisition is getting expensive, churn is creeping up, hiring the right tech is slow…"
+              maxLength={500}
+            />
+          </div>
+        ) : null}
+      </AccordionCard>
+
+      {/* 4. How does the business make money? (closed) ──────────── */}
       <AccordionCard
         title="How does the business make money?"
         aside={<span className="text-[11px] text-slate-500">(pick any)</span>}
@@ -374,7 +432,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
         </div>
       </AccordionCard>
 
-      {/* 4. KPIs that matter most (closed) ──────────────────────── */}
+      {/* 5. KPIs that matter most (closed) ──────────────────────── */}
       <AccordionCard
         title="KPIs that matter most"
         aside={<span className="text-[11px] text-slate-500">(pick any)</span>}
@@ -391,7 +449,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
         </div>
       </AccordionCard>
 
-      {/* 5. AI Context Preferences (closed) ─────────────────────── */}
+      {/* 6. AI Context Preferences (closed) ─────────────────────── */}
       <AccordionCard
         title="AI Context Preferences"
         aside={
@@ -428,7 +486,7 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
         </div>
       </AccordionCard>
 
-      {/* 6. Patterns Tweaxly noticed (closed) ───────────────────── */}
+      {/* 7. Patterns Tweaxly noticed (closed) ───────────────────── */}
       <AccordionCard
         title="Patterns Tweaxly noticed"
         aside={
@@ -530,20 +588,28 @@ function AccordionCard({
 // the Business model / KPI / AI preference toggles above to give the
 // section a calm grid look instead of a wall of pill chips.
 function SelectCard({
-  selected, onClick, label,
+  selected, onClick, label, disabled,
 }: {
   selected: boolean;
   onClick: () => void;
   label: string;
+  // True when the card is unselected AND a parent max-selection cap is
+  // reached. Renders dimmed + non-interactive so the user can see the
+  // option exists but understands they're already at the cap.
+  disabled?: boolean;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       role="checkbox"
       aria-checked={selected}
+      aria-disabled={disabled}
       className={`flex items-center gap-2.5 px-3 py-2 rounded-lg border text-left transition ${
-        selected
+        disabled
+          ? "border-line bg-ink-900/20 text-slate-500 cursor-not-allowed opacity-50"
+          : selected
           ? "border-accent bg-accent-soft/30 text-slate-100"
           : "border-line bg-ink-900/30 text-slate-300 hover:border-accent/40 hover:text-slate-100"
       }`}

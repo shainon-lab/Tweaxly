@@ -137,6 +137,28 @@ export const KPI_OPTIONS = [
   { value: "forecast_accuracy",      label: "Forecast accuracy" },
 ] as const;
 
+// Sentinel value for the "Other" pick - when present in
+// businessChallenges, the UI reveals the biggestChallenge free-text
+// box so the user can describe a challenge that doesn't fit a preset.
+export const BUSINESS_CHALLENGE_OTHER = "other";
+
+// Pre-set business challenges. The user can pick up to 3. The final
+// "other" entry is the sentinel that unlocks the free-text field; the
+// max-3 cap counts it like any other selection.
+export const BUSINESS_CHALLENGE_OPTIONS = [
+  { value: "cash_flow",            label: "Cash flow management" },
+  { value: "customer_acquisition", label: "Customer acquisition / sales" },
+  { value: "hiring",               label: "Hiring & retaining talent" },
+  { value: "margins",              label: "Rising costs / margin pressure" },
+  { value: "churn",                label: "Customer retention / churn" },
+  { value: "marketing",            label: "Marketing / brand awareness" },
+  { value: "operations",           label: "Operational efficiency" },
+  { value: "scaling",              label: "Scaling the business" },
+  { value: BUSINESS_CHALLENGE_OTHER, label: "Other" },
+] as const;
+
+export const BUSINESS_CHALLENGE_MAX = 3;
+
 // Phase-3 AI Context Preferences. Named bias toggles + a free-text
 // extra-context box, persisted as JSON on BusinessProfile so the
 // shape can evolve. The labels read like sentences the user is

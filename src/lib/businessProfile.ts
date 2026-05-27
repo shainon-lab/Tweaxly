@@ -28,6 +28,7 @@ import {
   BUSINESS_MODEL_OPTIONS, MAIN_GOAL_OPTIONS,
   CUSTOMER_TYPE_OPTIONS, REVENUE_STAGE_OPTIONS, KPI_OPTIONS,
   AI_PREFERENCE_TOGGLES,
+  BUSINESS_CHALLENGE_OPTIONS, BUSINESS_CHALLENGE_OTHER, BUSINESS_CHALLENGE_MAX,
 } from "./businessProfileOptions";
 
 // Re-export the vocabulary so existing server-side imports from
@@ -37,6 +38,7 @@ export {
   BUSINESS_MODEL_OPTIONS, MAIN_GOAL_OPTIONS,
   CUSTOMER_TYPE_OPTIONS, REVENUE_STAGE_OPTIONS, KPI_OPTIONS,
   AI_PREFERENCE_TOGGLES,
+  BUSINESS_CHALLENGE_OPTIONS, BUSINESS_CHALLENGE_OTHER, BUSINESS_CHALLENGE_MAX,
 };
 
 // AI Context Preferences shape. Stored as JSON so we can evolve it
@@ -51,14 +53,17 @@ export interface AiContextPreferences {
 // ────────────────────────────────────────────────────────────────────
 
 export type BusinessProfileFields = {
-  industry?:         string | null;
-  businessCategory?: string | null;
-  businessModels?:   string[];
-  mainGoal?:         string | null;
-  customerType?:     string | null;
-  revenueStage?:     string | null;
-  biggestChallenge?: string | null;
-  importantKpis?:    string[];
+  industry?:           string | null;
+  businessCategory?:   string | null;
+  businessModels?:     string[];
+  mainGoal?:           string | null;
+  customerType?:       string | null;
+  revenueStage?:       string | null;
+  biggestChallenge?:   string | null;
+  // Up to 3 preset challenges. Includes the "other" sentinel when the
+  // user has supplied a free-text biggestChallenge.
+  businessChallenges?: string[];
+  importantKpis?:      string[];
   aiContextPreferences?: AiContextPreferences | null;
 };
 
@@ -71,14 +76,15 @@ export async function upsertBusinessProfile(
   fields: BusinessProfileFields,
 ) {
   const clean = {
-    industry:         fields.industry ?? undefined,
-    businessCategory: fields.businessCategory ?? undefined,
-    businessModels:   fields.businessModels ?? undefined,
-    mainGoal:         fields.mainGoal ?? undefined,
-    customerType:     fields.customerType ?? undefined,
-    revenueStage:     fields.revenueStage ?? undefined,
-    biggestChallenge: fields.biggestChallenge ?? undefined,
-    importantKpis:    fields.importantKpis ?? undefined,
+    industry:           fields.industry ?? undefined,
+    businessCategory:   fields.businessCategory ?? undefined,
+    businessModels:     fields.businessModels ?? undefined,
+    mainGoal:           fields.mainGoal ?? undefined,
+    customerType:       fields.customerType ?? undefined,
+    revenueStage:       fields.revenueStage ?? undefined,
+    biggestChallenge:   fields.biggestChallenge ?? undefined,
+    businessChallenges: fields.businessChallenges ?? undefined,
+    importantKpis:      fields.importantKpis ?? undefined,
     // Prisma's Json column wants InputJsonValue | JsonNull on writes;
     // map our nice null/undefined contract onto that.
     aiContextPreferences:
@@ -243,7 +249,24 @@ export async function getProfileForPrompt(businessId: string): Promise<string> {
   if (np.customerType)     lines.push(`- Primary customers: ${customerLabel(np.customerType)}`);
   if (np.revenueStage)     lines.push(`- Stage: ${stageLabel(np.revenueStage)}`);
   if (np.mainGoal)         lines.push(`- Main goal right now: ${goalLabel(np.mainGoal)}`);
-  if (np.biggestChallenge) lines.push(`- Biggest challenge: ${np.biggestChallenge}`);
+  // Pre-set challenges + the optional free-text. Render labels from
+  // the vocabulary; if the owner picked "other", append their free
+  // text after the labels so the advisor sees the full picture.
+  if (np.businessChallenges.length || np.biggestChallenge) {
+    const labels = np.businessChallenges
+      .filter((v) => v !== BUSINESS_CHALLENGE_OTHER)
+      .map((v) => BUSINESS_CHALLENGE_OPTIONS.find((o) => o.value === v)?.label ?? v);
+    const parts: string[] = [];
+    if (labels.length) parts.push(labels.join(", "));
+    if (np.biggestChallenge && np.businessChallenges.includes(BUSINESS_CHALLENGE_OTHER)) {
+      parts.push(`other: ${np.biggestChallenge}`);
+    } else if (np.biggestChallenge && !np.businessChallenges.length) {
+      // Legacy rows that have biggestChallenge but no businessChallenges
+      // array yet - keep them readable in the prompt.
+      parts.push(np.biggestChallenge);
+    }
+    if (parts.length) lines.push(`- Biggest challenges: ${parts.join(" | ")}`);
+  }
   if (np.importantKpis.length) {
     const labels = np.importantKpis.map((v) => KPI_OPTIONS.find((o) => o.value === v)?.label ?? v);
     lines.push(`- KPIs the owner watches most: ${labels.join(", ")}`);
