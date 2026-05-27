@@ -205,14 +205,14 @@ function CreateForm({
         <div className="flex gap-2">
           <button
             type="button"
-            className={`btn flex-1 ${kind === "variable" ? "bg-bad text-white" : "btn-ghost"}`}
+            className={`btn flex-1 ${kind === "variable" ? "border border-bad text-bad hover:bg-bad/10" : "btn-ghost"}`}
             onClick={() => setKind("variable")}
           >
             Outcome
           </button>
           <button
             type="button"
-            className={`btn flex-1 ${kind === "revenue" ? "bg-good text-white" : "btn-ghost"}`}
+            className={`btn flex-1 ${kind === "revenue" ? "border border-good text-good hover:bg-good/10" : "btn-ghost"}`}
             onClick={() => setKind("revenue")}
           >
             Income

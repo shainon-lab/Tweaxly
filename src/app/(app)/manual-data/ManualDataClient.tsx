@@ -260,7 +260,7 @@ export default function ManualDataClient({
             <div className="flex gap-2">
               <button
                 type="button"
-                className={`btn flex-1 ${type === "outcome" ? "bg-bad text-white" : "btn-ghost"}`}
+                className={`btn flex-1 ${type === "outcome" ? "border border-bad text-bad hover:bg-bad/10" : "btn-ghost"}`}
                 onClick={() => {
                   setType("outcome");
                   setCategoryId("");
@@ -270,7 +270,7 @@ export default function ManualDataClient({
               </button>
               <button
                 type="button"
-                className={`btn flex-1 ${type === "income" ? "bg-good text-white" : "btn-ghost"}`}
+                className={`btn flex-1 ${type === "income" ? "border border-good text-good hover:bg-good/10" : "btn-ghost"}`}
                 onClick={() => {
                   setType("income");
                   setCategoryId("");

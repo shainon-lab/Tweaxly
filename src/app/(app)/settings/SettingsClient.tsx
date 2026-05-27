@@ -1132,14 +1132,14 @@ export default function SettingsClient({
               <div className="flex gap-2">
                 <button
                   type="button"
-                  className={`btn flex-1 ${!addCatDraft.isIncome ? "bg-bad text-white" : "btn-ghost"}`}
+                  className={`btn flex-1 ${!addCatDraft.isIncome ? "border border-bad text-bad hover:bg-bad/10" : "btn-ghost"}`}
                   onClick={() => setAddCatDraft({ ...addCatDraft, isIncome: false })}
                 >
                   Outcome
                 </button>
                 <button
                   type="button"
-                  className={`btn flex-1 ${addCatDraft.isIncome ? "bg-good text-white" : "btn-ghost"}`}
+                  className={`btn flex-1 ${addCatDraft.isIncome ? "border border-good text-good hover:bg-good/10" : "btn-ghost"}`}
                   onClick={() => setAddCatDraft({ ...addCatDraft, isIncome: true })}
                 >
                   Income
