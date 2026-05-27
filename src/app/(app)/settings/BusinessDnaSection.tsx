@@ -208,32 +208,120 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
   }
 
   return (
-    // Render order: Business profile (the 7 questions) first → About
-    // Your Business (AI summary) → Patterns Tweaxly noticed. Use flex +
-    // explicit `order` so the JSX can stay in functional order while the
-    // visual order reflects "fill in your data, see the AI take, see
-    // what we learned".
-    <div className="flex flex-col gap-6">
-      {/* ─── About Your Business ─────────────────────────────────── */}
-      <div className="card order-2">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
-          <div className="font-medium">About Your Business</div>
-          <div className="text-[11px] text-slate-500">
+    // Accordion layout. Six sections, each its own collapsible panel.
+    // Order + default-open state per design:
+    //   1. Business profile          - OPEN
+    //   2. About Your Business       - OPEN
+    //   3. How does the business
+    //      make money?               - CLOSED
+    //   4. KPIs that matter most     - CLOSED
+    //   5. AI Context Preferences    - CLOSED
+    //   6. Patterns Tweaxly noticed  - CLOSED
+    //
+    // Save button moves to a sticky footer below all sections so it's
+    // always reachable, regardless of which panels are open.
+    <div className="flex flex-col gap-3">
+      {/* 1. Business profile (open) ─────────────────────────────── */}
+      <AccordionCard title="Business profile" defaultOpen>
+        <div className="text-xs text-slate-400 mb-5">
+          The core answers the AI uses on every question. Pick what fits;
+          skip what doesn't.
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="label">Industry</label>
+            <input
+              list="industry-list"
+              className="input"
+              value={draft.industry}
+              onChange={(e) => setDraft({ ...draft, industry: e.target.value })}
+              placeholder="e.g. SaaS, Retail, Music"
+            />
+            <datalist id="industry-list">
+              {INDUSTRY_OPTIONS.map((i) => <option key={i} value={i} />)}
+            </datalist>
+          </div>
+
+          <div>
+            <label className="label">Specific business category</label>
+            <input
+              list="business-category-list"
+              className="input"
+              value={draft.businessCategory}
+              onChange={(e) => setDraft({ ...draft, businessCategory: e.target.value })}
+              placeholder="e.g. Recording Studio, Jewelry Store, Dental Clinic"
+            />
+            <datalist id="business-category-list">
+              {BUSINESS_CATEGORY_OPTIONS.map((c) => <option key={c} value={c} />)}
+            </datalist>
+          </div>
+
+          <div>
+            <label className="label">Business stage</label>
+            <select
+              className="input"
+              value={draft.revenueStage}
+              onChange={(e) => setDraft({ ...draft, revenueStage: e.target.value })}
+            >
+              <option value=""> -  pick one  - </option>
+              {REVENUE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="label">Main focus right now</label>
+            <select
+              className="input"
+              value={draft.mainGoal}
+              onChange={(e) => setDraft({ ...draft, mainGoal: e.target.value })}
+            >
+              <option value=""> -  pick one  - </option>
+              {MAIN_GOAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+
+          <div>
+            <label className="label">Primary customers</label>
+            <select
+              className="input"
+              value={draft.customerType}
+              onChange={(e) => setDraft({ ...draft, customerType: e.target.value })}
+            >
+              <option value=""> -  pick one  - </option>
+              {CUSTOMER_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-5">
+          <label className="label">Biggest current challenge</label>
+          <textarea
+            className="input min-h-[80px]"
+            value={draft.biggestChallenge}
+            onChange={(e) => setDraft({ ...draft, biggestChallenge: e.target.value })}
+            placeholder="e.g. customer acquisition is getting expensive, churn is creeping up, hiring the right tech is slow…"
+          />
+        </div>
+      </AccordionCard>
+
+      {/* 2. About Your Business (open) ──────────────────────────── */}
+      <AccordionCard
+        title="About Your Business"
+        defaultOpen
+        aside={
+          <span className="text-[11px] text-slate-500">
             {summaryUpdatedAt
               ? `Updated ${new Date(summaryUpdatedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}`
               : "Not generated yet"}
-          </div>
-        </div>
+          </span>
+        }
+      >
         <div className="text-xs text-slate-400 mb-3 leading-relaxed">
           The AI-generated identity Tweaxly uses across consultation,
           insights and forecasting. Edit freely or regenerate once your
           profile changes.
         </div>
-        {/* Same typography as the dashboard's NarrativeBody for
-            reading consistency. The textarea is the editable surface
-            (vs. the display-only NarrativeBody used on dashboards);
-            we match leading + tracking so the read/write feel doesn't
-            shift between the two. */}
         <textarea
           className="input min-h-[140px] leading-[1.7] tracking-[0.01em]"
           value={summary}
@@ -251,9 +339,6 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
           >
             {generating ? "Analyzing…" : summary ? "Regenerate with AI" : "Generate with AI"}
           </button>
-          {/* Save button - appears when the textarea has unsaved
-              hand-edits. Regenerate auto-saves on its own; this is
-              for owner overrides on top of the generated text. */}
           {summaryDirty ? (
             <>
               <button
@@ -270,195 +355,51 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
             </>
           ) : null}
         </div>
-      </div>
+      </AccordionCard>
 
-      {/* ─── Patterns Tweaxly noticed (Smart Evolution) ───────────
-          Pinned to the bottom of the page (order-5) so it reads as
-          the "what the AI has learned" reveal after the owner has
-          filled in the form + AI prefs above. */}
-      <div className="card order-5">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
-          <div>
-            <div className="font-medium">Patterns Tweaxly noticed</div>
-            <div className="text-xs text-slate-400 mt-0.5 leading-relaxed">
-              Auto-derived from your trailing data + a Claude pass. The advisor uses these alongside your profile on every answer.
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={refreshDerivedSignals}
-            disabled={derivingSignals}
-            className="text-xs px-3 py-1.5 rounded-md border border-accent/40 text-accent bg-transparent hover:bg-accent-soft hover:border-accent hover:text-white transition whitespace-nowrap disabled:opacity-50"
-          >
-            {derivingSignals ? "Refreshing…" : derivedSignals.length === 0 ? "Run analysis" : "Refresh patterns"}
-          </button>
-        </div>
-        {derivedSignals.length === 0 ? (
-          <div className="mt-3 rounded-lg border border-dashed border-line bg-ink-950/40 px-4 py-5 text-sm text-slate-400 text-center">
-            No patterns analyzed yet. Click <span className="text-slate-200">Run analysis</span> to scan trailing data for seasonality, growth, cash-flow concerns and concentration.
-          </div>
-        ) : (
-          <div className="mt-3 space-y-1.5">
-            {derivedSignals.map((s, i) => (
-              <div key={i} className="flex items-start gap-2 text-sm text-slate-200 leading-snug">
-                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent shrink-0" aria-hidden="true" />
-                <span>{s}</span>
-              </div>
-            ))}
-          </div>
-        )}
-        {lastDerivedAt ? (
-          <div className="mt-3 text-[11px] text-slate-500">
-            Last refreshed {new Date(lastDerivedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
-          </div>
-        ) : null}
-      </div>
-
-      {/* ─── Strategic profile fields ────────────────────────────── */}
-      <div className="card order-1">
-        <div className="font-medium mb-1">Business profile</div>
-        <div className="text-xs text-slate-400 mb-5">
-          Seven short answers that teach the AI how to think about your
-          workspace. The advisor uses these on every question.
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          {/* Industry */}
-          <div>
-            <label className="label">Industry</label>
-            <input
-              list="industry-list"
-              className="input"
-              value={draft.industry}
-              onChange={(e) => setDraft({ ...draft, industry: e.target.value })}
-              placeholder="e.g. SaaS, Retail, Music"
+      {/* 3. How does the business make money? (closed) ──────────── */}
+      <AccordionCard
+        title="How does the business make money?"
+        aside={<span className="text-[11px] text-slate-500">(pick any)</span>}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {BUSINESS_MODEL_OPTIONS.map((o) => (
+            <SelectCard
+              key={o.value}
+              selected={draft.businessModels.includes(o.value)}
+              onClick={() => toggle("businessModels", o.value)}
+              label={o.label}
             />
-            <datalist id="industry-list">
-              {INDUSTRY_OPTIONS.map((i) => <option key={i} value={i} />)}
-            </datalist>
-          </div>
+          ))}
+        </div>
+      </AccordionCard>
 
-          {/* Business category - typeahead from a curated SMB list,
-              with free-text fallback. Narrower than Industry. */}
-          <div>
-            <label className="label">Specific business category</label>
-            <input
-              list="business-category-list"
-              className="input"
-              value={draft.businessCategory}
-              onChange={(e) => setDraft({ ...draft, businessCategory: e.target.value })}
-              placeholder="e.g. Recording Studio, Jewelry Store, Dental Clinic"
+      {/* 4. KPIs that matter most (closed) ──────────────────────── */}
+      <AccordionCard
+        title="KPIs that matter most"
+        aside={<span className="text-[11px] text-slate-500">(pick any)</span>}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+          {KPI_OPTIONS.map((o) => (
+            <SelectCard
+              key={o.value}
+              selected={draft.importantKpis.includes(o.value)}
+              onClick={() => toggle("importantKpis", o.value)}
+              label={o.label}
             />
-            <datalist id="business-category-list">
-              {BUSINESS_CATEGORY_OPTIONS.map((c) => <option key={c} value={c} />)}
-            </datalist>
-          </div>
-
-          {/* Stage */}
-          <div>
-            <label className="label">Business stage</label>
-            <select
-              className="input"
-              value={draft.revenueStage}
-              onChange={(e) => setDraft({ ...draft, revenueStage: e.target.value })}
-            >
-              <option value=""> -  pick one  - </option>
-              {REVENUE_STAGE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-
-          {/* Main goal */}
-          <div>
-            <label className="label">Main focus right now</label>
-            <select
-              className="input"
-              value={draft.mainGoal}
-              onChange={(e) => setDraft({ ...draft, mainGoal: e.target.value })}
-            >
-              <option value=""> -  pick one  - </option>
-              {MAIN_GOAL_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
-
-          {/* Customer type */}
-          <div>
-            <label className="label">Primary customers</label>
-            <select
-              className="input"
-              value={draft.customerType}
-              onChange={(e) => setDraft({ ...draft, customerType: e.target.value })}
-            >
-              <option value=""> -  pick one  - </option>
-              {CUSTOMER_TYPE_OPTIONS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-            </select>
-          </div>
+          ))}
         </div>
+      </AccordionCard>
 
-        {/* Business models - multi-select card grid. Cards beat pill
-            chips for multi-select: the checkbox + label pattern is
-            instantly readable as "click to toggle" and the consistent
-            row heights make the section feel orderly even when labels
-            wrap. */}
-        <div className="mt-5">
-          <label className="label">
-            How does the business make money? <span className="text-slate-500 normal-case font-normal">(pick any)</span>
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {BUSINESS_MODEL_OPTIONS.map((o) => (
-              <SelectCard
-                key={o.value}
-                selected={draft.businessModels.includes(o.value)}
-                onClick={() => toggle("businessModels", o.value)}
-                label={o.label}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Important KPIs - multi-select card grid (same pattern). */}
-        <div className="mt-5">
-          <label className="label">
-            KPIs that matter most <span className="text-slate-500 normal-case font-normal">(pick any)</span>
-          </label>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            {KPI_OPTIONS.map((o) => (
-              <SelectCard
-                key={o.value}
-                selected={draft.importantKpis.includes(o.value)}
-                onClick={() => toggle("importantKpis", o.value)}
-                label={o.label}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Biggest challenge - free text */}
-        <div className="mt-5">
-          <label className="label">Biggest current challenge</label>
-          <textarea
-            className="input min-h-[80px]"
-            value={draft.biggestChallenge}
-            onChange={(e) => setDraft({ ...draft, biggestChallenge: e.target.value })}
-            placeholder="e.g. customer acquisition is getting expensive, churn is creeping up, hiring the right tech is slow…"
-          />
-        </div>
-
-      </div>
-
-      {/* ─── AI Context Preferences (own card, last on the page) ──
-          Pulled out of the Business profile card so the advisor-tuning
-          area reads as a distinct decision the owner is making  - 
-          "what should the AI keep in mind?" - rather than buried at
-          the bottom of the profile form. The Save button lives here
-          since this is the last section; saveAll() flushes the whole
-          shared draft (profile + AI prefs) in one POST. */}
-      <div className="card order-4">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
-          <div className="font-medium">AI Context Preferences</div>
-          <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold">
+      {/* 5. AI Context Preferences (closed) ─────────────────────── */}
+      <AccordionCard
+        title="AI Context Preferences"
+        aside={
+          <span className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold">
             Optional
-          </div>
-        </div>
+          </span>
+        }
+      >
         <div className="text-xs text-slate-400 mb-4 leading-relaxed">
           Biases the advisor will honour on every answer - tone, ranking,
           and risk posture. Skip if you want the AI to stay neutral.
@@ -485,21 +426,101 @@ export default function BusinessDnaSection({ initial }: BusinessDnaProps) {
             maxLength={1000}
           />
         </div>
+      </AccordionCard>
 
-        <div className="mt-5 flex items-center justify-end gap-3 flex-wrap">
-          {err ? <span className="text-sm text-bad mr-auto">{err}</span> : null}
-          {savedFlash ? <span className="text-sm text-good">Saved ✓</span> : null}
+      {/* 6. Patterns Tweaxly noticed (closed) ───────────────────── */}
+      <AccordionCard
+        title="Patterns Tweaxly noticed"
+        aside={
           <button
             type="button"
-            onClick={saveAll}
-            disabled={saving}
-            className="btn-primary disabled:opacity-50"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); refreshDerivedSignals(); }}
+            disabled={derivingSignals}
+            className="text-[11px] px-2.5 py-1 rounded-md border border-accent/40 text-accent bg-transparent hover:bg-accent-soft hover:border-accent hover:text-white transition whitespace-nowrap disabled:opacity-50"
           >
-            {saving ? "Saving…" : "Save profile"}
+            {derivingSignals ? "Refreshing…" : derivedSignals.length === 0 ? "Run analysis" : "Refresh"}
           </button>
+        }
+      >
+        <div className="text-xs text-slate-400 mb-3 leading-relaxed">
+          Auto-derived from your trailing data + a Claude pass. The advisor uses these alongside your profile on every answer.
         </div>
+        {derivedSignals.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-line bg-ink-950/40 px-4 py-5 text-sm text-slate-400 text-center">
+            No patterns analyzed yet. Click <span className="text-slate-200">Run analysis</span> to scan trailing data for seasonality, growth, cash-flow concerns and concentration.
+          </div>
+        ) : (
+          <div className="space-y-1.5">
+            {derivedSignals.map((s, i) => (
+              <div key={i} className="flex items-start gap-2 text-sm text-slate-200 leading-snug">
+                <span className="mt-1.5 w-1.5 h-1.5 rounded-full bg-accent shrink-0" aria-hidden="true" />
+                <span>{s}</span>
+              </div>
+            ))}
+          </div>
+        )}
+        {lastDerivedAt ? (
+          <div className="mt-3 text-[11px] text-slate-500">
+            Last refreshed {new Date(lastDerivedAt).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" })}
+          </div>
+        ) : null}
+      </AccordionCard>
+
+      {/* Save footer - lives OUTSIDE the accordions so the primary
+          action is always reachable no matter which panels are open.
+          saveAll() flushes the whole shared draft (profile + AI prefs)
+          in one POST. */}
+      <div className="mt-2 flex items-center justify-end gap-3 flex-wrap">
+        {err ? <span className="text-sm text-bad mr-auto">{err}</span> : null}
+        {savedFlash ? <span className="text-sm text-good">Saved ✓</span> : null}
+        <button
+          type="button"
+          onClick={saveAll}
+          disabled={saving}
+          className="btn-primary disabled:opacity-50"
+        >
+          {saving ? "Saving…" : "Save profile"}
+        </button>
       </div>
     </div>
+  );
+}
+
+// ─── AccordionCard ──────────────────────────────────────────────────
+// Collapsible card with summary row (title + optional aside content +
+// chevron) and a children body. Uses native <details>/<summary> so
+// open/closed state is per-element and survives without any React
+// useState. Aside content stops summary clicks from bubbling so
+// interactive controls (like the Patterns "Refresh" button) can live
+// in the header without toggling the accordion.
+function AccordionCard({
+  title, aside, defaultOpen, children,
+}: {
+  title:        string;
+  aside?:       React.ReactNode;
+  defaultOpen?: boolean;
+  children:     React.ReactNode;
+}) {
+  return (
+    <details open={!!defaultOpen} className="group card !p-0 overflow-hidden">
+      <summary className="cursor-pointer list-none select-none px-5 py-4 flex items-center justify-between gap-3 hover:bg-ink-900/40 transition">
+        <div className="flex items-baseline gap-3 flex-wrap min-w-0">
+          <span className="font-medium text-slate-100 truncate">{title}</span>
+        </div>
+        <div className="flex items-center gap-3 shrink-0">
+          {aside}
+          <span
+            aria-hidden="true"
+            className="text-slate-500 text-xs transition group-open:rotate-180"
+          >
+            ⌄
+          </span>
+        </div>
+      </summary>
+      <div className="px-5 pb-5 pt-1 border-t border-line/40">
+        {children}
+      </div>
+    </details>
   );
 }
 
