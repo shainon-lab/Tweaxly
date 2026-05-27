@@ -934,37 +934,47 @@ export default function SettingsClient({
 
       {/* Categorization rules - auto-assign categories to incoming
           transactions when their description or vendor matches a
-          pattern. Lives inside this tab because rules edit how
-          categories get applied. */}
-      <div className="card">
-        <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
-          <div className="font-medium">Categorization rules</div>
-          <p className="text-xs text-slate-400 max-w-md">
-            If a description or vendor matches your pattern, the system auto-assigns the category. Higher priority wins.
-          </p>
+          pattern. Collapsed by default - most users only configure
+          rules occasionally, so it doesn't need to take real estate
+          while they're scanning categories or vendors. */}
+      <details className="group card !p-0 overflow-hidden mt-4">
+        <summary className="cursor-pointer list-none select-none px-5 py-4 flex items-baseline justify-between gap-3 flex-wrap hover:bg-ink-900/40 transition">
+          <div className="flex items-baseline gap-3 flex-wrap min-w-0">
+            <span className="font-medium text-slate-100">Categorization rules</span>
+            <p className="text-xs text-slate-400 max-w-md">
+              If a description or vendor matches your pattern, the system auto-assigns the category. Higher priority wins.
+            </p>
+          </div>
+          <span aria-hidden="true" className="text-slate-500 text-xs transition group-open:rotate-180 shrink-0">⌄</span>
+        </summary>
+        <div className="px-5 pb-5 pt-1 border-t border-line/40">
+          <RulesClient
+            rules={rules}
+            categories={cats.map((c) => ({ id: c.id, name: c.name }))}
+          />
         </div>
-        <RulesClient
-          rules={rules}
-          categories={cats.map((c) => ({ id: c.id, name: c.name }))}
-        />
-      </div>
+      </details>
 
       {/* Vendorization rules - mirrors the categorization rules card,
-          but the target is a canonical vendor name. Patterns match
-          against description / vendor / source on upload and rewrite
-          Transaction.vendor before category rules run. */}
-      <div className="card mt-4">
-        <div className="flex items-baseline justify-between mb-3 flex-wrap gap-3">
-          <div className="font-medium">Vendorization rules</div>
-          <p className="text-xs text-slate-400 max-w-md">
-            If a description or raw vendor matches your pattern, the system rewrites the transaction's vendor to the canonical name. Higher priority wins. Runs before categorization rules.
-          </p>
+          but the target is a canonical vendor name. Same collapsed-
+          by-default treatment. */}
+      <details className="group card !p-0 overflow-hidden mt-4">
+        <summary className="cursor-pointer list-none select-none px-5 py-4 flex items-baseline justify-between gap-3 flex-wrap hover:bg-ink-900/40 transition">
+          <div className="flex items-baseline gap-3 flex-wrap min-w-0">
+            <span className="font-medium text-slate-100">Vendorization rules</span>
+            <p className="text-xs text-slate-400 max-w-md">
+              If a description or raw vendor matches your pattern, the system rewrites the transaction&apos;s vendor to the canonical name. Higher priority wins. Runs before categorization rules.
+            </p>
+          </div>
+          <span aria-hidden="true" className="text-slate-500 text-xs transition group-open:rotate-180 shrink-0">⌄</span>
+        </summary>
+        <div className="px-5 pb-5 pt-1 border-t border-line/40">
+          <VendorizationRulesClient
+            rules={vendorizationRules}
+            vendors={vends.map((v) => ({ id: v.id, name: v.name }))}
+          />
         </div>
-        <VendorizationRulesClient
-          rules={vendorizationRules}
-          vendors={vends.map((v) => ({ id: v.id, name: v.name }))}
-        />
-      </div>
+      </details>
 
       {/* Merge category modal - mirrors the vendor merge modal. Picks
           a target category, then POSTs to /api/categories/merge which

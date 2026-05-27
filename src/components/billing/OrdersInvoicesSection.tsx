@@ -187,7 +187,7 @@ export default function OrdersInvoicesSection() {
       ) : (
         <div className="rounded-lg border border-line overflow-x-auto">
           <table className="w-full text-xs">
-            <thead className="bg-ink-950 text-left text-[10px] uppercase tracking-wider text-slate-400 sticky top-[140px] z-10">
+            <thead className="bg-ink-950 text-left text-[10px] uppercase tracking-wider text-slate-400">
               <tr>
                 <th className="px-3 py-2 font-medium">Date</th>
                 <th className="px-3 py-2 font-medium">Workspace</th>

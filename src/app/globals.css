@@ -311,22 +311,6 @@ html[data-theme="light"] .auth-shell .card {
   }
   .table-base tbody tr:hover { @apply bg-ink-700/40; }
 
-  /* Opt-in sticky table header. Apply to <table> when the column
-     names should stay visible during vertical scroll of a long
-     dataset (transactions, billing orders, admin tables).
-     Top offsets match the app's sticky chrome:
-       - PageHeader alone:  85px
-       - PageHeader + tabs: 140px
-     Solid background (no transparency) so scrolling cells never
-     bleed through the column-name row. */
-  .sticky-thead thead th {
-    @apply sticky z-10 bg-ink-950;
-    top: 140px;
-  }
-  .sticky-thead-tight thead th {
-    @apply sticky z-10 bg-ink-950;
-    top: 85px;
-  }
 }
 
 /* Recharts tooltip - must adapt to theme so the popup stays legible. */

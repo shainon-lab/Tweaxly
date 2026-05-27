@@ -386,7 +386,7 @@ export default function TransactionsClient({
       ) : null}
 
       <div className="card overflow-x-auto">
-        <table className="table-base sticky-thead min-w-[1200px]">
+        <table className="table-base min-w-[1200px]">
           <thead>
             <tr>
               <th className="w-8"><input type="checkbox" checked={selected.size === sortedTxns.length && sortedTxns.length > 0} onChange={toggleAll} /></th>
