@@ -201,11 +201,23 @@ const CREDIT_PACKS: { pack: string; price: string }[] = [
 const PRICING_FAQS: { q: string; a: string }[] = [
   {
     q: "Is the Free plan really free?",
-    a: "Yes. The Free plan is free forever - no credit card required. You get 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Create as many workspaces as you want (each is its own subscription). Upgrade any workspace to Pro when you're ready to use AI continuously.",
+    a: "Yes. The Free plan is free forever - no credit card required. You get 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Free workspaces have a single owner (no team invitations on Free). Create as many workspaces as you want (each is its own subscription). Upgrade any workspace to Pro when you're ready to use AI continuously or bring in teammates.",
   },
   {
     q: "What is an AI Credit?",
-    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 500 credits every month plus the ability to buy more anytime.",
+    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 500 credits every month plus the ability to buy more anytime, and Pro routes those credits through a more capable AI tier with faster responses.",
+  },
+  {
+    q: "What's the difference between AI on Free vs Pro?",
+    a: "Free uses a lightweight AI tier so the starter credits go further - you still get useful consultation, signals, and basic forecasting. Pro switches you to the advanced tier: deeper analysis, longer reasoning, priority processing, and access to the full feature set (Scenario Builder, Workforce Planning, multi-scenario compare, Smart Alerts). The metering (credits per action) stays the same on both tiers.",
+  },
+  {
+    q: "Can I invite team members to my workspace?",
+    a: "Yes, on Pro. A Pro workspace supports the owner plus up to 2 additional members - 3 people total - with role-based access. Invite by email from Settings > Members & Access; the invited person gets a one-click link, accepts, and lands inside your workspace with their own login. Pending invitations count toward the 3-person cap. Free workspaces have a single owner only.",
+  },
+  {
+    q: "What can each role do?",
+    a: "Three roles: Owner (the workspace creator) has full access including billing, member management, and workspace deletion. Admin can use the app and manage data - uploads, transactions, categories, insights, forecasts, consultations - but cannot access billing or invite/remove members. Viewer is read-only: they can see dashboards, reports and signals but cannot upload, edit or change settings. Roles are assigned per workspace, so the same person can be an Admin in one and a Viewer in another.",
   },
   {
     q: "What happens when my starter credits run out on Free?",
@@ -220,8 +232,12 @@ const PRICING_FAQS: { q: string; a: string }[] = [
     a: "No. Buying add-on AI Credits is a Pro feature. On Free workspaces, the starter grant is a one-time experience - if you want to keep using the AI, upgrade to Pro for 500 monthly credits + the ability to buy packs anytime.",
   },
   {
+    q: "How far into the future does Tweaxly forecast?",
+    a: "Free workspaces forecast up to 3 months ahead - enough to spot near-term cash-flow issues. Pro extends the horizon to as far as 60 months (5 years) for long-range scenario planning, hiring decisions and growth modelling. Forecast confidence is shown alongside each projection so you know how much weight to put on the longer windows.",
+  },
+  {
     q: "What happens if I downgrade or cancel?",
-    a: "Your data is never deleted. The workspace moves to read-only mode: dashboards, past reports and historical signals stay visible. New AI consultation, forecast updates, uploads and advanced reports pause until you reactivate. Re-subscribe and everything resumes where it left off.",
+    a: "Your data is never deleted. The workspace moves to read-only mode: dashboards, past reports and historical signals stay visible. New AI consultation, forecast updates, uploads and advanced reports pause until you reactivate. Team members are suspended (not removed) - their access returns automatically when you upgrade back to Pro. Re-subscribe and everything resumes where it left off.",
   },
   {
     q: "Is there an annual plan?",
@@ -229,7 +245,7 @@ const PRICING_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Each workspace is its own plan - what does that mean?",
-    a: "If you run multiple businesses, every workspace has its own subscription and its own AI Credits. Upgrading workspace A to Pro doesn't change workspace B - they're independent. Useful for accountants, consultants and multi-business owners who want different tiers per business.",
+    a: "If you run multiple businesses, every workspace has its own subscription, its own AI Credits, and its own team. Upgrading workspace A to Pro doesn't change workspace B - they're independent, including team membership: the same person can be an Owner in one, Admin in another, and Viewer in a third. Useful for accountants, consultants and multi-business owners who want different tiers per business.",
   },
 ];
 
