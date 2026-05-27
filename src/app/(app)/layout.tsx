@@ -148,8 +148,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         />
         <main className="flex-1 min-w-0 overflow-y-auto">
           {/* pt-16 on mobile leaves room for the floating hamburger button
-              (sidebar lives behind a drawer below the lg breakpoint). */}
-          <div className="px-4 sm:px-6 lg:px-8 pt-16 pb-6 lg:py-8 max-w-[1400px] mx-auto">
+              (sidebar lives behind a drawer below the lg breakpoint).
+              pb-28 on every breakpoint reserves ~112px at the bottom so
+              the always-visible <GlobalConsult /> floating button (at
+              `fixed bottom-5 right-5`, ~48px tall plus an occasional
+              nudge stacked above it) never overlaps the last row of
+              page content. Without this padding, long-scrolling pages
+              (tables, transaction lists, settings) end with their last
+              row obscured by the button. */}
+          <div className="px-4 sm:px-6 lg:px-8 pt-16 pb-28 lg:pt-8 lg:pb-28 max-w-[1400px] mx-auto">
             {children}
           </div>
         </main>
