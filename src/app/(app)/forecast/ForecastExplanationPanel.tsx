@@ -1,15 +1,17 @@
 "use client";
 
-// "Why this forecast?" - 3-layer executive panel.
+// "Why this forecast?" - compact executive panel.
 //
-// Layer 1 (always visible): confidence widget + 3-4 main driver bullets.
-// Layer 2: compact driver cards in a grid (one per forecasting factor).
-// Layer 3 (collapsed): the full technical breakdown - baseline range,
-//   excluded records, recurring items, seasonality note, warnings.
+// Layer 1 (always visible): single dense header row with title +
+//   inline confidence chip + a tight driver-cards grid sorted by
+//   impact (warnings first).
+// Layer 2 (collapsed): the full technical breakdown - baseline range,
+//   excluded records, recurring items, seasonality note, engine
+//   narrative.
 //
 // All driver rollups are derived from the structured ForecastResult
-// fields; the engine's long explanationText is hidden inside Layer 3 so
-// it doesn't visually compete with the chart and KPI cards above.
+// fields; the engine's long explanationText is hidden inside Layer 2
+// so it doesn't visually compete with the chart and KPI cards above.
 
 import { useState } from "react";
 import { fmtMoney } from "@/lib/format";
@@ -57,71 +59,63 @@ export default function ForecastExplanationPanel({
 }: { result: ForecastResult; currency: string }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
-  const drivers = buildDrivers(result);
-  // Layer 1 main-driver bullets: top 4 by impact ranking. Warnings
-  // first so risks lead, then positives.
-  const topDrivers = [...drivers]
-    .sort((a, b) => TONE_RANK[a.impact] - TONE_RANK[b.impact])
-    .slice(0, 4);
+  // Sort drivers by impact (warnings first, then positives, then
+  // neutral) so the most-important cards lead. Previously this was
+  // done only for the now-removed "Main Drivers" bullet list - the
+  // cards rendered in build order. Sorting them now lets us drop the
+  // duplicate bullet list entirely.
+  const drivers = [...buildDrivers(result)]
+    .sort((a, b) => TONE_RANK[a.impact] - TONE_RANK[b.impact]);
 
   const confidencePct = result.confidenceScore;
   const confTone: Tone = result.confidence === "high"   ? "positive"
                        : result.confidence === "medium" ? "neutral"
                        :                                  "warning";
 
-  // Volatility label derived from confidence + outlier count -
-  // the user-facing word for what the engine measures.
   const volatility = volatilityLabel(result);
   const recurringCount = result.recurringDetected.length;
 
+  // Compact "based on" line - same four data points the old verbose
+  // confidence chip listed, now joined into one wrapping inline.
+  const basedOn = [
+    `${result.baselinePeriod.monthsWithData}/${result.baselinePeriod.monthsResolved} months`,
+    `${volatility.toLowerCase()} volatility`,
+    result.seasonalityApplied ? "seasonal pattern applied" : "no seasonal pattern",
+    recurringCount > 0
+      ? `${recurringCount} recurring item${recurringCount === 1 ? "" : "s"}`
+      : "no recurring items",
+  ].join(" · ");
+
   return (
     <div className="card mb-6">
-      {/* ─── Layer 1: confidence widget + main drivers ─────────── */}
-      <div className="flex items-start justify-between gap-6 flex-wrap mb-5">
+      {/* ─── Compact header: title + inline confidence chip ─────── */}
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
         <div className="min-w-0 flex-1">
-          <div className="font-medium mb-1">Why this forecast?</div>
-          <div className="text-xs text-slate-400">
-            The top drivers behind this projection, ranked by impact.
+          <div className="font-medium">Why this forecast?</div>
+          <div className="text-xs text-slate-400 mt-0.5">
+            Top drivers behind this projection, ranked by impact.
           </div>
         </div>
-
-        {/* Confidence chip - the trust layer. Big number, short
-            "based on" bullets so the user sees what fed the score. */}
-        <div className="rounded-lg border border-line bg-ink-900/50 px-4 py-3 min-w-[200px]">
-          <div className="text-[11px] uppercase tracking-wide text-slate-400">
-            Forecast Confidence
+        {/* Horizontal confidence chip - score + based-on facts share
+            one row so the panel header stays tight instead of leaving
+            a column of dead space on wide screens. */}
+        <div className="flex items-center gap-3 shrink-0 rounded-md border border-line bg-ink-900/50 px-3 py-2">
+          <div className="text-right">
+            <div className="text-[10px] uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
+            <div className={`text-xl font-semibold leading-tight ${TONE_TEXT[confTone]}`}>
+              {confidencePct}%
+            </div>
           </div>
-          <div className={`text-2xl font-semibold leading-tight ${TONE_TEXT[confTone]}`}>
-            {confidencePct}%
+          <div className="text-[11px] text-slate-400 leading-snug max-w-[200px]">
+            {basedOn}
           </div>
-          <ul className="text-[11px] text-slate-400 mt-1 space-y-0.5">
-            <li>· {result.baselinePeriod.monthsWithData} of {result.baselinePeriod.monthsResolved} months analyzed</li>
-            <li>· {volatility} volatility</li>
-            <li>· {result.seasonalityApplied ? "Seasonal pattern applied" : "No seasonal pattern"}</li>
-            <li>· {recurringCount > 0 ? `${recurringCount} recurring item${recurringCount === 1 ? "" : "s"}` : "No recurring items"}</li>
-          </ul>
         </div>
       </div>
 
-      {topDrivers.length > 0 ? (
-        <div className="mb-5">
-          <div className="text-[11px] uppercase tracking-wide text-slate-400 mb-2">
-            Main Drivers
-          </div>
-          <ul className="space-y-1.5">
-            {topDrivers.map((d, i) => (
-              <li key={i} className="flex items-start gap-2.5">
-                <span className={`mt-1.5 w-1.5 h-1.5 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
-                <span className="text-sm text-slate-200 leading-snug">
-                  {d.detail}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-
-      {/* ─── Layer 2: driver cards grid ────────────────────────── */}
+      {/* ─── Driver cards (sorted by impact: warning → positive →
+            neutral). Replaces the old separate "Main Drivers" bullet
+            list - the tone dot + Watch/Positive/Neutral label on each
+            card already conveys the same priority signal. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {drivers.map((d, i) => (
           <div
@@ -142,7 +136,7 @@ export default function ForecastExplanationPanel({
         ))}
       </div>
 
-      {/* ─── Layer 3: detailed analysis (collapsed) ────────────── */}
+      {/* ─── Layer 2: detailed analysis (collapsed) ────────────── */}
       <div className="mt-4 pt-4 border-t border-line">
         <button
           type="button"
