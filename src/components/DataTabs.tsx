@@ -92,7 +92,12 @@ export default function DataTabs() {
   }, [advancedOpen]);
 
   return (
-    <div className="mb-6 -mt-2 flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+    // Sticky just under the compact PageHeader (~56px) so the user
+    // keeps tab context while scrolling long data tables. The full-
+    // width background + extended horizontal padding prevent content
+    // from showing through during scroll.
+    <div className="sticky top-14 z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950/95 backdrop-blur pt-1 mb-6">
+      <div className="flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {PRIMARY_TABS.map((d) => {
         const active = d.activeWhen(path, tab);
         return (
@@ -146,6 +151,7 @@ export default function DataTabs() {
             })}
           </div>
         ) : null}
+      </div>
       </div>
     </div>
   );
