@@ -319,6 +319,24 @@ function stripOptionParagraphs(content: string, horizons: HorizonBlock[]): strin
   return withoutDisclaimer.join("\n\n").trim();
 }
 
+// Strip markdown syntax that has no business showing in a plain-text
+// surface (the Executive Takeaway renders as a normal <div>, not
+// through renderMarkdown - so things like "### " or "**bold**" come
+// through verbatim unless we sand them off here).
+function stripMarkdownSyntax(s: string): string {
+  return s
+    // Drop ATX heading prefixes ("#", "##", "###", up to "######").
+    .replace(/^#{1,6}\s+/, "")
+    // **bold** → bold
+    .replace(/\*\*([^*]+)\*\*/g, "$1")
+    // _italic_ → italic
+    .replace(/_([^_]+)_/g, "$1")
+    // *italic* → italic (single-asterisk variant the advisor sometimes
+    // emits even though we don't render it elsewhere).
+    .replace(/\*([^*]+)\*/g, "$1")
+    .trim();
+}
+
 function buildFreeformBriefing(content: string): DecisionBriefing {
   // When there's no structured payload we still produce a briefing
   // shape: pull the first sentence as the takeaway headline, keep
@@ -336,14 +354,14 @@ function buildFreeformBriefing(content: string): DecisionBriefing {
   const m = trimmed.match(/^([^.!?]+[.!?])(\s+|$)/);
   if (!m) {
     return {
-      takeaway: { headline: trimmed },
+      takeaway: { headline: stripMarkdownSyntax(trimmed) },
       anchors: [],
       reasoning: "",
       paths: [],
       risks: [],
     };
   }
-  const first = m[1].trim();
+  const first = stripMarkdownSyntax(m[1]);
   const rest  = trimmed.slice(m[0].length).trim();
   return {
     takeaway: { headline: first },

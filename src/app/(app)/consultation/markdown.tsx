@@ -13,14 +13,19 @@ import React from "react";
 
 // Soft target for paragraph length. Once a running word count crosses
 // this number we break at the next period / question mark / exclamation
-// mark followed by whitespace. Tuned for ~3-4 sentences per paragraph
-// at typical advisor sentence length, which keeps each paragraph
-// readable on phone widths and large desktops alike.
-const PARAGRAPH_TARGET_WORDS = 50;
+// mark followed by whitespace. 35 words ≈ 2-3 sentences at typical
+// advisor sentence length, which keeps the History view readable
+// instead of producing dense walls of text.
+const PARAGRAPH_TARGET_WORDS = 35;
 
 function inline(text: string): React.ReactNode {
   const parts: React.ReactNode[] = [];
-  const re = /(\*\*[^*]+\*\*|_[^_]+_)/g;
+  // Match order matters - **bold** must be tried before single-*
+  // italic so we don't accidentally split a `**` token into two
+  // single-asterisk italics. _italic_ is the underscore variant.
+  // *italic* is the single-asterisk variant the advisor often uses
+  // for inline labels like *Data:* and *Important missing data:*.
+  const re = /(\*\*[^*]+\*\*|_[^_]+_|\*[^*\n]+\*)/g;
   let last = 0;
   let m: RegExpExecArray | null;
   while ((m = re.exec(text)) !== null) {
@@ -32,7 +37,15 @@ function inline(text: string): React.ReactNode {
           {tok.slice(2, -2)}
         </strong>,
       );
+    } else if (tok.startsWith("_")) {
+      parts.push(
+        <em key={parts.length} className="text-slate-400">
+          {tok.slice(1, -1)}
+        </em>,
+      );
     } else {
+      // Single-asterisk italic. Renders the same as the underscore
+      // variant; we strip the markers so users never see literal *.
       parts.push(
         <em key={parts.length} className="text-slate-400">
           {tok.slice(1, -1)}
