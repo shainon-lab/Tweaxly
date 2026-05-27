@@ -217,80 +217,28 @@ export default function ManualDataClient({
 
   return (
     <>
-      {/* Recommended workflow - calm informational header, no warning
-          color. Tells owners how to use this page in order of priority
-          so first-timers don't reach for the template / single-entry
-          options when a bank statement is what they actually want. */}
-      <div className="card mb-4 border-accent/30 bg-accent-soft/10">
-        <div className="text-sm text-slate-100 font-medium mb-1">Recommended workflow</div>
-        <ol className="text-sm text-slate-300 list-decimal pl-5 space-y-1 leading-relaxed">
-          <li>
-            <span className="font-medium text-slate-100">First time:</span>{" "}
-            upload a historical date range from every source you track (bank, credit card, PayPal, etc.) so we have a complete baseline.
-          </li>
-          <li>
-            <span className="font-medium text-slate-100">Each month:</span>{" "}
-            upload last month's statement from each source - the coverage matrix and missing-month alerts will remind you.
-          </li>
-          <li>
-            Inside Source statement, you can optionally download the{" "}
-            <span className="font-medium text-slate-100">Tweaxly CSV template</span> to pre-format your file (skips the mapping step). The{" "}
-            <span className="font-medium text-slate-100">Single manual entry</span> option is for one-offs that won't appear in any export.
-          </li>
-        </ol>
-      </div>
-
-      {/* Mode selector - two upload patterns. Each renders the matching card.
-          The Tweaxly CSV template used to be its own option but is now a
-          download link inside the Source statement flow's upload step
-          (an OPTIONAL way to pre-format a file, not a separate workflow). */}
-      <div className="card mb-4">
-        <div className="font-medium mb-1">How are you uploading?</div>
-        <div className="text-sm text-slate-400 mb-3">
-          Pick the option that matches your file. You can switch any time.
-        </div>
+      {/* ── Step 1: Choose upload type ────────────────────────────────
+          Two cards, one-sentence descriptions. Replaces the old
+          three-paragraph "Recommended workflow" + verbose mode-selector
+          combo that pushed the actual action below the fold. */}
+      <section className="mb-5">
+        <StepLabel index={1} title="Choose upload type" />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <button
-            type="button"
+          <UploadTypeCard
+            active={uploadMode === "bank"}
+            badge="recommended"
+            title="Statement Upload"
+            description="Upload bank, credit card, PayPal, or Stripe exports."
             onClick={() => setUploadMode("bank")}
-            className={`text-left rounded-xl border p-4 transition ${
-              uploadMode === "bank"
-                ? "border-accent bg-accent-soft/30"
-                : "border-line bg-ink-900/30 hover:border-accent/40"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className={uploadMode === "bank" ? "pill-accent" : "pill text-[10px]"}>
-                {uploadMode === "bank" ? "selected" : "recommended"}
-              </span>
-              <span className="font-medium text-slate-100">Source statement</span>
-            </div>
-            <div className="text-xs text-slate-400 leading-relaxed">
-              Upload an export from any source - bank, credit card, PayPal, Stripe, or others - in CSV, XLS, or XLSX. We auto-detect columns, you confirm the mapping, and we save it for next time.
-            </div>
-          </button>
-          <button
-            type="button"
+          />
+          <UploadTypeCard
+            active={uploadMode === "manual"}
+            title="Manual Entry"
+            description="Add a one-time transaction manually."
             onClick={() => setUploadMode("manual")}
-            className={`text-left rounded-xl border p-4 transition ${
-              uploadMode === "manual"
-                ? "border-accent bg-accent-soft/30"
-                : "border-line bg-ink-900/30 hover:border-accent/40"
-            }`}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <span className={uploadMode === "manual" ? "pill-accent" : "pill text-[10px]"}>
-                {uploadMode === "manual" ? "selected" : "manual"}
-              </span>
-              <span className="font-medium text-slate-100">Single manual entry</span>
-            </div>
-            <div className="text-xs text-slate-400 leading-relaxed">
-              For items that won't appear in any upload - a personal-card business
-              purchase, a gift, or a one-off invoice settled outside the books.
-            </div>
-          </button>
+          />
         </div>
-      </div>
+      </section>
 
       {uploadMode === "bank" ? (
         <GuidedBankImport defaultCurrency={currency} />
@@ -620,6 +568,120 @@ export default function ManualDataClient({
           </div>
         </div>
       ) : null}
+
+      {/* ── Lightweight AI helper ─────────────────────────────────────
+          Sits below the action area, conversational tone. Replaces the
+          old documentation-heavy "Recommended workflow" block at the
+          top - same useful guidance, but the user sees it AFTER the
+          primary action is visible, not before. */}
+      <section className="mt-6">
+        <div className="rounded-2xl border border-brand-purple/25 bg-gradient-to-br from-brand-purple/10 via-ink-900/40 to-accent/5 p-4 sm:p-5">
+          <div className="flex items-start gap-3">
+            <div className="text-xl leading-none mt-0.5" aria-hidden="true">👋</div>
+            <div className="min-w-0">
+              <div className="text-sm font-semibold text-slate-100">First time importing?</div>
+              <div className="mt-1.5 text-xs text-slate-300 leading-relaxed">
+                For the best insights, start with:
+              </div>
+              <ul className="mt-1 text-xs text-slate-300 leading-relaxed space-y-0.5">
+                <li>• Bank statements</li>
+                <li>• Credit card exports</li>
+                <li>• PayPal activity</li>
+              </ul>
+              <div className="mt-2 text-[11px] text-slate-400 leading-relaxed">
+                Historical uploads improve forecasting accuracy.
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── Collapsed: How does data import work? ────────────────────
+          All the long-form workflow explanation lives here, hidden by
+          default so first-time users aren't forced to read it before
+          uploading. Curious users can expand for the deep version. */}
+      <section className="mt-3">
+        <details className="group rounded-xl border border-line bg-ink-900/30">
+          <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-slate-200 flex items-center justify-between">
+            <span>How does data import work?</span>
+            <span className="text-slate-500 text-xs transition group-open:rotate-180">⌄</span>
+          </summary>
+          <div className="px-4 pb-4 pt-1 text-xs text-slate-300 leading-relaxed space-y-3">
+            <p>
+              <span className="font-medium text-slate-100">Historical first.</span>{" "}
+              On your first run, upload a date range from every source you track (bank,
+              credit card, PayPal, etc.) so we have a complete baseline for forecasts
+              and signals.
+            </p>
+            <p>
+              <span className="font-medium text-slate-100">Monthly cadence.</span>{" "}
+              After that, upload last month's statement from each source. The
+              coverage matrix and missing-month alerts remind you what's needed.
+            </p>
+            <p>
+              <span className="font-medium text-slate-100">CSV template.</span>{" "}
+              Inside Statement Upload you can optionally download the Tweaxly CSV
+              template to pre-format a file. This skips the column-mapping step.
+            </p>
+            <p>
+              <span className="font-medium text-slate-100">Manual entry</span>{" "}
+              is for one-offs that won't appear in any export - a personal-card
+              business purchase, a gift, or an invoice settled outside the books.
+            </p>
+          </div>
+        </details>
+      </section>
     </>
+  );
+}
+
+// ─── Step header ────────────────────────────────────────────────────
+// Small uniform label so each step in the upload flow reads with the
+// same visual weight. Used by ManualDataClient AND GuidedBankImport so
+// the four step boundaries (Type → Source → Coverage → Upload) look
+// like one cohesive sequence even though they live in two files.
+function StepLabel({ index, title }: { index: number; title: string }) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent/20 text-accent text-[10px] font-semibold px-1.5">
+        {index}
+      </span>
+      <span className="text-sm font-semibold text-slate-100 tracking-tight">{title}</span>
+    </div>
+  );
+}
+
+// ─── Upload-type card ──────────────────────────────────────────────
+function UploadTypeCard({
+  active, badge, title, description, onClick,
+}: {
+  active:       boolean;
+  badge?:       string;
+  title:        string;
+  description:  string;
+  onClick:      () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`text-left rounded-xl border p-4 transition ${
+        active
+          ? "border-accent bg-accent-soft/30"
+          : "border-line bg-ink-900/30 hover:border-accent/40"
+      }`}
+    >
+      <div className="flex items-center gap-2 mb-1">
+        {badge ? (
+          <span className={active ? "pill-accent" : "pill text-[10px]"}>
+            {active ? "selected" : badge}
+          </span>
+        ) : active ? (
+          <span className="pill-accent">selected</span>
+        ) : null}
+        <span className="font-medium text-slate-100">{title}</span>
+      </div>
+      <div className="text-xs text-slate-400 leading-relaxed">{description}</div>
+    </button>
   );
 }

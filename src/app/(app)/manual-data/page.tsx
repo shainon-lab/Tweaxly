@@ -1,7 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import DataTabs from "@/components/DataTabs";
 import ReviewBanner from "@/components/ReviewBanner";
-import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { compareCategoriesIncomeFirst } from "@/lib/categories";
@@ -14,7 +13,6 @@ export default async function ManualDataPage({
   searchParams: Promise<{ onboarding?: string }>;
 }) {
   const { business } = await requireBusiness();
-  const { t } = await getServerT();
   const sp = await searchParams;
   const fromOnboarding = sp.onboarding === "1";
   const [entries, categoriesRaw] = await Promise.all([
@@ -44,12 +42,8 @@ export default async function ManualDataPage({
   return (
     <>
       <PageHeader
-        title={fromOnboarding ? "Import Your Business Data" : t("page.manualData.title")}
-        subtitle={
-          fromOnboarding
-            ? "Upload your business activity to generate your first business snapshot."
-            : "Import data - add income or outcome entries manually, or bulk-upload a file."
-        }
+        title="Import your business data"
+        subtitle="Upload bank, credit card, PayPal, or Stripe statements to start generating AI insights."
       />
       {fromOnboarding ? <OnboardingImportIntro /> : <DataTabs />}
       {!fromOnboarding ? <ReviewBanner businessId={business.id} surface="data" /> : null}

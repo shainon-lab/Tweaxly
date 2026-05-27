@@ -501,6 +501,19 @@ function UploadStep({
   const [dragOver, setDragOver] = useState(false);
   return (
     <div>
+      {/* Step label - matches the visual sequence with the earlier
+          steps on the parent page (Source → Coverage → Upload) so the
+          wizard feels like a continuation, not a new screen. */}
+      <div className="mb-2 flex items-center gap-2">
+        <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent/20 text-accent text-[10px] font-semibold px-1.5">
+          4
+        </span>
+        <span className="text-sm font-semibold text-slate-100 tracking-tight">Upload file</span>
+      </div>
+
+      {/* Hero drag-drop area. Visually dominant - this is the moment
+          of value. Larger padding, centered icon + copy, clear primary
+          surface on dark. */}
       <div
         onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
         onDragLeave={() => setDragOver(false)}
@@ -511,14 +524,21 @@ function UploadStep({
           if (f) onPick(f);
         }}
         onClick={() => fileInputRef.current?.click()}
-        className={`rounded-lg border-2 border-dashed ${dragOver ? "border-accent bg-accent-soft/20" : "border-line bg-ink-900/40"} px-6 py-10 text-center cursor-pointer transition`}
+        className={`rounded-2xl border-2 border-dashed px-6 py-14 sm:py-16 text-center cursor-pointer transition ${
+          dragOver
+            ? "border-accent bg-accent-soft/30"
+            : "border-line bg-gradient-to-b from-ink-900/50 to-ink-900/20 hover:border-accent/50 hover:bg-accent-soft/10"
+        }`}
       >
-        <UploadIcon size={28} strokeWidth={1.5} className="mx-auto text-slate-400 mb-2" />
-        <div className="text-sm font-medium text-slate-100">
-          {uploading ? "Reading file…" : "Drop a source statement here, or click to browse"}
+        <UploadIcon size={44} strokeWidth={1.5} className="mx-auto text-accent/80 mb-3" />
+        <div className="text-base sm:text-lg font-semibold text-slate-100">
+          {uploading ? "Reading file…" : "Drag & drop your file"}
         </div>
-        <div className="text-xs text-slate-400 mt-1">
-          CSV, XLS, XLSX up to 10 MB. Hebrew (Windows-1255) files are auto-detected.
+        <div className="text-xs text-slate-400 mt-1.5">
+          Supported: CSV, XLS, XLSX
+        </div>
+        <div className="text-[11px] text-slate-500 mt-3">
+          We'll auto-detect columns and prepare the import for review.
         </div>
         <input
           ref={fileInputRef}
@@ -539,28 +559,21 @@ function UploadStep({
       ) : null}
       {error ? <div className="mt-3 text-sm text-bad">{error}</div> : null}
 
-      {/* Optional: download the Tweaxly template. Used to be its own
-          upload mode but it makes more sense as a "preparing your file"
-          aid here - the user can either drop their raw source export
-          (mapping wizard handles it) or grab the template, fill it in,
-          and skip the mapping step. */}
-      <div className="mt-4 rounded-md border border-line/60 bg-ink-900/30 px-3 py-2.5 flex items-start gap-3 flex-wrap">
-        <div className="text-xs text-slate-400 flex-1 min-w-[240px]">
-          <span className="font-medium text-slate-200">Want to skip the mapping step?</span> Download our pre-formatted CSV template (Date · Description · Amount), fill it in, then drop it above.
-        </div>
+      {/* Template download - tucked below the hero, low-key so it
+          doesn't compete with the primary action. */}
+      <div className="mt-4 flex items-center justify-center">
         <a
           href="/templates/tweaxly-transactions-template.csv"
           download
-          className="text-xs font-medium px-3 py-1.5 rounded-md border border-accent/40 text-accent hover:bg-accent-soft/30 transition inline-flex items-center gap-1.5 shrink-0"
+          className="text-[11px] text-slate-500 hover:text-slate-300 underline-offset-2 hover:underline transition"
         >
-          Download Tweaxly template
+          Prefer a pre-formatted CSV template? Download it
         </a>
       </div>
 
       {templateCount > 0 ? (
-        <div className="mt-4 text-xs text-slate-400">
-          {templateCount} saved {templateCount === 1 ? "mapping" : "mappings"} available - if your file's
-          column headers match a saved one, the mapping will be applied automatically.
+        <div className="mt-3 text-[11px] text-slate-500 text-center">
+          {templateCount} saved {templateCount === 1 ? "mapping" : "mappings"} - matching column headers auto-apply.
         </div>
       ) : null}
     </div>

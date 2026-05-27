@@ -16,7 +16,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AlertTriangle, ArrowRight, ExternalLink, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 import BankImportWizard, { type WizardContext } from "./BankImportWizard";
 
 type Source = {
@@ -195,6 +195,10 @@ export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency:
 }
 
 // ─── Intake step ─────────────────────────────────────────────────────
+// Slimmed-down two-question flow: pick the source, say what the file
+// covers. No prose - the redesign's primary principle is "drop your
+// file, we'll handle the rest" - so explanations move to the
+// collapsible "How does data import work?" panel on ManualDataClient.
 function IntakeStep({
   intake, setIntake, sources, loadingSources, checking, onContinue,
 }: {
@@ -207,123 +211,115 @@ function IntakeStep({
 }) {
   const router = useRouter();
   return (
-    <div className="card mb-6">
-      <div className="font-medium mb-1">Where does this file come from?</div>
-      <div className="text-xs text-slate-400 mb-4">
-        Every upload belongs to one source (a bank account, credit card, PayPal, etc.) so the coverage matrix knows what's loaded and what's still missing.
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5">
-        {/* Source picker */}
-        <div>
-          <label className="label">Source</label>
-          {loadingSources ? (
-            <div className="text-xs text-slate-500">Loading sources…</div>
-          ) : sources.length === 0 ? (
-            <div className="rounded-md border border-warn/40 bg-warn/5 px-3 py-3 text-xs text-slate-200">
-              No sources yet.
-              <Link href="/sources?new=1" className="ml-1 text-accent inline-flex items-center gap-0.5">
-                Add your first source <ExternalLink size={11} />
-              </Link>
-            </div>
-          ) : (
-            <select
-              className="input"
-              value={intake.source?.id ?? ""}
-              onChange={(e) => {
-                // Sentinel "__new__" jumps the user out to the Manual
-                // Sources tab with the Add-source modal pre-opened.
-                // They can come back here after creating it.
-                if (e.target.value === "__new__") {
-                  // `from=upload` tells SourcesClient to send the user
-                  // back here once the new source is saved, with the
-                  // created source pre-selected.
-                  router.push("/sources?new=1&from=upload");
-                  return;
-                }
-                const s = sources.find((x) => x.id === e.target.value) ?? null;
-                setIntake({ ...intake, source: s });
-              }}
-            >
-              <option value="">Pick a source…</option>
-              {sources.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name} ({s.currency}{s.last4 ? ` ·${s.last4}` : ""})
-                </option>
-              ))}
-              <option value="__new__">+ Create new source…</option>
-            </select>
-          )}
-          {sources.length > 0 ? (
-            <Link href="/sources" className="text-xs text-slate-500 hover:text-slate-300 mt-1 inline-block">
-              Manage sources →
-            </Link>
-          ) : null}
-        </div>
-
-        {/* Period kind */}
-        <div>
-          <label className="label">What does this file cover?</label>
-          <div className="grid grid-cols-2 gap-2">
-            <KindButton
-              active={intake.periodKind === "month"}
-              onClick={() => setIntake({ ...intake, periodKind: "month", periodEnd: intake.periodStart })}
-              label="Specific month"
-              hint="One month per upload (typical)"
-            />
-            <KindButton
-              active={intake.periodKind === "range"}
-              onClick={() => setIntake({ ...intake, periodKind: "range" })}
-              label="Date range"
-              hint="Historical multi-month export"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Period selectors */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-5 max-w-2xl">
-        <div>
-          <label className="label">{intake.periodKind === "month" ? "Month" : "From month"}</label>
-          <input
-            type="month"
-            className="input"
-            value={intake.periodStart}
+    <>
+      {/* ── Step 2: Select source ───────────────────────────────────── */}
+      <section className="mb-5">
+        <IntakeStepLabel index={2} title="Select source" />
+        {loadingSources ? (
+          <div className="text-xs text-slate-500 px-1">Loading sources…</div>
+        ) : sources.length === 0 ? (
+          <Link
+            href="/sources?new=1&from=upload"
+            className="inline-flex items-center gap-1.5 rounded-lg border border-accent/40 bg-accent-soft/20 px-3 py-2 text-sm text-accent hover:bg-accent-soft/30 transition"
+          >
+            + Add Source
+          </Link>
+        ) : (
+          <select
+            className="input max-w-md"
+            value={intake.source?.id ?? ""}
             onChange={(e) => {
-              const v = e.target.value;
-              setIntake({
-                ...intake,
-                periodStart: v,
-                // Keep end >= start; bump end up if user picks a later start.
-                periodEnd: intake.periodKind === "month" ? v : (intake.periodEnd < v ? v : intake.periodEnd),
-              });
+              if (e.target.value === "__new__") {
+                router.push("/sources?new=1&from=upload");
+                return;
+              }
+              const s = sources.find((x) => x.id === e.target.value) ?? null;
+              setIntake({ ...intake, source: s });
             }}
+          >
+            <option value="">Pick a source…</option>
+            {sources.map((s) => (
+              <option key={s.id} value={s.id}>
+                {s.name} ({s.currency}{s.last4 ? ` ·${s.last4}` : ""})
+              </option>
+            ))}
+            <option value="__new__">+ Add Source</option>
+          </select>
+        )}
+      </section>
+
+      {/* ── Step 3: What does this file include? ────────────────────── */}
+      <section className="mb-5">
+        <IntakeStepLabel index={3} title="What does this file include?" />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-4">
+          <KindButton
+            active={intake.periodKind === "month"}
+            onClick={() => setIntake({ ...intake, periodKind: "month", periodEnd: intake.periodStart })}
+            label="Single Month"
+            hint="Typical monthly upload"
+          />
+          <KindButton
+            active={intake.periodKind === "range"}
+            onClick={() => setIntake({ ...intake, periodKind: "range" })}
+            label="Historical Range"
+            hint="Multi-month historical export"
           />
         </div>
-        {intake.periodKind === "range" ? (
+
+        {/* Period inputs - inline, no verbose labels */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-xl mb-4">
           <div>
-            <label className="label">To month</label>
+            <label className="label">{intake.periodKind === "month" ? "Month" : "From"}</label>
             <input
               type="month"
               className="input"
-              value={intake.periodEnd}
-              min={intake.periodStart}
-              onChange={(e) => setIntake({ ...intake, periodEnd: e.target.value })}
+              value={intake.periodStart}
+              onChange={(e) => {
+                const v = e.target.value;
+                setIntake({
+                  ...intake,
+                  periodStart: v,
+                  periodEnd: intake.periodKind === "month" ? v : (intake.periodEnd < v ? v : intake.periodEnd),
+                });
+              }}
             />
           </div>
-        ) : null}
-      </div>
+          {intake.periodKind === "range" ? (
+            <div>
+              <label className="label">To</label>
+              <input
+                type="month"
+                className="input"
+                value={intake.periodEnd}
+                min={intake.periodStart}
+                onChange={(e) => setIntake({ ...intake, periodEnd: e.target.value })}
+              />
+            </div>
+          ) : null}
+        </div>
 
-      <div className="flex items-center justify-end">
-        <button
-          type="button"
-          onClick={onContinue}
-          disabled={!intake.source || checking}
-          className="btn-primary text-sm inline-flex items-center gap-1.5 disabled:opacity-50"
-        >
-          {checking ? (<><Loader2 size={14} className="animate-spin" /> Checking…</>) : (<>Continue <ArrowRight size={14} /></>)}
-        </button>
-      </div>
+        <div className="flex items-center justify-end">
+          <button
+            type="button"
+            onClick={onContinue}
+            disabled={!intake.source || checking}
+            className="btn-primary text-sm inline-flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {checking ? (<><Loader2 size={14} className="animate-spin" /> Checking…</>) : (<>Continue <ArrowRight size={14} /></>)}
+          </button>
+        </div>
+      </section>
+    </>
+  );
+}
+
+function IntakeStepLabel({ index, title }: { index: number; title: string }) {
+  return (
+    <div className="mb-2 flex items-center gap-2">
+      <span className="inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-accent/20 text-accent text-[10px] font-semibold px-1.5">
+        {index}
+      </span>
+      <span className="text-sm font-semibold text-slate-100 tracking-tight">{title}</span>
     </div>
   );
 }
@@ -338,7 +334,7 @@ function KindButton({ active, onClick, label, hint }: { active: boolean; onClick
       }`}
     >
       <div className="text-sm font-medium text-slate-100">{label}</div>
-      <div className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">{hint}</div>
+      <div className="text-[11px] text-slate-400 mt-0.5">{hint}</div>
     </button>
   );
 }
