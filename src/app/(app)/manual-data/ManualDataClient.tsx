@@ -570,10 +570,13 @@ export default function ManualDataClient({
       ) : null}
 
       {/* ── Lightweight AI helper ─────────────────────────────────────
-          Sits below the action area, conversational tone. Replaces the
-          old documentation-heavy "Recommended workflow" block at the
-          top - same useful guidance, but the user sees it AFTER the
-          primary action is visible, not before. */}
+          Sits below the action area. Frames the import as ONE simple
+          action (upload bank with 90+ days) so first-time users don't
+          stall trying to gather every source at once. PayPal + credit
+          card are positioned as "add later" with one-line value props
+          so the user knows they exist but doesn't feel compelled to
+          deal with them on day one. The whole panel exists to push
+          users toward time-to-first-value, not to enumerate features. */}
       <section className="mt-6">
         <div className="rounded-2xl border border-brand-purple/25 bg-gradient-to-br from-brand-purple/10 via-ink-900/40 to-accent/5 p-4 sm:p-5">
           <div className="flex items-start gap-3">
@@ -581,15 +584,23 @@ export default function ManualDataClient({
             <div className="min-w-0">
               <div className="text-sm font-semibold text-slate-100">First time importing?</div>
               <div className="mt-1.5 text-xs text-slate-300 leading-relaxed">
-                For the best insights, start with:
+                Just upload your bank statement. Aim for at least <span className="text-slate-100 font-medium">90 days of history</span> - the more history you give us, the more accurate the forecasting and analysis.
               </div>
-              <ul className="mt-1 text-xs text-slate-300 leading-relaxed space-y-0.5">
-                <li>• Bank statements</li>
-                <li>• Credit card exports</li>
-                <li>• PayPal activity</li>
+
+              <div className="mt-3 text-[11px] uppercase tracking-wider text-slate-500 font-semibold">
+                Add more later
+              </div>
+              <ul className="mt-1 text-xs text-slate-300 leading-relaxed space-y-1">
+                <li>
+                  <span className="text-slate-100 font-medium">PayPal</span> - if you use it, add it for 100% revenue coverage.
+                </li>
+                <li>
+                  <span className="text-slate-100 font-medium">Credit card</span> - helps categorize card purchases more accurately. Can be added at any time.
+                </li>
               </ul>
-              <div className="mt-2 text-[11px] text-slate-400 leading-relaxed">
-                Historical uploads improve forecasting accuracy.
+
+              <div className="mt-3 text-[11px] text-slate-400 leading-relaxed italic">
+                Start with one upload, see the insights, then come back to fill in the rest.
               </div>
             </div>
           </div>
