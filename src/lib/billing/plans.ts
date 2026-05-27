@@ -157,7 +157,12 @@ export const PLANS: Plan[] = [
       dataSources:      "unlimited",
       historyDays:      "unlimited",
       signalsPerMonth:  "unlimited",
-      forecastMonths:   "unlimited",
+      // Forecast horizon caps at 60 months on Pro - matches the
+      // promise on /pricing ("Long-horizon forecasting (6, 12, 24,
+      // 36, 60 months)"). Used to be "unlimited" but no UI surfaces
+      // a horizon beyond 60 anyway, so we made the entitlement layer
+      // and the pricing page agree.
+      forecastMonths:   60,
       maxNotificationRules: "unlimited",
       monthlyAICredits: 500,
       starterAICredits: 0,
@@ -177,10 +182,15 @@ export const PLANS: Plan[] = [
         multiUser:              true,
         teamRoles:              true,
         advancedIntegrations:   true,
-        apiAccess:              true,
+        // apiAccess + auditLogs are intentionally OFF on Pro - the
+        // /pricing page doesn't list them, so the entitlements layer
+        // shouldn't either. They're declared on the PlanFeatures shape
+        // for forward compatibility (future tier or org plan) but no
+        // tier surfaces them today.
+        apiAccess:              false,
         webhooks:               true,
         priorityAI:             true,
-        auditLogs:              true,
+        auditLogs:              false,
         dedicatedOnboarding:    true,
       },
     },

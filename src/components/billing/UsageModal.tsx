@@ -40,7 +40,7 @@ const LIMITS = {
     scenarioBuilder:   false,
     exports:           false,
     smartAlerts:       false,
-    apiAccess:         false,
+    webhooks:          false,
   },
   pro: {
     businesses:        "Unlimited",
@@ -48,12 +48,16 @@ const LIMITS = {
     dataSources:       "Unlimited",
     historyDays:       "Unlimited",
     signalsPerMonth:   "Unlimited",
-    forecastMonths:    "Unlimited",
+    // Matches the Pro plan promise on /pricing - 60 months is the
+    // longest horizon the UI exposes. apiAccess + auditLogs are NOT
+    // surfaced on Pro (they're declared on the entitlements shape
+    // for forward compatibility but no tier ships them today).
+    forecastMonths:    "Up to 60 months",
     aiCredits:         500,
     scenarioBuilder:   true,
     exports:           true,
     smartAlerts:       true,
-    apiAccess:         true,
+    webhooks:          true,
   },
 } as const;
 
@@ -196,7 +200,7 @@ export default function UsageModal({
               <ComparisonRow label="Excel / CSV / PDF export" cur={current.exports}        next={next.exports} />
               <ComparisonRow label="Smart alerts"          cur={current.smartAlerts}       next={next.smartAlerts} />
               <ComparisonRow label="Team members + roles"  cur={current.members}           next={next.members} />
-              <ComparisonRow label="API access + webhooks" cur={current.apiAccess}         next={next.apiAccess} />
+              <ComparisonRow label="Webhooks"              cur={current.webhooks}          next={next.webhooks} />
             </div>
           ) : null}
 
