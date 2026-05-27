@@ -73,21 +73,27 @@ export default function AccountClient({
 
   return (
     <>
-      <div className="mb-6 -mt-2 flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
-        {subTabs.map((t) => (
-          <button
-            key={t.value}
-            type="button"
-            onClick={() => setTab(t.value)}
-            className={`px-3 py-1.5 rounded transition ${
-              tab === t.value
-                ? "bg-accent-soft text-accent"
-                : "text-slate-300 hover:text-white"
-            }`}
-          >
-            {t.label}
-          </button>
-        ))}
+      {/* Sticky just under the PageHeader (~85px). Solid bg + border
+          so the sub-tabs stay readable while scrolling and don't get
+          cut by the sticky title. Same pattern as DataTabs and
+          BusinessSettingsTabs. */}
+      <div className="sticky top-[85px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40 mb-6">
+        <div className="flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+          {subTabs.map((t) => (
+            <button
+              key={t.value}
+              type="button"
+              onClick={() => setTab(t.value)}
+              className={`px-3 py-1.5 rounded transition ${
+                tab === t.value
+                  ? "bg-accent-soft text-accent"
+                  : "text-slate-300 hover:text-white"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {tab === "workspaces"        ? <WorkspacesPane workspaces={workspaces} /> : null}
@@ -174,29 +180,34 @@ function CommNotificationsPane({ workspaces }: { workspaces: WorkspaceCardData[]
   const [inner, setInner] = useState<"communication" | "notifications">("communication");
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
-        <button
-          type="button"
-          onClick={() => setInner("communication")}
-          className={`px-3 py-1.5 rounded transition ${
-            inner === "communication"
-              ? "bg-accent-soft text-accent"
-              : "text-slate-300 hover:text-white"
-          }`}
-        >
-          Communication Preferences
-        </button>
-        <button
-          type="button"
-          onClick={() => setInner("notifications")}
-          className={`px-3 py-1.5 rounded transition ${
-            inner === "notifications"
-              ? "bg-accent-soft text-accent"
-              : "text-slate-300 hover:text-white"
-          }`}
-        >
-          Notifications
-        </button>
+      {/* Secondary-level sticky strip - sits below the primary
+          Account sub-tabs (which sticks at top-[85px] and is ~55px
+          tall). 85 + 55 = ~140px. */}
+      <div className="sticky top-[140px] z-10 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40 mb-4">
+        <div className="flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+          <button
+            type="button"
+            onClick={() => setInner("communication")}
+            className={`px-3 py-1.5 rounded transition ${
+              inner === "communication"
+                ? "bg-accent-soft text-accent"
+                : "text-slate-300 hover:text-white"
+            }`}
+          >
+            Communication Preferences
+          </button>
+          <button
+            type="button"
+            onClick={() => setInner("notifications")}
+            className={`px-3 py-1.5 rounded transition ${
+              inner === "notifications"
+                ? "bg-accent-soft text-accent"
+                : "text-slate-300 hover:text-white"
+            }`}
+          >
+            Notifications
+          </button>
+        </div>
       </div>
       {inner === "communication" ? <CommunicationPreferences /> : <NotificationsPane workspaces={workspaces} />}
     </>

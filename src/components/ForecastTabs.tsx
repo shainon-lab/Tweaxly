@@ -63,7 +63,10 @@ export default function ForecastTabs() {
   ];
 
   return (
-    <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+    // Sticky just under the PageHeader (~85px). Same pattern as the
+    // other primary-level tab strips across the app.
+    <div className="sticky top-[85px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40 mb-6">
+    <div className="inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => (
         <Link
           key={t.label}
@@ -77,6 +80,7 @@ export default function ForecastTabs() {
           {t.label}
         </Link>
       ))}
+    </div>
     </div>
   );
 }

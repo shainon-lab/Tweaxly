@@ -19,7 +19,10 @@ export default function ReportsInnerTabs() {
   const TABS = TAB_DEFS.map((d) => ({ href: d.href, label: t(d.tKey) }));
   const path = usePathname();
   return (
-    <div className="mb-6 flex items-center justify-between gap-2 flex-wrap">
+    // Sticky just under the PageHeader (~85px). Same pattern as the
+    // other primary-level tab strips across the app.
+    <div className="sticky top-[85px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40 mb-6">
+    <div className="flex items-center justify-between gap-2 flex-wrap">
       <div className="inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
         {TABS.map((t) => {
           // Yearly Summary stays active for its inner pages too
@@ -55,6 +58,7 @@ export default function ReportsInnerTabs() {
         <span>📈</span>
         <span>{t("tabs.reports.viewCharts")}</span>
       </Link>
+    </div>
     </div>
   );
 }

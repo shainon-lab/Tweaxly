@@ -18,7 +18,12 @@ export default function ConsultationTabs({ historyCount }: { historyCount?: numb
   const path = usePathname();
   const TABS = TAB_HREFS.map((x) => ({ href: x.href, label: t(x.tKey) }));
   return (
-    <div className="mb-6 -mt-2 inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+    // Sticky just under the PageHeader (~85px). Solid bg + border so
+    // the tab strip stays readable while scrolling and doesn't get
+    // cut by the sticky title. Matches the pattern used by DataTabs,
+    // BusinessSettingsTabs, and the Account sub-tabs.
+    <div className="sticky top-[85px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40 mb-6">
+    <div className="inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => {
         const active = path === t.href;
         const isHistory = t.href === "/consultation/history";
@@ -39,6 +44,7 @@ export default function ConsultationTabs({ historyCount }: { historyCount?: numb
           </Link>
         );
       })}
+    </div>
     </div>
   );
 }
