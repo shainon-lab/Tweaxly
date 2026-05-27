@@ -20,7 +20,6 @@ import {
 } from "@/lib/billing/plans";
 import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
 import CheckoutSuccessHandler from "@/components/billing/CheckoutSuccessHandler";
-import OrdersInvoicesSection from "@/components/billing/OrdersInvoicesSection";
 
 interface Transaction {
   id:           string;
@@ -478,11 +477,9 @@ export function BillingClient(props: BillingClientProps) {
         )}
       </section>
 
-      {/* Orders & Invoices — full billing history with Polar invoice
-          PDF downloads. Lives at the bottom so the upgrade/credits
-          actions stay above the fold. Client-side fetch so this card
-          doesn't add to the initial Server Component payload. */}
-      <OrdersInvoicesSection />
+      {/* Orders & Invoices lives under Account → Orders & Invoices
+          now (tied to the paying user, not the workspace) - so it no
+          longer renders here. */}
     </div>
   );
 }

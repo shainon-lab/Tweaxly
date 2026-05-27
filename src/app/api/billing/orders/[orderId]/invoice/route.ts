@@ -33,7 +33,6 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     where: { id: orderId },
     select: {
       polarOrderId:       true,
-      businessId:         true,
       userId:             true,
       polarCustomerEmail: true,
     },
@@ -42,23 +41,14 @@ export async function GET(_req: Request, { params }: { params: Promise<{ orderId
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
 
-  // Authorization: any of (a) row belongs to user, (b) row's business
-  // has an active membership for the user, (c) row's customer email
-  // matches the user's email (legacy fallback). Mirrors the listing
-  // endpoint's filter so a row visible in /api/billing/orders is
-  // downloadable here too.
+  // Authorization: the order belongs to this user IF the userId on
+  // the row matches OR the customer email matches the user's. Mirrors
+  // the listing endpoint's payer-only filter so a row visible in
+  // /api/billing/orders is downloadable here, and a workspace member
+  // who didn't pay can't grab the invoice.
   const userOwnsRow = order.userId === user.id;
   const emailMatch  = order.polarCustomerEmail === user.email.toLowerCase();
-
-  let workspaceMatch = false;
-  if (order.businessId) {
-    const membership = await prisma.businessMembership.findFirst({
-      where:  { userId: user.id, businessId: order.businessId, status: "active" },
-      select: { id: true },
-    });
-    workspaceMatch = !!membership;
-  }
-  if (!userOwnsRow && !emailMatch && !workspaceMatch) {
+  if (!userOwnsRow && !emailMatch) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

@@ -1,19 +1,22 @@
 // GET /api/billing/orders
 //
-// Returns every Polar order the authenticated user can see - that is,
-// orders belonging to any workspace they're a member of. Single
-// endpoint feeds the customer-facing Orders & Invoices section under
-// Billing & Products.
+// Returns every Polar order the authenticated user PAID FOR. Tied to
+// the paying identity (this user account), not to workspace access -
+// so a workspace member who didn't pay won't see another user's
+// orders, and a user who paid for multiple workspaces sees all of
+// them in one place.
 //
-// Filtered to: businesses where the user has an active membership,
-// PLUS any orders whose polarCustomerEmail matches the user's email
-// (covers legacy orders that pre-date the workspace metadata - they
-// surface with workspaceName="Unknown workspace" so the user still
-// sees a record).
+// Filter:
+//   - polarCustomerEmail matches the user's email (case-insensitive),
+//     OR
+//   - userId on the order matches the user.id we stamped at checkout.
+//
+// Each row includes its workspaceName so the user can tell at a
+// glance which workspace the order belonged to.
 //
 // Sorted newest-first. No pagination today - one user's billing
-// history fits comfortably in one page; we'll add pagination when a
-// workspace racks up >100 events.
+// history fits comfortably in one page; we'll add pagination if a
+// single account ever racks up >100 events.
 
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
@@ -24,22 +27,11 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const user = await requireUser();
 
-  // Workspaces the user can see. Includes their own owned businesses
-  // and any active memberships (covers future team-member case).
-  const memberships = await prisma.businessMembership.findMany({
-    where:  { userId: user.id, status: "active" },
-    select: { businessId: true },
-  });
-  const accessibleBusinessIds = memberships.map((m) => m.businessId);
-
   const orders = await prisma.polarOrder.findMany({
     where: {
       OR: [
-        ...(accessibleBusinessIds.length > 0
-          ? [{ businessId: { in: accessibleBusinessIds } }]
-          : []),
-        // Email fallback for legacy / un-mapped orders. Polar normalises
-        // emails to lowercase but we lowercase ours too to be safe.
+        // Polar normalises customer emails to lowercase; we do too so
+        // the comparison is symmetric.
         { polarCustomerEmail: user.email.toLowerCase() },
         { userId: user.id },
       ],

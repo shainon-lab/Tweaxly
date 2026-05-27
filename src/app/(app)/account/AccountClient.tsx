@@ -17,6 +17,7 @@ import { LanguagePreference } from "./LanguagePreference";
 import CommunicationPreferences from "./CommunicationPreferences";
 import { WorkspaceCard, type WorkspaceCardData } from "../workspaces/WorkspaceCard";
 import NotificationsPane from "./NotificationsPane";
+import OrdersInvoicesSection from "@/components/billing/OrdersInvoicesSection";
 import LoadingBar from "@/components/LoadingBar";
 import {
   readA11yWidgetEnabled,
@@ -26,11 +27,11 @@ import {
 
 type AccountSubTab =
   | "workspaces"
-  | "notifications"
+  | "orders"
   | "payment"
   | "password"
   | "preferences"
-  | "communications"
+  | "comm_notifications"
   | "accessibility"
   | "access_logs"
   | "close_account";
@@ -52,15 +53,22 @@ export default function AccountClient({
   const [tab, setTab] = useState<AccountSubTab>("workspaces");
 
   const subTabs: { value: AccountSubTab; label: string }[] = [
-    { value: "workspaces",    label: t("account.tab.workspaces") },
-    { value: "notifications", label: "Notifications" },
-    { value: "payment",       label: "Payment Methods" },
-    { value: "password",      label: t("account.tab.password") },
-    { value: "preferences",   label: t("account.tab.preferences") },
-    { value: "communications", label: "Communication Preferences" },
-    { value: "accessibility", label: "Accessibility" },
-    { value: "access_logs",   label: t("account.tab.accessLog") },
-    { value: "close_account", label: t("account.tab.danger") },
+    { value: "workspaces",         label: t("account.tab.workspaces") },
+    // Orders & Invoices sit right after Workspaces because they're
+    // tied to the paying user (this account), not to who has access
+    // to each workspace.
+    { value: "orders",             label: "Orders & Invoices" },
+    { value: "payment",            label: "Payment Methods" },
+    { value: "password",           label: t("account.tab.password") },
+    { value: "preferences",        label: t("account.tab.preferences") },
+    // Merged from the previous separate "Notifications" and
+    // "Communication Preferences" tabs - the two surfaces are tightly
+    // related ("how do we contact you?") and live behind one tab with
+    // internal sub-tabs.
+    { value: "comm_notifications", label: "Communication & Notifications" },
+    { value: "accessibility",      label: "Accessibility" },
+    { value: "access_logs",        label: t("account.tab.accessLog") },
+    { value: "close_account",      label: t("account.tab.danger") },
   ];
 
   return (
@@ -82,21 +90,21 @@ export default function AccountClient({
         ))}
       </div>
 
-      {tab === "workspaces"    ? <WorkspacesPane workspaces={workspaces} /> : null}
-      {tab === "notifications" ? <NotificationsPane workspaces={workspaces} /> : null}
-      {tab === "payment"       ? <PaymentMethodsPane /> : null}
-      {tab === "password"      ? <PasswordPane user={user} /> : null}
-      {tab === "preferences"   ? (
+      {tab === "workspaces"        ? <WorkspacesPane workspaces={workspaces} /> : null}
+      {tab === "orders"            ? <OrdersInvoicesSection /> : null}
+      {tab === "payment"           ? <PaymentMethodsPane /> : null}
+      {tab === "password"          ? <PasswordPane user={user} /> : null}
+      {tab === "preferences"       ? (
         <LanguagePreference
           initialLocale={user.preferredLanguage}
           initialRegion={user.region}
           detectedRegion={user.detectedRegion}
         />
       ) : null}
-      {tab === "communications" ? <CommunicationPreferences /> : null}
-      {tab === "accessibility" ? <AccessibilityPane /> : null}
-      {tab === "access_logs"   ? <AccessLogsPane /> : null}
-      {tab === "close_account" ? <CloseAccountPane /> : null}
+      {tab === "comm_notifications" ? <CommNotificationsPane workspaces={workspaces} /> : null}
+      {tab === "accessibility"     ? <AccessibilityPane /> : null}
+      {tab === "access_logs"       ? <AccessLogsPane /> : null}
+      {tab === "close_account"     ? <CloseAccountPane /> : null}
     </>
   );
 }
@@ -155,6 +163,43 @@ function Stat({ label, value, sub, tone }: { label: string; value: string; sub?:
       <div className={`mt-1 text-xl font-semibold tabular-nums ${valueCls}`}>{value}</div>
       {sub ? <div className="text-[11px] text-slate-500 mt-0.5">{sub}</div> : null}
     </div>
+  );
+}
+
+// Combined Communication & Notifications pane. Hosts the two existing
+// surfaces (CommunicationPreferences + NotificationsPane) behind an
+// inner tab strip so the user gets one entry point instead of two
+// separate top-level tabs for closely related settings.
+function CommNotificationsPane({ workspaces }: { workspaces: WorkspaceCardData[] }) {
+  const [inner, setInner] = useState<"communication" | "notifications">("communication");
+  return (
+    <>
+      <div className="mb-4 flex flex-wrap items-center gap-1 rounded-md border border-line bg-ink-900/60 p-1 text-sm">
+        <button
+          type="button"
+          onClick={() => setInner("communication")}
+          className={`px-3 py-1.5 rounded transition ${
+            inner === "communication"
+              ? "bg-accent-soft text-accent"
+              : "text-slate-300 hover:text-white"
+          }`}
+        >
+          Communication Preferences
+        </button>
+        <button
+          type="button"
+          onClick={() => setInner("notifications")}
+          className={`px-3 py-1.5 rounded transition ${
+            inner === "notifications"
+              ? "bg-accent-soft text-accent"
+              : "text-slate-300 hover:text-white"
+          }`}
+        >
+          Notifications
+        </button>
+      </div>
+      {inner === "communication" ? <CommunicationPreferences /> : <NotificationsPane workspaces={workspaces} />}
+    </>
   );
 }
 
