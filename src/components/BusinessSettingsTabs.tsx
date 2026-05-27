@@ -15,27 +15,40 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useT } from "@/lib/i18n/client";
 
-const TAB_DEFS: { href: string; tKey: string; activeWhen: (path: string, tab: string | null) => boolean }[] = [
+const TAB_DEFS: { href: string; label: string; activeWhen: (path: string, tab: string | null) => boolean }[] = [
   {
     href: "/settings",
-    tKey: "settings.tab.businessSettings",
+    label: "Business Settings",
     activeWhen: (path, tab) => path === "/settings" && (!tab || tab === "settings"),
   },
   {
     href: "/settings?tab=profile",
-    tKey: "settings.tab.businessProfile",
+    label: "Business Profile",
     activeWhen: (path, tab) => path === "/settings" && tab === "profile",
   },
   {
     href: "/settings?tab=plan",
-    tKey: "settings.tab.businessPlan",
+    label: "Business Plan",
     activeWhen: (path, tab) => path === "/settings" && tab === "plan",
+  },
+  {
+    href: "/settings?tab=members",
+    label: "Members & Access",
+    activeWhen: (path, tab) => path === "/settings" && tab === "members",
   },
 ];
 
 export default function BusinessSettingsTabs() {
   const t = useT();
-  const TABS = TAB_DEFS.map((d) => ({ ...d, label: t(d.tKey) }));
+  // First three tab labels are i18n-managed; "Members & Access" is
+  // English-only for now. Mirror the existing label-fallback pattern
+  // by mapping by href.
+  const I18N: Record<string, string> = {
+    "/settings":              t("settings.tab.businessSettings"),
+    "/settings?tab=profile":  t("settings.tab.businessProfile"),
+    "/settings?tab=plan":     t("settings.tab.businessPlan"),
+  };
+  const TABS = TAB_DEFS.map((d) => ({ ...d, label: I18N[d.href] ?? d.label }));
   const path = usePathname();
   const sp = useSearchParams();
   const tab = sp.get("tab");

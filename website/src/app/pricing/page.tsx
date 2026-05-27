@@ -78,6 +78,7 @@ const PLANS: Plan[] = [
     tagline:  "Connect your business and experience AI-powered insights. Starter credits included.",
     credits:  "30 starter AI Credits (one-time grant)",
     bullets: [
+      "1 workspace owner (no team invites on Free)",
       "90 days of visible history",
       "Up to 3 business signals per month",
       "Forecast up to 3 months ahead",
@@ -96,6 +97,7 @@ const PLANS: Plan[] = [
     credits:   "500 AI Credits / month",
     highlight: true,
     bullets: [
+      "Owner + up to 2 team members with role-based access",
       "Buy add-on AI Credit packs anytime as you scale",
       "Real-Time Business Alerts (desktop push + custom monitors)",
       "Unlimited historical data + custom date ranges",
@@ -124,7 +126,7 @@ const MATRIX: MatrixGroup[] = [
     rows: [
       // Workspaces are unlimited on both plans (each workspace has
       // its own subscription), so we don't surface a count.
-      { dimension: "Team members",     free: "1",        pro: "Team + roles" },
+      { dimension: "Team members",     free: "1 owner only", pro: "Owner + 2 team members" },
       { dimension: "Data sources",     free: "1",        pro: "Unlimited + integrations" },
       { dimension: "Historical data",  free: "90 days",  pro: "Unlimited" },
       { dimension: "Custom historical range", free: "—", pro: "✓" },

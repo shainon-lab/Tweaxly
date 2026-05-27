@@ -11,6 +11,7 @@ import BusinessSettingsTabs from "@/components/BusinessSettingsTabs";
 import CurrencySection from "./CurrencySection";
 import { BillingClient } from "./billing/BillingClient";
 import BusinessDnaSection, { type BusinessDnaProps } from "./BusinessDnaSection";
+import MembersAndAccessSection from "@/components/MembersAndAccessSection";
 
 // Settings shares a top-level tab row with the Data section
 // (/manual-data, /transactions, /data-log). The shared
@@ -25,11 +26,11 @@ import BusinessDnaSection, { type BusinessDnaProps } from "./BusinessDnaSection"
 // The default landing tab is `settings` so old /settings links still
 // surface the everyday-edit surface; deep-links to the other two tabs
 // use ?tab=profile / ?tab=plan.
-type SettingsTab = "settings" | "profile" | "plan" | "categories" | "integration";
+type SettingsTab = "settings" | "profile" | "plan" | "members" | "categories" | "integration";
 
 function resolveSettingsTab(raw: string | null): SettingsTab {
   if (raw === "categories" || raw === "integration") return raw;
-  if (raw === "profile" || raw === "plan" || raw === "settings") return raw;
+  if (raw === "profile" || raw === "plan" || raw === "settings" || raw === "members") return raw;
   return "settings";
 }
 
@@ -686,6 +687,11 @@ export default function SettingsClient({
       {/* ─── Business Plan tab (per-workspace billing) ──────────── */}
       {tab === "plan" && billing ? (
         <BillingClient {...billing} />
+      ) : null}
+
+      {/* ─── Members & Access tab ─────────────────────────────── */}
+      {tab === "members" ? (
+        <MembersAndAccessSection businessId={biz.id} />
       ) : null}
 
       {tab === "categories" ? (

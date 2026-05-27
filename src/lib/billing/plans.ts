@@ -153,7 +153,13 @@ export const PLANS: Plan[] = [
     // /settings/billing.
     limits: {
       businesses:       "unlimited",
-      members:          "unlimited",
+      // Pro = workspace owner + up to 2 additional members = 3 total
+      // active+pending records per workspace. Pending invitations
+      // count toward this cap so users can't pre-stage 50 invites to
+      // dodge the limit (the cap-check counts both BusinessMembership
+      // rows and pending BusinessInvitation rows). Future tier can
+      // raise this number without touching the entitlements wiring.
+      members:          3,
       dataSources:      "unlimited",
       historyDays:      "unlimited",
       signalsPerMonth:  "unlimited",

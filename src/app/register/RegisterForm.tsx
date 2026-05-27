@@ -21,6 +21,8 @@ import MarketingConsentCheckbox from "@/components/MarketingConsentCheckbox";
 
 export default function RegisterForm({
   labels,
+  inviteToken,
+  prefillEmail,
 }: {
   labels: {
     businessName: string;
@@ -29,23 +31,49 @@ export default function RegisterForm({
     passwordHint: string;
     create: string;
   };
+  // When set, signup is an invitation-acceptance flow: we hide the
+  // business-name field (the user is joining an existing workspace),
+  // pre-fill the invited email, and pass the token through to the
+  // server so it can route the redirect to /invite/[token] after
+  // signup succeeds.
+  inviteToken?: string | null;
+  prefillEmail?: string | null;
 }) {
   const [legalAccepted,   setLegalAccepted]   = useState(false);
   const [marketingOptIn,  setMarketingOptIn]  = useState(false);
 
   return (
     <form action="/api/auth/register" method="post" className="space-y-4">
-      <div>
-        <label className="label">{labels.businessName}</label>
-        <input className="input" name="businessName" required autoFocus placeholder="e.g. Acme Co." />
-      </div>
+      {inviteToken ? (
+        <>
+          {/* Hidden token gets read by the register handler so it can
+              redirect to /invite/[token] (auto-accept) instead of
+              /onboarding after the user is created. */}
+          <input type="hidden" name="invite" value={inviteToken} />
+          {/* No business-name field on the invitation flow: the user
+              is joining an existing workspace, not creating one. The
+              server uses a sensible default name internally. */}
+        </>
+      ) : (
+        <div>
+          <label className="label">{labels.businessName}</label>
+          <input className="input" name="businessName" required autoFocus placeholder="e.g. Acme Co." />
+        </div>
+      )}
       <div>
         <label className="label">{labels.yourName}</label>
         <input className="input" name="name" required placeholder="e.g. Sam Founder" />
       </div>
       <div>
         <label className="label">{labels.email}</label>
-        <input className="input" name="email" type="email" required />
+        <input
+          className="input"
+          name="email"
+          type="email"
+          required
+          defaultValue={prefillEmail ?? ""}
+          readOnly={!!inviteToken}
+        />
       </div>
       <div>
         <label className="label">{labels.passwordHint}</label>

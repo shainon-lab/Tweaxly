@@ -27,7 +27,17 @@ export async function POST(req: NextRequest) {
   const email = String(form.get("email") ?? "").toLowerCase().trim();
   const password = String(form.get("password") ?? "");
   const name = String(form.get("name") ?? "").trim() || null;
-  const businessName = String(form.get("businessName") ?? "").trim();
+  const businessNameRaw = String(form.get("businessName") ?? "").trim();
+  // Invitation handoff. Set by RegisterForm when the user landed on
+  // /register from an invitation link. On this path the business-
+  // name input is hidden, the email is pre-filled (read-only), and
+  // after the user is created we redirect to /invite/[token] so the
+  // AcceptInvitationClient finishes joining the workspace.
+  const inviteToken = String(form.get("invite") ?? "").trim() || null;
+  // Default the business name for invitation-flow signups so the
+  // user still has a personal workspace to fall back to if they
+  // ever leave the invited workspace. Renamable later in Settings.
+  const businessName = businessNameRaw || (inviteToken ? "My workspace" : "");
   const acceptTerms     = String(form.get("acceptTerms") ?? "")     === "yes";
   // Marketing consent is OPTIONAL - defaulted to false at the model
   // level, only flipped on if the user explicitly ticks the box.
@@ -172,10 +182,13 @@ export async function POST(req: NextRequest) {
     console.error("[register] verification email failed", err);
   }
 
-  // Drop the new user into the adaptive onboarding wizard, which
-  // ends by routing them to /manual-data (Import Your Business Data)
-  // or seeds a demo workspace if they pick 'Explore Demo Business'.
-  const res = NextResponse.redirect(new URL("/onboarding", req.url), { status: 303 });
+  // Invitation flow: route to /invite/[token] so the user accepts
+  // the workspace invitation as their next step. Regular signups
+  // continue to the onboarding wizard.
+  const nextUrl = inviteToken
+    ? new URL(`/invite/${encodeURIComponent(inviteToken)}`, req.url)
+    : new URL("/onboarding", req.url);
+  const res = NextResponse.redirect(nextUrl, { status: 303 });
   const session = await getIronSession<SessionData>(req, res, sessionOptions);
   session.userId = user.id;
   session.email = user.email;

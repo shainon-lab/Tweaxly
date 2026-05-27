@@ -28,7 +28,14 @@ export type AuditAction =
   | "source.created"
   | "billing.subscription_created"
   | "billing.subscription_updated"
-  | "billing.subscription_canceled";
+  | "billing.subscription_canceled"
+  // Workspace membership + invitation lifecycle.
+  | "membership.invitation_sent"
+  | "membership.invitation_accepted"
+  | "membership.invitation_cancelled"
+  | "membership.invitation_resent"
+  | "membership.removed"
+  | "membership.role_changed";
 
 export async function recordAudit(input: {
   actorUserId: string;

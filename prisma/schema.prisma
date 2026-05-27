@@ -86,6 +86,8 @@ model User {
   createdAt                 DateTime             @default(now())
   businesses                Business[]
   memberships               BusinessMembership[]
+  membershipInvitesSent     BusinessMembership[] @relation("MembershipInviter")
+  invitationsSent           BusinessInvitation[] @relation("InvitationInviter")
   auditLogs                 AuditLog[]           @relation("ActorAuditLogs")
   passwordResetTokens       PasswordResetToken[]
   loginAttempts             LoginAttempt[]
@@ -189,20 +191,68 @@ model BusinessMembership {
   user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   businessId String
   business   Business  @relation(fields: [businessId], references: [id], onDelete: Cascade)
-  // Per-account role: "account_admin" | "user" | "viewer" | "accountant".
-  // Account admins can change account settings, invite, and run
-  // destructive ops. Other roles are reserved for the future invite
-  // system; today only account_admin is created.
-  role       String    @default("user")
-  // Membership lifecycle. "active" once accepted; "invited" before
-  // the user joins; "disabled" if an admin suspended the member.
+  // Per-workspace role:
+  //   "owner"  - workspace creator. Full access incl. billing,
+  //              members, delete workspace. Always exactly one per
+  //              workspace.
+  //   "admin"  - can use the app + manage data; cannot access billing
+  //              or invite/remove members.
+  //   "viewer" - read-only.
+  // Legacy values ("account_admin", "user", "accountant") may still
+  // exist on rows created before the invitations system; treat
+  // anything other than "owner"/"admin"/"viewer" as legacy and map
+  // to a sensible default in code.
+  role       String    @default("admin")
+  // Membership lifecycle:
+  //   "active"    - normal access.
+  //   "suspended" - non-owner membership paused (e.g. workspace
+  //                 downgraded to Free). Reactivates automatically
+  //                 when the workspace is back on Pro.
+  //   "removed"   - soft-removed; not displayed in switcher.
   status     String    @default("active")
+  invitedBy  String?
+  inviter    User?     @relation("MembershipInviter", fields: [invitedBy], references: [id], onDelete: SetNull)
   invitedAt  DateTime?
   joinedAt   DateTime?
   createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt @default(now())
 
   @@unique([userId, businessId])
   @@index([businessId])
+}
+
+// Outstanding invitation to join a workspace. One row per outstanding
+// invite; once accepted, we create a BusinessMembership and mark the
+// invitation row "accepted". Pending invitations count toward the
+// workspace's member-limit so a Pro workspace can't invite 50 people
+// "for later" to dodge the cap.
+model BusinessInvitation {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Email the invitation was issued to. Normalised lowercase on write
+  // so the acceptance check is symmetric with User.email storage.
+  email           String
+  // Role the user will get when they accept ("admin" | "viewer").
+  // The "owner" role is never offered through invitations.
+  role            String   @default("admin")
+  invitedByUserId String
+  invitedBy       User     @relation("InvitationInviter", fields: [invitedByUserId], references: [id], onDelete: Cascade)
+  // SHA-256 hash of the single-use token. Plaintext token lives only
+  // in the invitation email + the accept URL - matches the email-
+  // verification pattern so a DB leak can't be turned into a free
+  // workspace membership.
+  tokenHash       String   @unique
+  // "pending" | "accepted" | "cancelled" | "expired". Status is
+  // updated on the row instead of deleting so we keep an audit trail.
+  status          String   @default("pending")
+  expiresAt       DateTime
+  acceptedAt      DateTime?
+  acceptedByUserId String?
+  createdAt       DateTime @default(now())
+
+  @@index([businessId, status])
+  @@index([email, status])
 }
 
 // Tenant-spanning audit trail. Records every super_admin action that
@@ -284,6 +334,7 @@ model Business {
   createdAt        DateTime  @default(now())
 
   memberships         BusinessMembership[]
+  invitations         BusinessInvitation[]
   auditLogs           AuditLog[]            @relation("AuditLogs")
   adminNotes          AdminNote[]
   categories          Category[]
