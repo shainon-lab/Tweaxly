@@ -15,7 +15,7 @@ export default async function ManualDataPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
   const fromOnboarding = sp.onboarding === "1";
-  const [entries, categoriesRaw] = await Promise.all([
+  const [entries, categoriesRaw, uploadBatchCount] = await Promise.all([
     prisma.manualEntry.findMany({
       where: { businessId: business.id },
       include: {
@@ -35,7 +35,13 @@ export default async function ManualDataPage({
     prisma.category.findMany({
       where: { businessId: business.id },
     }),
+    // Used to decide whether to default the intake to "Historical Range"
+    // (jan-to-last-month) for first-time users so they see the full
+    // backfill option pre-selected. Repeat users get the usual
+    // single-month default since that's what they upload most often.
+    prisma.uploadBatch.count({ where: { businessId: business.id } }),
   ]);
+  const hasAnyUpload = uploadBatchCount > 0;
   // Income first, outcome second - applied everywhere category lists render.
   const categories = categoriesRaw.slice().sort(compareCategoriesIncomeFirst);
 
@@ -84,6 +90,7 @@ export default async function ManualDataPage({
           kind: c.kind,
         }))}
         currency={business.currency}
+        hasAnyUpload={hasAnyUpload}
       />
     </>
   );

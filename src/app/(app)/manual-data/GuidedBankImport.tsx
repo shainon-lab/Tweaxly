@@ -36,7 +36,17 @@ type Intake = {
 
 type Phase = "intake" | "overlap" | "wizard";
 
-export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency: string }) {
+export default function GuidedBankImport({
+  defaultCurrency,
+  hasAnyUpload = true,
+}: {
+  defaultCurrency: string;
+  // When false (no prior uploads), the intake defaults to Historical
+  // Range from Jan-of-last-month's-year through last month, so a brand
+  // new user sees the right starting move pre-selected without having
+  // to discover the option.
+  hasAnyUpload?: boolean;
+}) {
   const router = useRouter();
   const searchParams = useSearchParams();
   // Deep-link params consumed on first render after the source list
@@ -53,11 +63,26 @@ export default function GuidedBankImport({ defaultCurrency }: { defaultCurrency:
   const [sources,  setSources]  = useState<Source[]>([]);
   const [loadingSources, setLoadingSources] = useState(true);
 
-  const [intake, setIntake] = useState<Intake>({
-    source: null,
-    periodKind: "month",
-    periodStart: defaultMonth(),
-    periodEnd:   defaultMonth(),
+  const [intake, setIntake] = useState<Intake>(() => {
+    // First-time users land on Historical Range pre-selected. The
+    // window defaults to Jan-of-last-month's-year → last month - which
+    // is "last calendar year so far" for most of the year, and "the
+    // full previous year" in January.
+    if (!hasAnyUpload) {
+      const { start, end } = defaultHistoricalRange();
+      return {
+        source: null,
+        periodKind: "range",
+        periodStart: start,
+        periodEnd:   end,
+      };
+    }
+    return {
+      source: null,
+      periodKind: "month",
+      periodStart: defaultMonth(),
+      periodEnd:   defaultMonth(),
+    };
   });
 
   const [phase,    setPhase]    = useState<Phase>("intake");
@@ -438,4 +463,22 @@ function fmtYm(ym: string): string {
 function defaultMonth(): string {
   const d = new Date();
   return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
+}
+
+// First-time intake range: Jan-of-last-month's-year → last month.
+// In Feb 2026 this returns Jan 2026 → Jan 2026. In Jul 2026 it returns
+// Jan 2026 → Jun 2026. In Jan 2026 it returns Jan 2025 → Dec 2025
+// (i.e. the full previous calendar year, since "Jan of THIS year"
+// would be greater than "last month").
+function defaultHistoricalRange(): { start: string; end: string } {
+  const now = new Date();
+  // Step back one month to land on "last month" in UTC.
+  const lastMonth = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 1, 1));
+  const endY = lastMonth.getUTCFullYear();
+  const endM = lastMonth.getUTCMonth() + 1;
+  const fmt = (y: number, m: number) => `${y}-${String(m).padStart(2, "0")}`;
+  return {
+    start: fmt(endY, 1),
+    end:   fmt(endY, endM),
+  };
 }

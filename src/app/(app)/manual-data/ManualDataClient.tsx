@@ -59,10 +59,15 @@ export default function ManualDataClient({
   entries: initial,
   categories,
   currency,
+  hasAnyUpload,
 }: {
   entries: Entry[];
   categories: Category[];
   currency: string;
+  // True when this business already has at least one upload batch.
+  // Used to decide whether to pre-select Historical Range vs Single
+  // Month in the bank-import intake step.
+  hasAnyUpload: boolean;
 }) {
   const router = useRouter();
   const [entries, setEntries] = useState(initial);
@@ -241,7 +246,7 @@ export default function ManualDataClient({
       </section>
 
       {uploadMode === "bank" ? (
-        <GuidedBankImport defaultCurrency={currency} />
+        <GuidedBankImport defaultCurrency={currency} hasAnyUpload={hasAnyUpload} />
       ) : null}
 
       {uploadMode === "manual" ? (
