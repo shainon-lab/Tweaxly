@@ -38,15 +38,8 @@ const TONE_TEXT: Record<Tone, string> = {
   neutral:  "text-slate-400",
 };
 
-const TONE_LABEL: Record<Tone, string> = {
-  positive: "Positive",
-  warning:  "Watch",
-  neutral:  "Neutral",
-};
-
-// Rank order used when picking which drivers to surface as the top
-// bullets in Layer 1. Warnings bubble up so the user sees risks first;
-// positives next so they understand what the engine is leaning on.
+// Rank order used to sort drivers in the card grid (warnings first,
+// positives second, neutrals last) so the most-important cards lead.
 const TONE_RANK: Record<Tone, number> = {
   warning:  0,
   positive: 1,
@@ -88,48 +81,39 @@ export default function ForecastExplanationPanel({
 
   return (
     <div className="card mb-6">
-      {/* ─── Compact header: title + inline confidence chip ─────── */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-3">
-        <div className="min-w-0 flex-1">
-          <div className="font-medium">Why this forecast?</div>
-          <div className="text-xs text-slate-400 mt-0.5">
-            Top drivers behind this projection, ranked by impact.
-          </div>
-        </div>
-        {/* Horizontal confidence chip - score + based-on facts share
-            one row so the panel header stays tight instead of leaving
-            a column of dead space on wide screens. */}
-        <div className="flex items-center gap-3 shrink-0 rounded-md border border-line bg-ink-900/50 px-3 py-2">
+      {/* ─── Single-line header: title + inline confidence chip ───
+          Title, score and based-on facts share ONE row. No subtitle,
+          no stacked elements - removes the vertical dead space the
+          old layout left between the title block and the (then-tall)
+          confidence chip on wide screens. */}
+      <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
+        <div className="font-medium text-slate-100 shrink-0">Why this forecast?</div>
+        <div className="flex items-center gap-3 shrink-0 rounded-md border border-line bg-ink-900/50 px-3 py-1.5">
           <div className="text-right">
             <div className="text-[10px] uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
-            <div className={`text-xl font-semibold leading-tight ${TONE_TEXT[confTone]}`}>
+            <div className={`text-lg font-semibold leading-tight ${TONE_TEXT[confTone]}`}>
               {confidencePct}%
             </div>
           </div>
-          <div className="text-[11px] text-slate-400 leading-snug max-w-[200px]">
+          <div className="text-[11px] text-slate-400 leading-snug max-w-[220px]">
             {basedOn}
           </div>
         </div>
       </div>
 
       {/* ─── Driver cards (sorted by impact: warning → positive →
-            neutral). Replaces the old separate "Main Drivers" bullet
-            list - the tone dot + Watch/Positive/Neutral label on each
-            card already conveys the same priority signal. */}
+            neutral). The tone dot already encodes the WATCH /
+            POSITIVE / NEUTRAL signal so the explicit label pill is
+            redundant - dropped to reduce visual weight per card. */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
         {drivers.map((d, i) => (
           <div
             key={i}
-            className="rounded-lg border border-line bg-ink-900/40 px-3 py-2.5"
+            className="rounded-lg border border-line bg-ink-900/40 px-3 py-2"
           >
-            <div className="flex items-center justify-between gap-2 mb-1">
-              <div className="flex items-center gap-2 min-w-0">
-                <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
-                <div className="text-xs font-medium text-slate-200 truncate">{d.title}</div>
-              </div>
-              <span className={`text-[10px] uppercase tracking-wide font-semibold shrink-0 ${TONE_TEXT[d.impact]}`}>
-                {TONE_LABEL[d.impact]}
-              </span>
+            <div className="flex items-center gap-2 min-w-0 mb-1">
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
+              <div className={`text-xs font-medium truncate ${TONE_TEXT[d.impact]}`}>{d.title}</div>
             </div>
             <div className="text-[11px] text-slate-400 leading-snug">{d.detail}</div>
           </div>
