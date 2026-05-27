@@ -493,7 +493,8 @@ export default function GlobalConsult() {
           owns the bottom-right corner. */}
       {showNudge && !open && !detailPanelOpen ? (
         <div
-          className={`fixed bottom-[68px] ${fbPos} z-40 max-w-[300px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]`}
+          style={{ bottom: "calc(max(1.25rem, env(safe-area-inset-bottom)) + 3.25rem)" }}
+          className={`fixed ${fbPos} z-40 max-w-[300px] rounded-lg border border-line bg-ink-900/95 backdrop-blur shadow-xl px-3.5 py-2.5 animate-[nudgeIn_220ms_ease-out]`}
           role="status"
           aria-live="polite"
         >
@@ -574,17 +575,25 @@ export default function GlobalConsult() {
           accessible while scrolling. Quiet pill style, never glowing.
           Hidden when a feature-level detail panel (Signals) owns the
           bottom-right corner so the two affordances don't visually
-          collide; the panel's own Consult action covers that case. */}
+          collide; the panel's own Consult action covers that case.
+          - bottom uses env(safe-area-inset-bottom) so the button clears
+            the iPhone home indicator. Falls back to 1.25rem on browsers
+            that don't expose safe-area.
+          - Below sm (≤640px), renders as an icon-only round button so
+            it occupies ~44px instead of ~150px - critical on phones
+            where the labeled pill covered a meaningful slice of any
+            right-aligned content / table cell. */}
       {!detailPanelOpen ? (
         <button
           type="button"
           onClick={() => setOpen(true)}
-          className={`fixed bottom-5 ${fbPos} z-40 inline-flex items-center gap-2 px-4 py-2.5 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200`}
+          style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
+          className={`fixed ${fbPos} z-40 inline-flex items-center justify-center gap-2 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5`}
           aria-label="Open AI business consultation"
           title="Consult with your AI advisor about this view"
         >
           <MessageSquareText size={16} strokeWidth={1.75} aria-hidden="true" />
-          <span className="text-sm font-medium">{t("consult.button")}</span>
+          <span className="hidden sm:inline text-sm font-medium">{t("consult.button")}</span>
         </button>
       ) : null}
 
