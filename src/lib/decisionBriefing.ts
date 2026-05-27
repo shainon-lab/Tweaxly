@@ -327,10 +327,24 @@ function buildFreeformBriefing(content: string): DecisionBriefing {
   if (!trimmed) {
     return { takeaway: null, anchors: [], reasoning: "", paths: [], risks: [] };
   }
-  // Split on sentence-end punctuation followed by whitespace.
-  const sentences = trimmed.split(/(?<=[.!?])\s+/);
-  const first = sentences[0] ?? trimmed;
-  const rest = sentences.slice(1).join(" ").trim();
+  // Match the first sentence followed by trailing whitespace. Slicing
+  // by the match length (instead of split → slice → join) preserves
+  // the original paragraph breaks in `rest`, so the History viewer's
+  // renderMarkdown still gets `\n\n`-separated paragraphs to work
+  // with and doesn't have to reconstruct rhythm from a flattened
+  // one-liner.
+  const m = trimmed.match(/^([^.!?]+[.!?])(\s+|$)/);
+  if (!m) {
+    return {
+      takeaway: { headline: trimmed },
+      anchors: [],
+      reasoning: "",
+      paths: [],
+      risks: [],
+    };
+  }
+  const first = m[1].trim();
+  const rest  = trimmed.slice(m[0].length).trim();
   return {
     takeaway: { headline: first },
     anchors: [],
