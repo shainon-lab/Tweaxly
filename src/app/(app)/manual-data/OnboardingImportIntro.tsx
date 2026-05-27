@@ -7,7 +7,7 @@ import Link from "next/link";
 
 export default function OnboardingImportIntro() {
   return (
-    <div className="space-y-4 mb-6 -mt-2">
+    <div className="space-y-4 mb-6">
       <div className="rounded-xl border border-brand-purple/30 bg-accent-soft/15 p-4 text-sm">
         <div className="flex items-start gap-3">
           <span className="text-brand-purple text-base leading-none mt-0.5">✨</span>

@@ -196,7 +196,7 @@ export default async function DashboardPage({
           when the workspace has no bank source yet (the empty state
           below already explains what's required). */}
       {!empty && cardSignals ? (
-        <div className="mb-3 -mt-2">
+        <div className="mb-3">
           <IntelligenceModeBadge signals={cardSignals} />
         </div>
       ) : null}
