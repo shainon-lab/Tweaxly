@@ -29,6 +29,7 @@ import {
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
 import { MARKETING_POLICY_VERSION } from "@/lib/communications";
 import { recordAudit } from "@/lib/audit";
+import { sendAdminSignupNotification } from "@/lib/email/adminSignupNotification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -166,6 +167,14 @@ export async function GET(req: NextRequest) {
         metadata:    { mode: "new_signup", businessId: newBusiness.id },
         request:     req,
       });
+      // Fire-and-forget admin notification - only on fresh Google
+      // signups (the linked-existing-account branch above already
+      // ran for an established user we've notified about long ago).
+      void sendAdminSignupNotification({
+        user:     { id: user.id, email: user.email, name: user.name, region: user.region, systemRole: user.systemRole },
+        business: { id: newBusiness.id, name: newBusiness.name },
+        method:   "google",
+      }).catch((err) => console.error("[google-callback] admin notification failed", err));
     }
   } else {
     // Returning Google user. Keep the avatar fresh; everything else

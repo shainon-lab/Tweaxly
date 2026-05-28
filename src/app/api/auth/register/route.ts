@@ -18,6 +18,7 @@ import {
 } from "@/lib/communications";
 import { recordAudit } from "@/lib/audit";
 import { generateAndStoreVerificationToken, sendVerificationEmail } from "@/lib/auth/verification";
+import { sendAdminSignupNotification } from "@/lib/email/adminSignupNotification";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -159,6 +160,15 @@ export async function POST(req: NextRequest) {
     },
     request: req,
   });
+
+  // Fire-and-forget admin signup notification to info@tweaxly.com.
+  // Runs after the account is fully committed so a Resend hiccup
+  // never blocks the signup flow.
+  void sendAdminSignupNotification({
+    user:     { id: user.id, email: user.email, name: user.name, region: user.region, systemRole: user.systemRole },
+    business: { id: business.id, name: business.name },
+    method:   "email_password",
+  }).catch((err) => console.error("[register] admin notification failed", err));
 
   // Fire-and-forget verification email. The user is logged in and
   // dropped into onboarding regardless of whether the email lands -
