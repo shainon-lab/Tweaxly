@@ -17,10 +17,11 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X as XIcon } from "lucide-react";
 import LoadingBar from "@/components/LoadingBar";
+import { notify } from "@/lib/notify";
 
 interface InboxItem {
   id:           string;
-  source:       "signal" | "monitor";
+  source:       "signal" | "monitor" | "system";
   sourceKey:    string;
   category:     string;
   severity:     "critical" | "important" | "info";
@@ -138,6 +139,61 @@ export default function NotificationCenter({
     onClose();
   }
 
+  // ── Workspace-invitation actions ────────────────────────────────
+  //
+  // Each pending invitation rendered in the bell carries the invitation
+  // id in `sourceKey` (set server-side when the notification row was
+  // created). Accept/decline go straight against the in-app routes -
+  // no token round-trip - and clear the notification from the inbox
+  // optimistically so the badge updates immediately.
+  const [invBusy, setInvBusy] = useState<string | null>(null);
+  async function acceptInvitation(n: InboxItem) {
+    if (invBusy) return;
+    setInvBusy(n.id);
+    try {
+      const res = await fetch(`/api/invitations/in-app/${n.sourceKey}/accept`, { method: "POST" });
+      if (!res.ok) {
+        const t = await res.json().catch(() => ({}));
+        void notify.alert({
+          title: "Couldn't accept invitation",
+          body:  t.error === "expired" ? "This invitation has expired. Ask the workspace owner for a new one."
+               : t.error === "already_used" ? "This invitation has already been used."
+               : t.error === "email_mismatch" ? "This invitation was sent to a different email. Sign in with that email to accept."
+               : "Something went wrong - please try again.",
+        });
+        return;
+      }
+      setItems((prev) => prev.filter((x) => x.id !== n.id));
+      onChangedUnread?.();
+      router.refresh();
+    } finally {
+      setInvBusy(null);
+    }
+  }
+  async function declineInvitation(n: InboxItem) {
+    if (invBusy) return;
+    const ok = await notify.confirm({
+      title: "Decline invitation?",
+      body:  `Decline the invitation to "${n.title.replace(/^Workspace invitation:\s*/, "")}"? The owner will need to re-invite you if you change your mind.`,
+      confirmLabel: "Decline",
+      cancelLabel:  "Keep",
+      danger: true,
+    });
+    if (!ok) return;
+    setInvBusy(n.id);
+    try {
+      const res = await fetch(`/api/invitations/in-app/${n.sourceKey}/decline`, { method: "POST" });
+      if (!res.ok) {
+        void notify.alert("Couldn't decline invitation - please try again.");
+        return;
+      }
+      setItems((prev) => prev.filter((x) => x.id !== n.id));
+      onChangedUnread?.();
+    } finally {
+      setInvBusy(null);
+    }
+  }
+
   if (!open || !portalTarget) return null;
 
   return createPortal(
@@ -227,7 +283,33 @@ export default function NotificationCenter({
                         <div className="text-sm font-semibold text-white leading-snug">{n.title}</div>
                         <div className="text-xs text-slate-300 mt-1 leading-snug">{n.body}</div>
                         <div className="mt-2 flex items-center gap-2 flex-wrap">
-                          {n.deepLink ? (
+                          {n.category === "workspace_invitation" ? (
+                            <>
+                              <button
+                                type="button"
+                                disabled={invBusy === n.id}
+                                onClick={() => acceptInvitation(n)}
+                                className="text-xs font-medium px-3 py-1 rounded-md border border-good/40 text-good hover:bg-good/10 hover:border-good transition disabled:opacity-50"
+                              >
+                                {invBusy === n.id ? "Working…" : "Accept"}
+                              </button>
+                              <button
+                                type="button"
+                                disabled={invBusy === n.id}
+                                onClick={() => declineInvitation(n)}
+                                className="text-xs font-medium px-3 py-1 rounded-md border border-bad/40 text-bad hover:bg-bad/10 hover:border-bad transition disabled:opacity-50"
+                              >
+                                Decline
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => openAlert(n)}
+                                className="text-xs text-slate-400 hover:text-slate-100 px-2 py-1 rounded transition"
+                              >
+                                Open Members & Access →
+                              </button>
+                            </>
+                          ) : n.deepLink ? (
                             <button
                               type="button"
                               onClick={() => openAlert(n)}

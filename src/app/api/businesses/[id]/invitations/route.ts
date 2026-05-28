@@ -9,6 +9,7 @@ import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
   createInvitation, sendInvitationEmail, INVITABLE_ROLES,
+  createIncomingInvitationNotification,
 } from "@/lib/memberships";
 import { recordAudit } from "@/lib/audit";
 
@@ -65,7 +66,7 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   // Look up inviter name for the email body (workspace name was
   // already fetched above as part of the owner check).
-  const inviter = await prisma.user.findUnique({ where: { id: user.id }, select: { name: true } });
+  const inviter = await prisma.user.findUnique({ where: { id: user.id }, select: { name: true, email: true } });
 
   await sendInvitationEmail({
     to:            result.invitation.email,
@@ -74,6 +75,19 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     role:          result.invitation.role,
     token:         result.token,
   });
+
+  // If the invited email belongs to an existing Tweaxly user, also
+  // drop an in-app notification on their bell so they don't have to
+  // dig through email to find the invitation. Best-effort - if the
+  // notification write fails, the email is still the primary channel.
+  await createIncomingInvitationNotification({
+    invitationId:  result.invitation.id,
+    workspaceName: business.name ?? "your workspace",
+    inviterName:   inviter?.name ?? null,
+    inviterEmail:  inviter?.email ?? "",
+    role:          role as "admin" | "viewer",
+    email:         result.invitation.email,
+  }).catch(() => { /* swallow - email is the source of truth */ });
 
   await recordAudit({
     actorUserId:      user.id,

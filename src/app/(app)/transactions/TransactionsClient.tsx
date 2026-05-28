@@ -1,7 +1,7 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
+import { ChevronUp, ChevronDown, ChevronsUpDown, Trash2 } from "lucide-react";
 import BulkCategoryPicker, { type PickerCategory } from "@/components/transactions/BulkCategoryPicker";
 import BulkVendorPicker, { type PickerVendor } from "@/components/transactions/BulkVendorPicker";
 import { useNotify } from "@/components/notify/NotifyProvider";
@@ -153,6 +153,30 @@ export default function TransactionsClient({
       body: JSON.stringify({ id, patch }),
     });
     if (!res.ok) { notify.alert(await res.text()); return; }
+    startTransition(() => router.refresh());
+  }
+
+  async function trashOne(t: Txn) {
+    const ok = await notify.confirm({
+      title:        "Move to trash?",
+      body:         `Move this transaction to trash? It'll stay restorable for 30 days.`,
+      confirmLabel: "Move to trash",
+      cancelLabel:  "Cancel",
+      danger:       true,
+    });
+    if (!ok) return;
+    const res = await fetch("/api/transactions/bulk", {
+      method:  "POST",
+      headers: { "Content-Type": "application/json" },
+      body:    JSON.stringify({ ids: [t.id], action: "trash" }),
+    });
+    if (!res.ok) { notify.alert(await res.text()); return; }
+    setSelected((prev) => {
+      if (!prev.has(t.id)) return prev;
+      const next = new Set(prev);
+      next.delete(t.id);
+      return next;
+    });
     startTransition(() => router.refresh());
   }
 
@@ -540,29 +564,41 @@ export default function TransactionsClient({
                     ) : null}
                   </td>
                   <td className="text-right whitespace-nowrap">
-                    {ignored ? (
+                    <div className="inline-flex items-center gap-1 justify-end">
+                      {ignored ? (
+                        <button
+                          className="btn-ghost py-1"
+                          disabled={pending}
+                          onClick={() => unIgnoreOne(t)}
+                          title={
+                            t.type === "credit_card_settlement" || t.type === "paypal_settlement"
+                              ? "Undo the auto-detected settlement and treat this row as a normal transaction"
+                              : "Re-include this transaction in P&L calculations"
+                          }
+                        >
+                          {t.type === "credit_card_settlement" || t.type === "paypal_settlement" ? "Undo settlement" : "Re-include"}
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-ghost py-1"
+                          disabled={pending}
+                          onClick={() => openIgnoreSingle(t)}
+                          title="Mark this transaction as not relevant to the business"
+                        >
+                          Ignore
+                        </button>
+                      )}
                       <button
-                        className="btn-ghost py-1"
+                        type="button"
+                        className="p-1.5 rounded-md text-slate-400 hover:text-bad hover:bg-bad/10 transition disabled:opacity-40"
                         disabled={pending}
-                        onClick={() => unIgnoreOne(t)}
-                        title={
-                          t.type === "credit_card_settlement" || t.type === "paypal_settlement"
-                            ? "Undo the auto-detected settlement and treat this row as a normal transaction"
-                            : "Re-include this transaction in P&L calculations"
-                        }
+                        onClick={() => trashOne(t)}
+                        title="Move to trash (restorable for 30 days)"
+                        aria-label="Move to trash"
                       >
-                        {t.type === "credit_card_settlement" || t.type === "paypal_settlement" ? "Undo settlement" : "Re-include"}
+                        <Trash2 size={14} />
                       </button>
-                    ) : (
-                      <button
-                        className="btn-ghost py-1"
-                        disabled={pending}
-                        onClick={() => openIgnoreSingle(t)}
-                        title="Mark this transaction as not relevant to the business"
-                      >
-                        Ignore
-                      </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               );

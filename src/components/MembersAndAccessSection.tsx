@@ -60,6 +60,17 @@ function fmtDate(iso: string): string {
   catch { return iso; }
 }
 
+interface IncomingInvitation {
+  id:            string;
+  role:          Role;
+  expiresAt:     string;
+  createdAt:     string;
+  expired:       boolean;
+  workspaceId:   string;
+  workspaceName: string;
+  invitedBy:     string;
+}
+
 export default function MembersAndAccessSection({ businessId }: { businessId: string }) {
   const [data,    setData]    = useState<ApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
@@ -71,6 +82,11 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
   // in the app's dark theme instead of using the browser's native
   // dialog (which looks completely out of place).
   const [notice, setNotice] = useState<{ title: string; body: string } | null>(null);
+
+  // Pending invitations addressed to THIS user (across any workspace).
+  // Loaded separately because the /members endpoint is scoped to the
+  // currently-viewed workspace and only returns OUTBOUND invites.
+  const [incoming, setIncoming] = useState<IncomingInvitation[]>([]);
 
   async function load() {
     setLoading(true);
@@ -90,7 +106,19 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
     }
   }
 
-  useEffect(() => { void load(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [businessId]);
+  async function loadIncoming() {
+    try {
+      const res = await fetch("/api/invitations/incoming");
+      if (!res.ok) return;
+      const d = await res.json();
+      setIncoming(d.invitations ?? []);
+    } catch {
+      // Silent: incoming invitations are a secondary surface; the bell
+      // notification is the primary channel.
+    }
+  }
+
+  useEffect(() => { void load(); void loadIncoming(); /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [businessId]);
 
   if (loading) {
     return <div className="space-y-2">{Array.from({ length: 3 }).map((_, i) => <div key={i} className="h-10 rounded-md bg-ink-900/40 animate-pulse" />)}</div>;
@@ -129,6 +157,30 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
 
   return (
     <div className="space-y-6">
+      {/* ── Incoming invitations to this user ──────────────────── */}
+      {incoming.length > 0 ? (
+        <section className="rounded-lg border border-accent/40 bg-accent-soft/10 p-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-sm font-semibold text-slate-100">Invitations for you</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full border border-accent/40 bg-accent-soft/30 text-accent font-semibold">
+              {incoming.length} pending
+            </span>
+          </div>
+          <div className="text-xs text-slate-300 leading-relaxed">
+            You&apos;ve been invited to the following workspace{incoming.length === 1 ? "" : "s"}. Accepting opens the workspace in your switcher; declining cancels the invite.
+          </div>
+          <div className="space-y-2">
+            {incoming.map((inv) => (
+              <IncomingInvitationRow
+                key={inv.id}
+                invitation={inv}
+                onChanged={loadIncoming}
+              />
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       {/* ── Header row ──────────────────────────────────────────── */}
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="min-w-0 flex-1">
@@ -470,6 +522,100 @@ function InviteModal({
             {busy ? "Sending…" : "Invite Member"}
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Incoming invitation row (this user is the invitee) ──────────────
+function IncomingInvitationRow({
+  invitation, onChanged,
+}: {
+  invitation: IncomingInvitation;
+  onChanged:  () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+
+  async function accept() {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/invitations/in-app/${invitation.id}/accept`, { method: "POST" });
+      if (!res.ok) {
+        const t = await res.json().catch(() => ({}));
+        await notify.alert({
+          title: "Couldn't accept invitation",
+          body:  t.error === "expired" ? "This invitation has expired. Ask the workspace owner for a new one."
+               : t.error === "already_used" ? "This invitation has already been used."
+               : t.error === "email_mismatch" ? "This invitation was sent to a different email. Sign in with that email to accept."
+               : "Something went wrong - please try again.",
+        });
+        onChanged();
+        return;
+      }
+      // Reload the cross-workspace switcher by reloading the page so
+      // the new workspace shows up immediately. Soft router.refresh()
+      // would refetch server data but won't refresh the sidebar's
+      // pre-rendered workspace list.
+      window.location.assign("/dashboard");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function decline() {
+    if (busy) return;
+    const ok = await notify.confirm({
+      title: "Decline invitation?",
+      body:  `Decline the invitation to "${invitation.workspaceName}"? The owner will need to re-invite you if you change your mind.`,
+      confirmLabel: "Decline",
+      cancelLabel:  "Keep",
+      danger: true,
+    });
+    if (!ok) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/invitations/in-app/${invitation.id}/decline`, { method: "POST" });
+      if (!res.ok) {
+        await notify.alert("Couldn't decline invitation - please try again.");
+        return;
+      }
+      onChanged();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5 rounded-md border border-line/60 bg-ink-900/40">
+      <div className="min-w-0 flex-1">
+        <div className="text-sm font-medium text-slate-100 truncate">
+          {invitation.workspaceName}
+          {invitation.expired ? (
+            <span className="ml-2 text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-warn/15 text-warn font-semibold">Expired</span>
+          ) : null}
+        </div>
+        <div className="text-xs text-slate-400 truncate">
+          Invited by {invitation.invitedBy} · {ROLE_LABEL[invitation.role]} · expires {fmtDate(invitation.expiresAt)}
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <button
+          type="button"
+          onClick={accept}
+          disabled={busy || invitation.expired}
+          className="text-xs font-medium px-3 py-1.5 rounded-md border border-good/40 text-good hover:bg-good/10 hover:border-good transition disabled:opacity-50"
+        >
+          {busy ? "Working…" : "Accept"}
+        </button>
+        <button
+          type="button"
+          onClick={decline}
+          disabled={busy}
+          className="text-xs font-medium px-3 py-1.5 rounded-md border border-bad/40 text-bad hover:bg-bad/10 hover:border-bad transition disabled:opacity-50"
+        >
+          Decline
+        </button>
       </div>
     </div>
   );

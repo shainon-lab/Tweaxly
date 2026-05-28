@@ -320,7 +320,148 @@ export async function acceptInvitation(plainToken: string, userId: string, userE
     }),
   ]);
 
+  // Clear any open bell notifications for this invitation so the
+  // badge doesn't keep nagging after the user has acted on it.
+  await markInvitationNotificationsRead(inv.id);
+
   return { ok: true, businessId: inv.businessId, role };
+}
+
+// ── In-app accept / decline ─────────────────────────────────────────
+//
+// Variant of acceptInvitation() that doesn't need the plaintext token.
+// Used by the Notification Center + Members & Access "Incoming
+// invitations" surfaces where the user is already logged in and the
+// invitation id is known. Email match is still enforced.
+export async function acceptInvitationById(invitationId: string, userId: string, userEmail: string): Promise<AcceptResult> {
+  const inv = await prisma.businessInvitation.findUnique({ where: { id: invitationId } });
+  if (!inv)                          return { ok: false, reason: "invalid_token" };
+  if (inv.status !== "pending")      return { ok: false, reason: "already_used" };
+  if (inv.expiresAt < new Date()) {
+    await prisma.businessInvitation.update({ where: { id: inv.id }, data: { status: "expired" } });
+    return { ok: false, reason: "expired" };
+  }
+  if (inv.email.toLowerCase() !== userEmail.toLowerCase()) {
+    return { ok: false, reason: "email_mismatch" };
+  }
+
+  const role = normalizeRole(inv.role);
+
+  await prisma.$transaction([
+    prisma.businessMembership.upsert({
+      where: { userId_businessId: { userId, businessId: inv.businessId } },
+      create: {
+        userId,
+        businessId: inv.businessId,
+        role,
+        status:     "active",
+        invitedBy:  inv.invitedByUserId,
+        invitedAt:  inv.createdAt,
+        joinedAt:   new Date(),
+      },
+      update: {
+        role,
+        status:    "active",
+        joinedAt:  new Date(),
+      },
+    }),
+    prisma.businessInvitation.update({
+      where: { id: inv.id },
+      data:  { status: "accepted", acceptedAt: new Date(), acceptedByUserId: userId },
+    }),
+  ]);
+
+  await markInvitationNotificationsRead(inv.id);
+
+  return { ok: true, businessId: inv.businessId, role };
+}
+
+export type DeclineResult =
+  | { ok: true }
+  | { ok: false; reason: "invalid_token" | "expired" | "email_mismatch" | "already_used" };
+
+// Invitee declines their own pending invitation. Uses the same email
+// match as acceptInvitationById so a logged-in user can only cancel
+// invitations issued to their address.
+export async function declineInvitationById(invitationId: string, userEmail: string): Promise<DeclineResult> {
+  const inv = await prisma.businessInvitation.findUnique({ where: { id: invitationId } });
+  if (!inv)                     return { ok: false, reason: "invalid_token" };
+  if (inv.status !== "pending") return { ok: false, reason: "already_used" };
+  if (inv.email.toLowerCase() !== userEmail.toLowerCase()) {
+    return { ok: false, reason: "email_mismatch" };
+  }
+  await prisma.businessInvitation.update({
+    where: { id: inv.id },
+    data:  { status: "declined" },
+  });
+  await markInvitationNotificationsRead(inv.id);
+  return { ok: true };
+}
+
+// ── Bell notification for the invitee ───────────────────────────────
+//
+// If the invited email belongs to an existing user, drop an
+// AlertNotification on their bell so they don't have to dig through
+// email to find the invitation. The notification lives under the
+// invitee's primary workspace (the inbox is scoped per active
+// workspace, so we anchor it where they'll actually see it). The
+// invitation id is encoded in sourceKey so the notification panel
+// can render an inline Accept/Decline UI.
+export async function createIncomingInvitationNotification(args: {
+  invitationId: string;
+  workspaceName: string;
+  inviterName:   string | null;
+  inviterEmail:  string;
+  role:          "admin" | "viewer";
+  email:         string;
+}): Promise<void> {
+  const user = await prisma.user.findUnique({
+    where: { email: args.email.toLowerCase() },
+    select: { id: true },
+  });
+  if (!user) return; // No existing user → email is their only channel.
+
+  // Anchor the bell notification under any workspace the user can
+  // actually open. Prefer one they own (workspace switcher always
+  // shows owned workspaces); fall back to any active membership.
+  const owned = await prisma.business.findFirst({
+    where:   { ownerId: user.id },
+    orderBy: { createdAt: "asc" },
+    select:  { id: true },
+  });
+  const anchorBusinessId = owned?.id ?? (await prisma.businessMembership.findFirst({
+    where:   { userId: user.id, status: "active" },
+    orderBy: { createdAt: "asc" },
+    select:  { businessId: true },
+  }))?.businessId;
+  if (!anchorBusinessId) return; // Edge case: invitee has no workspaces.
+
+  const inviter  = args.inviterName?.trim() || args.inviterEmail;
+  const roleText = args.role === "admin" ? "Admin" : "Viewer";
+
+  await prisma.alertNotification.create({
+    data: {
+      userId:     user.id,
+      businessId: anchorBusinessId,
+      source:     "system",
+      sourceKey:  args.invitationId,
+      category:   "workspace_invitation",
+      severity:   "important",
+      title:      `Workspace invitation: ${args.workspaceName}`,
+      body:       `${inviter} invited you to join "${args.workspaceName}" as ${roleText}. Accept or decline below, or open Settings → Members & Access for more.`,
+      deepLink:   "/settings?tab=members",
+    },
+  });
+}
+
+// Mark any open bell notifications for this invitation as read so
+// the badge clears once the user has acted on it (via the bell, via
+// Members & Access, or via the email link).
+export async function markInvitationNotificationsRead(invitationId: string): Promise<void> {
+  await prisma.alertNotification.updateMany({
+    where: { category: "workspace_invitation", sourceKey: invitationId, readAt: null },
+    data:  { readAt: new Date() },
+  });
 }
 
 // ── Members ─────────────────────────────────────────────────────────
