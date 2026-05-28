@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Trash2 } from "lucide-react";
+import { notify } from "@/lib/notify";
 
 type Note = {
   id: string;
@@ -56,7 +57,7 @@ export function AdminNotes({
   }
 
   async function remove(noteId: string) {
-    if (!confirm("Delete this note? This can't be undone.")) return;
+    if (!(await notify.confirm({ title: "Delete note?", body: "Delete this note? This can't be undone.", confirmLabel: "Delete", danger: true }))) return;
     setBusy(true);
     try {
       await fetch(`/api/admin/accounts/${businessId}/notes?noteId=${noteId}`, {

@@ -3,6 +3,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Plus, Check, Trash2, LogOut, Pencil } from "lucide-react";
+import { notify } from "@/lib/notify";
 
 type Workspace = {
   membershipId: string;
@@ -65,7 +66,7 @@ export function WorkspacesClient({ workspaces, currentBusinessId }: {
   }
 
   async function leave(id: string, name: string) {
-    if (!confirm(`Leave "${name}"? You won't be able to access this workspace until you're re-invited.`)) return;
+    if (!(await notify.confirm({ title: "Leave workspace?", body: `Leave "${name}"? You won't be able to access this workspace until you're re-invited.`, confirmLabel: "Leave", danger: true }))) return;
     setError(null);
     const res = await fetch(`/api/businesses/${id}/leave`, { method: "POST" });
     if (!res.ok) {
@@ -86,7 +87,7 @@ export function WorkspacesClient({ workspaces, currentBusinessId }: {
       `Permanently delete "${name}"?\n\nThis cascade-deletes ${txCount.toLocaleString()} transaction(s), uploads, employees, forecasts, and every member. There is no undo.\n\nType the workspace name to confirm:`
     );
     if (confirmText !== name) {
-      if (confirmText !== null) alert("Name didn't match - deletion cancelled.");
+      if (confirmText !== null) notify.alert("Name didn't match - deletion cancelled.");
       return;
     }
     setError(null);

@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { TriggeredAlert } from "@/lib/notificationsEval";
 import NotificationsClient from "@/app/(app)/notifications/NotificationsClient";
+import { notify } from "@/lib/notify";
 
 type RuleRow = {
   id: string;
@@ -102,7 +103,7 @@ export default function ThresholdAlertsBox({
         body: JSON.stringify({ id: ruleId, action: "ack" }),
       });
       if (!res.ok) {
-        alert(await res.text());
+        notify.alert(await res.text());
         return;
       }
       startTransition(() => router.refresh());

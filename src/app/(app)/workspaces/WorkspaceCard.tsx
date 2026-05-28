@@ -9,6 +9,7 @@
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 export interface WorkspaceCardData {
   id:                string;
@@ -58,7 +59,7 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
         body:    JSON.stringify({ businessId: card.id }),
       });
       if (!res.ok) {
-        alert("Couldn't switch workspace. Try again.");
+        notify.alert("Couldn't switch workspace. Try again.");
         setBusy(false);
         return;
       }
@@ -66,7 +67,7 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
       // session workspace immediately.
       window.location.assign("/dashboard");
     } catch {
-      alert("Network error - check your connection.");
+      notify.alert("Network error - check your connection.");
       setBusy(false);
     }
   }
@@ -86,10 +87,10 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
         headers: { "content-type": "application/json" },
         body:    JSON.stringify({ businessId: card.id }),
       });
-      if (!res.ok) { alert("Couldn't switch workspace."); setBusy(false); return; }
+      if (!res.ok) { notify.alert("Couldn't switch workspace."); setBusy(false); return; }
       window.location.assign("/settings?tab=plan");
     } catch {
-      alert("Network error.");
+      notify.alert("Network error.");
       setBusy(false);
     }
   }

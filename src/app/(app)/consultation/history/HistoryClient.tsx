@@ -11,6 +11,7 @@ import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import { buildDecisionBriefing } from "@/lib/decisionBriefing";
 import { renderMarkdown } from "../markdown";
+import { notify } from "@/lib/notify";
 
 export type HistoryListItem = {
   id: string;
@@ -63,12 +64,12 @@ export default function HistoryClient({
   async function deleteEntry(id: string, e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm("Delete this consultation from history? This cannot be undone.")) return;
+    if (!(await notify.confirm({ title: "Delete consultation?", body: "Delete this consultation from history? This cannot be undone.", confirmLabel: "Delete", danger: true }))) return;
     setDeletingId(id);
     try {
       const res = await fetch(`/api/consultation/history?id=${id}`, { method: "DELETE" });
       if (!res.ok) {
-        alert(await res.text());
+        notify.alert(await res.text());
         return;
       }
       // If we just deleted the currently-selected entry, clear the

@@ -36,6 +36,7 @@ import {
   DATE_FORMATS, type DateFormat, parseDateWithFormat,
   suggestDateFormat, formatDateLong, toIsoDate,
 } from "@/lib/dateFormats";
+import { notify } from "@/lib/notify";
 
 // ─── Field vocabulary ─────────────────────────────────────────────────────
 // What the user maps each file column to. "ignore" means the column is
@@ -431,7 +432,7 @@ export default function BankImportWizard({
               setStep("done");
               startTransition(() => router.refresh());
             } catch (err) {
-              alert(err instanceof Error ? err.message : "Import failed");
+              notify.alert(err instanceof Error ? err.message : "Import failed");
             } finally {
               setImporting(false);
             }

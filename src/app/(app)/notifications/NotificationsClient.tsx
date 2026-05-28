@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import UpgradeModal from "@/components/billing/UpgradeModal";
+import { notify } from "@/lib/notify";
 
 type Rule = {
   id: string;
@@ -219,7 +220,7 @@ export default function NotificationsClient({
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this notification rule?")) return;
+    if (!(await notify.confirm({ title: "Delete rule?", body: "Delete this notification rule?", confirmLabel: "Delete", danger: true }))) return;
     await fetch(`/api/notifications?id=${id}`, { method: "DELETE" });
     setRules(rules.filter((r) => r.id !== id));
     startTransition(() => router.refresh());

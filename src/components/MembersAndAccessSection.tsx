@@ -16,6 +16,7 @@
 // owner-only access + the Pro plan cap.
 
 import { useEffect, useState } from "react";
+import { notify } from "@/lib/notify";
 
 type Role = "owner" | "admin" | "viewer";
 
@@ -107,7 +108,7 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
   // capped - and shows a styled notice explaining the cap if they
   // click it while disabled. Free owners see an "upgrade" notice
   // instead. NoticeModal renders in the app theme; no browser-native
-  // alert() that would look out of place.
+  // notify.alert() that would look out of place.
   function handleInviteClick() {
     if (!isPro) {
       setNotice({
@@ -221,7 +222,7 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
 }
 
 // ─── Branded notice modal ─────────────────────────────────────────
-// Replaces browser-native alert() for the in-app "you can't do that"
+// Replaces browser-native notify.alert() for the in-app "you can't do that"
 // messages so the dialog matches the rest of the dark theme. Same
 // dismissal mechanics as InviteModal (backdrop click + OK button).
 function NoticeModal({

@@ -8,6 +8,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { MoreHorizontal } from "lucide-react";
+import { notify } from "@/lib/notify";
 
 export default function RowActions({
   businessId,
@@ -38,7 +39,7 @@ export default function RowActions({
   }, [open]);
 
   async function changeStatus(next: string, prompt: string) {
-    if (!confirm(prompt)) return;
+    if (!(await notify.confirm({ title: "Change account status?", body: prompt, confirmLabel: "Confirm", danger: true }))) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/accounts/${businessId}/status`, {
@@ -46,7 +47,7 @@ export default function RowActions({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ status: next }),
       });
-      if (!res.ok) alert("Status update failed");
+      if (!res.ok) notify.alert("Status update failed");
       else router.refresh();
       setOpen(false);
     } finally {
@@ -62,7 +63,7 @@ export default function RowActions({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ businessId, allowWrites: false }),
       });
-      if (!res.ok) { alert("Impersonation failed"); setBusy(false); return; }
+      if (!res.ok) { notify.alert("Impersonation failed"); setBusy(false); return; }
       window.location.assign("/dashboard");
     } catch {
       setBusy(false);

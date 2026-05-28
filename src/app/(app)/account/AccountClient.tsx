@@ -24,6 +24,7 @@ import {
   setA11yWidgetEnabled,
   onA11yWidgetToggle,
 } from "@/lib/a11y/visibilityStore";
+import { notify } from "@/lib/notify";
 
 type AccountSubTab =
   | "workspaces"
@@ -636,7 +637,7 @@ function CloseAccountPane() {
           className="btn-danger disabled:opacity-50"
           disabled={confirm !== "DELETE"}
           onClick={() =>
-            alert(
+            notify.alert(
               "Account deletion runs through support during preview to prevent accidental data loss. We've recorded your intent - please confirm by emailing support@tweaxly.com from this email address and we'll process it within 24 hours.",
             )
           }

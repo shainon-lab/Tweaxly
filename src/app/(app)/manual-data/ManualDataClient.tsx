@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import GuidedBankImport from "./GuidedBankImport";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { fmtMoney } from "@/lib/format";
+import { notify } from "@/lib/notify";
 
 // Per-currency formatter for the "original entered" amount shown in
 // parens after the base-currency converted value.
@@ -205,14 +206,14 @@ export default function ManualDataClient({
         method: "DELETE",
       });
       if (!res.ok) {
-        alert(await res.text());
+        notify.alert(await res.text());
         return;
       }
       const data = await res.json();
       setEntries((prev) => prev.filter((e) => e.id !== entry.id));
       setConfirmDelete(null);
       startTransition(() => router.refresh());
-      alert(
+      notify.alert(
         `Removed manual entry. Deleted ${data.deletedTransactions} materialized transaction${data.deletedTransactions === 1 ? "" : "s"}.`,
       );
     } finally {

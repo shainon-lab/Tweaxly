@@ -18,6 +18,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { X as XIcon, Plus, Sparkles } from "lucide-react";
 import { SUGGESTED_INCOME_CATEGORIES, SUGGESTED_EXPENSE_CATEGORIES } from "@/lib/suggestedCategories";
+import { notify } from "@/lib/notify";
 
 export interface PickerCategory {
   id:   string;
@@ -74,7 +75,7 @@ export default function BulkCategoryPicker({ open, onClose, categories, onPick, 
       const created = await onCreate(name, kind);
       onPick(created.id, created.name);
     } catch (e) {
-      alert(e instanceof Error ? e.message : "Couldn't create category");
+      notify.alert(e instanceof Error ? e.message : "Couldn't create category");
     } finally {
       setBusy(false);
     }

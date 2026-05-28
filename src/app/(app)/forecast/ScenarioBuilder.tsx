@@ -19,6 +19,7 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createAssumption } from "./actions";
+import { notify } from "@/lib/notify";
 
 export type RosterMember = {
   id: string;
@@ -214,7 +215,7 @@ export default function ScenarioBuilder({
     if (def.pickFromRoster) {
       const emp = eligibleRoster.find((r) => r.id === form.employeeId);
       if (!emp) {
-        alert(`Please pick a ${def.pickFromRoster.includes("employee") ? "n employee" : " contractor"} from the dropdown.`);
+        notify.alert(`Please pick a ${def.pickFromRoster.includes("employee") ? "n employee" : " contractor"} from the dropdown.`);
         return;
       }
       try {
@@ -232,7 +233,7 @@ export default function ScenarioBuilder({
         setOpenKey(null);
         startTransition(() => router.refresh());
       } catch (e) {
-        alert(`Failed to save: ${(e as Error).message}`);
+        notify.alert(`Failed to save: ${(e as Error).message}`);
       }
       return;
     }
@@ -243,11 +244,11 @@ export default function ScenarioBuilder({
       const amtFromForm = Number(form.amount || 0);
       if (form.raiseScope === "specific") {
         const emp = raiseEmployees.find((r) => r.id === form.employeeId);
-        if (!emp) { alert("Pick an employee for the raise."); return; }
+        if (!emp) { notify.alert("Pick an employee for the raise."); return; }
         // Resolve $ amount: if user entered a percent, compute it against
         // the employee's gross salary; otherwise use the typed amount.
         const monthlyDelta = pct > 0 ? emp.grossSalary * pct : amtFromForm;
-        if (monthlyDelta <= 0) { alert("Enter a positive percent OR amount for the raise."); return; }
+        if (monthlyDelta <= 0) { notify.alert("Enter a positive percent OR amount for the raise."); return; }
         try {
           await createAssumption({
             family: "payroll",
@@ -263,14 +264,14 @@ export default function ScenarioBuilder({
           setOpenKey(null);
           startTransition(() => router.refresh());
         } catch (e) {
-          alert(`Failed to save: ${(e as Error).message}`);
+          notify.alert(`Failed to save: ${(e as Error).message}`);
         }
         return;
       }
       // Overall: stored as a different type so the engine handles it
       // against the baseline payroll instead of as a single per-employee delta.
       if (pct <= 0 && amtFromForm <= 0) {
-        alert("Enter a positive percent OR amount for the overall raise.");
+        notify.alert("Enter a positive percent OR amount for the overall raise.");
         return;
       }
       try {
@@ -290,13 +291,13 @@ export default function ScenarioBuilder({
         setOpenKey(null);
         startTransition(() => router.refresh());
       } catch (e) {
-        alert(`Failed to save: ${(e as Error).message}`);
+        notify.alert(`Failed to save: ${(e as Error).message}`);
       }
       return;
     }
 
     // ── Default form path (everything else) ──────────────────────────
-    if (!form.label.trim()) { alert("Please add a short label."); return; }
+    if (!form.label.trim()) { notify.alert("Please add a short label."); return; }
     const amt = Number(form.amount || 0);
     const pct = Number(form.percentagePct || 0) / 100;
     const isReductionUI = ["mkt-down"].includes(def.key);
@@ -321,7 +322,7 @@ export default function ScenarioBuilder({
       // scroll the page on save (that used to disorient when the
       // builder was inline at the bottom of the page).
     } catch (e) {
-      alert(`Failed to save: ${(e as Error).message}`);
+      notify.alert(`Failed to save: ${(e as Error).message}`);
     }
   }
 

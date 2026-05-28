@@ -4,6 +4,8 @@ import { useRouter } from "next/navigation";
 import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react";
 import BulkCategoryPicker, { type PickerCategory } from "@/components/transactions/BulkCategoryPicker";
 import BulkVendorPicker, { type PickerVendor } from "@/components/transactions/BulkVendorPicker";
+import { useNotify } from "@/components/notify/NotifyProvider";
+import { notify } from "@/lib/notify";
 
 type Txn = {
   id: string;
@@ -49,6 +51,7 @@ export default function TransactionsClient({
   filters: { q: string; source: string; ym: string; uncategorized: boolean; unvendorized: boolean };
 }) {
   const router = useRouter();
+  const notify = useNotify();
   const [pending, startTransition] = useTransition();
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [cats, setCats]     = useState<Category[]>(categories);
@@ -136,7 +139,7 @@ export default function TransactionsClient({
       body: JSON.stringify({ ids: Array.from(selected), action, ...payload }),
     });
     if (!res.ok) {
-      alert(await res.text());
+      notify.alert(await res.text());
       return;
     }
     setSelected(new Set());
@@ -149,7 +152,7 @@ export default function TransactionsClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ id, patch }),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     startTransition(() => router.refresh());
   }
 
@@ -229,7 +232,7 @@ export default function TransactionsClient({
       }),
     });
     setVendorPrompt(null);
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     startTransition(() => router.refresh());
   }
 
@@ -268,7 +271,7 @@ export default function TransactionsClient({
             note: note.length > 0 ? note : undefined,
           }),
         });
-        if (!res.ok) { alert(await res.text()); return; }
+        if (!res.ok) { notify.alert(await res.text()); return; }
         setSelected(new Set());
         startTransition(() => router.refresh());
       }
@@ -301,7 +304,7 @@ export default function TransactionsClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ids: [t.id], action: "dismissDup" }),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     startTransition(() => router.refresh());
   }
 
@@ -375,7 +378,14 @@ export default function TransactionsClient({
             className="text-sm font-medium px-3 py-1.5 rounded-md border border-bad/50 text-bad hover:bg-bad/10 transition"
             disabled={pending}
             onClick={async () => {
-              if (!confirm(`Move ${selected.size} transaction${selected.size === 1 ? "" : "s"} to trash? They'll stay restorable for 30 days.`)) return;
+              const ok = await notify.confirm({
+                title:        "Move to trash?",
+                body:         `Move ${selected.size} transaction${selected.size === 1 ? "" : "s"} to trash? They'll stay restorable for 30 days.`,
+                confirmLabel: "Move to trash",
+                cancelLabel:  "Cancel",
+                danger:       true,
+              });
+              if (!ok) return;
               await bulk("trash");
               setSelected(new Set());
             }}

@@ -3,6 +3,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import MoneyAmountWithCurrencyBreakdown from "@/components/MoneyAmountWithCurrencyBreakdown";
 import type { BreakdownResult } from "@/lib/currencyBreakdown";
+import { notify } from "@/lib/notify";
 
 type SummaryRowOutcome = {
   name: string;
@@ -85,15 +86,14 @@ export default function SummaryTable(props: SummaryProps) {
     fromKind: string,
     toKind: "revenue" | "other",
   ) {
-    if (
-      !confirm(
-        toKind === "revenue"
-          ? "Reclassify this category as REVENUE/INCOME? Existing transactions in this category will be re-signed positive (so the data flow + dashboard pick it up as income)."
-          : "Reclassify this category as OUTCOME? Existing transactions will be re-signed negative.",
-      )
-    ) {
-      return;
-    }
+    const ok = await notify.confirm({
+      title: "Reclassify category?",
+      body: toKind === "revenue"
+        ? "Reclassify this category as REVENUE/INCOME? Existing transactions in this category will be re-signed positive (so the data flow + dashboard pick it up as income)."
+        : "Reclassify this category as OUTCOME? Existing transactions will be re-signed negative.",
+      confirmLabel: "Reclassify",
+    });
+    if (!ok) return;
     setBusyId(categoryId);
     try {
       const res = await fetch("/api/categories", {
@@ -106,7 +106,7 @@ export default function SummaryTable(props: SummaryProps) {
         }),
       });
       if (!res.ok) {
-        alert(await res.text());
+        notify.alert(await res.text());
         return;
       }
       startTransition(() => router.refresh());

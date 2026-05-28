@@ -12,6 +12,7 @@ import CurrencySection from "./CurrencySection";
 import { BillingClient } from "./billing/BillingClient";
 import BusinessDnaSection, { type BusinessDnaProps } from "./BusinessDnaSection";
 import MembersAndAccessSection from "@/components/MembersAndAccessSection";
+import { notify } from "@/lib/notify";
 
 // Settings shares a top-level tab row with the Data section
 // (/manual-data, /transactions, /data-log). The shared
@@ -330,7 +331,7 @@ export default function SettingsClient({
         isOneTime: addCatDraft.isOneTime,
       }),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     const c = await res.json();
     // Brand-new categories start with zero of everything - without
     // these explicit defaults the table renderer crashes on
@@ -361,7 +362,7 @@ export default function SettingsClient({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: catName, kind: "variable", isOneTime: false }),
       });
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       const created = await res.json();
       setCats((cur) => [...cur, {
         ...created,
@@ -383,7 +384,7 @@ export default function SettingsClient({
         isOneTime: addVendorDraft.isOneTime,
       }),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     const v = await res.json();
     // Same defaults story as addCategoryFromModal - the Vendors table
     // reads transactionCount / totalAmount / lastSeenAt and crashes
@@ -407,14 +408,14 @@ export default function SettingsClient({
   }
 
   async function removeCategory(id: string) {
-    if (!confirm("Delete this category? Transactions using it will become Uncategorized.")) return;
+    if (!(await notify.confirm({ title: "Delete category?", body: "Delete this category? Transactions using it will become Uncategorized.", confirmLabel: "Delete", danger: true }))) return;
     await fetch(`/api/categories?id=${id}`, { method: "DELETE" });
     setCats(cats.filter((c) => c.id !== id));
     startTransition(() => router.refresh());
   }
 
   async function removeVendor(id: string) {
-    if (!confirm("Delete this vendor? Transactions keep their text vendor field, but this entry will disappear from the registry.")) return;
+    if (!(await notify.confirm({ title: "Delete vendor?", body: "Delete this vendor? Transactions keep their text vendor field, but this entry will disappear from the registry.", confirmLabel: "Delete", danger: true }))) return;
     await fetch(`/api/vendors?id=${id}`, { method: "DELETE" });
     setVends((cur) => cur.filter((v) => v.id !== id));
     setCats((cur) => cur.map((c) => (c.primaryVendorId === id ? { ...c, primaryVendorId: null } : c)));
@@ -444,12 +445,12 @@ export default function SettingsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromVendorId: mergeFrom.id, toVendorId: mergeTargetId }),
       });
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       const data = await res.json();
       setVends((cur) => cur.filter((v) => v.id !== mergeFrom.id));
       setMergeFrom(null);
       setMergeTargetId("");
-      alert(`Merged. ${data.transactionsReassigned ?? 0} transaction${(data.transactionsReassigned ?? 0) === 1 ? "" : "s"} reassigned.`);
+      notify.alert(`Merged. ${data.transactionsReassigned ?? 0} transaction${(data.transactionsReassigned ?? 0) === 1 ? "" : "s"} reassigned.`);
       startTransition(() => router.refresh());
     } finally {
       setMergeBusy(false);
@@ -465,12 +466,12 @@ export default function SettingsClient({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ fromCategoryId: mergeCategoryFrom.id, toCategoryId: mergeCategoryTargetId }),
       });
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       const data = await res.json();
       setCats((cur) => cur.filter((c) => c.id !== mergeCategoryFrom.id));
       setMergeCategoryFrom(null);
       setMergeCategoryTargetId("");
-      alert(`Merged. ${data.transactionsReassigned ?? 0} transaction${(data.transactionsReassigned ?? 0) === 1 ? "" : "s"} reassigned.`);
+      notify.alert(`Merged. ${data.transactionsReassigned ?? 0} transaction${(data.transactionsReassigned ?? 0) === 1 ? "" : "s"} reassigned.`);
       startTransition(() => router.refresh());
     } finally {
       setMergeCategoryBusy(false);
@@ -485,7 +486,7 @@ export default function SettingsClient({
       body: JSON.stringify({ id: v.id, isOneTime: next }),
     });
     if (!res.ok) {
-      alert(await res.text());
+      notify.alert(await res.text());
       setVends((cur) => cur.map((x) => (x.id === v.id ? { ...x, isOneTime: v.isOneTime } : x)));
       return;
     }
@@ -505,7 +506,7 @@ export default function SettingsClient({
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, kind: "variable", isOneTime: false }),
       });
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       const created: Cat = await res.json();
       setCats((cur) => [...cur, created]);
       categoryId = created.id;
@@ -520,7 +521,7 @@ export default function SettingsClient({
       body: JSON.stringify({ id: vendorId, categoryId }),
     });
     if (!res.ok) {
-      alert(await res.text());
+      notify.alert(await res.text());
       // Roll back: re-fetch on next render.
       startTransition(() => router.refresh());
       return;
@@ -547,7 +548,7 @@ export default function SettingsClient({
       body: JSON.stringify({ id: c.id, isOneTime: next }),
     });
     if (!res.ok) {
-      alert(await res.text());
+      notify.alert(await res.text());
       setCats(cats.map((x) => (x.id === c.id ? { ...x, isOneTime: c.isOneTime } : x)));
       return;
     }

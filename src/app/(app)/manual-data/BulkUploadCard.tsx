@@ -1,6 +1,7 @@
 "use client";
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 type Preview = {
   headers: string[];
@@ -280,7 +281,7 @@ export default function BulkUploadCard({ currency }: { currency: string }) {
       setSections([newSection(today.month, today.year)]);
       setCommittingId(null);
       startTransition(() => router.refresh());
-      alert(
+      notify.alert(
         `Imported ${totalImported} transaction${totalImported === 1 ? "" : "s"} from ${fileCount} file${fileCount === 1 ? "" : "s"}.`,
       );
       router.push("/data-flow?range=all");

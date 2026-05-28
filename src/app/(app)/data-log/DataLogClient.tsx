@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 // One unified row type spanning both upload-driven batches and manual
 // single-entry rows. `kind` discriminates the two and tells the delete
@@ -78,7 +79,7 @@ export default function DataLogClient({
           if (raw.trim().startsWith("<")) msg = `Server returned ${res.status} - endpoint may be unavailable. Try again in a moment.`;
           else msg = raw || msg;
         }
-        alert(msg);
+        notify.alert(msg);
         return;
       }
       const data = await res.json();
@@ -87,11 +88,11 @@ export default function DataLogClient({
       setConfirming(null);
       startTransition(() => router.refresh());
       const noun = row.kind === "manual" ? "manual entry" : "upload";
-      alert(
+      notify.alert(
         `Removed ${noun} "${row.label}" and ${deletedTxns} transaction${deletedTxns === 1 ? "" : "s"}.`,
       );
     } catch (err) {
-      alert(err instanceof Error ? err.message : "Delete failed - check your connection and try again.");
+      notify.alert(err instanceof Error ? err.message : "Delete failed - check your connection and try again.");
     } finally {
       setBusyId(null);
     }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 // Delete button only renders enabled when there are no redemptions
 // yet. Coupons with redemption history are kept for audit; admins
@@ -12,10 +13,10 @@ export function DeleteCouponButton({ id, canDelete }: { id: string; canDelete: b
 
   async function onDelete() {
     if (!canDelete) return;
-    if (!confirm("Delete this coupon? This cannot be undone.")) return;
+    if (!(await notify.confirm({ title: "Delete coupon?", body: "Delete this coupon? This cannot be undone.", confirmLabel: "Delete", danger: true }))) return;
     const res = await fetch(`/api/admin/coupons/${id}`, { method: "DELETE" });
     if (!res.ok) {
-      alert("Delete failed");
+      notify.alert("Delete failed");
       return;
     }
     startTransition(() => router.push("/admin/coupons"));

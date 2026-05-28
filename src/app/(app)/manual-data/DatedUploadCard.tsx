@@ -18,6 +18,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 type Preview = {
   headers: string[];
@@ -292,7 +293,7 @@ export default function DatedUploadCard({ currency }: { currency: string }) {
       setPreview(null);
       setCommitting(false);
       startTransition(() => router.refresh());
-      alert(
+      notify.alert(
         `Your business data was uploaded successfully.\n\n${imported} transaction${imported === 1 ? "" : "s"} imported. We're now analyzing your income, expenses, trends, and business activity to generate insights and forecasts.`,
       );
       router.push("/data-flow?range=all");

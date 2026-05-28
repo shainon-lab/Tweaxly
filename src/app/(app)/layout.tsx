@@ -7,6 +7,7 @@ import EmailVerificationBanner from "@/components/EmailVerificationBanner";
 import { gracePeriodStatus } from "@/lib/auth/verificationGate";
 import { NotificationCenterProvider } from "@/components/notifications/NotificationCenterContext";
 import NotificationCenterMount from "@/components/notifications/NotificationCenterMount";
+import NotifyProvider from "@/components/notify/NotifyProvider";
 import { requireBusiness } from "@/lib/auth";
 import { getSidebarAlerts } from "@/lib/alerts";
 import { prisma } from "@/lib/db";
@@ -99,6 +100,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     // Lock the outer container to the viewport height and make only the main
     // area scroll - the sidebar stays put no matter how long the page is.
     <NotificationCenterProvider>
+    <NotifyProvider>
     <div className="h-screen flex flex-col overflow-hidden">
       {/* Persistent impersonation banner - shown only when a super_admin
           is viewing this account as a customer. Sits above the layout so
@@ -172,6 +174,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           not the Sidebar's transform containing block. */}
       <NotificationCenterMount />
     </div>
+    </NotifyProvider>
     </NotificationCenterProvider>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 type Employee = {
   id: string; name: string; role: string | null;
@@ -47,7 +48,7 @@ export default function EmployeesClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(empDraft),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     setEmpDraft({ ...empDraft, name: "", role: "", notes: "", grossMonthlySalary: 0 });
     startTransition(() => router.refresh());
   }
@@ -64,7 +65,7 @@ export default function EmployeesClient({
   }
 
   async function deleteEmployee(id: string) {
-    if (!confirm("Delete this employee record? Events will be unlinked, not deleted.")) return;
+    if (!(await notify.confirm({ title: "Delete employee?", body: "Delete this employee record? Events will be unlinked, not deleted.", confirmLabel: "Delete", danger: true }))) return;
     await fetch(`/api/employees?id=${id}`, { method: "DELETE" });
     startTransition(() => router.refresh());
   }
@@ -75,7 +76,7 @@ export default function EmployeesClient({
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(evDraft),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     setEvDraft({ ...evDraft, amount: 0, notes: "" });
     startTransition(() => router.refresh());
   }

@@ -7,6 +7,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteAssumption, clearAllAssumptions } from "./actions";
+import { notify } from "@/lib/notify";
 
 type AssumptionRow = {
   id: string;
@@ -48,13 +49,13 @@ export default function ActiveScenarioAssumptions({
   if (assumptions.length === 0) return null;
 
   async function remove(id: string) {
-    if (!confirm("Remove this assumption?")) return;
+    if (!(await notify.confirm({ title: "Remove assumption?", body: "Remove this assumption?", confirmLabel: "Remove", danger: true }))) return;
     await deleteAssumption(id);
     startTransition(() => router.refresh());
   }
 
   async function clearAll() {
-    if (!confirm("Remove all scenario assumptions?")) return;
+    if (!(await notify.confirm({ title: "Remove all assumptions?", body: "Remove all scenario assumptions?", confirmLabel: "Remove all", danger: true }))) return;
     await clearAllAssumptions();
     startTransition(() => router.refresh());
   }

@@ -6,6 +6,7 @@
 // Transaction.vendor rewritten to the rule's vendorName.
 
 import { useState } from "react";
+import { notify } from "@/lib/notify";
 
 type Rule = {
   id:         string;
@@ -41,16 +42,16 @@ export default function VendorizationRulesClient({
       headers: { "Content-Type": "application/json" },
       body:    JSON.stringify({ ...draft, pattern, vendorName }),
     });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     const created = await res.json();
     setRules([created, ...rules]);
     setDraft({ ...draft, pattern: "" });
   }
 
   async function remove(id: string) {
-    if (!confirm("Delete this rule?")) return;
+    if (!(await notify.confirm({ title: "Delete rule?", body: "Delete this rule?", confirmLabel: "Delete", danger: true }))) return;
     const res = await fetch(`/api/vendorization-rules?id=${id}`, { method: "DELETE" });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     setRules(rules.filter((r) => r.id !== id));
   }
 

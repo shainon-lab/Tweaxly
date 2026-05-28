@@ -18,6 +18,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, ArrowRight, Loader2, RefreshCw } from "lucide-react";
 import BankImportWizard, { type WizardContext } from "./BankImportWizard";
+import { notify } from "@/lib/notify";
 
 type Source = {
   id: string; name: string; type: string; currency: string; last4: string | null; startMonth: string;
@@ -145,14 +146,14 @@ export default function GuidedBankImport({
     const start = intake.periodStart;
     const end   = intake.periodKind === "month" ? intake.periodStart : intake.periodEnd;
     if (!start || !end || start > end) {
-      alert("Pick a valid month or month range first.");
+      notify.alert("Pick a valid month or month range first.");
       return;
     }
     setChecking(true);
     try {
       const r = await fetch(`/api/financial-sources/${intake.source.id}/overlap?periodStart=${start}&periodEnd=${end}`);
       const d = await r.json();
-      if (!r.ok) { alert(d.error ?? "Overlap check failed."); return; }
+      if (!r.ok) { notify.alert(d.error ?? "Overlap check failed."); return; }
       if (d.hasOverlap && d.batches.length > 0) {
         setOverlap(d.batches);
         setPhase("overlap");

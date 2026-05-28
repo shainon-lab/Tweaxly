@@ -2,6 +2,7 @@
 
 import { useTransition, useState } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 type Member = {
   id: string;
@@ -63,10 +64,10 @@ export function MembersTable({
 
   async function disable(memberId: string, isOwner: boolean) {
     if (isOwner) {
-      alert("Can't disable the account owner. Transfer ownership first, or suspend the entire account.");
+      notify.alert("Can't disable the account owner. Transfer ownership first, or suspend the entire account.");
       return;
     }
-    if (!confirm("Disable this member's access to the account? They'll be signed out and can't log back in until re-enabled.")) return;
+    if (!(await notify.confirm({ title: "Disable member?", body: "Disable this member's access to the account? They'll be signed out and can't log back in until re-enabled.", confirmLabel: "Disable", danger: true }))) return;
     await update(memberId, { status: "disabled" });
   }
 

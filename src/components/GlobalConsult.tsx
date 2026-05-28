@@ -21,6 +21,7 @@ import { MessageSquareText, Sparkles, X } from "lucide-react";
 import { renderMarkdown } from "@/app/(app)/consultation/markdown";
 import { useT, useLocale } from "@/lib/i18n/client";
 import { dirFor } from "@/lib/i18n";
+import { notify } from "@/lib/notify";
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Proactive nudge configuration. The values here are tuned to feel
@@ -471,7 +472,7 @@ export default function GlobalConsult() {
         body: JSON.stringify({ message: contextualized }),
       });
       if (!res.ok) {
-        alert(await res.text());
+        notify.alert(await res.text());
         return;
       }
       const data = await res.json();

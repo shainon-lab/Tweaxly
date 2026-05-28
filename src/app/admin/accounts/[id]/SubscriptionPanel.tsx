@@ -20,6 +20,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 interface OverrideRow {
   id:             string;
@@ -109,7 +110,7 @@ export function SubscriptionPanel(props: SubscriptionPanelProps) {
 
   async function revokeOverride(overrideId: string) {
     setError(null);
-    if (!confirm("Revoke this override? The business will fall back to its real subscription (or Free).")) return;
+    if (!(await notify.confirm({ title: "Revoke override?", body: "Revoke this override? The business will fall back to its real subscription (or Free).", confirmLabel: "Revoke", danger: true }))) return;
     const res = await fetch(`/api/admin/accounts/${props.businessId}/overrides/${overrideId}/revoke`, { method: "POST" });
     if (!res.ok) { setError("Failed to revoke override"); return }
     setSavedAt(Date.now());

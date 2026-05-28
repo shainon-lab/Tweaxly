@@ -6,6 +6,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { notify } from "@/lib/notify";
 
 export function UserRoleEditor({
   userId,
@@ -23,7 +24,7 @@ export function UserRoleEditor({
 
   async function changeTo(next: "user" | "admin") {
     const verb = next === "admin" ? "promote" : "demote";
-    if (!confirm(`${verb === "promote" ? "Promote" : "Demote"} ${email} to ${next}?`)) return;
+    if (!(await notify.confirm({ title: `${verb === "promote" ? "Promote" : "Demote"} user?`, body: `${verb === "promote" ? "Promote" : "Demote"} ${email} to ${next}?`, confirmLabel: verb === "promote" ? "Promote" : "Demote", danger: verb === "demote" }))) return;
     setBusy(true);
     setError(null);
     try {

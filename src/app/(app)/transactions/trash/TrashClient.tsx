@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, RotateCcw, Trash2 } from "lucide-react";
+import { notify } from "@/lib/notify";
 
 type Sample = {
   id:              string;
@@ -38,11 +39,11 @@ export default function TrashClient({
   const [, startTransition] = useTransition();
 
   async function restore(b: Batch) {
-    if (!confirm(`Restore ${b.transactionCount} transaction${b.transactionCount === 1 ? "" : "s"} from this batch?`)) return;
+    if (!(await notify.confirm({ title: "Restore transactions?", body: `Restore ${b.transactionCount} transaction${b.transactionCount === 1 ? "" : "s"} from this batch?`, confirmLabel: "Restore" }))) return;
     setBusy(b.id);
     try {
       const res = await fetch(`/api/transactions/trash/${b.id}`, { method: "POST" });
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       setBatches((prev) => prev.filter((x) => x.id !== b.id));
       startTransition(() => router.refresh());
     } finally {
@@ -51,11 +52,11 @@ export default function TrashClient({
   }
 
   async function purgeNow(b: Batch) {
-    if (!confirm(`Permanently delete ${b.transactionCount} transaction${b.transactionCount === 1 ? "" : "s"} now? This cannot be undone.`)) return;
+    if (!(await notify.confirm({ title: "Permanently delete?", body: `Permanently delete ${b.transactionCount} transaction${b.transactionCount === 1 ? "" : "s"} now? This cannot be undone.`, confirmLabel: "Delete permanently", danger: true }))) return;
     setBusy(b.id);
     try {
       const res = await fetch(`/api/transactions/trash/${b.id}`, { method: "DELETE" });
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       setBatches((prev) => prev.filter((x) => x.id !== b.id));
       startTransition(() => router.refresh());
     } finally {

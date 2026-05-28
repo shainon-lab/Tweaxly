@@ -7,6 +7,7 @@
 // - it's contractually required to operate the account.
 
 import { useEffect, useState } from "react";
+import { notify } from "@/lib/notify";
 
 interface PrefsState {
   systemEmails: boolean;
@@ -57,7 +58,7 @@ export default function CommunicationPreferences() {
   }
 
   async function unsubscribeAll() {
-    if (!confirm("Turn off every marketing channel? You'll continue to receive transactional emails (billing, security, password resets) for as long as your account is active.")) return;
+    if (!(await notify.confirm({ title: "Unsubscribe from everything?", body: "Turn off every marketing channel? You'll continue to receive transactional emails (billing, security, password resets) for as long as your account is active.", confirmLabel: "Unsubscribe" }))) return;
     setSaving(true);
     setMsg(null);
     const res = await fetch("/api/account/communication-preferences", {

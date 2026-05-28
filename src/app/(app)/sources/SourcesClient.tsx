@@ -17,6 +17,7 @@ import CurrencyPicker from "@/components/CurrencyPicker";
 import LoadingBar from "@/components/LoadingBar";
 import HealthScoreWidget from "@/components/sources/HealthScoreWidget";
 import MonthlyChecklist from "@/components/sources/MonthlyChecklist";
+import { notify } from "@/lib/notify";
 
 type SourceType = "bank" | "credit_card" | "paypal" | "payment_provider" | "cash" | "other";
 
@@ -99,9 +100,9 @@ export default function SourcesClient({ currency }: { currency: string }) {
   useEffect(() => { void refresh(); }, [refresh]);
 
   async function archive(id: string) {
-    if (!confirm("Archive this source? Its upload history stays in the audit log, but it won't appear in the import picker.")) return;
+    if (!(await notify.confirm({ title: "Archive source?", body: "Archive this source? Its upload history stays in the audit log, but it won't appear in the import picker.", confirmLabel: "Archive", danger: true }))) return;
     const res = await fetch(`/api/financial-sources/${id}`, { method: "DELETE" });
-    if (!res.ok) { alert(await res.text()); return; }
+    if (!res.ok) { notify.alert(await res.text()); return; }
     await refresh();
     router.refresh();
   }

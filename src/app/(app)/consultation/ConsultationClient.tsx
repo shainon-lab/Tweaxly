@@ -18,6 +18,7 @@ import {
 } from "@/lib/decisionBriefing";
 import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
 import BuyCreditsTriggerButton from "@/components/billing/BuyCreditsTriggerButton";
+import { notify } from "@/lib/notify";
 
 type Msg = {
   id: string;
@@ -293,7 +294,7 @@ export default function ConsultationClient({
   // by /api/consultation on every successful send (the response
   // carries the post-deduct balance so we don't need a second
   // roundtrip). `outOfCredits` shorts the send path with a proper
-  // upgrade card instead of an alert().
+  // upgrade card instead of an notify.alert().
   const [credits, setCredits] = useState<{
     balance: number;
     monthlyAllowance: number;
@@ -367,7 +368,7 @@ export default function ConsultationClient({
         body: JSON.stringify({ message }),
       });
       // 402: out of credits OR workspace is read-only. Surface the
-      // upgrade card instead of an alert().
+      // upgrade card instead of an notify.alert().
       if (res.status === 402) {
         const data = await res.json().catch(() => null);
         setOutOfCredits({
@@ -382,11 +383,11 @@ export default function ConsultationClient({
       if (res.status === 403) {
         const data = await res.json().catch(() => null);
         if (data?.error === "email_unverified") {
-          alert("Please verify your email to use AI consultations. Use the Resend button in the banner at the top of the page.");
+          notify.alert("Please verify your email to use AI consultations. Use the Resend button in the banner at the top of the page.");
           return;
         }
       }
-      if (!res.ok) { alert(await res.text()); return; }
+      if (!res.ok) { notify.alert(await res.text()); return; }
       const data = await res.json();
       const fresh = data.consultation as Active;
       setActive(fresh);
