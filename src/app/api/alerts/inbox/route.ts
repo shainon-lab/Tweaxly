@@ -18,6 +18,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireBusiness } from "@/lib/auth";
+import { backfillIncomingInvitationNotifications } from "@/lib/memberships";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -25,6 +26,12 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   const { user, business } = await requireBusiness();
   const url  = new URL(req.url);
+
+  // Lazy backfill: any pending invitation issued to this user that
+  // doesn't yet have a bell notification gets one written before we
+  // read. Covers invitations created before the feature shipped and
+  // any send-time notification write that failed.
+  await backfillIncomingInvitationNotifications(user.id, user.email).catch(() => {});
 
   const severity   = url.searchParams.get("severity");
   const category   = url.searchParams.get("category");

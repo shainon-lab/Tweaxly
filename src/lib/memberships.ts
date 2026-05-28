@@ -464,6 +464,75 @@ export async function markInvitationNotificationsRead(invitationId: string): Pro
   });
 }
 
+// Lazy backfill: create AlertNotification rows for any pending
+// invitation issued to this user that doesn't already have one. Runs
+// on every inbox / unread-count poll so existing invitations - or
+// any invitation whose send-time notification write failed - still
+// reach the bell. Cheap: one query for the user's pending
+// invitations + one query for existing notifications, and only
+// writes when a row is genuinely missing.
+//
+// Idempotency: skips invitations that already have ANY AlertNotification
+// (read or unread) so the backfill doesn't fight a user who has
+// already marked the notification read. For workspace_invitation
+// entries the bell "Clear" action also sets readAt (instead of
+// deleting) so the backfill check survives a clear too.
+export async function backfillIncomingInvitationNotifications(userId: string, userEmail: string): Promise<void> {
+  const email = userEmail.toLowerCase();
+  const pending = await prisma.businessInvitation.findMany({
+    where: { email, status: "pending", expiresAt: { gt: new Date() } },
+    include: {
+      business:  { select: { name: true } },
+      invitedBy: { select: { name: true, email: true } },
+    },
+  });
+  if (pending.length === 0) return;
+
+  const existing = await prisma.alertNotification.findMany({
+    where: {
+      userId,
+      category:  "workspace_invitation",
+      sourceKey: { in: pending.map((p) => p.id) },
+    },
+    select: { sourceKey: true },
+  });
+  const alreadyNotified = new Set(existing.map((e) => e.sourceKey));
+
+  const missing = pending.filter((p) => !alreadyNotified.has(p.id));
+  if (missing.length === 0) return;
+
+  // Anchor each backfill to a workspace the user can actually open.
+  const owned = await prisma.business.findFirst({
+    where:   { ownerId: userId },
+    orderBy: { createdAt: "asc" },
+    select:  { id: true },
+  });
+  const anchorBusinessId = owned?.id ?? (await prisma.businessMembership.findFirst({
+    where:   { userId, status: "active" },
+    orderBy: { createdAt: "asc" },
+    select:  { businessId: true },
+  }))?.businessId;
+  if (!anchorBusinessId) return;
+
+  await prisma.alertNotification.createMany({
+    data: missing.map((p) => {
+      const inviter  = p.invitedBy.name?.trim() || p.invitedBy.email;
+      const role     = p.role === "viewer" ? "Viewer" : "Admin";
+      return {
+        userId,
+        businessId: anchorBusinessId,
+        source:     "system",
+        sourceKey:  p.id,
+        category:   "workspace_invitation",
+        severity:   "important",
+        title:      `Workspace invitation: ${p.business.name}`,
+        body:       `${inviter} invited you to join "${p.business.name}" as ${role}. Accept or decline below, or open Settings → Members & Access for more.`,
+        deepLink:   "/settings?tab=members",
+      };
+    }),
+  });
+}
+
 // ── Members ─────────────────────────────────────────────────────────
 
 export async function removeMember(businessId: string, userId: string) {

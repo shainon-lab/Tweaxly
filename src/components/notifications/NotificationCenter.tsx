@@ -122,8 +122,18 @@ export default function NotificationCenter({
   }
 
   async function clearOne(id: string) {
+    // Workspace_invitation notifications get marked read instead of
+    // deleted - otherwise the server-side backfill (which surfaces
+    // pending invitations the user hasn't seen yet) would re-create
+    // the row on the next poll and fight the user's clear action.
+    const item = items.find((n) => n.id === id);
+    const useMarkRead = item?.category === "workspace_invitation";
     setItems((prev) => prev.filter((n) => n.id !== id));
-    await fetch(`/api/alerts/inbox/${id}`, { method: "DELETE" });
+    await fetch(`/api/alerts/inbox/${id}`, {
+      method:  useMarkRead ? "PATCH" : "DELETE",
+      headers: useMarkRead ? { "content-type": "application/json" } : undefined,
+      body:    useMarkRead ? JSON.stringify({}) : undefined,
+    });
     onChangedUnread?.();
   }
 

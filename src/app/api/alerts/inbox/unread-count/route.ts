@@ -13,12 +13,16 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
 import { requireBusiness } from "@/lib/auth";
+import { backfillIncomingInvitationNotifications } from "@/lib/memberships";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
   const { user, business } = await requireBusiness();
+  // Lazy backfill so the badge picks up invitations that predate
+  // the feature or whose send-time notification write failed.
+  await backfillIncomingInvitationNotifications(user.id, user.email).catch(() => {});
   const count = await prisma.alertNotification.count({
     where: {
       userId: user.id,
