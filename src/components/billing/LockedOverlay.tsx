@@ -89,7 +89,7 @@ export default function LockedOverlay({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="mt-4 text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
+            className="mt-4 text-sm px-4 py-2 rounded-md bg-accent text-white font-medium shadow-sm hover:bg-brand-purple-deep transition"
           >
             Upgrade to unlock
           </button>
