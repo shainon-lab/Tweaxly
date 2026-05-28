@@ -39,6 +39,7 @@ export default function Logo({
       className={`inline-flex flex-col items-center rounded-lg ${s.padX} ${s.padY} ${className}`}
       style={{ backgroundColor: NAVY }}
       aria-label="TWEAXLY"
+      data-surface="dark"
     >
       <div
         className="flex items-center font-semibold text-white"

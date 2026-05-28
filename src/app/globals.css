@@ -118,6 +118,13 @@ html[data-theme="light"] :where(
 ) .text-white:not(:is(
   .btn-primary, .btn-brand,
   .btn-primary *, .btn-brand *,
+  /* Dark-tinted surfaces opt out via data-surface="dark" (Logo, LockedOverlay,
+     anything that keeps its dark gradient regardless of theme). The descendant
+     selector covers any text-white nested inside those subtrees. */
+  [data-surface="dark"], [data-surface="dark"] *,
+  /* bg-accent-soft is LIGHT purple in light mode - text-white on it would be
+     invisible. Catch it before the broader bg-accent* exclusion below. */
+  [class*="bg-accent-soft"], [class*="bg-accent-soft"] *,
   [class*="bg-accent"], [class*="bg-brand"],
   [class*="bg-good"], [class*="bg-bad"], [class*="bg-warn"],
   [class*="bg-purple"], [class*="bg-red"], [class*="bg-emerald"], [class*="bg-amber"],
@@ -127,6 +134,27 @@ html[data-theme="light"] :where(
 )) {
   color: rgb(17 24 39) !important; /* spec primary text */
 }
+
+/* The :not above (correctly) skips bg-accent-soft to keep its dark text intact,
+   but the broader [class*="bg-accent"] entry that follows still skips it for
+   the OPPOSITE reason (kept white). Net: white-on-light-purple. Fix by forcing
+   text-white inside accent-soft to dark, beating both rules. */
+html[data-theme="light"] [class*="bg-accent-soft"] .text-white,
+html[data-theme="light"] [class*="bg-accent-soft"].text-white {
+  color: rgb(17 24 39) !important;
+}
+
+/* Slate-* text inside data-surface="dark" subtrees has to stay LIGHT (the
+   surface keeps its dark gradient in light mode, so dark text on dark
+   background would be unreadable). Reverse the global slate remap here. */
+html[data-theme="light"] [data-surface="dark"] .text-white { color: rgb(255 255 255) !important; }
+html[data-theme="light"] [data-surface="dark"] .text-slate-50,
+html[data-theme="light"] [data-surface="dark"] .text-slate-100,
+html[data-theme="light"] [data-surface="dark"] .text-slate-200 { color: rgb(241 245 249) !important; }
+html[data-theme="light"] [data-surface="dark"] .text-slate-300 { color: rgb(203 213 225) !important; }
+html[data-theme="light"] [data-surface="dark"] .text-slate-400 { color: rgb(148 163 184) !important; }
+html[data-theme="light"] [data-surface="dark"] .text-slate-500,
+html[data-theme="light"] [data-surface="dark"] .text-slate-600 { color: rgb(148 163 184) !important; }
 
 /* hover:text-white on tab strips and nav items turns the label invisible
    on hover in light mode (white-on-white-ish). Remap the hover color
@@ -139,8 +167,20 @@ html[data-theme="light"] :where(
 ) .hover\:text-white:hover:not(:is(
   .btn-primary, .btn-brand,
   .btn-primary *, .btn-brand *,
-  [class*="bg-accent"], [class*="bg-brand"], [class*="bg-gradient"]
+  [data-surface="dark"], [data-surface="dark"] *,
+  /* hover:bg-accent-soft is LIGHT in light mode, so hover:text-white on it
+     is invisible. Exclude accent-soft from the "stays white" set so the
+     remap below catches it. */
+  [class*="bg-accent"]:not([class*="bg-accent-soft"]),
+  [class*="bg-brand"], [class*="bg-gradient"]
 )) {
+  color: rgb(17 24 39) !important;
+}
+
+/* Hover combos like `hover:bg-accent-soft hover:text-white`: when the hover
+   bg is the light-purple accent-soft, the hover text must be dark, not white. */
+html[data-theme="light"] [class*="hover\:bg-accent-soft"]:hover.hover\:text-white,
+html[data-theme="light"] [class*="hover\:bg-accent-soft"]:hover .hover\:text-white {
   color: rgb(17 24 39) !important;
 }
 
@@ -241,6 +281,22 @@ html[data-theme="light"] [data-credits-pill] {
 }
 html[data-theme="light"] [data-credits-pill]:hover {
   background-color: rgb(241 245 249) !important;
+}
+
+/* Bell sits at the top-right of the sidebar header and partially overlaps
+   the navy logo banner (which keeps its dark bg in light mode). Without
+   its own surface, a dark icon on dark navy = nearly invisible and the
+   unread badge looks "cut" against the navy edge. Give the bell a white
+   chip + subtle shadow so the icon and the badge both stay legible on
+   either background. */
+html[data-theme="light"] [data-sidebar-header] [aria-label*="Notifications"] {
+  background-color: rgb(255 255 255);
+  color: rgb(51 65 85) !important; /* slate-700 - clear icon contrast on white */
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.08), 0 0 0 1px rgb(226 232 240);
+}
+html[data-theme="light"] [data-sidebar-header] [aria-label*="Notifications"]:hover {
+  background-color: rgb(248 250 252);
+  color: rgb(15 23 42) !important;
 }
 
 /* Table rows in light mode. The default `bg-ink-700/40` hover resolves to

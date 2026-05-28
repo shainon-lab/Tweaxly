@@ -68,6 +68,7 @@ export default function LockedOverlay({
       </div>
 
       <div
+        data-surface="dark"
         className="absolute inset-0 z-10 flex items-center justify-center p-6 rounded-xl"
         style={{
           backgroundImage:
