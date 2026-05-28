@@ -12,7 +12,7 @@
 // State is loaded via /api/alerts/inbox and refreshed when filters
 // change. The bell badge polls /api/alerts/inbox/unread-count.
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { X as XIcon } from "lucide-react";
@@ -70,14 +70,17 @@ export default function NotificationCenter({
   const [items,    setItems]    = useState<InboxItem[]>([]);
   const [loading,  setLoading]  = useState(false);
   const [severity, setSeverity] = useState<SeverityFilter>("all");
-  const [businessId, setBusinessId] = useState<string>("all");
   // Portal target - set after mount so SSR stays clean. The Sidebar
   // ancestor uses `transform`, which traps `position: fixed` children
   // inside its 256px box; rendering into document.body escapes that.
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   useEffect(() => { setPortalTarget(document.body) }, []);
 
-  // Pull the inbox whenever the panel opens or filters change.
+  // Pull the inbox whenever the panel opens or filters change. The
+  // request is intentionally NOT parameterised with businessId - the
+  // server scopes to the user's current active workspace, matching
+  // the "you only see this workspace's notifications" UX the rest
+  // of the app uses.
   useEffect(() => {
     if (!open) return;
     let cancelled = false;
@@ -85,7 +88,6 @@ export default function NotificationCenter({
       setLoading(true);
       const params = new URLSearchParams();
       if (severity !== "all")  params.set("severity", severity);
-      if (businessId !== "all") params.set("businessId", businessId);
       const res = await fetch(`/api/alerts/inbox?${params.toString()}`).catch(() => null);
       if (!res || !res.ok) { setLoading(false); return }
       const data = await res.json();
@@ -95,7 +97,7 @@ export default function NotificationCenter({
       }
     })();
     return () => { cancelled = true };
-  }, [open, severity, businessId]);
+  }, [open, severity]);
 
   // ESC closes + body scroll lock while open.
   useEffect(() => {
@@ -108,12 +110,6 @@ export default function NotificationCenter({
       document.body.style.overflow = "";
     };
   }, [open, onClose]);
-
-  const businesses = useMemo(() => {
-    const seen = new Map<string, string>();
-    for (const it of items) if (!seen.has(it.businessId)) seen.set(it.businessId, it.businessName);
-    return Array.from(seen.entries()).map(([id, name]) => ({ id, name }));
-  }, [items]);
 
   async function markRead(id: string) {
     setItems((prev) => prev.map((n) => n.id === id ? { ...n, readAt: new Date().toISOString() } : n));
@@ -239,19 +235,11 @@ export default function NotificationCenter({
           </button>
         </div>
 
-        {/* Filters */}
+        {/* Filters. The workspace dropdown was intentionally removed -
+            notifications are strictly scoped to the workspace the user
+            is currently in, matching how the bell badge is counted. */}
         <div className="px-5 py-3 border-b border-line/60 flex items-center gap-2 flex-wrap">
           <SeverityChips value={severity} onChange={setSeverity} />
-          {businesses.length > 1 ? (
-            <select
-              value={businessId}
-              onChange={(e) => setBusinessId(e.target.value)}
-              className="ml-auto input py-1 text-xs max-w-[180px]"
-            >
-              <option value="all">All workspaces</option>
-              {businesses.map((b) => <option key={b.id} value={b.id}>{b.name}</option>)}
-            </select>
-          ) : null}
         </div>
 
         {/* List */}

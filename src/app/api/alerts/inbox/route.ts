@@ -44,25 +44,12 @@ export async function GET(req: Request) {
   const where: Record<string, unknown> = { userId: user.id };
   if (severity   && ["critical","important","info"].includes(severity)) where.severity = severity;
   if (category) where.category = category;
-  // Default: scope to active workspace. Explicit ?businessId=all opts
-  // out of the scoping; any other value scopes to that workspace
-  // (membership check is enforced server-side via requireBusiness above,
-  // so a malicious id only ever sees their OWN notifications anyway).
-  //
-  // Exception: workspace_invitation notifications ALWAYS surface,
-  // regardless of which workspace the invitee is currently viewing and
-  // regardless of their plan. An invitation is an account-level event,
-  // not a workspace-level one - hiding it because the user happens to
-  // be looking at a different workspace would silently drop it.
-  if (businessId === "all") {
-    // no-op - leave businessId unscoped
-  } else {
-    const scopeId = businessId ?? business.id;
-    where.OR = [
-      { businessId: scopeId },
-      { category:   "workspace_invitation" },
-    ];
-  }
+  // Strict per-workspace scope. The bell on every workspace shows ONLY
+  // that workspace's notifications - switching workspaces re-renders
+  // the layout and re-fetches the inbox with the new businessId. There
+  // is no cross-workspace view from here; users who want to triage
+  // multiple workspaces switch into each one explicitly.
+  where.businessId = businessId ?? business.id;
   if (onlyUnread) where.readAt = null;
 
   const items = await prisma.alertNotification.findMany({

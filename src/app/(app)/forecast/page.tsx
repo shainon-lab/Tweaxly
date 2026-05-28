@@ -9,6 +9,7 @@
 // clicks event cards in the Scenario Builder to add assumptions. The chart,
 // summary cards, and insights panel all redraw against both layers.
 
+import { ChevronDown } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import ForecastTabs from "@/components/ForecastTabs";
 import { getServerT } from "@/lib/i18n/server";
@@ -449,9 +450,12 @@ export default async function ForecastPage({
           = [] so baseline + scenario columns show the same numbers.
           On Scenarios, points includes the manual assumptions so
           the right-hand columns reflect the delta. */}
-      <details className="card mb-6 overflow-x-auto" open={view === "scenarios"}>
-        <summary className="cursor-pointer font-medium mb-3 select-none">
-          Month-by-month projection
+      <details className="group card mb-6 overflow-x-auto" open={view === "scenarios"}>
+        <summary className="cursor-pointer list-none font-medium mb-3 select-none flex items-center justify-between gap-3">
+          <span>Month-by-month projection</span>
+          <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-line bg-ink-900/60 text-slate-300 group-hover:text-slate-100 group-hover:border-accent/50 group-hover:bg-accent-soft/20 transition group-open:rotate-180 shrink-0">
+            <ChevronDown size={16} strokeWidth={2} />
+          </span>
         </summary>
         <table className="table-base">
           <thead>

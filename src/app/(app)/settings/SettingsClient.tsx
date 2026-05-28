@@ -1,6 +1,7 @@
 "use client";
 import { useState, useTransition } from "react";
 import Link from "next/link";
+import { ChevronDown } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import RulesClient from "../rules/RulesClient";
@@ -952,7 +953,9 @@ export default function SettingsClient({
               If a description or vendor matches your pattern, the system auto-assigns the category. Higher priority wins.
             </p>
           </div>
-          <span aria-hidden="true" className="text-slate-500 text-xs transition group-open:rotate-180 shrink-0">⌄</span>
+          <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-line bg-ink-900/60 text-slate-300 group-hover:text-slate-100 group-hover:border-accent/50 group-hover:bg-accent-soft/20 transition group-open:rotate-180 shrink-0">
+            <ChevronDown size={16} strokeWidth={2} />
+          </span>
         </summary>
         <div className="px-5 pb-5 pt-1 border-t border-line/40">
           <RulesClient
@@ -973,7 +976,9 @@ export default function SettingsClient({
               If a description or raw vendor matches your pattern, the system rewrites the transaction&apos;s vendor to the canonical name. Higher priority wins. Runs before categorization rules.
             </p>
           </div>
-          <span aria-hidden="true" className="text-slate-500 text-xs transition group-open:rotate-180 shrink-0">⌄</span>
+          <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-line bg-ink-900/60 text-slate-300 group-hover:text-slate-100 group-hover:border-accent/50 group-hover:bg-accent-soft/20 transition group-open:rotate-180 shrink-0">
+            <ChevronDown size={16} strokeWidth={2} />
+          </span>
         </summary>
         <div className="px-5 pb-5 pt-1 border-t border-line/40">
           <VendorizationRulesClient

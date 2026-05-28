@@ -14,6 +14,7 @@
 // can complete it incrementally.
 
 import { useEffect, useRef, useState } from "react";
+import { ChevronDown } from "lucide-react";
 // Import from the client-safe options module (the main businessProfile
 // lib pulls in Prisma + the Anthropic SDK which can't be bundled for
 // the browser).
@@ -569,9 +570,9 @@ function AccordionCard({
           {aside}
           <span
             aria-hidden="true"
-            className="text-slate-500 text-xs transition group-open:rotate-180"
+            className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-line bg-ink-900/60 text-slate-300 group-hover:text-slate-100 group-hover:border-accent/50 group-hover:bg-accent-soft/20 transition group-open:rotate-180"
           >
-            ⌄
+            <ChevronDown size={16} strokeWidth={2} />
           </span>
         </div>
       </summary>

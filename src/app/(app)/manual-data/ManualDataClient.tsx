@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { ChevronDown } from "lucide-react";
 import GuidedBankImport from "./GuidedBankImport";
 import CurrencyPicker from "@/components/CurrencyPicker";
 import { fmtMoney } from "@/lib/format";
@@ -621,7 +622,9 @@ export default function ManualDataClient({
         <details className="group rounded-xl border border-line bg-ink-900/30">
           <summary className="cursor-pointer list-none px-4 py-3 text-sm font-medium text-slate-200 flex items-center justify-between">
             <span>How does data import work?</span>
-            <span className="text-slate-500 text-xs transition group-open:rotate-180">⌄</span>
+            <span aria-hidden="true" className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-line bg-ink-900/60 text-slate-300 group-hover:text-slate-100 group-hover:border-accent/50 group-hover:bg-accent-soft/20 transition group-open:rotate-180 shrink-0">
+              <ChevronDown size={16} strokeWidth={2} />
+            </span>
           </summary>
           <div className="px-4 pb-4 pt-1 text-xs text-slate-300 leading-relaxed space-y-3">
             <p>
