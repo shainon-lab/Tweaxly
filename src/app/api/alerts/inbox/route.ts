@@ -40,12 +40,20 @@ export async function GET(req: Request) {
   // out of the scoping; any other value scopes to that workspace
   // (membership check is enforced server-side via requireBusiness above,
   // so a malicious id only ever sees their OWN notifications anyway).
+  //
+  // Exception: workspace_invitation notifications ALWAYS surface,
+  // regardless of which workspace the invitee is currently viewing and
+  // regardless of their plan. An invitation is an account-level event,
+  // not a workspace-level one - hiding it because the user happens to
+  // be looking at a different workspace would silently drop it.
   if (businessId === "all") {
     // no-op - leave businessId unscoped
-  } else if (businessId) {
-    where.businessId = businessId;
   } else {
-    where.businessId = business.id;
+    const scopeId = businessId ?? business.id;
+    where.OR = [
+      { businessId: scopeId },
+      { category:   "workspace_invitation" },
+    ];
   }
   if (onlyUnread) where.readAt = null;
 

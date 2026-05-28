@@ -3,10 +3,12 @@
 // Lightweight count for the bell badge. The bell polls this every
 // ~30 seconds when mounted - keep the response tiny.
 //
-// Scoped to the CURRENT active workspace via requireBusiness, so the
-// badge only shows notifications for the workspace the user is
-// looking at. Switching workspaces (via BusinessSwitcher) re-renders
-// the layout and the bell re-polls with the new businessId.
+// Scoped to the CURRENT active workspace via requireBusiness so the
+// badge stays per-workspace - EXCEPT for workspace_invitation
+// notifications, which always surface (an invitation is an
+// account-level event, not a workspace one - it must show up
+// regardless of which workspace the invitee is currently viewing
+// and regardless of plan).
 
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/db";
@@ -18,7 +20,14 @@ export const dynamic = "force-dynamic";
 export async function GET() {
   const { user, business } = await requireBusiness();
   const count = await prisma.alertNotification.count({
-    where: { userId: user.id, businessId: business.id, readAt: null },
+    where: {
+      userId: user.id,
+      readAt: null,
+      OR: [
+        { businessId: business.id },
+        { category:   "workspace_invitation" },
+      ],
+    },
   });
   return NextResponse.json({ unread: count });
 }
