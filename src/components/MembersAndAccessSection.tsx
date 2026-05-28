@@ -65,7 +65,11 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
   const [error,   setError]   = useState<string | null>(null);
 
   // Invite modal state
-  const [inviteOpen,  setInviteOpen]  = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  // Branded notice modal - replaces window.alert() so messages stay
+  // in the app's dark theme instead of using the browser's native
+  // dialog (which looks completely out of place).
+  const [notice, setNotice] = useState<{ title: string; body: string } | null>(null);
 
   async function load() {
     setLoading(true);
@@ -100,15 +104,23 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
   const capLabel   = data.cap != null ? `${data.used}/${data.cap}` : `${data.used}`;
 
   // The Invite button ALWAYS renders for owners on Pro - even when
-  // capped - and shows a popup explaining the cap if they click it
-  // while disabled. Free owners see an "upgrade" popup instead.
+  // capped - and shows a styled notice explaining the cap if they
+  // click it while disabled. Free owners see an "upgrade" notice
+  // instead. NoticeModal renders in the app theme; no browser-native
+  // alert() that would look out of place.
   function handleInviteClick() {
     if (!isPro) {
-      window.alert("Upgrade to Pro to invite team members.");
+      setNotice({
+        title: "Upgrade to Pro to invite team members",
+        body:  "Free workspaces have a single owner. Upgrade this workspace to Pro to invite up to 3 team members with role-based access.",
+      });
       return;
     }
     if (capReached) {
-      window.alert(`You have already filled all the available seats in your package (${capLabel}). Remove a member or cancel a pending invitation to free a seat.`);
+      setNotice({
+        title: "All seats are used",
+        body:  `You have already filled all the available seats in your package (${capLabel}). Remove a member or cancel a pending invitation to free a seat.`,
+      });
       return;
     }
     setInviteOpen(true);
@@ -140,18 +152,20 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
             type="button"
             onClick={handleInviteClick}
             // Greyed when capped or Free, but click still routes to
-            // the explanation popup - never silently dead.
+            // the NoticeModal explanation - never silently dead. No
+            // native title attribute (would render a browser tooltip
+            // that looks out of place against the dark theme).
             aria-disabled={!isPro || capReached}
+            aria-label={
+              !isPro     ? "Invite Member (Pro plan required)" :
+              capReached ? "Invite Member (all seats used)" :
+                           "Invite Member"
+            }
             className={`text-sm px-4 py-2 rounded-md border font-medium transition shrink-0 ${
               !isPro || capReached
                 ? "border-line bg-ink-900/40 text-slate-500 cursor-not-allowed"
                 : "border-accent/40 bg-accent-soft/40 text-accent hover:bg-accent-soft hover:border-accent hover:text-white"
             }`}
-            title={
-              !isPro     ? "Upgrade to Pro to invite team members" :
-              capReached ? "All seats are used - remove a member to free one" :
-                           "Send a workspace invitation"
-            }
           >
             + Invite Member
           </button>
@@ -194,6 +208,44 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
           onInvited={() => { setInviteOpen(false); void load(); }}
         />
       ) : null}
+
+      {notice ? (
+        <NoticeModal
+          title={notice.title}
+          body={notice.body}
+          onClose={() => setNotice(null)}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+// ─── Branded notice modal ─────────────────────────────────────────
+// Replaces browser-native alert() for the in-app "you can't do that"
+// messages so the dialog matches the rest of the dark theme. Same
+// dismissal mechanics as InviteModal (backdrop click + OK button).
+function NoticeModal({
+  title, body, onClose,
+}: {
+  title:   string;
+  body:    string;
+  onClose: () => void;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-50 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label={title}
+    >
+      <div className="card w-full max-w-md" onClick={(e) => e.stopPropagation()}>
+        <div className="text-base font-semibold mb-2 text-slate-100">{title}</div>
+        <div className="text-sm text-slate-300 leading-relaxed mb-5">{body}</div>
+        <div className="flex justify-end">
+          <button type="button" onClick={onClose} className="btn-primary text-sm">OK</button>
+        </div>
+      </div>
     </div>
   );
 }
