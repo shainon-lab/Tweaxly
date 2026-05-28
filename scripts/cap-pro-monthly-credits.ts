@@ -51,16 +51,37 @@ async function main() {
   const wallets = await prisma.aiCreditWallet.findMany();
   console.log(`Total wallets: ${wallets.length}`);
 
-  let reduced = 0;
-  let skipped = 0;
-  let nonPro  = 0;
+  let reduced            = 0;
+  let allowanceOnlyFixed = 0;
+  let skipped            = 0;
+  let nonPro             = 0;
 
   for (const w of wallets) {
     const plan = overrideByBiz.get(w.businessId) ?? subByBiz.get(w.businessId) ?? "free";
     const isPro = plan === "pro" || plan === "business";
 
     if (!isPro) { nonPro++; continue; }
-    if (w.balance <= NEW_PRO_MONTHLY) { skipped++; continue; }
+
+    // If only the stored monthlyAllowance is stale (still 500 from
+    // the old plan) but the balance is already within the new
+    // ceiling, normalize the snapshot so the credits bar reads
+    // against the right denominator. No transaction ledger entry
+    // because no credits actually move.
+    if (w.balance <= NEW_PRO_MONTHLY) {
+      if (w.monthlyAllowance !== NEW_PRO_MONTHLY) {
+        console.log(`  - ${w.businessId}  plan=${plan}  monthlyAllowance ${w.monthlyAllowance} -> ${NEW_PRO_MONTHLY} (balance ${w.balance} unchanged)`);
+        if (apply) {
+          await prisma.aiCreditWallet.update({
+            where: { businessId: w.businessId },
+            data:  { monthlyAllowance: NEW_PRO_MONTHLY },
+          });
+        }
+        allowanceOnlyFixed++;
+      } else {
+        skipped++;
+      }
+      continue;
+    }
 
     const delta = w.balance - NEW_PRO_MONTHLY;
     console.log(`  - ${w.businessId}  plan=${plan}  balance ${w.balance} -> ${NEW_PRO_MONTHLY}  (-${delta})`);
@@ -86,9 +107,10 @@ async function main() {
   }
 
   console.log(`\nSummary:`);
-  console.log(`  Reduced  : ${reduced}`);
-  console.log(`  Skipped  : ${skipped}  (already at or below ${NEW_PRO_MONTHLY})`);
-  console.log(`  Non-Pro  : ${nonPro}`);
+  console.log(`  Balance reduced       : ${reduced}`);
+  console.log(`  Allowance-only fixed  : ${allowanceOnlyFixed}`);
+  console.log(`  Skipped               : ${skipped}  (already aligned)`);
+  console.log(`  Non-Pro               : ${nonPro}`);
   console.log(apply ? "\n[APPLIED]\n" : "\n[DRY-RUN] re-run with --apply to commit.\n");
 
   await prisma.$disconnect();

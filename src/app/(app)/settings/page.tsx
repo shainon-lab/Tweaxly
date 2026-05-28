@@ -193,7 +193,17 @@ export default async function SettingsPage({
     currentPeriodEnd:  effective.currentPeriodEnd?.toISOString() ?? null,
     cancelAtPeriodEnd: effective.cancelAtPeriodEnd ?? false,
     walletBalance:     wallet?.balance ?? 0,
-    monthlyAllowance:  wallet?.monthlyAllowance ?? planLimits.monthlyAICredits,
+    // Use the plan's CURRENT ceiling as the credit-bar denominator,
+    // not the wallet's stored snapshot. The snapshot can lag the plan
+    // limit (e.g. Pro reduced 500 -> 100 mid-period); reading it
+    // would render a partially-red bar even for a workspace at the
+    // new full allowance. Fall back to the wallet snapshot only when
+    // the plan has no recurring grant (Free), so the bar denominator
+    // logic in BillingClient still falls through to lifetimeGranted
+    // for starter credits.
+    monthlyAllowance:  planLimits.monthlyAICredits > 0
+      ? planLimits.monthlyAICredits
+      : (wallet?.monthlyAllowance ?? 0),
     periodStart:       wallet?.periodStart?.toISOString() ?? null,
     lifetimeGranted:   wallet?.lifetimeGranted ?? 0,
     lifetimeConsumed:  wallet?.lifetimeConsumed ?? 0,
