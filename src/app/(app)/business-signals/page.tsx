@@ -12,6 +12,7 @@ import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
 import { evaluateNotificationRules } from "@/lib/notificationsEval";
 import { getQuota, getPlanFor } from "@/lib/billing";
 import LockedOverlay from "@/components/billing/LockedOverlay";
+import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
 import BusinessSignalsTabs from "./BusinessSignalsTabs";
 import { sweepAndDispatch } from "@/lib/alerts/sweep";
 
@@ -27,6 +28,29 @@ export default async function BusinessSignalsPage() {
   const ccy = business.currency;
   // Phase-4 Alerts dispatcher (5-min throttled inside the lib).
   void sweepAndDispatch(user.id, business.id).catch(() => {});
+
+  // Empty-state short-circuit: with no transactions on file, the
+  // advisor pool is empty and signals are meaningless. Show the same
+  // "Upload your bank transactions to activate your business
+  // intelligence" CTA the dashboard / forecast / insights / consultation
+  // pages use, so the user lands on a coherent next step instead of a
+  // blank screen.
+  const totalTxnCount = await prisma.transaction.count({
+    where: { businessId: business.id },
+  });
+  if (totalTxnCount === 0) {
+    const { t } = await getServerT();
+    return (
+      <>
+        <PageHeader
+          title={t("page.signals.title")}
+          subtitle={t("page.signals.subtitle")}
+        />
+        <BusinessSignalsTabs firingAlerts={0} />
+        <BankIntelligenceEmptyState />
+      </>
+    );
+  }
 
   const [advisorPool, mutedRows, triggeredAlerts] = await Promise.all([
     (async () => {
