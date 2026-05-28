@@ -24,6 +24,7 @@ import {
 } from "@/lib/a11y/visibilityStore";
 import BusinessSwitcher, { type SwitcherWorkspace } from "./BusinessSwitcher";
 import UsageModal from "./billing/UsageModal";
+import CreditsBar, { isLowCredits } from "./billing/CreditsBar";
 import BellButton from "./notifications/BellButton";
 import { useT } from "@/lib/i18n/client";
 
@@ -59,6 +60,10 @@ export interface SidebarBilling {
   plan:             string;   // "free" | "pro" | "business"
   balance:          number;
   monthlyAllowance: number;
+  // Effective denominator for the credits bar - monthlyAllowance for
+  // Pro/Business, starterAICredits for Free (since Free has no
+  // recurring allowance). Always > 0 when the workspace has credits.
+  total:            number;
 }
 
 export default function Sidebar({
@@ -298,14 +303,12 @@ export default function Sidebar({
 // with the next tier + Upgrade CTA). The pill itself is purely
 // presentational; all upgrade plumbing lives in the modal.
 function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
-  const { balance, monthlyAllowance, plan } = billing;
+  const { balance, monthlyAllowance, total, plan } = billing;
   const [usageOpen, setUsageOpen] = useState(false);
-  const low   = balance > 0 && balance < 5;
   const empty = balance <= 0;
-  const pct   = monthlyAllowance > 0
-    ? Math.max(0, Math.min(100, Math.round((balance / monthlyAllowance) * 100)))
-    : 0;
+  const low   = isLowCredits(balance, total);
   const planLabel = plan === "pro" || plan === "business" ? "Pro" : "Free";
+  const isPro = plan === "pro" || plan === "business";
 
   return (
     <>
@@ -322,16 +325,28 @@ function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
             {balance.toLocaleString()}
           </span>
         </div>
-        <div className="mt-1.5 h-1 rounded-full bg-ink-700/80 overflow-hidden">
-          <div
-            className={`h-full rounded-full ${
-              empty ? "bg-bad" : low ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"
-            }`}
-            style={{ width: `${pct}%` }}
-            aria-hidden="true"
-          />
+        <div className="mt-1.5">
+          <CreditsBar balance={balance} total={total} size="sm" />
         </div>
       </button>
+      {/* Running-out-of-credits nudge. Sits directly below the pill so the
+          visual ladder reads: balance → bar → next step. The CTA opens
+          the UsageModal which already routes Free→Upgrade, Pro→Buy
+          Credits flows with all the checkout plumbing. */}
+      {low ? (
+        <div className="mt-2 rounded-md border border-warn/40 bg-warn/10 px-3 py-2">
+          <div className="text-[11px] text-warn font-medium leading-snug mb-1.5">
+            You&apos;re running out of credits
+          </div>
+          <button
+            type="button"
+            onClick={() => setUsageOpen(true)}
+            className="w-full text-[11px] font-semibold px-2 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
+          >
+            {isPro ? "Buy Credits" : "Upgrade to Pro"}
+          </button>
+        </div>
+      ) : null}
       <UsageModal
         open={usageOpen}
         onClose={() => setUsageOpen(false)}

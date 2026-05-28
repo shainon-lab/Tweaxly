@@ -16,6 +16,7 @@ import { useRouter } from "next/navigation";
 import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
 import CheckoutSuccessHandler from "@/components/billing/CheckoutSuccessHandler";
 import BuyCreditsModal from "@/components/billing/BuyCreditsModal";
+import CreditsBar, { isLowCredits } from "@/components/billing/CreditsBar";
 
 interface Transaction {
   id:           string;
@@ -288,13 +289,33 @@ export function BillingClient(props: BillingClientProps) {
                   : <>of {props.monthlyAllowance.toLocaleString()} this month</>}
               </span>
             </div>
-            <div className="mt-3 h-1.5 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-brand-purple to-brand-teal"
-                style={{ width: `${pct}%` }}
-                aria-hidden="true"
-              />
+            <div className="mt-3 max-w-md">
+              <CreditsBar balance={props.walletBalance} total={denominator} size="md" />
             </div>
+            {isLowCredits(props.walletBalance, denominator) ? (
+              <div className="mt-3 max-w-md rounded-md border border-warn/40 bg-warn/10 px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="text-xs text-warn font-medium">
+                  You&apos;re running out of credits - {props.walletBalance.toLocaleString()} of {denominator.toLocaleString()} left
+                </div>
+                {props.plan === "free" ? (
+                  <UpgradeTriggerButton
+                    currentPlan={props.plan}
+                    feature="Pro plan"
+                    className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
+                  >
+                    Upgrade to Pro
+                  </UpgradeTriggerButton>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setBuyOpen(true)}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
+                  >
+                    Buy Credits
+                  </button>
+                )}
+              </div>
+            ) : null}
             {props.plan === "free" ? (
               <div className="mt-4 text-xs text-slate-300 leading-relaxed">
                 Upgrade to Pro to get 500 AI Credits delivered every month.

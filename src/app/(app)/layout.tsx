@@ -32,6 +32,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const billingCtx = await ensureMonthlyAllowance(business.id);
   const effectivePlan = await getEffectivePlan(business.id);
   const planMonthlyAllowance = getPlanLimits(effectivePlan.plan).monthlyAICredits;
+  // The sidebar credits bar needs a non-zero denominator to render.
+  // Free plans have monthlyAICredits = 0 (no recurring allowance), so
+  // fall back to the one-time starter grant so the bar visualises
+  // remaining-vs-used against the right ceiling.
+  const planCreditTotal = planMonthlyAllowance > 0
+    ? planMonthlyAllowance
+    : getPlanLimits(effectivePlan.plan).starterAICredits;
   // Workspaces the user can switch into. Excludes disabled memberships.
   // Skipped while impersonating - the switcher is for the actual user's
   // workspaces, not the customer's.
@@ -146,6 +153,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
             plan:             effectivePlan.plan,
             balance:          billingCtx.balance,
             monthlyAllowance: planMonthlyAllowance,
+            total:            planCreditTotal,
           }}
         />
         <main className="flex-1 min-w-0 overflow-y-auto">

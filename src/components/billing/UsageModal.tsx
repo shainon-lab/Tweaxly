@@ -10,6 +10,7 @@ import { createPortal } from "react-dom";
 import Link from "next/link";
 import UpgradeTriggerButton from "./UpgradeTriggerButton";
 import BuyCreditsTriggerButton from "./BuyCreditsTriggerButton";
+import CreditsBar, { isLowCredits } from "./CreditsBar";
 
 interface UsageModalProps {
   open:              boolean;
@@ -156,13 +157,33 @@ export default function UsageModal({
                   : <> left of {monthlyAllowance.toLocaleString()} this month</>}
               </div>
             </div>
-            <div className="mt-3 h-1.5 rounded-full bg-ink-700/80 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-brand-purple to-brand-teal"
-                style={{ width: `${100 - usedPct}%` }}
-                aria-hidden="true"
-              />
+            <div className="mt-3">
+              <CreditsBar balance={balance} total={monthlyAllowance} size="md" />
             </div>
+            {isLowCredits(balance, monthlyAllowance) ? (
+              <div className="mt-3 rounded-md border border-warn/40 bg-warn/10 px-3 py-2.5 flex items-center justify-between gap-3 flex-wrap">
+                <div className="text-xs text-warn font-medium">
+                  You&apos;re running out of credits - {balance.toLocaleString()} of {monthlyAllowance.toLocaleString()} left
+                </div>
+                {safePlan === "free" ? (
+                  <UpgradeTriggerButton
+                    currentPlan={safePlan}
+                    feature="Pro plan"
+                    onBeforeOpen={onClose}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
+                  >
+                    Upgrade to Pro
+                  </UpgradeTriggerButton>
+                ) : (
+                  <BuyCreditsTriggerButton
+                    onBeforeOpen={onClose}
+                    className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
+                  >
+                    Buy Credits
+                  </BuyCreditsTriggerButton>
+                )}
+              </div>
+            ) : null}
             <div className="mt-2 text-[11px] text-slate-500">
               {safePlan === "free" ? (
                 <>
