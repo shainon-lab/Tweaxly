@@ -94,31 +94,63 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
     return <div className="card text-sm text-bad">{error ?? "Couldn't load members."}</div>;
   }
 
-  const isOwner   = data.viewerRole === "owner";
-  const isPro     = data.plan === "pro";
+  const isOwner    = data.viewerRole === "owner";
+  const isPro      = data.plan === "pro";
   const capReached = data.cap != null && data.used >= data.cap;
+  const capLabel   = data.cap != null ? `${data.used}/${data.cap}` : `${data.used}`;
+
+  // The Invite button ALWAYS renders for owners on Pro - even when
+  // capped - and shows a popup explaining the cap if they click it
+  // while disabled. Free owners see an "upgrade" popup instead.
+  function handleInviteClick() {
+    if (!isPro) {
+      window.alert("Upgrade to Pro to invite team members.");
+      return;
+    }
+    if (capReached) {
+      window.alert(`You have already filled all the available seats in your package (${capLabel}). Remove a member or cancel a pending invitation to free a seat.`);
+      return;
+    }
+    setInviteOpen(true);
+  }
 
   return (
     <div className="space-y-6">
-      {/* ── Header + Invite CTA ─────────────────────────────────── */}
-      <div className="flex items-start justify-between gap-3 flex-wrap">
-        <div>
-          <div className="text-sm text-slate-400 leading-relaxed">
-            Manage who can access this workspace. {isPro
-              ? <>Pro workspaces support up to <strong className="text-slate-100">{data.cap}</strong> members total (owner + invitations + active members).</>
+      {/* ── Header row ──────────────────────────────────────────── */}
+      <div className="flex items-start justify-between gap-4 flex-wrap">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap mb-1">
+            <span className="text-sm font-medium text-slate-100">Members & Access</span>
+            <span className={`text-[11px] px-2 py-0.5 rounded-full border font-semibold tabular-nums ${
+              capReached
+                ? "border-warn/40 bg-warn/10 text-warn"
+                : "border-line bg-ink-900/60 text-slate-300"
+            }`}>
+              {capLabel} {data.cap != null ? "seats" : "members"}
+            </span>
+          </div>
+          <div className="text-xs text-slate-400 leading-relaxed">
+            {isPro
+              ? <>Pro workspaces support up to <strong className="text-slate-100">{data.cap}</strong> members total - owner + invitations + active members all count toward the cap.</>
               : <>Free workspaces have a single owner. Upgrade to Pro to invite up to <strong className="text-slate-100">3</strong> team members.</>}
           </div>
         </div>
         {isOwner ? (
           <button
             type="button"
-            onClick={() => setInviteOpen(true)}
-            disabled={!isPro || capReached}
-            className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+            onClick={handleInviteClick}
+            // Greyed when capped or Free, but click still routes to
+            // the explanation popup - never silently dead.
+            aria-disabled={!isPro || capReached}
+            className={`text-sm px-4 py-2 rounded-md border font-medium transition shrink-0 ${
+              !isPro || capReached
+                ? "border-line bg-ink-900/40 text-slate-500 cursor-not-allowed"
+                : "border-accent/40 bg-accent-soft/40 text-accent hover:bg-accent-soft hover:border-accent hover:text-white"
+            }`}
             title={
-              !isPro       ? "Upgrade to Pro to invite team members" :
-              capReached   ? "You've reached the member limit for this plan" :
-                             "Send a workspace invitation"
+              !isPro     ? "Upgrade to Pro to invite team members" :
+              capReached ? "All seats are used - remove a member to free one" :
+                           "Send a workspace invitation"
             }
           >
             + Invite Member
@@ -126,10 +158,10 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
         ) : null}
       </div>
 
-      {/* ── Current Members ──────────────────────────────────────── */}
+      {/* ── Combined roster: active members + pending invitations ── */}
       <section>
         <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">
-          Current Members ({data.members.length})
+          Workspace Roster ({data.members.length + data.invitations.length})
         </div>
         <div className="rounded-lg border border-line overflow-hidden">
           {data.members.map((m, i) => (
@@ -142,29 +174,18 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
               onChanged={load}
             />
           ))}
+          {data.invitations.map((inv) => (
+            <InvitationRow
+              key={inv.id}
+              invitation={inv}
+              businessId={businessId}
+              isOwner={isOwner}
+              showDivider={data.members.length > 0}
+              onChanged={load}
+            />
+          ))}
         </div>
       </section>
-
-      {/* ── Pending Invitations ──────────────────────────────────── */}
-      {data.invitations.length > 0 ? (
-        <section>
-          <div className="text-[10px] uppercase tracking-wider text-slate-400 font-semibold mb-2">
-            Pending Invitations ({data.invitations.length})
-          </div>
-          <div className="rounded-lg border border-line overflow-hidden">
-            {data.invitations.map((inv, i) => (
-              <InvitationRow
-                key={inv.id}
-                invitation={inv}
-                businessId={businessId}
-                isOwner={isOwner}
-                showDivider={i > 0}
-                onChanged={load}
-              />
-            ))}
-          </div>
-        </section>
-      ) : null}
 
       {inviteOpen ? (
         <InviteModal
@@ -295,8 +316,11 @@ function InvitationRow({
         @
       </div>
       <div className="min-w-0 flex-1">
-        <div className="text-sm text-slate-100 truncate">{invitation.email}</div>
-        <div className="text-[11px] text-slate-500">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-sm text-slate-100 truncate">{invitation.email}</span>
+          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded bg-warn/15 text-warn font-semibold">Pending</span>
+        </div>
+        <div className="text-[11px] text-slate-500 mt-0.5">
           Invited {fmtDate(invitation.invitedAt)} by {invitation.invitedBy} · Expires {fmtDate(invitation.expiresAt)}
         </div>
       </div>
@@ -308,7 +332,7 @@ function InvitationRow({
               {busy === "resend" ? "Sending…" : "Resend"}
             </button>
             <button type="button" onClick={cancel} disabled={busy != null} className="text-xs text-slate-400 hover:text-bad transition disabled:opacity-50">
-              {busy === "cancel" ? "Cancelling…" : "Cancel"}
+              {busy === "cancel" ? "Cancelling…" : "Remove"}
             </button>
           </>
         ) : null}
