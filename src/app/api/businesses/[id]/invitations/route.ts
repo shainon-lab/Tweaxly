@@ -81,13 +81,20 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   // dig through email to find the invitation. Best-effort - if the
   // notification write fails, the email is still the primary channel.
   await createIncomingInvitationNotification({
-    invitationId:  result.invitation.id,
-    workspaceName: business.name ?? "your workspace",
-    inviterName:   inviter?.name ?? null,
-    inviterEmail:  inviter?.email ?? "",
-    role:          role as "admin" | "viewer",
-    email:         result.invitation.email,
-  }).catch(() => { /* swallow - email is the source of truth */ });
+    invitationId:       result.invitation.id,
+    invitingBusinessId: businessId,
+    workspaceName:      business.name ?? "your workspace",
+    inviterName:        inviter?.name ?? null,
+    inviterEmail:       inviter?.email ?? "",
+    role:               role as "admin" | "viewer",
+    email:              result.invitation.email,
+  }).catch((err: unknown) => {
+    // Email is still the source of truth for the invitation, but log
+    // the bell-notification failure so we don't silently lose visibility
+    // into it again. (Earlier silent swallow masked an anchor-workspace
+    // lookup that returned null for invitees who'd been removed.)
+    console.error("[invitations] createIncomingInvitationNotification failed", err);
+  });
 
   await recordAudit({
     actorUserId:      user.id,

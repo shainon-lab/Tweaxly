@@ -408,12 +408,13 @@ export async function declineInvitationById(invitationId: string, userEmail: str
 // invitation id is encoded in sourceKey so the notification panel
 // can render an inline Accept/Decline UI.
 export async function createIncomingInvitationNotification(args: {
-  invitationId: string;
-  workspaceName: string;
-  inviterName:   string | null;
-  inviterEmail:  string;
-  role:          "admin" | "viewer";
-  email:         string;
+  invitationId:        string;
+  invitingBusinessId:  string;
+  workspaceName:       string;
+  inviterName:         string | null;
+  inviterEmail:        string;
+  role:                "admin" | "viewer";
+  email:               string;
 }): Promise<void> {
   const user = await prisma.user.findUnique({
     where: { email: args.email.toLowerCase() },
@@ -421,20 +422,32 @@ export async function createIncomingInvitationNotification(args: {
   });
   if (!user) return; // No existing user → email is their only channel.
 
-  // Anchor the bell notification under any workspace the user can
-  // actually open. Prefer one they own (workspace switcher always
-  // shows owned workspaces); fall back to any active membership.
+  // Anchor the bell notification under any business id that exists -
+  // the column has a foreign key, so we need SOMETHING valid even
+  // when the inbox query is going to surface the row regardless of
+  // scope (the inbox ORs in category = "workspace_invitation"). Order
+  // of preference:
+  //   1. A workspace the user owns      (the natural home for it)
+  //   2. An active membership           (next best)
+  //   3. The inviting workspace itself  (always exists, even when the
+  //      user has been removed from every other workspace and never
+  //      owned one - the typical state after the only-via-invite
+  //      flow used to be member of SHAI LIFE, was removed, owns
+  //      nothing else).
   const owned = await prisma.business.findFirst({
     where:   { ownerId: user.id },
     orderBy: { createdAt: "asc" },
     select:  { id: true },
   });
-  const anchorBusinessId = owned?.id ?? (await prisma.businessMembership.findFirst({
-    where:   { userId: user.id, status: "active" },
-    orderBy: { createdAt: "asc" },
-    select:  { businessId: true },
-  }))?.businessId;
-  if (!anchorBusinessId) return; // Edge case: invitee has no workspaces.
+  const anchorBusinessId =
+    owned?.id ??
+    (await prisma.businessMembership.findFirst({
+      where:   { userId: user.id, status: "active" },
+      orderBy: { createdAt: "asc" },
+      select:  { businessId: true },
+    }))?.businessId ??
+    args.invitingBusinessId;
+  if (!anchorBusinessId) return;
 
   const inviter  = args.inviterName?.trim() || args.inviterEmail;
   const roleText = args.role === "admin" ? "Admin" : "Viewer";
@@ -501,18 +514,20 @@ export async function backfillIncomingInvitationNotifications(userId: string, us
   const missing = pending.filter((p) => !alreadyNotified.has(p.id));
   if (missing.length === 0) return;
 
-  // Anchor each backfill to a workspace the user can actually open.
+  // Find the user's "natural" anchor workspace (owned > active
+  // membership). May be undefined for an invitee who's been removed
+  // from every workspace - we fall back per-invitation to the
+  // inviting workspace below.
   const owned = await prisma.business.findFirst({
     where:   { ownerId: userId },
     orderBy: { createdAt: "asc" },
     select:  { id: true },
   });
-  const anchorBusinessId = owned?.id ?? (await prisma.businessMembership.findFirst({
+  const fallbackAnchor = owned?.id ?? (await prisma.businessMembership.findFirst({
     where:   { userId, status: "active" },
     orderBy: { createdAt: "asc" },
     select:  { businessId: true },
   }))?.businessId;
-  if (!anchorBusinessId) return;
 
   await prisma.alertNotification.createMany({
     data: missing.map((p) => {
@@ -520,7 +535,7 @@ export async function backfillIncomingInvitationNotifications(userId: string, us
       const role     = p.role === "viewer" ? "Viewer" : "Admin";
       return {
         userId,
-        businessId: anchorBusinessId,
+        businessId: fallbackAnchor ?? p.businessId,
         source:     "system",
         sourceKey:  p.id,
         category:   "workspace_invitation",

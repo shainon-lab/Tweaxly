@@ -31,7 +31,8 @@ export async function GET(req: Request) {
   // doesn't yet have a bell notification gets one written before we
   // read. Covers invitations created before the feature shipped and
   // any send-time notification write that failed.
-  await backfillIncomingInvitationNotifications(user.id, user.email).catch(() => {});
+  await backfillIncomingInvitationNotifications(user.id, user.email)
+    .catch((err: unknown) => { console.error("[inbox] invitation backfill failed", err) });
 
   const severity   = url.searchParams.get("severity");
   const category   = url.searchParams.get("category");
