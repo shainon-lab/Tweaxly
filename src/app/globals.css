@@ -63,8 +63,11 @@ html[data-theme="light"] {
   --c-ink-700: 241 245 249;
   --c-line: 226 232 240;
   --c-accent-soft: 237 232 255;
-  --c-body-bg: 241 245 249;
-  --c-body-fg: 15 23 42;
+  /* Page bg uses #F5F7FA - a half-step between slate-50 and slate-100 -
+     to maintain a clean separation between the page surround and the
+     pure-white cards layered on top. */
+  --c-body-bg: 245 247 250;
+  --c-body-fg: 17 24 39;
 }
 
 html, body {
@@ -82,13 +85,16 @@ html, body {
 /* !important here so these beat Tailwind's `!text-slate-…` utilities (which
    themselves emit `!important`) - without that, headers tagged with
    `!text-slate-100` for emphasis stay near-white on a white card. */
-html[data-theme="light"] .text-slate-50  { color: rgb(15 23 42) !important; }
-html[data-theme="light"] .text-slate-100 { color: rgb(15 23 42) !important; }
-html[data-theme="light"] .text-slate-200 { color: rgb(30 41 59) !important; }
-html[data-theme="light"] .text-slate-300 { color: rgb(51 65 85) !important; }
-html[data-theme="light"] .text-slate-400 { color: rgb(71 85 105) !important; }
-html[data-theme="light"] .text-slate-500 { color: rgb(100 116 139) !important; }
-html[data-theme="light"] .text-slate-600 { color: rgb(148 163 184) !important; }
+/* Scale anchored to: primary #111827, secondary #4B5563, muted floor #6B7280.
+   No remap may sit lighter than the floor in light mode - otherwise long
+   reading sessions on data-heavy pages get tiring. */
+html[data-theme="light"] .text-slate-50  { color: rgb(17 24 39)  !important; } /* primary  */
+html[data-theme="light"] .text-slate-100 { color: rgb(17 24 39)  !important; } /* primary  */
+html[data-theme="light"] .text-slate-200 { color: rgb(31 41 55)  !important; }
+html[data-theme="light"] .text-slate-300 { color: rgb(55 65 81)  !important; }
+html[data-theme="light"] .text-slate-400 { color: rgb(75 85 99)  !important; } /* secondary #4B5563 */
+html[data-theme="light"] .text-slate-500 { color: rgb(107 114 128) !important; } /* muted floor #6B7280 */
+html[data-theme="light"] .text-slate-600 { color: rgb(107 114 128) !important; } /* clamped to muted floor (was slate-400 - too light) */
 
 /* Buttons / pills with `text-white` should usually stay white because they
    sit on a colored or dark background. But muted "white on dark" usages
@@ -106,7 +112,7 @@ html[data-theme="light"] :where(.btn-ghost).text-white { color: rgb(15 23 42); }
    in the codebase + the platform's button classes. */
 html[data-theme="light"] :where(
   .card, .card-tight,
-  [role="dialog"],
+  [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"],
   [class*="bg-gradient"],
   [class*="bg-ink-9"], [class*="bg-ink-8"], [class*="bg-ink-7"]
 ) .text-white:not(:is(
@@ -119,7 +125,7 @@ html[data-theme="light"] :where(
   [class*="bg-good"] *, [class*="bg-bad"] *, [class*="bg-warn"] *,
   [class*="bg-purple"] *, [class*="bg-red"] *, [class*="bg-emerald"] *, [class*="bg-amber"] *
 )) {
-  color: rgb(15 23 42) !important;
+  color: rgb(17 24 39) !important; /* spec primary text */
 }
 
 /* hover:text-white on tab strips and nav items turns the label invisible
@@ -128,13 +134,14 @@ html[data-theme="light"] :where(
 html[data-theme="light"] :where(
   .card, .card-tight,
   aside, nav,
+  [role="dialog"], [role="menu"], [role="listbox"], [role="tooltip"],
   [class*="bg-ink-9"], [class*="bg-ink-8"], [class*="bg-ink-7"]
 ) .hover\:text-white:hover:not(:is(
   .btn-primary, .btn-brand,
   .btn-primary *, .btn-brand *,
   [class*="bg-accent"], [class*="bg-brand"], [class*="bg-gradient"]
 )) {
-  color: rgb(15 23 42) !important;
+  color: rgb(17 24 39) !important;
 }
 
 /* ── Light-mode surface adjustments ───────────────────────────────────────
@@ -159,18 +166,25 @@ html[data-theme="light"] .card-tight {
 /* The Categorization-rules pill background uses `bg-accent-soft` for the
    sidebar nav active state - already swapped via the var to light purple. */
 
-/* Inputs sit inside white cards in light mode; make sure their border &
-   placeholder are visible. */
+/* Inputs sit inside white cards in light mode; their border + placeholder
+   need clear visibility against the card without dominating the form. */
 html[data-theme="light"] .input {
   background-color: rgb(241 245 249);
-  color: rgb(15 23 42);
+  color: rgb(17 24 39);
+  border-color: rgb(203 213 225); /* slate-300 - stronger than the default
+                                     slate-200 border on top of slate-100 bg,
+                                     so the field affordance reads cleanly */
 }
-html[data-theme="light"] .input::placeholder { color: rgb(148 163 184); }
+/* Placeholder kept at the muted floor (#6B7280). Lighter than this and the
+   placeholder reads as "decoration" instead of "this is a hint". */
+html[data-theme="light"] .input::placeholder { color: rgb(107 114 128); }
 
-/* Buttons with `btn-ghost` lose their hover contrast in light mode because
-   hover:bg-ink-700 = slate-100 = nearly identical to background. Lift the
-   hover state. */
-html[data-theme="light"] .btn-ghost:hover { background-color: rgb(226 232 240); }
+/* btn-ghost hover state. The default hover:bg-ink-700 = slate-100 = nearly
+   identical to a white card. Promote to slate-200 for a clear hover signal. */
+html[data-theme="light"] .btn-ghost:hover {
+  background-color: rgb(226 232 240); /* slate-200 */
+  color: rgb(17 24 39);
+}
 
 /* Pills (`bg-ink-700` in dark → slate-100 in light) get a slightly stronger
    tint so they read as pills, not blank chips. */
@@ -187,16 +201,19 @@ html[data-theme="light"] [role="switch"][aria-checked="false"] {
   border-color: rgb(148 163 184) !important;
 }
 
-/* The recharts default axis stroke (#94a3b8) is too pale on white. Bump
-   contrast in light mode. */
+/* The recharts default axis stroke is too pale on white. Push axis lines
+   to slate-400 + tick text to spec-secondary so labels stay readable
+   during long analysis sessions. */
 html[data-theme="light"] .recharts-cartesian-axis-line,
-html[data-theme="light"] .recharts-cartesian-axis-tick-line,
+html[data-theme="light"] .recharts-cartesian-axis-tick-line {
+  stroke: rgb(100 116 139) !important; /* slate-500 - axis */
+}
 html[data-theme="light"] .recharts-cartesian-grid line {
-  stroke: rgb(148 163 184) !important;
+  stroke: rgb(203 213 225) !important; /* slate-300 - gridlines stay quieter */
 }
 html[data-theme="light"] .recharts-cartesian-axis-tick text,
 html[data-theme="light"] .recharts-legend-item-text {
-  fill: rgb(71 85 105) !important;
+  fill: rgb(75 85 99) !important; /* spec secondary #4B5563 */
 }
 
 /* Some components use inline `style={{ background: "rgb(17 20 27 / x)" }}`
@@ -224,6 +241,50 @@ html[data-theme="light"] [data-credits-pill] {
 }
 html[data-theme="light"] [data-credits-pill]:hover {
   background-color: rgb(241 245 249) !important;
+}
+
+/* Table rows in light mode. The default `bg-ink-700/40` hover resolves to
+   40%-opacity slate-100 on white = invisible. Lift hover to a clear slate-100
+   and keep the row dividers visible (the dark-mode `border-line/60` resolves
+   to 60% slate-200 on white = barely there). */
+html[data-theme="light"] .table-base tbody tr:hover {
+  background-color: rgb(241 245 249) !important; /* slate-100 */
+}
+html[data-theme="light"] .table-base tbody td {
+  border-bottom-color: rgb(226 232 240) !important; /* solid slate-200 */
+}
+html[data-theme="light"] .table-base thead th {
+  color: rgb(75 85 99) !important; /* spec secondary - column headers */
+  border-bottom-color: rgb(203 213 225) !important; /* slate-300 - heavier head/body separator */
+}
+
+/* Catch-all for unread / accent-soft list item highlights. The
+   `bg-accent-soft/5` and `bg-accent-soft/20` patterns used for "unread"
+   row tints in dark mode disappear on a light card. Bump them slightly. */
+html[data-theme="light"] [class*="bg-accent-soft"] {
+  /* The var already swaps to light purple; this just makes sure low-opacity
+     variants still register against white. No-op for components that pass
+     a fully opaque accent-soft. */
+}
+
+/* Disabled buttons + inputs in light mode. `disabled:opacity-50` against
+   already-muted text (slate-700) goes near-white. Floor disabled text at
+   the spec muted color so the affordance still reads. */
+html[data-theme="light"] button:disabled,
+html[data-theme="light"] [aria-disabled="true"],
+html[data-theme="light"] .input:disabled {
+  color: rgb(107 114 128); /* #6B7280 muted floor */
+}
+/* But preserve white text on colored disabled buttons (.btn-primary etc.
+   already have a dark purple bg, so the inherited white stays readable). */
+html[data-theme="light"] .btn-primary:disabled,
+html[data-theme="light"] .btn-brand:disabled,
+html[data-theme="light"] [class*="bg-accent"]:disabled,
+html[data-theme="light"] [class*="bg-brand"]:disabled,
+html[data-theme="light"] [class*="bg-good"]:disabled,
+html[data-theme="light"] [class*="bg-bad"]:disabled,
+html[data-theme="light"] [class*="bg-warn"]:disabled {
+  color: rgb(255 255 255);
 }
 
 /* ── Auth-shell ambient background ────────────────────────────────────────
