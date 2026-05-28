@@ -75,21 +75,21 @@ export default function LockedOverlay({
             "radial-gradient(ellipse 60% 50% at 50% 50%, rgba(11,13,18,0.85), rgba(11,13,18,0.55))",
         }}
       >
-        <div className="text-center max-w-sm">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full border border-accent/40 bg-accent-soft/20 text-accent mb-3">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <div className="text-center max-w-md">
+          <div className="inline-flex items-center justify-center w-14 h-14 rounded-full border border-accent/40 bg-accent-soft/20 text-accent mb-4">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <rect x="4" y="11" width="16" height="10" rx="2" stroke="currentColor" strokeWidth="1.8" />
               <path d="M8 11V8a4 4 0 0 1 8 0v3" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
             </svg>
           </div>
-          <div className="text-sm font-semibold text-white">{feature} is a Pro feature</div>
-          <p className="mt-2 text-xs text-slate-300 leading-relaxed">
+          <div className="text-xl font-semibold text-white">{feature} is a Pro feature</div>
+          <p className="mt-3 text-base text-slate-300 leading-relaxed">
             {blurb ?? "Available on Pro and Business plans. Free users see this layout as a preview."}
           </p>
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="mt-4 text-sm px-4 py-2 rounded-md bg-accent text-white font-medium shadow-sm hover:bg-brand-purple-deep transition"
+            className="mt-5 text-base px-5 py-2.5 rounded-md bg-accent text-white font-medium shadow-sm hover:bg-brand-purple-deep transition"
           >
             Upgrade to unlock
           </button>
