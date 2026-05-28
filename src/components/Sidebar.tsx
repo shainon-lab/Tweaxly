@@ -176,13 +176,15 @@ export default function Sidebar({
               very first render before ensureMonthlyAllowance has run). */}
           {billing ? <SidebarCreditsPill billing={billing} /> : null}
           {/* Top-right corner: notifications bell + mobile close. The
-              bell is a Premium feature - only render it for paid
-              plans. Free workspaces don't accumulate notifications
-              (the sweep skips them server-side too), so showing the
-              bell would just be a permanently-empty UI affordance.
+              bell is always rendered now - workspace invitations are
+              account-level events that fire even for Free workspaces,
+              so gating the bell behind Pro would hide them from
+              users who haven't upgraded yet. Free workspaces still
+              skip AI-signal + monitor writes server-side, so a Free
+              user's bell typically only lights up for invitations.
               The mobile close button is always present. */}
           <div className="absolute top-3 right-3 flex items-center gap-1">
-            {billing && billing.plan !== "free" ? <BellButton /> : null}
+            <BellButton />
             <button
               type="button"
               className="lg:hidden w-8 h-8 inline-flex items-center justify-center text-slate-300 hover:text-white rounded-md"
