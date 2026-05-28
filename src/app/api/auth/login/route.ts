@@ -45,10 +45,23 @@ export async function POST(req: NextRequest) {
   const email = String(form.get("email") ?? "").toLowerCase().trim();
   const password = String(form.get("password") ?? "");
 
+  // Optional post-login redirect target. Used by the workspace
+  // invitation flow ( /invite/[token] -> /login?next=/invite/[token]
+  // -> back to /invite/[token] for the accept click). Whitelist-
+  // gated to same-origin paths so this can't be turned into an
+  // open-redirect attack.
+  const rawNext = String(form.get("next") ?? "");
+  const safeNextPath = rawNext.startsWith("/") && !rawNext.startsWith("//") ? rawNext : null;
+
   // Build the redirect response up front; we'll attach the session cookie
   // to it before returning.
-  const successUrl = new URL("/", req.url);
-  const failureUrl = new URL("/login?err=1", req.url);
+  const successUrl = new URL(safeNextPath ?? "/", req.url);
+  // Preserve `next` on the failure path so a wrong password doesn't
+  // strand the user without their invitation-acceptance destination.
+  const failureUrl = new URL(
+    safeNextPath ? `/login?err=1&next=${encodeURIComponent(safeNextPath)}` : "/login?err=1",
+    req.url,
+  );
 
   if (!email || !password) {
     await recordLoginAttempt({ req, email, success: false, userId: null });

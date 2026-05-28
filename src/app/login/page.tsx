@@ -23,9 +23,12 @@ const ERROR_COPY: Record<string, string> = {
 
 export default async function LoginPage({
   searchParams,
-}: { searchParams: Promise<{ err?: string; reset?: string }> }) {
-  const { err, reset } = await searchParams;
+}: { searchParams: Promise<{ err?: string; reset?: string; next?: string; email?: string }> }) {
+  const { err, reset, next, email } = await searchParams;
   const { t } = await getServerT();
+  // Only honour `next` if it's a same-origin path - prevents open-
+  // redirect attacks where an attacker links to /login?next=https://evil.
+  const safeNext = typeof next === "string" && next.startsWith("/") && !next.startsWith("//") ? next : null;
   return (
     <div className="auth-shell">
       <div className="card w-full max-w-md">
@@ -57,10 +60,23 @@ export default async function LoginPage({
         </div>
         */}
 
+        {safeNext && safeNext.startsWith("/invite/") ? (
+          <div className="mb-4 rounded-md border border-accent/40 bg-accent-soft/15 text-accent text-xs px-3 py-2 leading-relaxed">
+            Sign in to accept your workspace invitation. We&apos;ll take you straight to the accept screen after login.
+          </div>
+        ) : null}
         <form action="/api/auth/login" method="post" className="space-y-4">
+          {safeNext ? <input type="hidden" name="next" value={safeNext} /> : null}
           <div>
             <label className="label">{t("common.email")}</label>
-            <input className="input" name="email" type="email" required autoFocus />
+            <input
+              className="input"
+              name="email"
+              type="email"
+              required
+              autoFocus
+              defaultValue={email ?? ""}
+            />
           </div>
           <div>
             <div className="flex items-baseline justify-between">
