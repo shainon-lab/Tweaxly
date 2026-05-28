@@ -48,7 +48,7 @@ const DEFAULT_BENEFITS = [
   "Full forecasting + Scenario Builder",
   "Export to Excel, CSV, PDF",
   "Multi-business, multi-user, team roles",
-  "500 AI Credits / month - buy more anytime",
+  "100 AI Credits / month - buy more anytime",
 ];
 
 export default function UpgradeModal({

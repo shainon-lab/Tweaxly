@@ -54,7 +54,7 @@ const LIMITS = {
     // surfaced on Pro (they're declared on the entitlements shape
     // for forward compatibility but no tier ships them today).
     forecastMonths:    "Up to 60 months",
-    aiCredits:         500,
+    aiCredits:         100,
     scenarioBuilder:   true,
     exports:           true,
     smartAlerts:       true,
@@ -188,7 +188,7 @@ export default function UsageModal({
               {safePlan === "free" ? (
                 <>
                   Starter AI Credits are a one-time grant on Free workspaces - they don&apos;t renew.
-                  Upgrade to Pro for 500 AI Credits every month + the ability to buy more anytime.
+                  Upgrade to Pro for 100 AI Credits every month + the ability to buy more anytime.
                 </>
               ) : (
                 <>

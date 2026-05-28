@@ -170,7 +170,7 @@ export const PLANS: Plan[] = [
       // and the pricing page agree.
       forecastMonths:   60,
       maxNotificationRules: "unlimited",
-      monthlyAICredits: 500,
+      monthlyAICredits: 100,
       starterAICredits: 0,
       features: {
         smartAlerts:            true,

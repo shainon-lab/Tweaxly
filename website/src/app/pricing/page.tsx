@@ -19,7 +19,7 @@ const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const SITE_URL    = "https://tweaxly.com";
 
 const DESCRIPTION =
-  "Tweaxly pricing for AI business intelligence. Start free with 30 AI Credits and 90 days of history. Upgrade to Pro ($49/mo) for unlimited everything + 500 AI Credits/month. Buy more AI Credit packs anytime.";
+  "Tweaxly pricing for AI business intelligence. Start free with 30 AI Credits and 90 days of history. Upgrade to Pro ($49/mo) for unlimited everything + 100 AI Credits/month. Buy more AI Credit packs anytime.";
 const OG_DESCRIPTION =
   "Two plans. Start free with AI Credits included. Upgrade to Pro for unlimited platform access, then buy AI Credit packs as you scale.";
 
@@ -94,7 +94,7 @@ const PLANS: Plan[] = [
     price:     "$49",
     period:    "per month",
     tagline:   "Unlock the full platform - everything Tweaxly can do, in one premium plan.",
-    credits:   "500 AI Credits / month",
+    credits:   "100 AI Credits / month",
     highlight: true,
     bullets: [
       "Owner + up to 2 team members with role-based access",
@@ -136,7 +136,7 @@ const MATRIX: MatrixGroup[] = [
   {
     label: "AI & intelligence",
     rows: [
-      { dimension: "Included AI Credits",             free: "30 (starter, one-time)", pro: "500 / month (+ packs)" },
+      { dimension: "Included AI Credits",             free: "30 (starter, one-time)", pro: "100 / month (+ packs)" },
       { dimension: "Business signals / month",        free: "Up to 3",   pro: "Unlimited" },
       { dimension: "Smart alerts",                    free: "—",         pro: "✓" },
       { dimension: "Real-Time Business Alerts (desktop push)", free: "—", pro: "✓" },
@@ -205,7 +205,7 @@ const PRICING_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What is an AI Credit?",
-    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 500 credits every month plus the ability to buy more anytime, and Pro routes those credits through a more capable AI tier with faster responses.",
+    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 100 credits every month plus the ability to buy more anytime, and Pro routes those credits through a more capable AI tier with faster responses.",
   },
   {
     q: "What's the difference between AI on Free vs Pro?",
@@ -643,7 +643,7 @@ function FinalCta() {
           <Link href="/features" className="btn-ghost text-base px-6 py-3">See all features →</Link>
         </div>
         <div className="mt-4 text-xs text-slate-500">
-          Pro $49/mo · 500 AI Credits included · Buy more credits anytime
+          Pro $49/mo · 100 AI Credits included · Buy more credits anytime
         </div>
       </div>
     </section>

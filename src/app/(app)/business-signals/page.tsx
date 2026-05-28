@@ -129,7 +129,7 @@ export default async function BusinessSignalsPage() {
               "Every business signal Tweaxly detects, unblurred",
               "Smart alerts on top of the signal stream",
               "Action-oriented recommendations on every signal",
-              "Plus full forecasting, exports, and 500 AI Credits / month",
+              "Plus full forecasting, exports, and 100 AI Credits / month",
             ]}
           >
             <PushRecommendations initial={lockedRecs} currency={ccy} />

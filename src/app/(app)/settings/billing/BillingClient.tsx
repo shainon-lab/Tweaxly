@@ -318,7 +318,7 @@ export function BillingClient(props: BillingClientProps) {
             ) : null}
             {props.plan === "free" ? (
               <div className="mt-4 text-xs text-slate-300 leading-relaxed">
-                Upgrade to Pro to get 500 AI Credits delivered every month.
+                Upgrade to Pro to get 100 AI Credits delivered every month.
                 Pro also unlocks add-on credit packs whenever you want extra
                 power on top of your monthly allowance, so you&apos;ll always
                 have the credits you need on hand.
