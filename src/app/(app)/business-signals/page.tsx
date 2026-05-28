@@ -12,7 +12,7 @@ import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
 import { evaluateNotificationRules } from "@/lib/notificationsEval";
 import { getQuota, getPlanFor } from "@/lib/billing";
 import LockedOverlay from "@/components/billing/LockedOverlay";
-import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
+import EmptyDataPreview from "@/components/EmptyDataPreview";
 import BusinessSignalsTabs from "./BusinessSignalsTabs";
 import { sweepAndDispatch } from "@/lib/alerts/sweep";
 
@@ -47,7 +47,7 @@ export default async function BusinessSignalsPage() {
           subtitle={t("page.signals.subtitle")}
         />
         <BusinessSignalsTabs firingAlerts={0} />
-        <BankIntelligenceEmptyState />
+        <EmptyDataPreview surface="signals" />
       </>
     );
   }

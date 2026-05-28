@@ -4,7 +4,7 @@ import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import DashboardInsights from "../dashboard/DashboardInsights";
-import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
+import EmptyDataPreview from "@/components/EmptyDataPreview";
 
 // "Charts" tab in the Reports umbrella. Renders the seven-chart period
 // grid (Trend, Cash flow, Top expense categories, Revenue channel,
@@ -35,7 +35,7 @@ export default async function ChartsPage({
       />
       <ReportsTabs />
       {totalTxnCount === 0 ? (
-        <BankIntelligenceEmptyState surface="insights" />
+        <EmptyDataPreview surface="insights" />
       ) : (
         <DashboardInsights
           businessId={business.id}

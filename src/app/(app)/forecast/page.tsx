@@ -41,7 +41,7 @@ import { type RosterMember } from "./ScenarioBuilder";
 import ScenarioBuilderPanel from "./ScenarioBuilderPanel";
 import ScenarioBuilderTrigger from "./ScenarioBuilderTrigger";
 import ActiveScenarioAssumptions from "./ActiveScenarioAssumptions";
-import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
+import EmptyDataPreview from "@/components/EmptyDataPreview";
 
 function isHistoricalValue(v: string | undefined): v is HistoricalPeriodValue {
   return (
@@ -279,7 +279,7 @@ export default async function ForecastPage({
           the technical "Forecast unavailable" card and points the user
           directly at the bank upload flow with consistent copy. */}
       {isEmpty ? (
-        <BankIntelligenceEmptyState surface="forecast" />
+        <EmptyDataPreview surface="forecast" />
       ) : !engineResult.ok ? (
         <div className="card mb-6 border-warn/40 bg-warn/10 px-6 py-8">
           <div className="text-base font-semibold text-warn mb-2 uppercase tracking-wide">

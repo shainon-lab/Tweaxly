@@ -3,7 +3,7 @@ import PageHeader from "@/components/PageHeader";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryStream, { ExecutiveSummarySkeleton } from "./ExecutiveSummaryStream";
-import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
+import EmptyDataPreview from "@/components/EmptyDataPreview";
 import CardUploadRecommendation from "@/components/CardUploadRecommendation";
 import IntelligenceModeBadge from "@/components/IntelligenceModeBadge";
 import { scanBankCardSignals } from "@/lib/settlements";
@@ -202,7 +202,7 @@ export default async function DashboardPage({
       ) : null}
 
       {empty ? (
-        <BankIntelligenceEmptyState surface="dashboard" />
+        <EmptyDataPreview surface="dashboard" />
       ) : (
         <>
           {/* Summary hero - the AI-generated executive narrative is the

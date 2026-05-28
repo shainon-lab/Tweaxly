@@ -14,7 +14,7 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ConsultationClient from "./ConsultationClient";
 import ConsultationTabs from "./ConsultationTabs";
-import BankIntelligenceEmptyState from "@/components/BankIntelligenceEmptyState";
+import EmptyDataPreview from "@/components/EmptyDataPreview";
 
 export default async function ConsultationPage({
   searchParams,
@@ -55,7 +55,7 @@ export default async function ConsultationPage({
       />
       <ConsultationTabs historyCount={totalQuestions} />
       {isEmpty ? (
-        <BankIntelligenceEmptyState surface="consultation" />
+        <EmptyDataPreview surface="consultation" />
       ) : (
         <ConsultationClient
           currency={business.currency}
