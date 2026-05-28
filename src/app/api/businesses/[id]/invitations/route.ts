@@ -8,7 +8,7 @@ import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import {
-  createInvitation, sendInvitationEmail, normalizeRole, INVITABLE_ROLES,
+  createInvitation, sendInvitationEmail, INVITABLE_ROLES,
 } from "@/lib/memberships";
 import { recordAudit } from "@/lib/audit";
 
@@ -18,12 +18,17 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id: businessId } = await params;
   const user = await requireUser();
 
-  // Owner-only gate. Admins and viewers cannot invite.
-  const membership = await prisma.businessMembership.findFirst({
-    where:  { businessId, userId: user.id, status: "active" },
-    select: { role: true },
+  // Owner-only gate. The authoritative owner signal is
+  // Business.ownerId (not BusinessMembership.role) - workspaces
+  // provisioned via admin tools may not have a membership row
+  // tagged as "account_admin" but their ownerId is always set.
+  // Fetch name too so we can avoid a second query later when
+  // composing the invitation email.
+  const business = await prisma.business.findUnique({
+    where:  { id: businessId },
+    select: { ownerId: true, name: true },
   });
-  if (!membership || normalizeRole(membership.role) !== "owner") {
+  if (!business || business.ownerId !== user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
@@ -58,16 +63,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return NextResponse.json({ error: result.reason }, { status });
   }
 
-  // Look up workspace name + inviter name for the email body.
-  const [business, inviter] = await Promise.all([
-    prisma.business.findUnique({ where: { id: businessId }, select: { name: true } }),
-    prisma.user.findUnique({ where: { id: user.id }, select: { name: true } }),
-  ]);
+  // Look up inviter name for the email body (workspace name was
+  // already fetched above as part of the owner check).
+  const inviter = await prisma.user.findUnique({ where: { id: user.id }, select: { name: true } });
 
   await sendInvitationEmail({
     to:            result.invitation.email,
     inviterName:   inviter?.name ?? null,
-    workspaceName: business?.name ?? "your workspace",
+    workspaceName: business.name ?? "your workspace",
     role:          result.invitation.role,
     token:         result.token,
   });

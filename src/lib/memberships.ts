@@ -39,21 +39,57 @@ function hashToken(plain: string): string {
 // ── Listing ─────────────────────────────────────────────────────────
 
 export async function listMembers(businessId: string) {
-  const rows = await prisma.businessMembership.findMany({
-    where:   { businessId, status: { in: ["active", "suspended"] } },
-    include: { user: { select: { id: true, email: true, name: true, avatarUrl: true } } },
-    orderBy: [{ role: "asc" }, { createdAt: "asc" }],
-  });
-  return rows.map((m) => ({
-    id:        m.id,
-    userId:    m.userId,
-    email:     m.user.email,
-    name:      m.user.name,
-    avatarUrl: m.user.avatarUrl,
-    role:      normalizeRole(m.role),
-    status:    m.status as "active" | "suspended",
-    joinedAt:  m.joinedAt?.toISOString() ?? null,
-  }));
+  // Pull the workspace's authoritative ownerId AND every membership
+  // row in one shot. The owner is ALWAYS surfaced as the first row
+  // - regardless of whether a BusinessMembership row exists for
+  // them. Workspaces provisioned manually by admins sometimes lack
+  // a membership row for the owner; this guarantees the list still
+  // includes them with the correct "owner" role.
+  const [business, rows] = await Promise.all([
+    prisma.business.findUnique({
+      where:  { id: businessId },
+      select: { ownerId: true, owner: { select: { id: true, email: true, name: true, avatarUrl: true } } },
+    }),
+    prisma.businessMembership.findMany({
+      where:   { businessId, status: { in: ["active", "suspended"] } },
+      include: { user: { select: { id: true, email: true, name: true, avatarUrl: true } } },
+      orderBy: [{ createdAt: "asc" }],
+    }),
+  ]);
+
+  const owner = business?.owner;
+  const ownerId = business?.ownerId;
+
+  // Build the owner row first. Prefer the existing membership row
+  // (for joinedAt) but fall back to a synthesized record from the
+  // Business.owner relation.
+  const ownerMembership = ownerId ? rows.find((r) => r.userId === ownerId) : null;
+  const ownerEntry = owner ? [{
+    id:        ownerMembership?.id ?? `synthetic-owner-${ownerId}`,
+    userId:    owner.id,
+    email:     owner.email,
+    name:      owner.name,
+    avatarUrl: owner.avatarUrl,
+    role:      "owner" as const,
+    status:    "active" as const,
+    joinedAt:  ownerMembership?.joinedAt?.toISOString() ?? null,
+  }] : [];
+
+  // The rest of the roster: every non-owner membership row.
+  const others = rows
+    .filter((m) => m.userId !== ownerId)
+    .map((m) => ({
+      id:        m.id,
+      userId:    m.userId,
+      email:     m.user.email,
+      name:      m.user.name,
+      avatarUrl: m.user.avatarUrl,
+      role:      normalizeRole(m.role),
+      status:    m.status as "active" | "suspended",
+      joinedAt:  m.joinedAt?.toISOString() ?? null,
+    }));
+
+  return [...ownerEntry, ...others];
 }
 
 export async function listPendingInvitations(businessId: string) {
@@ -84,16 +120,31 @@ export async function listPendingInvitations(businessId: string) {
 // Counts toward the plan's `members` quota: every non-removed
 // membership PLUS every pending invitation. Suspended memberships
 // also count because they reactivate automatically on re-upgrade.
+//
+// Always counts the workspace owner once - even when they don't have
+// a BusinessMembership row (manual admin provisioning) - so the cap
+// math matches what the user sees in the roster.
 export async function countMembersAgainstCap(businessId: string): Promise<number> {
-  const [memberCount, pendingCount] = await Promise.all([
-    prisma.businessMembership.count({
-      where: { businessId, status: { in: ["active", "suspended"] } },
+  const [business, memberships, pendingCount] = await Promise.all([
+    prisma.business.findUnique({
+      where:  { id: businessId },
+      select: { ownerId: true },
+    }),
+    prisma.businessMembership.findMany({
+      where:  { businessId, status: { in: ["active", "suspended"] } },
+      select: { userId: true },
     }),
     prisma.businessInvitation.count({
       where: { businessId, status: "pending" },
     }),
   ]);
-  return memberCount + pendingCount;
+
+  // De-duplicate: owner counted once whether or not they have a
+  // membership row. Non-owner memberships count once each.
+  const userIds = new Set<string>();
+  if (business?.ownerId) userIds.add(business.ownerId);
+  for (const m of memberships) userIds.add(m.userId);
+  return userIds.size + pendingCount;
 }
 
 export type CapCheck =

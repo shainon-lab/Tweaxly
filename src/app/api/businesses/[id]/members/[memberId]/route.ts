@@ -9,17 +9,20 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { changeMemberRole, removeMember, normalizeRole, INVITABLE_ROLES } from "@/lib/memberships";
+import { changeMemberRole, removeMember, INVITABLE_ROLES } from "@/lib/memberships";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
 async function ownerOnly(businessId: string, userId: string): Promise<{ ok: true } | { ok: false; res: NextResponse }> {
-  const caller = await prisma.businessMembership.findFirst({
-    where:  { businessId, userId, status: "active" },
-    select: { role: true },
+  // Authoritative ownership check: Business.ownerId. Workspaces
+  // provisioned via admin tools or older flows may not have a
+  // "account_admin" membership row, but they always have ownerId set.
+  const business = await prisma.business.findUnique({
+    where:  { id: businessId },
+    select: { ownerId: true },
   });
-  if (!caller || normalizeRole(caller.role) !== "owner") {
+  if (!business || business.ownerId !== userId) {
     return { ok: false, res: NextResponse.json({ error: "forbidden" }, { status: 403 }) };
   }
   return { ok: true };

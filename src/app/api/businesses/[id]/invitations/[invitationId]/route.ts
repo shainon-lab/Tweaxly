@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { cancelInvitation, normalizeRole } from "@/lib/memberships";
+import { cancelInvitation } from "@/lib/memberships";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -14,11 +14,11 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { id: businessId, invitationId } = await params;
   const user = await requireUser();
 
-  const membership = await prisma.businessMembership.findFirst({
-    where:  { businessId, userId: user.id, status: "active" },
-    select: { role: true },
+  const business = await prisma.business.findUnique({
+    where:  { id: businessId },
+    select: { ownerId: true },
   });
-  if (!membership || normalizeRole(membership.role) !== "owner") {
+  if (!business || business.ownerId !== user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 

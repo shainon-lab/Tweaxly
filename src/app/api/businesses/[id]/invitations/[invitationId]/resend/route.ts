@@ -18,11 +18,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const { id: businessId, invitationId } = await params;
   const user = await requireUser();
 
-  const membership = await prisma.businessMembership.findFirst({
-    where:  { businessId, userId: user.id, status: "active" },
-    select: { role: true },
+  const business = await prisma.business.findUnique({
+    where:  { id: businessId },
+    select: { ownerId: true },
   });
-  if (!membership || normalizeRole(membership.role) !== "owner") {
+  if (!business || business.ownerId !== user.id) {
     return NextResponse.json({ error: "forbidden" }, { status: 403 });
   }
 
