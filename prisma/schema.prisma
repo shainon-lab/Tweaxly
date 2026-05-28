@@ -350,6 +350,7 @@ model Business {
   mutedSignals        MutedSignal[]
   mappingTemplates    MappingTemplate[]
   financialSources    FinancialSource[]
+  plaidConnections    PlaidConnection[]
   trashBatches        TrashBatch[]
   recommendations     Recommendation[]
   consultations       Consultation[]
@@ -690,7 +691,7 @@ model FinancialSource {
   business     Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
   // Human-friendly label shown in the picker and coverage matrix.
   name         String
-  // bank | credit_card | paypal | payment_provider | cash | other
+  // bank | credit_card | paypal | payment_provider | cash | other | plaid
   type         String
   currency     String // ISO 4217
   last4        String? // optional last 4 digits, e.g. for cards
@@ -703,9 +704,58 @@ model FinancialSource {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
+  // Plaid linkage. Populated only for sources that were auto-created
+  // by a Plaid connection - one FinancialSource per linked account.
+  // plaidAccountId is Plaid's stable per-account identifier; we use
+  // it to upsert balances + scope transaction inserts to the right
+  // source on every sync.
+  plaidConnectionId String?
+  plaidConnection   PlaidConnection? @relation(fields: [plaidConnectionId], references: [id], onDelete: SetNull)
+  plaidAccountId    String? // Plaid's account_id
+  currentBalance    Float?  // most recent balance snapshot
+  availableBalance  Float?
+
   uploadBatches UploadBatch[]
 
   @@unique([businessId, name])
+  @@unique([plaidConnectionId, plaidAccountId])
+  @@index([businessId, status])
+  @@index([plaidConnectionId])
+}
+
+// One row per linked Plaid Item (= one bank login that may expose
+// multiple accounts). The encrypted access_token + sync cursor live
+// here; FinancialSource rows for each account fan out from this.
+// Tweaxly is read-only — we never call /transactions/sync's payment
+// or auth surfaces and we never store the public_token.
+model PlaidConnection {
+  id                String   @id @default(cuid())
+  businessId        String
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Plaid Item identifier — stable across re-auth, returned by
+  // /item/get. Unique so a re-link surfaces as an update, not a dup.
+  itemId            String   @unique
+  // AES-256-GCM ciphertext of the access_token. Never logged, never
+  // returned to the frontend, never serialized into any response.
+  accessTokenEnc    String
+  // Institution metadata for the UI.
+  institutionId     String?
+  institutionName   String?
+  // Cursor for Plaid /transactions/sync. Empty string = full history
+  // hasn't been fetched yet; populated after first sync completes.
+  syncCursor        String   @default("")
+  // "connected" | "syncing" | "error" | "disconnected"
+  status            String   @default("syncing")
+  // Last error message surfaced from Plaid - cleared on next success.
+  lastError         String?
+  lastSyncStartedAt   DateTime?
+  lastSyncCompletedAt DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  financialSources  FinancialSource[]
+
+  @@index([businessId])
   @@index([businessId, status])
 }
 

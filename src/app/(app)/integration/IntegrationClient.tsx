@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
+import PlaidPanel from "./PlaidPanel";
 
 type Provider = {
   id: string;
@@ -40,16 +41,6 @@ const PROVIDERS: Provider[] = [
     logo: "▢",
     exportTip:
       "From Square Dashboard → Reports → Transactions, export to CSV with itemized fees.",
-  },
-  {
-    id: "plaid",
-    name: "Plaid (bank connections)",
-    category: "banking",
-    description:
-      "Connect any of 12,000+ banks and pull account-level transactions.",
-    logo: "≡",
-    exportTip:
-      "Most banks let you export a transaction CSV from your statement page. Use it as Financial Activity in Manual Data.",
   },
   {
     id: "quickbooks",
@@ -119,11 +110,16 @@ export default function IntegrationClient() {
 
   return (
     <>
+      {/* Live Plaid integration (sandbox MVP) - the only provider with
+          a real working connect flow today. Everything below in the
+          PROVIDERS list is still placeholder copy + email-capture. */}
+      <PlaidPanel />
+
       <div className="card mb-6">
         <div className="flex items-start gap-3">
           <span className="pill-accent shrink-0 mt-0.5">heads-up</span>
           <div className="text-sm text-slate-200 leading-relaxed">
-            <span className="font-medium">Direct integrations are on the roadmap.</span>{" "}
+            <span className="font-medium">More direct integrations are on the roadmap.</span>{" "}
             We're wiring up OAuth and per-provider sync. In the meantime, every provider below has a clean export-to-CSV path -{" "}
             <Link href="/manual-data" className="text-accent hover:underline">
               import from the Manual Data tab
