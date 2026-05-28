@@ -84,6 +84,18 @@ model User {
   // grant so accounts that never opt in don't generate one.
   unsubscribeToken          String?              @unique
   createdAt                 DateTime             @default(now())
+  // ── Admin-notification flag ───────────────────────────────────────
+  // Stamped by the /api/cron/admin-new-account-notifications job once
+  // it has successfully emailed info@tweaxly.com about this signup.
+  // The job runs ~10 minutes after createdAt and uses this field to
+  // ensure exactly one admin email per account (never duplicated if
+  // the user later verifies / onboards). Null = not yet notified.
+  adminNotificationSentAt   DateTime?
+  // Latest error string from the admin-notification send attempt -
+  // populated only when sending fails so we can debug; cleared on
+  // success. Sent-at staying null while error is populated means
+  // the next cron tick will retry.
+  adminNotificationError    String?
   businesses                Business[]
   memberships               BusinessMembership[]
   membershipInvitesSent     BusinessMembership[] @relation("MembershipInviter")
