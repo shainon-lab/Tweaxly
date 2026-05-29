@@ -32,6 +32,19 @@ import * as cfForecast    from "./cash-flow-forecasting";
 import * as profitableNoCash from "./why-profitable-businesses-run-out-of-cash";
 import * as cashReserve   from "./how-much-cash-reserve";
 
+// Business Forecasting
+import * as whatIsForecasting from "./what-is-financial-forecasting";
+import * as revForecast       from "./revenue-forecasting-methods";
+import * as expForecast       from "./expense-forecasting";
+import * as scenarioPlanning  from "./scenario-planning-explained";
+import * as forecastAccuracy  from "./how-accurate-should-a-forecast-be";
+
+// Business Signals
+import * as revenueSlowing    from "./early-signs-revenue-growth-is-slowing";
+import * as expenseWarnings   from "./expense-growth-warning-signs";
+import * as detectTrends      from "./detecting-business-trends-before-they-become-problems";
+import * as redFlags          from "./financial-red-flags-every-owner-should-know";
+
 import type { ArticleModule, CategoryId } from "./types";
 
 // Order matters here - it controls the default sort on the index page.
@@ -57,6 +70,15 @@ export const ARTICLES: ArticleModule[] = [
   { meta: cfForecast.meta,    Body: cfForecast.Body    },
   { meta: profitableNoCash.meta, Body: profitableNoCash.Body },
   { meta: cashReserve.meta,   Body: cashReserve.Body   },
+  { meta: whatIsForecasting.meta, Body: whatIsForecasting.Body },
+  { meta: revForecast.meta,       Body: revForecast.Body       },
+  { meta: expForecast.meta,       Body: expForecast.Body       },
+  { meta: scenarioPlanning.meta,  Body: scenarioPlanning.Body  },
+  { meta: forecastAccuracy.meta,  Body: forecastAccuracy.Body  },
+  { meta: revenueSlowing.meta,    Body: revenueSlowing.Body    },
+  { meta: expenseWarnings.meta,   Body: expenseWarnings.Body   },
+  { meta: detectTrends.meta,      Body: detectTrends.Body      },
+  { meta: redFlags.meta,          Body: redFlags.Body          },
 ];
 
 export function getArticle(category: CategoryId, slug: string): ArticleModule | null {
