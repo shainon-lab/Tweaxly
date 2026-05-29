@@ -132,13 +132,22 @@ export default function PlaidPanel() {
 
   // When a link token gets minted AND plaidReady becomes true, open
   // the Plaid modal automatically (user already clicked Connect).
+  // Gated together with onConnectClick - this effect stays harmless
+  // while linkToken is always null. Restore by un-gating onConnectClick.
   useEffect(() => {
     if (linkToken && plaidReady) openPlaidLink();
   }, [linkToken, plaidReady, openPlaidLink]);
 
   async function onConnectClick() {
-    if (tokenLoading) return;
-    await ensureLinkToken();
+    // ── GATE: the real Plaid Link flow is held back until the
+    //    workspace owner is ready to add sandbox credentials. To
+    //    re-enable, replace the body with `await ensureLinkToken();`
+    //    The rest of the panel (usePlaidLink, onPlaidSuccess, polling,
+    //    refresh / disconnect, connection rows) stays in place.
+    await notify.alert({
+      title: "Bank connections - coming soon",
+      body:  "We're putting the finishing touches on secure bank connections through Plaid. This will let you link any of 12,000+ banks read-only and have transactions flow straight into Tweaxly. You'll see it appear here as soon as it's live.",
+    });
   }
 
   async function onRefreshClick(conn: PlaidConnection) {
