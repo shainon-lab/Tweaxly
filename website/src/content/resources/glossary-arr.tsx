@@ -23,8 +23,12 @@ export const meta: ArticleModule["meta"] = {
   ],
   faq: [
     { q: "What does ARR stand for?", a: "Annual Recurring Revenue. The annualized version of MRR (Monthly Recurring Revenue)." },
-    { q: "Is ARR the same as revenue?", a: "No. ARR is a snapshot of currently-active recurring subscriptions, projected forward 12 months. Revenue is what was actually billed in a specific period." },
-    { q: "Does ARR include one-time fees?", a: "No. Only recurring subscription revenue counts in ARR. One-time setup fees, professional services, and overage charges are excluded." },
+    { q: "Is ARR the same as revenue?", a: "No. ARR is a snapshot of currently-active recurring subscriptions, projected forward 12 months. Revenue is what was actually billed in a specific period. They can differ significantly, especially in growing or churning businesses." },
+    { q: "Does ARR include one-time fees?", a: "No. ARR is strictly recurring subscription revenue. Setup fees, professional services, and one-time payments should be tracked separately." },
+    { q: "What's a good ARR growth rate?", a: "Depends on stage. Sub-$1M ARR: 100%+ YoY is common. $1-10M ARR: 50-150% YoY is healthy. $10-100M ARR: 40-80% YoY is strong. $100M+: 20-40% YoY is considered very healthy." },
+    { q: "Can ARR decrease?", a: "Yes - when contraction (downgrades) and churn (cancellations) exceed new acquisition and expansion. A shrinking ARR usually appears in the components (Churned and Contraction) months before it shows up in total." },
+    { q: "What's the Rule of 40?", a: "A SaaS benchmark: revenue growth rate (%) + profit margin (%) should sum to 40 or higher. A business growing 60% at -20% margins passes. So does one growing 20% at 20% margins. Failing both means losing." },
+    { q: "Is ARR cash?", a: "No. ARR represents the recurring revenue rate of currently-active subscriptions. It says nothing about when that revenue is actually collected, especially when customers prepay annually." },
   ],
   seo: {
     title: "ARR - Annual Recurring Revenue Definition | Tweaxly",
@@ -112,12 +116,12 @@ export const Body = () => (
 
     <ul>
       <li>
-        <ArticleLink href="/resources/business-metrics-kpis/what-is-monthly-recurring-revenue-mrr">
+        <ArticleLink href="/resources/business-glossary/mrr">
           MRR (Monthly Recurring Revenue)
         </ArticleLink>
       </li>
       <li>
-        <ArticleLink href="/resources/business-metrics-kpis/what-is-customer-lifetime-value-ltv">
+        <ArticleLink href="/resources/business-glossary/ltv">
           LTV (Customer Lifetime Value)
         </ArticleLink>
       </li>
@@ -127,13 +131,13 @@ export const Body = () => (
         </ArticleLink>
       </li>
       <li>
-        <ArticleLink href="/resources/business-metrics-kpis/mom-vs-yoy-growth">
-          MoM vs YoY Growth
+        <ArticleLink href="/resources/business-glossary/ebitda">
+          EBITDA
         </ArticleLink>
       </li>
       <li>
-        <ArticleLink href="/resources/business-glossary/ebitda">
-          EBITDA
+        <ArticleLink href="/resources/business-metrics-kpis/mom-vs-yoy-growth">
+          MoM vs YoY Growth (article)
         </ArticleLink>
       </li>
     </ul>

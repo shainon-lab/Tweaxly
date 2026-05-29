@@ -22,9 +22,13 @@ export const meta: ArticleModule["meta"] = {
     "Don't confuse with: Marketing spend (CAC includes salaries, tools, and everything required to acquire customers - not just paid ads).",
   ],
   faq: [
-    { q: "What does CAC stand for?", a: "Customer Acquisition Cost." },
-    { q: "What's included in CAC?", a: "Everything required to acquire customers: paid ads, content production, sales team salaries (proportionally), marketing tools and software, agency fees, events. Not just paid spend." },
-    { q: "What's a good CAC?", a: "Meaningful only relative to LTV (Customer Lifetime Value). Aim for LTV:CAC ratio of 3:1 or higher. Absolute CAC numbers vary wildly by industry." },
+    { q: "What does CAC stand for?", a: "Customer Acquisition Cost - the average money spent to win one new customer." },
+    { q: "What's included in CAC?", a: "Everything required to acquire customers: paid ads, content production, sales team salaries (proportionally), marketing tools and software, agency fees, events. The fully-loaded number; not just paid spend." },
+    { q: "What's a good CAC?", a: "Meaningful only relative to LTV (Customer Lifetime Value). Aim for LTV:CAC ratio of 3:1 or higher. Below 1:1 means you lose money per customer. Absolute CAC numbers vary wildly by industry." },
+    { q: "How often should I measure CAC?", a: "Monthly is right for most businesses. Trends month-over-month and quarter-over-quarter are more useful than any single month's number." },
+    { q: "Is CAC different by industry?", a: "Wildly. B2B SaaS commonly runs $300-3,000+. E-commerce $20-100. Financial services $200-500. Local services $50-300. Compare to your industry, not absolute numbers." },
+    { q: "What's CAC payback period?", a: "How many months of customer revenue (or gross profit) it takes to earn back the CAC. CAC ÷ monthly gross profit per customer = payback in months. Under 12 months is healthy for most businesses." },
+    { q: "Why does CAC rise over time?", a: "The cheapest customers (existing network, organic, easy paid channels) get acquired first. Later customers come from more expensive channels or require more effort to convert. Plan for CAC creep." },
   ],
   seo: {
     title: "CAC - Customer Acquisition Cost Definition | Tweaxly",
@@ -104,8 +108,13 @@ export const Body = () => (
 
     <ul>
       <li>
-        <ArticleLink href="/resources/business-metrics-kpis/what-is-customer-lifetime-value-ltv">
+        <ArticleLink href="/resources/business-glossary/ltv">
           LTV (Customer Lifetime Value)
+        </ArticleLink>
+      </li>
+      <li>
+        <ArticleLink href="/resources/business-glossary/mrr">
+          MRR (Monthly Recurring Revenue)
         </ArticleLink>
       </li>
       <li>
@@ -121,11 +130,6 @@ export const Body = () => (
       <li>
         <ArticleLink href="/resources/business-glossary/burn-rate">
           Burn Rate
-        </ArticleLink>
-      </li>
-      <li>
-        <ArticleLink href="/resources/business-metrics-kpis/mom-vs-yoy-growth">
-          MoM vs YoY Growth
         </ArticleLink>
       </li>
     </ul>

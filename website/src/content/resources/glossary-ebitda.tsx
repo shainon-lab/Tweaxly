@@ -23,8 +23,12 @@ export const meta: ArticleModule["meta"] = {
   ],
   faq: [
     { q: "What does EBITDA stand for?", a: "Earnings Before Interest, Taxes, Depreciation, and Amortization." },
-    { q: "Why does EBITDA exist?", a: "To make businesses comparable - stripping out how they're financed, taxed, and how they account for their assets reveals operating performance." },
-    { q: "Is EBITDA cash flow?", a: "No. The business still pays interest, taxes, and capital expenses. EBITDA strips those out for comparison purposes only." },
+    { q: "Why does EBITDA exist?", a: "To make businesses comparable. Two identical companies can show different net profits because of how they're financed, how they're taxed, or how they depreciate their assets. EBITDA strips those choices out so you see the operating reality." },
+    { q: "Is EBITDA cash flow?", a: "No - this is the most common misconception. EBITDA doesn't subtract interest, taxes, or capital expenditures, but the business still pays all three. Real cash flow is usually lower than EBITDA, sometimes by a lot." },
+    { q: "What's a good EBITDA margin?", a: "Depends on industry. Software 25-40%. Services 15-30%. Manufacturing 10-20%. Retail 5-15%. Below 10% is thin for most categories." },
+    { q: "What's the difference between EBITDA and operating profit?", a: "Operating profit subtracts depreciation and amortization (they're operating expenses). EBITDA adds them back. So EBITDA is usually higher than operating profit, sometimes significantly if the business has significant capital assets." },
+    { q: "What is \"Adjusted EBITDA\"?", a: "EBITDA with additional add-backs for one-time or non-recurring expenses (founder car, one-time legal, severance). Buyers normalize these aggressively in valuation - aggressive add-backs typically lead to lower multiples." },
+    { q: "When is EBITDA most useful?", a: "Comparing businesses (especially with different financing structures), business valuation and sale negotiations, and lender or private equity conversations. For day-to-day operating decisions, net profit and cash flow are usually more useful." },
   ],
   seo: {
     title: "EBITDA - Definition | Tweaxly Business Glossary",
@@ -107,18 +111,13 @@ export const Body = () => (
 
     <ul>
       <li>
-        <ArticleLink href="/resources/financial-fundamentals/net-profit-explained">
+        <ArticleLink href="/resources/business-glossary/net-profit">
           Net Profit
         </ArticleLink>
       </li>
       <li>
-        <ArticleLink href="/resources/financial-fundamentals/gross-profit-explained">
+        <ArticleLink href="/resources/business-glossary/gross-profit">
           Gross Profit
-        </ArticleLink>
-      </li>
-      <li>
-        <ArticleLink href="/resources/financial-fundamentals/cash-flow-vs-profit">
-          Cash Flow vs Profit
         </ArticleLink>
       </li>
       <li>
@@ -129,6 +128,11 @@ export const Body = () => (
       <li>
         <ArticleLink href="/resources/business-glossary/burn-rate">
           Burn Rate
+        </ArticleLink>
+      </li>
+      <li>
+        <ArticleLink href="/resources/financial-fundamentals/cash-flow-vs-profit">
+          Cash Flow vs Profit (article)
         </ArticleLink>
       </li>
     </ul>

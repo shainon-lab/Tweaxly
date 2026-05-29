@@ -184,14 +184,11 @@ export const CATEGORIES: CategoryMeta[] = [
     blurb: "Simple explanations of important business, finance and analytics terms.",
     icon:  "BookA",
     description:
-      "The Business Glossary is a reference - one term per entry, written in plain English. The goal is that any business owner can look up an acronym or piece of jargon and walk away in two minutes with a clear understanding of what it means and how it's used. Entries cover finance terms (EBITDA, ARR, MRR), metrics (CAC, LTV, churn), accounting concepts (accrual, deferred revenue, working capital), growth and operations vocabulary (runway, burn rate, retention cohort), and the rest of the language that gets thrown around in business writing. Each entry includes a one-line definition, a slightly longer plain-English explanation, a practical example, and links to related entries and the deeper articles in our category pages. The glossary is meant to grow - new entries get added as we discover terms that come up often enough to deserve a short explainer. Read the glossary when a term in a meeting or an article landed without context and you want to know what it actually means before you nod along. Use it alongside the topical categories: glossary entries explain the words; category articles explain how to use the concepts to run a better business.",
-    faq: [
-      { q: "What's the difference between a glossary entry and a full article?", a: "Glossary entries are short reference definitions, focused on one term, optimized for \"what does this word mean?\". Full articles in the other categories teach a concept or a method, with examples, formulas, and decisions to make from it." },
-      { q: "Why do you keep telling me to explain acronyms?", a: "Because most business writing assumes the reader already knows what the acronym stands for - which excludes a lot of people who could otherwise be following along. We always spell out terms on first use." },
-      { q: "Can I suggest a term to add?", a: "Yes - we add new entries based on what readers search for. If you've looked up a term and didn't find it, the chances are high we'll add it." },
-      { q: "Are the definitions strict accounting definitions or plain-English?", a: "Plain-English. Where the formal accounting definition matters (revenue recognition rules, depreciation methods), we say so explicitly. Otherwise we explain the concept the way an owner would use it." },
-      { q: "How is the glossary organized?", a: "Alphabetically inside the glossary category. Inside the rest of the Learning Center, every full article links out to the relevant glossary entries for any term that might need defining." },
-    ],
+      "The Business Glossary is a reference - one term per entry, written in plain English. The goal is that any business owner can look up an acronym or piece of jargon and walk away in two minutes with a clear understanding of what it means and how it's used. Entries cover finance terms (EBITDA, ARR, MRR), metrics (CAC, LTV, churn), accounting concepts (gross profit, net profit, working capital), growth and operations vocabulary (runway, burn rate, retention cohort), and the rest of the language that gets thrown around in business writing. Each entry includes a one-line definition, a slightly longer plain-English explanation, a practical example, and links to related entries and the deeper articles in our category pages. The glossary is meant to grow - new entries get added as we discover terms that come up often enough to deserve a short explainer. Use it alongside the topical categories: glossary entries explain the words; category articles explain how to use the concepts to run a better business.",
+    // Intentionally empty - the glossary landing page renders the
+    // entries themselves as the primary content; a category-level
+    // FAQ is redundant here (each entry has its own FAQ).
+    faq: [],
   },
 ];
 

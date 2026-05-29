@@ -24,8 +24,12 @@ export const meta: ArticleModule["meta"] = {
   ],
   faq: [
     { q: "What's burn rate in plain English?", a: "How fast a business is spending cash. Usually quoted as monthly net burn: total cash going out minus total cash coming in, per month." },
-    { q: "What's the difference between gross and net burn?", a: "Gross burn = total cash spent per month. Net burn = total cash spent minus cash collected. Net burn is the more useful number because it's what hits the bank account." },
-    { q: "Should a business have a burn rate?", a: "Profitable businesses don't have meaningful burn (they generate cash). Burn is most relevant for early-stage businesses investing ahead of profit, or for businesses in a temporary downturn." },
+    { q: "What's the difference between gross and net burn?", a: "Gross burn = total cash spent per month. Net burn = total cash spent minus cash collected. Net burn is the more useful number because it's what actually hits the bank account." },
+    { q: "Should every business have a burn rate?", a: "Profitable businesses don't have meaningful burn - they generate cash, not spend it. Burn is most relevant for early-stage businesses investing ahead of profit, or for businesses in a temporary downturn." },
+    { q: "Is burn rate the same as a monthly loss?", a: "Not quite. A loss is on the profit and loss statement (revenue minus expenses). Burn is on cash flow (cash in minus cash out). They can differ significantly because of timing, working capital, and non-cash expenses like depreciation." },
+    { q: "How is burn rate different from runway?", a: "Burn rate is the speed; runway is the distance. Burn tells you cash leaves at $X per month; runway = current cash ÷ burn = how many months you can keep going." },
+    { q: "What's a healthy burn rate?", a: "There isn't a universal number - it depends on cash on hand and the strategy. The discipline is matching burn to runway: don't burn faster than your cash position supports for the time it'll take to reach profitability." },
+    { q: "Can burn rate be negative?", a: "Yes - if you're collecting more cash than you're spending. A negative net burn means you're cash-flow positive, which is the goal." },
   ],
   seo: {
     title: "Burn Rate - Definition | Tweaxly Business Glossary",
@@ -110,23 +114,23 @@ export const Body = () => (
         </ArticleLink>
       </li>
       <li>
+        <ArticleLink href="/resources/business-glossary/ebitda">
+          EBITDA
+        </ArticleLink>
+      </li>
+      <li>
+        <ArticleLink href="/resources/business-glossary/net-profit">
+          Net Profit
+        </ArticleLink>
+      </li>
+      <li>
         <ArticleLink href="/resources/cash-flow-management/what-is-cash-flow">
-          Cash Flow
+          What Is Cash Flow (article)
         </ArticleLink>
       </li>
       <li>
         <ArticleLink href="/resources/cash-flow-management/cash-flow-forecasting">
-          Cash Flow Forecasting
-        </ArticleLink>
-      </li>
-      <li>
-        <ArticleLink href="/resources/cash-flow-management/why-profitable-businesses-run-out-of-cash">
-          Why Profitable Businesses Run Out of Cash
-        </ArticleLink>
-      </li>
-      <li>
-        <ArticleLink href="/resources/business-glossary/ebitda">
-          EBITDA
+          Cash Flow Forecasting (article)
         </ArticleLink>
       </li>
     </ul>

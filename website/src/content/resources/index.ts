@@ -72,11 +72,15 @@ import * as teamProductivity  from "./team-productivity-metrics";
 import * as delegation        from "./delegation-frameworks-for-business-owners";
 
 // Business Glossary
-import * as glossaryEbitda    from "./glossary-ebitda";
-import * as glossaryArr       from "./glossary-arr";
-import * as glossaryCac       from "./glossary-cac";
-import * as glossaryBurnRate  from "./glossary-burn-rate";
-import * as glossaryRunway    from "./glossary-runway";
+import * as glossaryEbitda     from "./glossary-ebitda";
+import * as glossaryArr        from "./glossary-arr";
+import * as glossaryCac        from "./glossary-cac";
+import * as glossaryBurnRate   from "./glossary-burn-rate";
+import * as glossaryRunway     from "./glossary-runway";
+import * as glossaryNetProfit  from "./glossary-net-profit";
+import * as glossaryGrossProfit from "./glossary-gross-profit";
+import * as glossaryMrr        from "./glossary-mrr";
+import * as glossaryLtv        from "./glossary-ltv";
 
 import type { ArticleModule, CategoryId } from "./types";
 
@@ -130,11 +134,15 @@ export const ARTICLES: ArticleModule[] = [
   { meta: workflows.meta,         Body: workflows.Body         },
   { meta: teamProductivity.meta,  Body: teamProductivity.Body  },
   { meta: delegation.meta,        Body: delegation.Body        },
-  { meta: glossaryEbitda.meta,    Body: glossaryEbitda.Body    },
-  { meta: glossaryArr.meta,       Body: glossaryArr.Body       },
-  { meta: glossaryCac.meta,       Body: glossaryCac.Body       },
-  { meta: glossaryBurnRate.meta,  Body: glossaryBurnRate.Body  },
-  { meta: glossaryRunway.meta,    Body: glossaryRunway.Body    },
+  { meta: glossaryEbitda.meta,      Body: glossaryEbitda.Body      },
+  { meta: glossaryArr.meta,         Body: glossaryArr.Body         },
+  { meta: glossaryCac.meta,         Body: glossaryCac.Body         },
+  { meta: glossaryBurnRate.meta,    Body: glossaryBurnRate.Body    },
+  { meta: glossaryRunway.meta,      Body: glossaryRunway.Body      },
+  { meta: glossaryNetProfit.meta,   Body: glossaryNetProfit.Body   },
+  { meta: glossaryGrossProfit.meta, Body: glossaryGrossProfit.Body },
+  { meta: glossaryMrr.meta,         Body: glossaryMrr.Body         },
+  { meta: glossaryLtv.meta,         Body: glossaryLtv.Body         },
 ];
 
 export function getArticle(category: CategoryId, slug: string): ArticleModule | null {

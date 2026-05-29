@@ -25,7 +25,11 @@ export const meta: ArticleModule["meta"] = {
   faq: [
     { q: "What's runway in plain English?", a: "How many months your business can keep operating with the cash you have, assuming you keep spending at the current rate." },
     { q: "How is runway calculated?", a: "Cash on hand divided by monthly net burn (cash going out minus cash coming in). $300K cash with $30K monthly burn = 10 months of runway." },
-    { q: "How much runway should I have?", a: "12+ months is comfortable. 6-12 months means you should be actively planning. Below 6 months: act now. Below 3 months: crisis territory." },
+    { q: "How much runway should I have?", a: "12+ months is comfortable. 9-12 months means you should be actively planning. 6-9 months: act now. 3-6 months: urgent. Less than 3 months: crisis territory requiring daily attention." },
+    { q: "Should I include expected future revenue in runway?", a: "Only conservatively. Optimistic revenue assumptions stretch runway artificially. Use known committed revenue (signed contracts, recurring subscriptions); leave optimistic forecasts out." },
+    { q: "What if my burn rate is increasing?", a: "Runway is shorter than the simple math suggests. Use a rolling forward calculation with expected burn for each month, not just current burn. A business with $300K cash and rising burn might have 6 months effective runway even if current math says 10." },
+    { q: "When should I start raising money?", a: "When you don't urgently need it - typically when you have 9-12 months of runway. Fundraising takes 3-6 months in good conditions, longer in bad. Securing financing when you're under 6 months of runway is much more expensive and uncertain." },
+    { q: "Does runway only matter for startups?", a: "Mostly. Profitable established businesses have effectively infinite runway as long as they stay profitable. Runway is most relevant for early-stage, growth-stage burning cash, or any business in a temporary downturn." },
   ],
   seo: {
     title: "Runway - Definition | Tweaxly Business Glossary",
@@ -123,23 +127,23 @@ export const Body = () => (
         </ArticleLink>
       </li>
       <li>
-        <ArticleLink href="/resources/cash-flow-management/what-is-cash-flow">
-          Cash Flow
+        <ArticleLink href="/resources/business-glossary/ebitda">
+          EBITDA
+        </ArticleLink>
+      </li>
+      <li>
+        <ArticleLink href="/resources/business-glossary/net-profit">
+          Net Profit
         </ArticleLink>
       </li>
       <li>
         <ArticleLink href="/resources/cash-flow-management/cash-flow-forecasting">
-          Cash Flow Forecasting
+          Cash Flow Forecasting (article)
         </ArticleLink>
       </li>
       <li>
         <ArticleLink href="/resources/cash-flow-management/how-much-cash-reserve">
-          How Much Cash Reserve Should a Business Have
-        </ArticleLink>
-      </li>
-      <li>
-        <ArticleLink href="/resources/business-glossary/ebitda">
-          EBITDA
+          How Much Cash Reserve Should a Business Have (article)
         </ArticleLink>
       </li>
     </ul>
