@@ -129,13 +129,13 @@ export default function ScenarioBuilderPanel({
           >
             <header className="flex items-start justify-between gap-3 px-5 py-4 border-b border-line">
               <div className="min-w-0">
-                <div className="text-[10px] uppercase tracking-wide text-accent font-semibold mb-1">
+                <div className="t-meta uppercase tracking-wide text-accent font-semibold mb-1">
                   Scenario Builder
                 </div>
-                <div className="text-base font-semibold text-slate-100">
+                <div className="t-section text-slate-100">
                   {headerOverride.title ?? "Model a 'what-if' decision"}
                 </div>
-                <div className="text-xs text-slate-400 mt-0.5">
+                <div className="t-body text-slate-400 mt-1">
                   {headerOverride.subtitle ?? "Pick an event below. The forecast updates as soon as you save."}
                 </div>
               </div>

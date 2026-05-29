@@ -66,11 +66,11 @@ export function Stat({
   return (
     <div className={wrapperClass}>
       <div className="flex items-start justify-between gap-2">
-        <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
+        <div className="t-meta uppercase tracking-wide text-slate-400">{label}</div>
         {explain ? (
           <button
             type="button"
-            className={`text-[10px] uppercase tracking-wide px-1.5 py-0.5 rounded border transition shrink-0 ${
+            className={`t-meta uppercase tracking-wide px-2 py-0.5 rounded border transition shrink-0 ${
               open
                 ? "border-accent/60 bg-accent-soft text-accent"
                 : "border-line text-slate-400 hover:text-slate-200 hover:border-slate-500"
@@ -82,16 +82,23 @@ export function Stat({
           </button>
         ) : null}
       </div>
+      {/* Stat value stays at its existing prominence - text-2xl is the
+          KPI tile headline size. The 5-level typography ladder uses
+          t-page (28px) for page-level metric heroes (signal cards,
+          dashboard KPIs); these compact tiles intentionally sit a
+          step below at 24px so they don't compete with the page
+          title. */}
       <div className={`mt-2 text-2xl font-semibold tracking-tight ${toneClass}`}>{value}</div>
-      {comparison ? <Comparison c={comparison} /> : sub ? <div className="mt-1 text-xs text-slate-400">{sub}</div> : null}
+      {comparison ? <Comparison c={comparison} /> : sub ? <div className="mt-1 t-meta text-slate-400">{sub}</div> : null}
       {explain && open ? (
         <div className="mt-3 pt-3 border-t border-line">
-          <div className="text-xs text-slate-200 leading-relaxed">{explain.description}</div>
+          {/* Explain panel is analytical text - bumped to t-body. */}
+          <div className="t-body text-slate-200">{explain.description}</div>
           {explain.tips && explain.tips.length > 0 ? (
-            <ul className="mt-2 space-y-1">
+            <ul className="mt-3 space-y-1.5">
               {explain.tips.map((t, i) => (
-                <li key={i} className="flex items-start gap-2 text-xs text-slate-300">
-                  <span className="text-accent mt-0.5">•</span>
+                <li key={i} className="flex items-start gap-2 t-body text-slate-300">
+                  <span className="text-accent mt-1">•</span>
                   <span>{t}</span>
                 </li>
               ))}
@@ -120,7 +127,7 @@ function Comparison({ c }: { c: StatComparison }) {
     c.pct == null ? "-" :
     `${sign}${(Math.abs(c.pct) * 100).toFixed(1)}%`;
   return (
-    <div className="mt-1 text-xs text-slate-400 leading-relaxed">
+    <div className="mt-1 t-meta text-slate-400">
       <span className="text-slate-300">{c.prevValue}</span>{" "}
       <span className={pctClass}>({pctStr})</span>
       {c.prevLabel ? <span className="ml-1 text-slate-500">{c.prevLabel}</span> : null}

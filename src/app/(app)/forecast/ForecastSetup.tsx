@@ -150,7 +150,7 @@ export default function ForecastSetup({
     // height as the action buttons on /workforce.
     <div className="flex flex-wrap items-end justify-end gap-3">
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+        <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">
           Historical period
         </label>
         <select
@@ -188,7 +188,7 @@ export default function ForecastSetup({
       {historical === "custom" ? (
         <>
           <div>
-            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
+            <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">From</label>
             <input
               type="date"
               className="input"
@@ -203,7 +203,7 @@ export default function ForecastSetup({
             />
           </div>
           <div>
-            <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">To</label>
+            <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">To</label>
             <input
               type="date"
               className="input"
@@ -222,7 +222,7 @@ export default function ForecastSetup({
       ) : null}
 
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+        <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">
           Forecast period
         </label>
         <select

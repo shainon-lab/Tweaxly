@@ -332,9 +332,9 @@ export default function ScenarioBuilder({
   return (
     <>
       <div id="scenario-builder" className="card mb-4 scroll-mt-6">
-        <div className="flex items-center justify-between mb-3">
-          <div className="font-medium">Scenario Builder</div>
-          <div className="text-xs text-slate-400">Click an event to model a business decision</div>
+        <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+          <div className="t-card">Scenario Builder</div>
+          <div className="t-body text-slate-400">Click an event to model a business decision</div>
         </div>
         {EVENT_GROUPS.map((g) => {
           // Filter the group's keys to only events whose family is
@@ -349,7 +349,7 @@ export default function ScenarioBuilder({
           if (keys.length === 0) return null;
           return (
           <div key={g.title} className="mb-4 last:mb-0">
-            <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-2">{g.title}</div>
+            <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">{g.title}</div>
             <div className="flex flex-wrap gap-2">
               {keys.map((k) => {
                 const e = EVENTS.find((x) => x.key === k);
@@ -377,11 +377,11 @@ export default function ScenarioBuilder({
 
             {/* Salary-increase scope toggle */}
             {def.hasScopeToggle ? (
-              <div className="mb-4 flex items-center gap-2">
-                <span className="text-xs text-slate-400 mr-1">Apply to</span>
+              <div className="mb-4 flex items-center gap-2 flex-wrap">
+                <span className="t-meta text-slate-400 mr-1">Apply to</span>
                 <button
                   type="button"
-                  className={`text-xs px-3 py-1 rounded-md border transition ${
+                  className={`t-meta px-3 py-1.5 rounded-md border transition ${
                     form.raiseScope === "specific"
                       ? "bg-accent-soft border-accent text-accent"
                       : "border-line text-slate-300 hover:bg-ink-700"
@@ -392,7 +392,7 @@ export default function ScenarioBuilder({
                 </button>
                 <button
                   type="button"
-                  className={`text-xs px-3 py-1 rounded-md border transition ${
+                  className={`t-meta px-3 py-1.5 rounded-md border transition ${
                     form.raiseScope === "overall"
                       ? "bg-accent-soft border-accent text-accent"
                       : "border-line text-slate-300 hover:bg-ink-700"
@@ -412,7 +412,7 @@ export default function ScenarioBuilder({
                     {def.pickFromRoster.includes("employee") ? "Employee" : "Contractor"}
                   </label>
                   {eligibleRoster.length === 0 ? (
-                    <div className="text-xs text-slate-400 px-3 py-2 rounded-md border border-line">
+                    <div className="t-body text-slate-400 px-3 py-2 rounded-md border border-line">
                       No active {def.pickFromRoster.includes("employee") ? "employees" : "contractors"} on the roster. Add one in the Employees tab.
                     </div>
                   ) : (
@@ -430,7 +430,7 @@ export default function ScenarioBuilder({
                     </select>
                   )}
                   {selectedRosterEmp ? (
-                    <div className="text-xs text-slate-400 mt-1">
+                    <div className="t-meta text-slate-400 mt-1.5">
                       Fully-loaded monthly cost: <span className="text-slate-200">{fmtMoney(selectedRosterEmp.monthlyCost, currency)}</span>
                     </div>
                   ) : null}
@@ -442,7 +442,7 @@ export default function ScenarioBuilder({
                 <div className="md:col-span-3">
                   <label className="label">Employee</label>
                   {raiseEmployees.length === 0 ? (
-                    <div className="text-xs text-slate-400 px-3 py-2 rounded-md border border-line">
+                    <div className="t-body text-slate-400 px-3 py-2 rounded-md border border-line">
                       No active employees yet. Add one in the Employees tab.
                     </div>
                   ) : (
@@ -460,7 +460,7 @@ export default function ScenarioBuilder({
                     </select>
                   )}
                   {selectedRaiseEmp ? (
-                    <div className="text-xs text-slate-400 mt-1">
+                    <div className="t-meta text-slate-400 mt-1.5">
                       Current gross: <span className="text-slate-200">{fmtMoney(selectedRaiseEmp.grossSalary, currency)}</span>
                     </div>
                   ) : null}
@@ -471,7 +471,7 @@ export default function ScenarioBuilder({
               {def.type === "salary_increase" && form.raiseScope === "overall" ? (
                 <div className="md:col-span-3">
                   <label className="label">Scope</label>
-                  <div className="text-xs text-slate-400 px-3 py-2 rounded-md border border-line">
+                  <div className="t-body text-slate-400 px-3 py-2 rounded-md border border-line">
                     Applied across the active roster (~{fmtMoney(activePayrollSum, currency)}/mo total payroll baseline).
                   </div>
                 </div>

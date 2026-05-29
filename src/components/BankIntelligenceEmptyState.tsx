@@ -39,10 +39,10 @@ export default function BankIntelligenceEmptyState({
           <Sparkles size={20} strokeWidth={1.5} />
         </span>
         <div className="flex-1 min-w-0">
-          <h2 className="text-xl md:text-2xl font-semibold text-slate-50 leading-tight tracking-tight">
+          <h2 className="t-section text-slate-50 leading-tight tracking-tight">
             {heading}
           </h2>
-          <p className="mt-2 text-sm md:text-base text-slate-300 leading-relaxed max-w-2xl">
+          <p className="mt-3 t-body text-slate-300 max-w-2xl">
             Start by uploading at least 3 months of bank activity. Tweaxly will
             immediately begin analyzing your revenue, expenses, cash flow and
             financial trends.
@@ -56,7 +56,7 @@ export default function BankIntelligenceEmptyState({
               <Upload size={14} strokeWidth={2} />
               Upload Bank Statement
             </Link>
-            <span className="text-[11px] text-slate-500">
+            <span className="t-meta text-slate-500">
               More historical data = better forecasting and smarter insights.
             </span>
           </div>

@@ -743,7 +743,7 @@ function PnlBreakdown({
                          "text-bad";
     const sign = diff > 0 ? "+" : diff < 0 ? "−" : "";
     return (
-      <span className={`text-[11px] ml-1 ${cls}`}>
+      <span className={`t-meta ml-1 ${cls}`}>
         {pct != null ? `${sign}${Math.abs(pct * 100).toFixed(1)}%` : `${sign}${fmtMoney(Math.abs(diff), currency)}`}
       </span>
     );
@@ -752,8 +752,8 @@ function PnlBreakdown({
   if (cur.income.length === 0 && cur.outcome.length === 0 && (!cmp || (cmp.income.length === 0 && cmp.outcome.length === 0))) {
     return (
       <div className="card">
-        <div className="font-medium mb-2">P&amp;L breakdown - {label}</div>
-        <div className="text-sm text-slate-400 py-8 text-center">
+        <div className="t-card mb-2">P&amp;L breakdown - {label}</div>
+        <div className="t-body text-slate-400 py-8 text-center">
           No categorized activity for this period yet.{" "}
           <Link className="text-accent" href="/transactions">
             Categorize transactions
@@ -767,15 +767,15 @@ function PnlBreakdown({
   return (
     <div className="card">
       <div className="flex items-baseline justify-between mb-3 flex-wrap gap-2">
-        <div className="font-medium">
+        <div className="t-card">
           P&amp;L breakdown - {label}
           {compareOn ? (
-            <span className="text-slate-400 font-normal ml-2 text-xs">
+            <span className="t-meta text-slate-400 font-normal ml-2">
               vs <span className="text-slate-200">{compareLabel}</span>
             </span>
           ) : null}
         </div>
-        <div className="text-xs text-slate-400">
+        <div className="t-meta text-slate-400">
           {cur.income.length === 0
             ? "No revenue recorded"
             : cur.income.length === 1
@@ -792,12 +792,12 @@ function PnlBreakdown({
       <table className="table-base">
         <thead>
           <tr>
-            <th className="!normal-case !text-sm !text-slate-500 !font-medium">Line</th>
-            <th className="!normal-case !text-sm !text-slate-100 !font-semibold text-right whitespace-nowrap">
+            <th className="!normal-case !text-[13px] !text-slate-500 !font-medium">Line</th>
+            <th className="!normal-case !text-[13px] !text-slate-100 !font-semibold text-right whitespace-nowrap">
               {label}
             </th>
             {compareOn ? (
-              <th className="!normal-case !text-sm !text-slate-100 !font-semibold text-right whitespace-nowrap">
+              <th className="!normal-case !text-[13px] !text-slate-100 !font-semibold text-right whitespace-nowrap">
                 {compareLabel}
               </th>
             ) : null}
@@ -840,7 +840,7 @@ function PnlBreakdown({
 
           {/* Outcomes */}
           <tr>
-            <td className="pt-4 text-xs uppercase tracking-wide text-slate-500">
+            <td className="pt-4 t-meta uppercase tracking-wide text-slate-500">
               Outcomes
             </td>
             <td></td>
@@ -888,7 +888,7 @@ function PnlBreakdown({
               {cur.netProfit >= 0 ? "+" : "−"}
               {fmtMoneyExact(Math.abs(cur.netProfit), currency)}
               {margin != null ? (
-                <span className="text-xs text-slate-400 ml-2">
+                <span className="t-meta text-slate-400 ml-2">
                   ({fmtPct(margin)} margin)
                 </span>
               ) : null}

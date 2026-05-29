@@ -43,8 +43,8 @@ export default async function YearlyNumbersPage({
         />
         <ReportsInnerTabs />
         <div className="card text-center py-12">
-          <div className="text-lg font-medium">No completed years to summarize yet</div>
-          <div className="text-sm text-slate-400 mt-1">
+          <div className="t-card">No completed years to summarize yet</div>
+          <div className="t-body text-slate-400 mt-2">
             Once at least one full prior calendar year has transactions in the database,
             its summary will appear here.
           </div>
@@ -114,7 +114,7 @@ function YearlyContentPreview({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {boxes.slice(0, 8).map((b, i) => (
             <div key={i} className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">{b.label}</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">{b.label}</div>
               <div className={`mt-2 text-lg font-semibold ${b.tone ? TONE_CLASS[b.tone] : ""}`}>{b.value}</div>
             </div>
           ))}
@@ -173,7 +173,7 @@ function YearlyContent({
         <div className="card mb-4 border-warn/40">
           <div className="flex items-start gap-3">
             <span className="pill-warn shrink-0">Partial year</span>
-            <div className="text-sm text-slate-200">{stats.coverage.partialNote}</div>
+            <div className="t-body text-slate-200">{stats.coverage.partialNote}</div>
           </div>
         </div>
       ) : null}
@@ -181,8 +181,8 @@ function YearlyContent({
       <div className="card mb-6">
         <div className="flex items-center justify-between flex-wrap gap-2 mb-3">
           <div>
-            <div className="font-medium">Key numbers · {selected}</div>
-            <div className="text-xs text-slate-400">
+            <div className="t-card">Key numbers · {selected}</div>
+            <div className="t-meta text-slate-400 mt-1">
               {boxes.length} headline metrics across financials, workforce, and cost composition
             </div>
           </div>
@@ -190,12 +190,12 @@ function YearlyContent({
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {boxes.map((b, i) => (
             <div key={i} className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">{b.label}</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">{b.label}</div>
               <div className={`mt-2 text-lg font-semibold ${b.tone ? TONE_CLASS[b.tone] : ""}`}>
                 {b.value}
               </div>
               {b.hint ? (
-                <div className="text-xs text-slate-400 mt-1">{b.hint}</div>
+                <div className="t-meta text-slate-400 mt-1.5">{b.hint}</div>
               ) : null}
             </div>
           ))}

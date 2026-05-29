@@ -46,7 +46,7 @@ export default function PageHeader({
             {help ? <div className="shrink-0">{help}</div> : null}
           </div>
           {subtitle ? (
-            <div className="text-sm text-slate-400 mt-1 leading-snug">
+            <div className="t-body text-slate-400 mt-1.5">
               {subtitle}
             </div>
           ) : null}

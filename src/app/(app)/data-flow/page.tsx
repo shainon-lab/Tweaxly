@@ -184,8 +184,8 @@ async function SummaryView({
   ) {
     return (
       <div className="card text-center py-12">
-        <div className="text-lg font-medium">No data in this window</div>
-        <div className="text-sm text-slate-400 mt-1">
+        <div className="t-card">No data in this window</div>
+        <div className="t-body text-slate-400 mt-2">
           Either no uploads cover this period yet, or the chosen category has no
           data here. Try "All time" or upload more data.
         </div>
@@ -260,14 +260,14 @@ async function SummaryView({
       </div>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Window</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Window</div>
           <div className="mt-2 text-base font-semibold">
             {ymToLabel(summary.fromYM)} → {ymToLabel(summary.toYM)}
           </div>
-          <div className="text-xs text-slate-400 mt-1">{monthsLabel}</div>
+          <div className="t-meta text-slate-400 mt-1">{monthsLabel}</div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Revenue</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Revenue</div>
           <div className="mt-2 text-xl font-semibold text-good">
             +<MoneyAmountWithCurrencyBreakdown
               convertedTotal={summary.revenue}
@@ -280,7 +280,7 @@ async function SummaryView({
           </div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Total outcome</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Total outcome</div>
           <div className="mt-2 text-xl font-semibold text-bad">
             −<MoneyAmountWithCurrencyBreakdown
               convertedTotal={summary.totalOutcome}
@@ -291,12 +291,12 @@ async function SummaryView({
               dateRange={{ from: `${fromYM}-01`, to: `${toYM}-01` }}
             />
           </div>
-          <div className="text-xs text-slate-400 mt-1">
+          <div className="t-meta text-slate-400 mt-1">
             {summary.outcomes.length} categor{summary.outcomes.length === 1 ? "y" : "ies"}
           </div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">P&amp;L</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">P&amp;L</div>
           <div
             className={`mt-2 text-xl font-semibold ${summary.pnl >= 0 ? "text-good" : "text-bad"}`}
           >
@@ -311,7 +311,7 @@ async function SummaryView({
             />
           </div>
           <div
-            className={`text-xs mt-1 ${
+            className={`t-meta mt-1 ${
               summary.marginPct == null
                 ? "text-slate-400"
                 : summary.marginPct >= 0
@@ -373,8 +373,8 @@ async function DetailView({
   if (grid.months.length === 0 || grid.categories.length === 0) {
     return (
       <div className="card text-center py-12">
-        <div className="text-lg font-medium">No data in this window</div>
-        <div className="text-sm text-slate-400 mt-1">
+        <div className="t-card">No data in this window</div>
+        <div className="t-body text-slate-400 mt-2">
           Either no uploads cover this period yet, or the chosen category has no
           data here. Try "All time" or upload more data.
         </div>
@@ -397,28 +397,28 @@ async function DetailView({
     <>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Window</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Window</div>
           <div className="mt-2 text-base font-semibold">
             {ymToLabel(grid.fromYM)} → {ymToLabel(grid.toYM)}
           </div>
-          <div className="text-xs text-slate-400 mt-1">
+          <div className="t-meta text-slate-400 mt-1">
             {grid.months.length} month{grid.months.length === 1 ? "" : "s"}
           </div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Income</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Income</div>
           <div className="mt-2 text-xl font-semibold text-good">
             +{fmtMoney(incomeTotal, ccy)}
           </div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Expenses</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Expenses</div>
           <div className="mt-2 text-xl font-semibold text-bad">
             −{fmtMoney(expenseTotal, ccy)}
           </div>
         </div>
         <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Net</div>
+          <div className="t-meta uppercase tracking-wide text-slate-400">Net</div>
           <div
             className={`mt-2 text-xl font-semibold ${incomeTotal - expenseTotal >= 0 ? "text-good" : "text-bad"}`}
           >
@@ -511,7 +511,7 @@ async function DetailView({
         </table>
       </div>
 
-      <div className="text-xs text-slate-500 mt-3">
+      <div className="t-body text-slate-400 mt-4">
         Once a category appears anywhere in your history, it persists in every
         later month - 0 means "no transactions in that month after the category
         was introduced". A dash "-" means the category hadn't been introduced
