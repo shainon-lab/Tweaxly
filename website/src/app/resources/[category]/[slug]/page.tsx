@@ -9,7 +9,10 @@ import {
 import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, TLDR, FAQ } from "@/components/article";
 import { JsonLd, articleJsonLd, faqJsonLd } from "@/lib/schema";
-import { featuresForCategory, EXPLORE_LINKS } from "@/content/resources/relations";
+import {
+  featuresForCategory, EXPLORE_LINKS,
+  glossaryTermsFor, articlesUsingTerm,
+} from "@/content/resources/relations";
 
 // Pre-generate every article route at build time.
 export function generateStaticParams() {
@@ -115,6 +118,56 @@ export default async function ArticlePage(
             <TLDR items={article.meta.tldr} />
           </div>
         ) : null}
+
+        {/* Auto-derived link block. Full articles get a "Key terms"
+            rail (glossary entries that share topical overlap);
+            glossary entries get an "Articles using this term" rail
+            (full articles where the term shows up). Driven by
+            relations.ts so every existing and future entry inherits
+            this linking density automatically - hits the
+            8-15-glossary-links-per-article goal on the article side
+            and ensures every glossary entry funnels to at least a few
+            deeper reads. */}
+        {(() => {
+          const isGlossary = article.meta.kind === "glossary";
+          const links = isGlossary
+            ? articlesUsingTerm(article.meta.category, article.meta.slug, 6)
+            : glossaryTermsFor(article.meta.category, article.meta.slug, 10);
+          if (links.length === 0) return null;
+          return (
+            <aside className="mt-8 rounded-2xl border border-line bg-ink-900/40 p-5 sm:p-6">
+              <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3 font-semibold">
+                {isGlossary ? "Articles using this term" : "Key terms in this article"}
+              </div>
+              {isGlossary ? (
+                <ul className="space-y-2">
+                  {links.map((l) => (
+                    <li key={`${l.meta.category}-${l.meta.slug}`}>
+                      <Link
+                        href={articleHref(l.meta)}
+                        className="text-sm text-slate-200 hover:text-white hover:underline transition"
+                      >
+                        {l.meta.title}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {links.map((l) => (
+                    <Link
+                      key={`${l.meta.category}-${l.meta.slug}`}
+                      href={articleHref(l.meta)}
+                      className="inline-flex items-center rounded-full border border-line bg-ink-950/60 px-3 py-1.5 text-xs sm:text-[13px] text-slate-200 hover:border-brand-purple/60 hover:text-white transition"
+                    >
+                      {l.meta.title}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </aside>
+          );
+        })()}
 
         {/* Body */}
         <div className="article-body mt-10">

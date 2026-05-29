@@ -109,6 +109,55 @@ export function glossaryTermsFor(
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Glossary → Articles
+// The mirror of glossaryTermsFor. Surfaces full articles where
+// the term shows up topically - shared tags + title-word overlap
+// against the term itself. Used by the "Articles using this term"
+// block on glossary entry pages so the reverse direction of the
+// link graph stays dense automatically.
+// ─────────────────────────────────────────────────────────────────
+
+export function articlesUsingTerm(
+  category: CategoryId,
+  slug: string,
+  n = 6,
+): ArticleModule[] {
+  const term = ARTICLES.find(
+    (a) => a.meta.slug === slug && a.meta.category === category,
+  );
+  if (!term || term.meta.kind !== "glossary") return [];
+
+  const fullArticles = ARTICLES.filter((a) => a.meta.kind !== "glossary");
+  const termTags  = new Set(term.meta.tags.map((t) => t.toLowerCase()));
+  // The term's title words - "MRR", "Monthly", "Recurring", "Revenue".
+  const termWords = new Set(
+    term.meta.title.toLowerCase().split(/[^a-z0-9]+/).filter((w) => w.length > 2),
+  );
+
+  const scored = fullArticles.map((a) => {
+    let score = 0;
+    // Tag overlap is the primary signal.
+    for (const t of a.meta.tags) {
+      if (termTags.has(t.toLowerCase())) score += 3;
+    }
+    // Article title contains the term itself.
+    const articleTitle = a.meta.title.toLowerCase();
+    for (const w of termWords) {
+      if (articleTitle.includes(w)) score += 1;
+    }
+    // Featured articles get a small nudge.
+    if (a.meta.featured) score += 0.5;
+    return { a, score };
+  });
+
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((x, y) => y.score - x.score || y.a.meta.publishedAt.localeCompare(x.a.meta.publishedAt))
+    .slice(0, n)
+    .map((s) => s.a);
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Category → Key Glossary Terms
 // "Key Terms in this Category" block on the category landing page.
 // Picks glossary entries whose tags align most strongly with the
