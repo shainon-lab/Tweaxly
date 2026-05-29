@@ -2,13 +2,19 @@
 
 // Account page. Top-level destination under the main sidebar nav (sits
 // alongside Settings). Sub-tabs:
-//   Workspaces | Payment Methods | Password | Language & Region
-//   | Communication Preferences | Access Logs | Close Account
+//   Workspaces | Orders & Invoices | Password | Language & Region
+//   | Communication & Notifications | Accessibility | Access Logs
+//   | Close Account
 //
 // The "Workspaces" tab is the cross-workspace overview: one card per
 // business with plan + AI credits + alerts + activity. Per-workspace
 // billing (purchases, ledger, plan changes) lives inside each
 // workspace's own Settings → Business Profile.
+//
+// Payment Methods sits as a section INSIDE Orders & Invoices rather
+// than as its own tab - the two surfaces answer the same "how you pay
+// / what you paid" question and were splitting cognitive load for no
+// real gain.
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
@@ -29,7 +35,6 @@ import { notify } from "@/lib/notify";
 type AccountSubTab =
   | "workspaces"
   | "orders"
-  | "payment"
   | "password"
   | "preferences"
   | "comm_notifications"
@@ -57,9 +62,10 @@ export default function AccountClient({
     { value: "workspaces",         label: t("account.tab.workspaces") },
     // Orders & Invoices sit right after Workspaces because they're
     // tied to the paying user (this account), not to who has access
-    // to each workspace.
+    // to each workspace. Payment Methods used to be its own tab but
+    // now renders as a section inside the Orders & Invoices view -
+    // the two are conceptually one "how you pay / what you paid" tab.
     { value: "orders",             label: "Orders & Invoices" },
-    { value: "payment",            label: "Payment Methods" },
     { value: "password",           label: t("account.tab.password") },
     { value: "preferences",        label: t("account.tab.preferences") },
     // Merged from the previous separate "Notifications" and
@@ -98,8 +104,12 @@ export default function AccountClient({
       </div>
 
       {tab === "workspaces"        ? <WorkspacesPane workspaces={workspaces} /> : null}
-      {tab === "orders"            ? <OrdersInvoicesSection /> : null}
-      {tab === "payment"           ? <PaymentMethodsPane /> : null}
+      {tab === "orders"            ? (
+        <div className="space-y-6">
+          <OrdersInvoicesSection />
+          <PaymentMethodsPane />
+        </div>
+      ) : null}
       {tab === "password"          ? <PasswordPane user={user} /> : null}
       {tab === "preferences"       ? (
         <LanguagePreference
