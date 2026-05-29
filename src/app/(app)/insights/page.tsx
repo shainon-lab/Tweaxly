@@ -1,6 +1,6 @@
 import PageHeader from "@/components/PageHeader";
 import ReportsTabs from "@/components/ReportsTabs";
-import { getServerT } from "@/lib/i18n/server";
+import ReportsHelp from "@/components/ReportsHelp";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import DashboardInsights from "../dashboard/DashboardInsights";
@@ -22,7 +22,6 @@ export default async function ChartsPage({
   }>;
 }) {
   const { business } = await requireBusiness();
-  const { t } = await getServerT();
   const sp = await searchParams;
   const totalTxnCount = await prisma.transaction.count({
     where: { businessId: business.id },
@@ -30,8 +29,9 @@ export default async function ChartsPage({
   return (
     <>
       <PageHeader
-        title={t("page.charts.title")}
-        subtitle={t("page.charts.subtitle")}
+        title="Reports - Charts"
+        subtitle="Visual snapshot - seven charts on one page for the selected period."
+        help={<ReportsHelp />}
       />
       <ReportsTabs />
       {totalTxnCount === 0 ? (

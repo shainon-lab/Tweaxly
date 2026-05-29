@@ -25,6 +25,8 @@ import { WorkspaceCard, type WorkspaceCardData } from "../workspaces/WorkspaceCa
 import NotificationsPane from "./NotificationsPane";
 import OrdersInvoicesSection from "@/components/billing/OrdersInvoicesSection";
 import LoadingBar from "@/components/LoadingBar";
+import PageHeader from "@/components/PageHeader";
+import AccountHelp from "@/components/AccountHelp";
 import {
   readA11yWidgetEnabled,
   setA11yWidgetEnabled,
@@ -78,8 +80,15 @@ export default function AccountClient({
     { value: "close_account",      label: t("account.tab.danger") },
   ];
 
+  const subTabTitle = subTabs.find((s) => s.value === tab)?.label ?? "Workspaces";
+
   return (
     <>
+      <PageHeader
+        title={`Account - ${subTabTitle}`}
+        subtitle={t("account.subtitle")}
+        help={<AccountHelp />}
+      />
       {/* Sticky just under the PageHeader (~85px). Solid bg + border
           so the sub-tabs stay readable while scrolling and don't get
           cut by the sticky title. Same pattern as DataTabs and

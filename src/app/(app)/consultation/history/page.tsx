@@ -5,6 +5,7 @@
 // inside the same thread.
 
 import PageHeader from "@/components/PageHeader";
+import AdvisoryHelp from "@/components/AdvisoryHelp";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import ConsultationTabs from "../ConsultationTabs";
@@ -73,8 +74,9 @@ export default async function ConsultationHistoryPage({
   return (
     <>
       <PageHeader
-        title="Advisory History"
+        title="Advisory - History"
         subtitle="Review previous consultations and business recommendations."
+        help={<AdvisoryHelp />}
       />
       <ConsultationTabs historyCount={list.length} />
       <HistoryClient

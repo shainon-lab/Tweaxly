@@ -2,6 +2,7 @@
 // view (default landing) lives at /insights/yearly.
 
 import PageHeader from "@/components/PageHeader";
+import ReportsHelp from "@/components/ReportsHelp";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { requireBusiness } from "@/lib/auth";
 import {
@@ -27,8 +28,9 @@ export default async function YearlyInsightsTextPage({
     return (
       <>
         <PageHeader
-          title="Insights"
+          title="Reports - Yearly Summary"
           subtitle="Yearly retrospective - drill into a completed year's full picture."
+          help={<ReportsHelp />}
         />
         <ReportsInnerTabs />
         <div className="card text-center py-12">
@@ -51,8 +53,9 @@ export default async function YearlyInsightsTextPage({
   return (
     <>
       <PageHeader
-        title={`Insights · ${selected} Summary`}
-        subtitle="Plain-English observations about the chosen year, each paired with a tip you can act on."
+        title="Reports - Yearly Summary"
+        subtitle={`${selected} retrospective - plain-English observations paired with tips you can act on.`}
+        help={<ReportsHelp />}
       />
       <ReportsInnerTabs />
       <YearlySubTabs />

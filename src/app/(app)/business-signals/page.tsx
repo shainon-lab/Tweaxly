@@ -11,7 +11,6 @@
 // not on every page render. See src/lib/signals/* for the engine.
 
 import PageHeader from "@/components/PageHeader";
-import { getServerT } from "@/lib/i18n/server";
 import PushRecommendations, { type PushRec } from "@/components/PushRecommendations";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -21,8 +20,7 @@ import EmptyDataPreview from "@/components/EmptyDataPreview";
 import BusinessSignalsTabs from "./BusinessSignalsTabs";
 import { sweepAndDispatch } from "@/lib/alerts/sweep";
 import { listActiveSignals, planSignalCap } from "@/lib/signals/evaluator";
-import HowItWorks from "@/components/HowItWorks";
-import { BadgeCheck, CheckCircle2, RefreshCw, Bell } from "lucide-react";
+import SignalsHelp from "@/components/SignalsHelp";
 
 export const dynamic = "force-dynamic";
 
@@ -47,12 +45,12 @@ export default async function BusinessSignalsPage({
     where: { businessId: business.id },
   });
   if (totalTxnCount === 0) {
-    const { t } = await getServerT();
     return (
       <>
         <PageHeader
-          title={t("page.signals.title")}
-          subtitle={t("page.signals.subtitle")}
+          title="Signals - Signals"
+          subtitle="The most important business observations from your data right now."
+          help={<SignalsHelp />}
         />
         <BusinessSignalsTabs firingAlerts={0} />
         <EmptyDataPreview surface="signals" />
@@ -118,26 +116,12 @@ export default async function BusinessSignalsPage({
   }
 
   const planLabel = plan === "pro" ? "Pro" : "Free";
-  const { t } = await getServerT();
   return (
     <>
       <PageHeader
-        title={t("page.signals.title")}
-        subtitle={t("page.signals.subtitle")}
-        help={
-          <HowItWorks
-            title="How your business signals work"
-            subtitle={`${activeSignals.length} of ${cap} active · ${planLabel} plan`}
-            intro={`Signals are the most important business observations from your data right now. We only show signals that pass our importance threshold - if there's nothing meaningful to flag, slots stay empty. The ${planLabel} plan tops out at ${cap} active signals at a time.`}
-            cards={[
-              { icon: <BadgeCheck size={16} strokeWidth={1.7} />,  title: "Mark as read",     body: "You've seen this insight. The signal stays in the list, just visually muted, until the underlying condition changes or you resolve it." },
-              { icon: <CheckCircle2 size={16} strokeWidth={1.7} />, title: "Mark as resolved", body: "You're closing this out. The signal is removed from the active list. If the same condition re-appears later, a brand-new signal opens automatically." },
-              { icon: <RefreshCw size={16} strokeWidth={1.7} />,    title: "Refresh signals",  body: "Triggers a fresh AI analysis and uses 3 AI credits from your balance. Automatic updates (after data uploads or the weekly re-evaluation) are always free." },
-              { icon: <Bell size={16} strokeWidth={1.7} />,         title: "Monitor",          body: "Build your own threshold rules on the Monitor tab. When revenue, expenses, profit, or any specific category crosses a limit you choose, an alert fires - separate from the AI-generated signals." },
-            ]}
-            outro={<><strong className="text-slate-300">Signals vs. notifications.</strong> Signals are the current state of your business. The bell shows notifications - events that happened to a signal. You get notified when a signal is created, updated, escalated, or resolved. We never repeat a notification for a signal that&apos;s simply still present.</>}
-          />
-        }
+        title="Signals - Signals"
+        subtitle={`${activeSignals.length} of ${cap} active · ${planLabel} plan`}
+        help={<SignalsHelp />}
       />
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}

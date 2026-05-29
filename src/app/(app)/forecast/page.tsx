@@ -233,7 +233,7 @@ export default async function ForecastPage({
   return (
     <>
       <PageHeader
-        title={t("page.forecast.title")}
+        title={view === "scenarios" ? "Forecast - Scenarios" : "Forecast - Overview"}
         subtitle={
           view === "scenarios"
             ? t("page.forecast.subtitle.scenarios")

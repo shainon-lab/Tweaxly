@@ -1,7 +1,7 @@
 import PageHeader from "@/components/PageHeader";
+import DataHelp from "@/components/DataHelp";
 import DataTabs from "@/components/DataTabs";
 import ReviewBanner from "@/components/ReviewBanner";
-import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import DataLogClient from "./DataLogClient";
@@ -15,7 +15,6 @@ const FREQUENCY_LABEL: Record<string, string> = {
 
 export default async function DataLogPage() {
   const { business } = await requireBusiness();
-  const { t } = await getServerT();
 
   // Data log is a unified activity feed: every UploadBatch (file imports)
   // AND every ManualEntry (single rows the user typed in). Manual entries
@@ -96,8 +95,9 @@ export default async function DataLogPage() {
   return (
     <>
       <PageHeader
-        title={t("page.dataLog.title")}
-        subtitle="Manual Data Log - every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
+        title="Data - Data Log"
+        subtitle="Every upload AND every manual entry that has fed data into your dashboard, forecast, and consultation. Removing a row deletes all transactions that came from it."
+        help={<DataHelp />}
       />
       <DataTabs />
       <ReviewBanner businessId={business.id} surface="data" />

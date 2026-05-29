@@ -52,8 +52,9 @@ export default async function WorkforcePage() {
     return (
       <>
         <PageHeader
-          title={t("page.workforce.title")}
+          title="Forecast - Workforce Planning"
           subtitle={t("page.workforce.subtitle")}
+          help={<ForecastHelp />}
         />
         <ForecastTabs />
         <LockedOverlay
@@ -210,7 +211,7 @@ export default async function WorkforcePage() {
   return (
     <>
       <PageHeader
-        title={t("page.workforce.title")}
+        title="Forecast - Workforce Planning"
         subtitle={t("page.workforce.subtitle")}
         help={<ForecastHelp />}
         right={

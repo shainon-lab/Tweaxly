@@ -1,7 +1,6 @@
 import { Fragment } from "react";
-import { FileText, Download, GitCompare } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
-import HowItWorks from "@/components/HowItWorks";
+import ReportsHelp from "@/components/ReportsHelp";
 import ReviewBanner from "@/components/ReviewBanner";
 import ReportPeriodPicker from "@/components/ReportPeriodPicker";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
@@ -253,20 +252,9 @@ export default async function ReportPage({
   return (
     <>
       <PageHeader
-        title={`P&L Statement - ${primary.label}`}
+        title="Reports - P&L Statements"
         subtitle={business.name}
-        help={
-          <HowItWorks
-            title="How reports work"
-            intro="Long-form views of your business across the period you choose. Reports re-compute when you change the picker; numbers come straight from your uploaded data, not from a template."
-            cards={[
-              { icon: <FileText size={16} strokeWidth={1.7} />,   title: "Yearly summary", body: "Top insights and tips for any completed year. Revenue / expense movements, biggest cost categories, what changed vs. last year, and where to focus next." },
-              { icon: <GitCompare size={16} strokeWidth={1.7} />, title: "Comparison",     body: "Every report has a comparison column - this period vs. the same period last year, last quarter, or the period before. Surfaces what grew, what shrank, and where to dig in first." },
-              { icon: <Download size={16} strokeWidth={1.7} />,   title: "Exports",        body: "Excel, CSV, and PDF on Pro. White-label PDF exports for sharing with partners, accountants, and stakeholders." },
-            ]}
-            outro="Granularity (month / quarter / year) and the comparison period are owner-set above. The PDF download uses the same period you're viewing."
-          />
-        }
+        help={<ReportsHelp />}
         right={
           <div className="flex items-center gap-3 flex-wrap justify-end">
             <ReportPeriodPicker

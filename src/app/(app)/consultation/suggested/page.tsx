@@ -14,7 +14,7 @@
 // directly on the answer.
 
 import PageHeader from "@/components/PageHeader";
-import { getServerT } from "@/lib/i18n/server";
+import AdvisoryHelp from "@/components/AdvisoryHelp";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildBusinessContext, recommendProactive } from "@/lib/advisor";
@@ -30,7 +30,6 @@ export const dynamic = "force-dynamic";
 
 export default async function SuggestedPage() {
   const { business } = await requireBusiness();
-  const { t } = await getServerT();
 
   const totalQuestions = await prisma.consultationMessage.count({
     where: { consultation: { businessId: business.id }, role: "user" },
@@ -76,8 +75,9 @@ export default async function SuggestedPage() {
   return (
     <>
       <PageHeader
-        title={t("page.advisory.suggested.title") || "Suggested questions"}
-        subtitle={t("page.advisory.suggested.subtitle") || "AI-curated questions worth asking, ranked by what's actionable, abnormal, or otherwise important right now in this workspace."}
+        title="Advisory - Suggested"
+        subtitle="AI-curated questions worth asking, ranked by what's actionable, abnormal, or otherwise important right now in this workspace."
+        help={<AdvisoryHelp />}
       />
       <ConsultationTabs historyCount={totalQuestions} />
       <SuggestedClient questions={questions} />
