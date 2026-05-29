@@ -101,7 +101,7 @@ export default async function AccountPage() {
       <PageHeader
         title={t("account.title")}
         subtitle={t("account.subtitle")}
-        right={
+        help={
           <HowItWorks
             title="How the account section works"
             intro="Your personal account, separate from any workspace. Workspaces you can switch into, billing across all of them, language and region, communication preferences. Settings here apply across every workspace you own or belong to."

@@ -22,7 +22,7 @@ import BusinessSignalsTabs from "./BusinessSignalsTabs";
 import { sweepAndDispatch } from "@/lib/alerts/sweep";
 import { listActiveSignals, planSignalCap } from "@/lib/signals/evaluator";
 import HowItWorks from "@/components/HowItWorks";
-import { BadgeCheck, CheckCircle2, RefreshCw } from "lucide-react";
+import { BadgeCheck, CheckCircle2, RefreshCw, Bell } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -124,7 +124,7 @@ export default async function BusinessSignalsPage({
       <PageHeader
         title={t("page.signals.title")}
         subtitle={t("page.signals.subtitle")}
-        right={
+        help={
           <HowItWorks
             title="How your business signals work"
             subtitle={`${activeSignals.length} of ${cap} active · ${planLabel} plan`}
@@ -133,6 +133,7 @@ export default async function BusinessSignalsPage({
               { icon: <BadgeCheck size={16} strokeWidth={1.7} />,  title: "Mark as read",     body: "You've seen this insight. The signal stays in the list, just visually muted, until the underlying condition changes or you resolve it." },
               { icon: <CheckCircle2 size={16} strokeWidth={1.7} />, title: "Mark as resolved", body: "You're closing this out. The signal is removed from the active list. If the same condition re-appears later, a brand-new signal opens automatically." },
               { icon: <RefreshCw size={16} strokeWidth={1.7} />,    title: "Refresh signals",  body: "Triggers a fresh AI analysis and uses 3 AI credits from your balance. Automatic updates (after data uploads or the weekly re-evaluation) are always free." },
+              { icon: <Bell size={16} strokeWidth={1.7} />,         title: "Monitor",          body: "Build your own threshold rules on the Monitor tab. When revenue, expenses, profit, or any specific category crosses a limit you choose, an alert fires - separate from the AI-generated signals." },
             ]}
             outro={<><strong className="text-slate-300">Signals vs. notifications.</strong> Signals are the current state of your business. The bell shows notifications - events that happened to a signal. You get notified when a signal is created, updated, escalated, or resolved. We never repeat a notification for a signal that&apos;s simply still present.</>}
           />

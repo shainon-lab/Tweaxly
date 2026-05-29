@@ -253,7 +253,7 @@ export default async function SettingsPage({
       <PageHeader
         title={isCategoriesTab ? "Data" : t("settings.title")}
         subtitle={t("settings.subtitle")}
-        right={
+        help={
           <HowItWorks
             title="How settings work"
             intro="Workspace-level configuration. Most of this is set once when you start a workspace and only revisited when something changes - team, plan, integration credentials, branding."

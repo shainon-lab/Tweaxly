@@ -54,7 +54,7 @@ export default async function ConsultationPage({
       <PageHeader
         title={t("page.advisory.title")}
         subtitle={t("page.advisory.subtitle")}
-        right={
+        help={
           <HowItWorks
             title="How the AI advisor works"
             intro="Free-form Q&A about your business. The advisor sees your full financial picture, business profile, and recent activity. Ask anything in plain business English; the advisor speaks the same back."

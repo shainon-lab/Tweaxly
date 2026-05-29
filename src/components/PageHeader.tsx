@@ -19,10 +19,15 @@ export default function PageHeader({
   title,
   subtitle,
   right,
+  help,
 }: {
   title:    string;
   subtitle?: string;
   right?:    React.ReactNode;
+  // Small inline help trigger (e.g. <HowItWorks/>) rendered as a
+  // sibling of the title so it never competes with action buttons
+  // in `right` (period pickers, download buttons, etc).
+  help?:     React.ReactNode;
 }) {
   return (
     <div
@@ -34,9 +39,12 @@ export default function PageHeader({
     >
       <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
         <div className="min-w-0">
-          <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">
-            {title}
-          </h1>
+          <div className="flex items-center gap-2 min-w-0">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">
+              {title}
+            </h1>
+            {help ? <div className="shrink-0">{help}</div> : null}
+          </div>
           {subtitle ? (
             <div className="text-sm text-slate-400 mt-1 leading-snug">
               {subtitle}

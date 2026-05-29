@@ -1,7 +1,7 @@
 import PageHeader from "@/components/PageHeader";
 import HowItWorks from "@/components/HowItWorks";
 import DataTabs from "@/components/DataTabs";
-import { Upload, FolderTree, ShieldCheck } from "lucide-react";
+import { Upload, FolderTree, Plug } from "lucide-react";
 import ReviewBanner from "@/components/ReviewBanner";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -52,16 +52,16 @@ export default async function ManualDataPage({
       <PageHeader
         title="Import your business data"
         subtitle="Upload bank, credit card, PayPal, or Stripe statements to start generating AI insights."
-        right={
+        help={
           <HowItWorks
             title="How data import works"
-            intro="Bring your business data into Tweaxly. Bank statements first, then add credit cards, PayPal, integrations. The more you upload, the better the signals, forecasts, and AI answers get."
+            intro="Bring your business data into Tweaxly. Bank statements first, then add credit cards, PayPal, and direct integrations. The more you upload, the better the signals, forecasts, and AI answers get."
             cards={[
-              { icon: <Upload size={16} strokeWidth={1.7} />,     title: "Statement upload", body: "CSV from any source. Tweaxly auto-detects columns, currencies, and credit-card settlements so the import isn't blocked on column-mapping." },
-              { icon: <FolderTree size={16} strokeWidth={1.7} />, title: "Sources",          body: "Each bank, card, or provider is its own source. The coverage matrix shows which months are uploaded per source - so you can see at a glance what's missing." },
-              { icon: <ShieldCheck size={16} strokeWidth={1.7} />, title: "Read-only",       body: "Tweaxly only reads transactions and balances. We never store credentials, never move money, never connect to your bank with write access." },
+              { icon: <Upload size={16} strokeWidth={1.7} />,     title: "Import",     body: "CSV from any source. Tweaxly auto-detects columns, currencies, and credit-card settlements so the import isn't blocked on column-mapping. Manual entry handles one-offs that won't appear in any export." },
+              { icon: <FolderTree size={16} strokeWidth={1.7} />, title: "Sources",    body: "Each bank, card, or provider is its own source. The coverage matrix shows which months are uploaded per source - so you can see at a glance what's missing and where the gaps are." },
+              { icon: <Plug size={16} strokeWidth={1.7} />,       title: "Integration", body: "Connect your bank directly through Plaid (US, more regions soon). Transactions and balances sync automatically with no more monthly CSV uploads. Strictly read-only - we never store credentials or move money." },
             ]}
-            outro="Historical first (3-12 months from every source), then a monthly cadence as new statements arrive. Manual entry handles one-offs that won't appear in any export."
+            outro="Historical first (3-12 months from every source), then a monthly cadence as new statements arrive. Plaid handles the cadence for you once connected."
           />
         }
       />

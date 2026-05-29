@@ -71,10 +71,13 @@ export default function HowItWorks({
           onClick={() => setOpen("copy")}
           aria-label={label}
           title={label}
-          className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-line text-xs font-medium text-slate-400 hover:text-accent hover:border-accent/60 hover:bg-accent-soft/20 transition"
+          // Compact icon-only trigger sized to sit inline next to a
+          // page title without competing with action buttons in
+          // PageHeader.right. Native title attribute carries the
+          // "How it works?" tooltip on hover.
+          className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-line text-slate-400 hover:text-accent hover:border-accent/60 hover:bg-accent-soft/20 transition"
         >
-          <HelpCircle size={14} strokeWidth={1.75} aria-hidden="true" />
-          <span>{label}</span>
+          <HelpCircle size={13} strokeWidth={1.75} aria-hidden="true" />
         </button>
         {videoUrl ? (
           <button
@@ -82,9 +85,9 @@ export default function HowItWorks({
             onClick={() => setOpen("video")}
             aria-label="Watch tour video"
             title="Watch tour video"
-            className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-line text-slate-400 hover:text-accent hover:border-accent/60 hover:bg-accent-soft/20 transition"
+            className="inline-flex items-center justify-center w-6 h-6 rounded-full border border-line text-slate-400 hover:text-accent hover:border-accent/60 hover:bg-accent-soft/20 transition"
           >
-            <Video size={14} strokeWidth={1.75} aria-hidden="true" />
+            <Video size={13} strokeWidth={1.75} aria-hidden="true" />
           </button>
         ) : null}
       </div>
@@ -99,7 +102,7 @@ export default function HowItWorks({
         >
           <section
             onClick={(e) => e.stopPropagation()}
-            className="rounded-2xl border border-line shadow-2xl shadow-black/40 max-w-2xl w-full bg-ink-900 overflow-hidden animate-[slideInRight_180ms_ease-out]"
+            className={`rounded-2xl border border-line shadow-2xl shadow-black/40 ${cards && cards.length >= 4 ? "max-w-4xl" : "max-w-2xl"} w-full bg-ink-900 overflow-hidden animate-[slideInRight_180ms_ease-out]`}
             style={{
               backgroundImage:
                 "linear-gradient(135deg, rgba(124,92,250,0.10) 0%, rgba(79,125,255,0.06) 50%, rgba(34,211,238,0.08) 100%)",
@@ -151,7 +154,12 @@ export default function HowItWorks({
                   </p>
 
                   {cards && cards.length > 0 ? (
-                    <div className={`mt-5 grid gap-3 ${cards.length === 2 ? "sm:grid-cols-2" : cards.length >= 3 ? "sm:grid-cols-3" : ""}`}>
+                    <div className={`mt-5 grid gap-3 ${
+                      cards.length === 2 ? "sm:grid-cols-2"
+                      : cards.length === 3 ? "sm:grid-cols-3"
+                      : cards.length === 4 ? "sm:grid-cols-2 lg:grid-cols-4"
+                      : "sm:grid-cols-3"
+                    }`}>
                       {cards.map((c, i) => (
                         <ExplainerCard key={i} icon={c.icon} title={c.title} body={c.body} />
                       ))}
