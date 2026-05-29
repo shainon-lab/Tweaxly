@@ -60,9 +60,9 @@ export default async function WorkforcePage() {
           feature="Workforce Planning"
           plan={currentPlan}
           benefits={[
-            "Live payroll cost, % of revenue, MoM change and 12-month forecast",
+            "Live payroll cost, % of revenue, change vs. last month, and 12-month forecast",
             "Model hires, cuts, contract changes and one-offs",
-            "Revenue + burn per employee, affordable-hires estimate",
+            "Revenue + monthly cost per employee, affordable-hires estimate",
             "Full Excel / CSV / PDF export",
           ]}
           blurb="See team cost, payroll trends and hiring headroom at a glance. Upgrade to Pro to unlock."
@@ -261,7 +261,7 @@ export default async function WorkforcePage() {
               </div>
             </div>
             <div className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">MoM payroll change</div>
+              <div className="text-xs uppercase tracking-wide text-slate-400">Payroll change vs. last month</div>
               <div className={`mt-2 text-xl font-semibold ${momTone}`}>
                 {payrollMoM == null ? "-" : (payrollMoM >= 0 ? "+" : "") + fmtPct(payrollMoM)}
               </div>
@@ -282,7 +282,7 @@ export default async function WorkforcePage() {
             </div>
             {insights.length === 0 ? (
               <div className="text-sm text-slate-400 py-4 text-center">
-                Nothing notable in the trailing window. Once payroll moves &gt;5% MoM or its ratio to revenue shifts, signals will appear here.
+                Nothing notable in the trailing window. Once payroll moves more than 5% compared to last month or its share of revenue shifts, signals will appear here.
               </div>
             ) : (
               <div className="space-y-2">

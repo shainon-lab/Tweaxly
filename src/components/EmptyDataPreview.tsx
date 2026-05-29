@@ -130,8 +130,8 @@ function ConsultationPreview() {
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-slate-400 font-semibold">
           <Sparkles size={12} /> AI Advisor
         </div>
-        <Bubble who="user" body="How does our cash runway look for the next quarter?" />
-        <Bubble who="ai" body="Based on the last 90 days you're netting about $16K/month with a $94K cash position. At the current burn you have ~18 months of runway. The biggest swing factor is Stripe revenue - it's growing 12% MoM but expenses on Marketing are up 24%; if marketing keeps pace you'd see runway tighten by ~3 months." />
+        <Bubble who="user" body="How long can our cash support the business at this pace?" />
+        <Bubble who="ai" body="Based on the last 90 days you're netting about $16K per month with $94K in the bank. At the current spending level, your cash could support the business for roughly 18 months. The biggest swing factor is Stripe revenue - it's growing about 12% compared to last month, but Marketing spend is up 24%; if marketing keeps climbing, that 18 months tightens by about 3." />
         <Bubble who="user" body="What should I cut first?" />
         <Bubble who="ai" body="Three subscriptions in your Software category haven't been touched in 60+ days - canceling them would save ~$340/month with no impact. After that I'd review Marketing channels with sub-1.0 ROAS before touching headcount." />
       </div>
@@ -155,7 +155,7 @@ function SignalsPreview() {
         />
         <SignalCard
           tone="good"
-          title="Recurring revenue up 12.4% MoM"
+          title="Recurring revenue up 12.4% compared to last month"
           body="Stripe subscription revenue grew $4,180 vs. last month. Customer churn held below 2.1% - the lift is from upsells, not new logos."
         />
         <SignalCard

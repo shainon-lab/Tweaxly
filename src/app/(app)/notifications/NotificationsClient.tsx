@@ -113,11 +113,11 @@ export default function NotificationsClient({
     const amount = draft.thresholdType === "percent"
       ? `${draft.thresholdValue}%`
       : fmtMoney.format(draft.thresholdValue || 0);
-    const periodAbbr =
-      draft.period === "month"   ? "MoM" :
-      draft.period === "quarter" ? "QoQ" :
-                                   "YoY";
-    return `${subject} ${verb} ≥ ${amount} ${periodAbbr}`;
+    const periodLabel =
+      draft.period === "month"   ? "compared to last month" :
+      draft.period === "quarter" ? "compared to last quarter" :
+                                   "compared to the same period last year";
+    return `${subject} ${verb} ≥ ${amount} ${periodLabel}`;
   }, [
     draft.metric, draft.categoryId, draft.direction,
     draft.thresholdType, draft.thresholdValue, draft.period,
@@ -420,12 +420,12 @@ export default function NotificationsClient({
     {
       label: "Alert me if expenses increase by more than 15%",
       helper: "Month over month",
-      apply: () => setDraft({ ...draft, metric: "expenses", direction: "increase", thresholdType: "percent", thresholdValue: 15, period: "month", severity: "important", label: "Expenses up >15% MoM" }),
+      apply: () => setDraft({ ...draft, metric: "expenses", direction: "increase", thresholdType: "percent", thresholdValue: 15, period: "month", severity: "important", label: "Expenses up >15% vs last month" }),
     },
     {
       label: "Alert me if revenue drops more than 20%",
       helper: "Vs last quarter",
-      apply: () => setDraft({ ...draft, metric: "revenue", direction: "decrease", thresholdType: "percent", thresholdValue: 20, period: "quarter", severity: "critical", label: "Revenue down >20% QoQ" }),
+      apply: () => setDraft({ ...draft, metric: "revenue", direction: "decrease", thresholdType: "percent", thresholdValue: 20, period: "quarter", severity: "critical", label: "Revenue down >20% vs last quarter" }),
     },
     {
       label: `Alert me if payroll exceeds ${fmtMoney.format(50000)}`,

@@ -19,13 +19,20 @@ import type { BusinessContext, ConsultationAnswer } from "./advisor";
 import { parseStructuredAdvice } from "./advisorTypes";
 import { getProfileForPrompt } from "./businessProfile";
 import { tierConfigForBusiness, tierConfigFor } from "./aiTier";
+import { BUSINESS_LANGUAGE_STYLE } from "./ai/businessLanguageStyle";
 
 export type ConsultationHistoryMessage = {
   role: "user" | "assistant";
   content: string;
 };
 
-const SYSTEM_INSTRUCTIONS = `You are the TWEAXLY advisor - an AI-powered business intelligence assistant inside a small-business owner's TWEAXLY workspace. The owner asks free-form questions on a "Consultation" chat page. They expect a real, helpful answer to anything reasonable about their business - finance, strategy, growth ideas, hiring, vendors, pricing, market trends, comparing options, etc. Be a thoughtful generalist with their finances at your fingertips, not a chatbot that only handles four canned patterns.
+const SYSTEM_INSTRUCTIONS = `${BUSINESS_LANGUAGE_STYLE}
+
+═══════════════════════════════════════════════════════
+ROLE
+═══════════════════════════════════════════════════════
+
+You are the TWEAXLY advisor - an AI-powered business intelligence assistant inside a small-business owner's TWEAXLY workspace. The owner asks free-form questions on a "Consultation" chat page. They expect a real, helpful answer to anything reasonable about their business - finance, strategy, growth ideas, hiring, vendors, pricing, market trends, comparing options, etc. Be a thoughtful generalist with their finances at your fingertips, not a chatbot that only handles four canned patterns.
 
 ═══════════════════════════════════════════════════════
 HOW TO DECIDE WHAT TO USE

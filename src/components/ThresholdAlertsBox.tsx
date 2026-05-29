@@ -250,7 +250,7 @@ export default function ThresholdAlertsBox({
             <>
               <div className="text-base font-medium text-slate-100 mb-2">No notifications set yet</div>
               <div className="text-sm text-slate-400 max-w-md leading-relaxed mb-4">
-                You haven&apos;t set up any threshold notifications. Add your first one to get alerted when revenue, expenses, net profit, or any category crosses a limit (e.g. revenue drops 10% MoM, expenses rise above $5,000 QoQ).
+                You haven&apos;t set up any threshold notifications. Add your first one to get alerted when revenue, expenses, net profit, or any category crosses a limit (e.g. revenue drops 10% compared to last month, expenses rise above $5,000 compared to last quarter).
               </div>
               <button
                 type="button"

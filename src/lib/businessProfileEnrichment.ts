@@ -20,6 +20,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { prisma } from "./db";
 import { buildBusinessContext, recommendProactive, type BusinessContext } from "./advisor";
 import { tierConfigForBusiness } from "./aiTier";
+import { BUSINESS_LANGUAGE_STYLE_SHORT } from "./ai/businessLanguageStyle";
 
 // Cap on how many observations we keep at once - more becomes noise
 // in the system prompt + visually overwhelming in the Settings
@@ -194,9 +195,11 @@ function runDeterministic(ctx: BusinessContext): Detected[] {
 // Claude polish (optional)
 // ────────────────────────────────────────────────────────────────────
 
-const POLISH_SYSTEM = `You are spotting patterns in a small business's financial profile that simple rules might miss. The user has filled out their business profile + the system already detected some patterns deterministically (listed below). Your job: return 1-2 ADDITIONAL observations that the deterministic rules would not have caught.
+const POLISH_SYSTEM = `${BUSINESS_LANGUAGE_STYLE_SHORT}
 
-Examples of what fits: customer concentration risk hinted at by lumpy revenue, an emerging shift in expense mix, signs that one channel is starting to plateau, a margin pattern that's masked by the topline.
+You are spotting patterns in a small business's financial profile that simple rules might miss. The user has filled out their business profile + the system already detected some patterns deterministically (listed below). Your job: return 1-2 ADDITIONAL observations that the deterministic rules would not have caught.
+
+Examples of what fits: revenue that depends heavily on a few customers (do not write "concentration risk"), an emerging shift in expense mix, signs that one channel is starting to plateau, a margin pattern that's masked by the topline.
 
 Output rules:
 - Return ONE JSON array of 1-2 strings. No prose, no fences if possible.

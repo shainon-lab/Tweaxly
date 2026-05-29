@@ -14,6 +14,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import type { PeriodAggregate } from "./period";
 import { fmtMoney, fmtPct, ymToLabel } from "./format";
 import { tierConfigForBusiness, type AiTier } from "./aiTier";
+import { BUSINESS_LANGUAGE_STYLE } from "./ai/businessLanguageStyle";
 
 export type SummaryTimeframe = "monthly" | "quarterly" | "yearly" | "custom";
 
@@ -125,7 +126,13 @@ export async function buildExecutiveSummary(
 // Claude path
 // ─────────────────────────────────────────────────────────────────────────────
 
-const SYSTEM_INSTRUCTIONS = `You are an executive business advisor writing a short, nuanced summary for a small-business owner.
+const SYSTEM_INSTRUCTIONS = `${BUSINESS_LANGUAGE_STYLE}
+
+═══════════════════════════════════════════════════════
+ROLE
+═══════════════════════════════════════════════════════
+
+You are an executive business advisor writing a short, nuanced summary for a small-business owner.
 
 Tone:
 - Calm, analytical, executive-level. Like a thoughtful CFO speaking to the owner.

@@ -501,7 +501,7 @@ export default async function DashboardPage({
                 description:
                   "Spend in any category tagged for marketing or advertising - Google/Meta/LinkedIn ads, agencies, content writers, sponsorships, events.",
                 tips: [
-                  "Most growth-stage SMBs run 10–20% of revenue on marketing. Above 25% is aggressive - confirm payback and CAC trend.",
+                  "Most growth-stage small businesses run 10-20% of revenue on marketing. Above 25% is aggressive - confirm that the cost to bring in each new customer is still paying off.",
                   "Cutting marketing improves the P&L immediately but the revenue hit lags 60–90 days, so model the trade-off in Forecast first.",
                 ],
               }}

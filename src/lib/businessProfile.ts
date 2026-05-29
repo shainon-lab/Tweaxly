@@ -23,6 +23,7 @@ import { Prisma } from "@prisma/client";
 import { prisma } from "./db";
 import { buildBusinessContext } from "./advisor";
 import { tierConfigForBusiness } from "./aiTier";
+import { BUSINESS_LANGUAGE_STYLE } from "./ai/businessLanguageStyle";
 import {
   INDUSTRY_OPTIONS, BUSINESS_CATEGORY_OPTIONS,
   BUSINESS_MODEL_OPTIONS, MAIN_GOAL_OPTIONS,
@@ -114,7 +115,13 @@ export function isProfileSubstantive(p: { industry: string | null; businessModel
 // AI summary
 // ────────────────────────────────────────────────────────────────────
 
-const SUMMARY_SYSTEM = `You write the "About Your Business" paragraph that lives at the top of a small business's Tweaxly workspace. The owner just filled out a short profile (industry, business model, main goal, customer type, stage, biggest challenge, key KPIs) and you also have a live snapshot of their recent financial data.
+const SUMMARY_SYSTEM = `${BUSINESS_LANGUAGE_STYLE}
+
+═══════════════════════════════════════════════════════
+TASK
+═══════════════════════════════════════════════════════
+
+You write the "About Your Business" paragraph that lives at the top of a small business's Tweaxly workspace. The owner just filled out a short profile (industry, business model, main goal, customer type, stage, biggest challenge, key KPIs) and you also have a live snapshot of their recent financial data.
 
 Punctuation rule (critical): NEVER use the em-dash character "—" (U+2014). Use a regular hyphen with spaces (" - ") instead. The em-dash is a giveaway that text was AI-generated; avoid it entirely.
 

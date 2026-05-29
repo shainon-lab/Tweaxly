@@ -130,7 +130,7 @@ export const KPI_OPTIONS = [
   { value: "profit_margin",          label: "Profit margin" },
   { value: "cash_flow",              label: "Cash flow" },
   { value: "customer_retention",     label: "Customer retention" },
-  { value: "mrr_arr",                label: "MRR / ARR" },
+  { value: "mrr_arr",                label: "Recurring revenue" },
   { value: "operational_efficiency", label: "Operational efficiency" },
   { value: "expense_reduction",      label: "Expense reduction" },
   { value: "sales_growth",           label: "Sales growth" },
