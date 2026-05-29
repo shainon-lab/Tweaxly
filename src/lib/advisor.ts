@@ -475,7 +475,7 @@ export async function recommendProactive(
       level: "good",
       observation: `Marketing cut held in ${curLabel} without hurting revenue.`,
       interpretation: `Marketing went from ${fmtMoney(prev.marketing, ccy)} in ${prevLabel} to ${fmtMoney(current.marketing, ccy)} in ${curLabel} while revenue stayed flat - efficiency improved, not just spend.`,
-      recommendation: `Lock in the savings unless you start seeing your sales pipeline drop in 60-90 days. The early signs to watch: cost to bring in each new customer creeping up, and a smaller share of leads turning into customers.`,
+      recommendation: `Lock in the savings unless you start seeing your sales pipeline drop in 60-90 days. The early signs to watch: the cost to bring in each new customer (customer acquisition cost, CAC) creeping up, and a smaller share of leads turning into customers.`,
       impact: round0(prev.marketing - current.marketing),
       category: "marketing",
       signalKey: "marketing_cut_held",
@@ -564,7 +564,7 @@ export async function recommendProactive(
       level: "info",
       observation: `Healthy margin with light marketing in ${curLabel} - you have growth headroom.`,
       interpretation: `Net profit is ${fmtPct(current.netProfit / avgRevenue)} of revenue and marketing is only ${fmtPct(marketingRatio)}. Profitable businesses under-investing in acquisition tend to plateau - you're leaving growth on the table.`,
-      recommendation: `Try one month with marketing spend up 25%, then check whether the cost to win each new customer stayed the same or got better. Use Consultation to model the cash impact before committing.`,
+      recommendation: `Try one month with marketing spend up 25%, then check whether the cost to win each new customer (customer acquisition cost, CAC) stayed the same or got better. Use Consultation to model the cash impact before committing.`,
       impact: 0,
       category: "growth",
       signalKey: "growth_headroom",
@@ -1208,17 +1208,17 @@ function growthLeversFor(
   }
   if (months <= 12) {
     return [
-      `**Marketing investment** - bring spend to about 10% of revenue if you're below it. As a rule of thumb, don't spend more than a third of a customer's annual value to win them. Expect payback within 60-90 days.`,
+      `**Marketing investment** - bring spend to about 10% of revenue if you're below it. As a rule of thumb, the cost to win each new customer (customer acquisition cost, CAC) shouldn't be more than a third of what that customer is worth in their first year. Expect payback within 60-90 days.`,
       `**Pricing** - still the fastest lever; revisit in three months once you have a read on how customers respond.`,
       `**One sales hire** - only if you have a repeatable channel. Adds ${fmtMoney(8000, ccy)}-${fmtMoney(15000, ccy)}/mo loaded cost; expect break-even in month 4-6.`,
-      `**Retention** - each percentage point of churn you eliminate adds the same to customer lifetime value. Cheapest growth move you can make.`,
+      `**Retention** - each percentage point of churn you eliminate adds the same to customer lifetime value (LTV). Cheapest growth move you can make.`,
     ];
   }
   if (months <= 36) {
     return [
       `**Channel diversification** - add a second acquisition channel that isn't correlated with the first. Risk of single-channel saturation grows over 2-year windows.`,
       `**Selective hiring** - sales/CS first if revenue-bottlenecked, ops/eng if delivery-bottlenecked. Plan in cohorts of 1–2, not waves.`,
-      `**Pricing tier expansion** - launch a higher-tier or annual plan; this typically lifts average revenue per customer 15-25% over 24 months.`,
+      `**Pricing tier expansion** - launch a higher-tier or annual plan; this typically lifts average revenue per customer (ARPU) 15-25% over 24 months.`,
       `**Retention motion** - onboarding revamp + quarterly check-ins with top accounts. Reduces churn by 20-40% typical.`,
       `**Geographic or vertical expansion** - feasible at this horizon if your motion is repeatable in your home market.`,
     ];
@@ -1228,7 +1228,7 @@ function growthLeversFor(
     `**Product breadth** - second product line or platform play. Usually requires hiring a product+eng pod for 12+ months ahead of revenue.`,
     `**Brand and category creation** - only worthwhile if you can dominate; otherwise a value trap.`,
     `**M&A or partnerships** - realistic at this horizon; can compress 3 years of growth into 12 months but adds integration risk.`,
-    `**Org scaling** - leadership layer (VPs, finance, HR). Comes with a step-function cost increase; usually right around the $5-10M annual recurring revenue mark.`,
+    `**Org scaling** - leadership layer (VPs, finance, HR). Comes with a step-function cost increase; usually right around the $5-10M annual recurring revenue (ARR) mark.`,
   ];
 }
 
@@ -1248,7 +1248,7 @@ function growthAnswer(
   if (marketingRatio < 0.10 && current.netProfit > 0) {
     const test = round0(avgMarketing > 0 ? avgMarketing * 1.5 : avgRevenue * 0.10);
     lines.push(
-      `**Marketing is light at ${fmtPct(marketingRatio)} of revenue** while you're profitable - the cheapest growth move is to test raising it to about 10% of revenue (around ${fmtMoney(test, ccy)}/mo). Run for 60 days and check the cost to win each new customer plus the revenue from those customers before scaling further.`,
+      `**Marketing is light at ${fmtPct(marketingRatio)} of revenue** while you're profitable - the cheapest growth move is to test raising it to about 10% of revenue (around ${fmtMoney(test, ccy)}/mo). Run for 60 days and check the cost to win each new customer (customer acquisition cost, CAC) plus the revenue from those customers before scaling further.`,
     );
   } else if (marketingRatio > 0.25) {
     lines.push(
@@ -1285,7 +1285,7 @@ function runwayAnswer(
   const { ccy, avgRevenue, avgExpenses, current } = ctx;
   const monthlyShortfall = Math.max(0, avgExpenses - avgRevenue);
   const lines: string[] = [];
-  lines.push(`### How long your cash can support the business`);
+  lines.push(`### How long your cash can support the business (runway)`);
   lines.push("");
   if (monthlyShortfall <= 0) {
     lines.push(

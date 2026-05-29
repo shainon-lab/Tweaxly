@@ -392,7 +392,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: s.marketingPctRevenue > 0.20 ? 8 : 6,
       text: `Marketing spend hit ${fmtMoney(s.totalMarketing, ccy)} - ${fmtPct(s.marketingPctRevenue)} of revenue.`,
       tip: s.marketingPctRevenue > 0.20
-        ? "Above 20% of revenue is aggressive. Before committing the same level next year, confirm the marketing is still paying back and that each new customer is worth what you're spending to win them."
+        ? "Above 20% of revenue is aggressive. Before committing the same level next year, confirm the marketing is still paying back and that the cost to win each new customer (customer acquisition cost, CAC) is reasonable."
         : "Below the typical 15-20% range for growth-stage small businesses. If revenue is growing, the marketing is efficient; if it's flat, you may be under-investing.",
     });
   }

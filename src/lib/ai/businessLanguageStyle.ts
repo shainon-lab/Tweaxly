@@ -24,10 +24,28 @@ If a typical owner would need to Google a word to understand it, the
 wording is wrong - rewrite it.
 
 ─── Banned wording (acronym-first or jargon-only) ────────────────
-Never lead with these. If you genuinely need the acronym for
-shorthand later in the answer, introduce the plain meaning first
-and only THEN show the acronym in parentheses. Default to NOT using
-the acronym at all when the plain phrasing fits.
+Never lead with these. Always introduce the plain meaning first.
+On the FIRST mention inside a piece of narrative (an insight, tip,
+recommendation, or answer), put the acronym in parentheses after
+the plain phrase so a curious owner can learn the terminology over
+time. Subsequent mentions in the same piece stay plain - don't
+repeat the parens every time. Examples:
+  Good (first mention)    : "the cost to win each new customer
+                             (customer acquisition cost, CAC) is
+                             creeping up."
+  Good (later in answer)  : "...keep the cost to win customers
+                             from rising further."
+  Bad  (no parens at all) : "the cost to win each new customer is
+                             creeping up."  ← loses the teaching
+                                              moment; OK only for
+                                              short card / label
+                                              copy.
+  Bad  (acronym first)    : "CAC is creeping up."
+
+For card / label / option / button copy where there is no room for
+the parens (KPI titles, picker options, focus-question shortcuts,
+status badges), use pure plain English and skip the acronym
+entirely.
 
   YoY · MoM · QoQ          → "compared to the same period last
                               year" / "compared to last month" /
