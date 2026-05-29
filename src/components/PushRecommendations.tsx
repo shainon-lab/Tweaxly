@@ -373,13 +373,34 @@ export default function PushRecommendations({
     });
   }
 
-  function resolveSignal(r: PushRec) {
-    const key = r.signalKey ?? r.id;
+  // Server-backed "Mark as resolved". Drops the card from the active
+  // list immediately (optimistic), then asks the server. On a 404 /
+  // bad-id we still keep the local resolution so the UI stays in
+  // sync with the user's intent; the next sweep will reconcile.
+  async function resolveSignal(r: PushRec) {
     const next = new Set(resolved);
-    next.add(key);
+    next.add(r.signalKey ?? r.id);
     setResolvedState(next);
     writeResolved(next);
     setSelectedId(null);
+    // Update server state - zero AI credits, idempotent.
+    void fetch(`/api/signals/${encodeURIComponent(r.id)}`, {
+      method:  "PATCH",
+      headers: { "content-type": "application/json" },
+      body:    JSON.stringify({ action: "mark_resolved" }),
+    }).catch(() => {});
+  }
+
+  // Server-backed "Mark as read". The card stays visible but flips
+  // its local lifecycle to "ongoing-acknowledged" so the deck can
+  // de-emphasise it. Zero AI credits.
+  async function markSignalRead(r: PushRec) {
+    setRecs((prev) => prev.map((x) => x.id === r.id ? { ...x, status: "acknowledged" } : x));
+    void fetch(`/api/signals/${encodeURIComponent(r.id)}`, {
+      method:  "PATCH",
+      headers: { "content-type": "application/json" },
+      body:    JSON.stringify({ action: "mark_read" }),
+    }).catch(() => {});
   }
 
   function selectSignal(id: string) {
@@ -500,6 +521,7 @@ export default function PushRecommendations({
                 currency={currency}
                 onClose={closePanel}
                 onResolve={() => resolveSignal(selectedRec)}
+                onMarkRead={() => markSignalRead(selectedRec)}
               />
             </div>
           ) : null}
@@ -697,12 +719,14 @@ function SignalDetailPanel({
   currency,
   onClose,
   onResolve,
+  onMarkRead,
 }: {
   rec: PushRec | null;
   lifecycle?: Lifecycle;
   currency: string;
   onClose: () => void;
   onResolve: () => void;
+  onMarkRead: () => void;
 }) {
   const router = useRouter();
   // When the user closes the panel, unmount it immediately - no exit
@@ -802,15 +826,24 @@ function SignalDetailPanel({
       {/* Footer - immediately under the body content. No flex pinning;
           when content is short the buttons sit tight under the text,
           when content is long the user scrolls to reach them. */}
-      <div className="border-t border-line p-4 flex items-center justify-between gap-2 bg-ink-900">
-        <button
-          type="button"
-          onClick={onResolve}
-          className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-slate-100 hover:border-slate-500 transition"
-          title="Hide from this view - restore from the header to bring back"
-        >
-          Mark resolved
-        </button>
+      <div className="border-t border-line p-4 flex items-center justify-between gap-2 bg-ink-900 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={onMarkRead}
+            disabled={rec.status === "acknowledged"}
+            className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-300 hover:text-slate-100 hover:border-slate-500 transition disabled:opacity-50"
+          >
+            {rec.status === "acknowledged" ? "Read" : "Mark as read"}
+          </button>
+          <button
+            type="button"
+            onClick={onResolve}
+            className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-good hover:border-good/60 transition"
+          >
+            Mark as resolved
+          </button>
+        </div>
         <button
           type="button"
           onClick={() => {

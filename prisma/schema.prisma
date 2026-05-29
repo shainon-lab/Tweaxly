@@ -351,6 +351,7 @@ model Business {
   mappingTemplates    MappingTemplate[]
   financialSources    FinancialSource[]
   plaidConnections    PlaidConnection[]
+  businessSignals     BusinessSignal[]
   trashBatches        TrashBatch[]
   recommendations     Recommendation[]
   consultations       Consultation[]
@@ -1403,4 +1404,60 @@ model PolarOrder {
   @@index([polarCustomerEmail])
   @@index([status])
   @@index([createdAt])
+}
+
+// Persisted business signal. Replaces the prior "recompute every page
+// load, never store" model. Each row represents one instance of a
+// detected signal in the business context; the lifecycle progresses
+// active -> acknowledged (user has seen it but the condition still
+// holds) -> resolved (underlying condition disappeared OR user marked
+// it resolved). A resolved signal stays in history for audit; if the
+// same signalKey comes back later, a brand-new row is opened so the
+// timeline is honest.
+model BusinessSignal {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  // Stable identifier from the deterministic evaluator. Used to
+  // match candidate signals against existing rows on re-evaluation.
+  // Examples: "vendor_spike:Acme", "marketing_intensity_high".
+  signalKey       String
+
+  // Detected level + ranked monthly $ impact. Both are mutable - if
+  // a re-evaluation produces the same signalKey at a worse level or
+  // a different impact, we update the row AND emit a notification.
+  level           String   // "bad" | "warn" | "good" | "info"
+  impact          Float    // estimated monthly $ impact (0 for observational)
+
+  // Rendered content shown on the signal card + the detail view.
+  observation     String
+  interpretation  String
+  recommendation  String
+  category        String   // "marketing" | "payroll" | "vendor" | "growth" | "accuracy" | "cashflow" | "other"
+
+  // Lifecycle.
+  //   "active"       - currently true in the data, not yet acted on
+  //   "acknowledged" - user marked it read; condition still holds
+  //   "resolved"     - condition no longer holds (system or user marked)
+  //   "archived"     - aged out / superseded
+  status          String   @default("active")
+  acknowledgedAt  DateTime?
+  resolvedAt      DateTime?
+  resolvedBy      String?  // "system" when auto-resolved, "user" when manual
+
+  // Tracking - useful for ranking + the explanation panel.
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now())
+  evaluationCount Int      @default(1) // how many evaluations saw this signal
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Lookup patterns: list active signals for a workspace, match a
+  // candidate against existing open rows by signalKey, page through
+  // the resolved-history feed.
+  @@index([businessId, status])
+  @@index([businessId, signalKey, status])
+  @@index([businessId, status, impact(sort: Desc)])
 }
