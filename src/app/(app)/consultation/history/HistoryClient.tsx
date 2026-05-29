@@ -4,13 +4,20 @@
 // Selection lives in the URL (?id=xxx) so navigation feels stable -
 // each click triggers a server-rendered swap of the right panel
 // without touching the left list.
+//
+// Detail render path is identical to the New Advisory tab: if a
+// structured payload was stored we render StructuredAdvisoryView,
+// otherwise we fall through to the shared ResponseBriefing. That
+// way re-opening a past question shows the same boxes, anchors,
+// strategic paths and risk cards the user saw the first time.
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
-import { buildDecisionBriefing } from "@/lib/decisionBriefing";
-import { renderMarkdown } from "../markdown";
+import StructuredAdvisoryView from "@/components/advisory/StructuredAdvisoryView";
+import ResponseBriefing from "@/components/advisory/ResponseBriefing";
+import type { StructuredAdvice } from "@/lib/advisorTypes";
 import { notify } from "@/lib/notify";
 
 export type HistoryListItem = {
@@ -25,6 +32,7 @@ export type HistoryDetail = {
   askedAt: string;
   answerMarkdown: string | null;
   payload: string | null;
+  structured: StructuredAdvice | null;
 };
 
 function fmtDate(iso: string): { date: string; time: string } {
@@ -166,27 +174,37 @@ export default function HistoryClient({
               </div>
             ) : (
               <>
-                <div className="px-5 md:px-6 py-4 border-b border-line bg-ink-900/60 flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[10px] uppercase tracking-wide text-accent mb-1">Question</div>
-                    <div className="text-sm md:text-base text-slate-100 break-words">
+                {/* Question header - mirrors the New Advisory question
+                    card (same accent border, "Your question" eyebrow,
+                    t-meta/t-body typography) so a re-opened session
+                    feels identical to the moment it was asked. */}
+                <div className="px-5 md:px-6 py-4 border-b border-line bg-ink-900/60">
+                  <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3">
+                    <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
+                    <div className="t-body text-slate-100 whitespace-pre-wrap">
                       {detail.question}
                     </div>
-                    <div className="text-[11px] text-slate-500 mt-1">
+                    <div className="t-meta text-slate-500 mt-1">
                       {new Date(detail.askedAt).toLocaleString()}
                     </div>
                   </div>
                 </div>
 
                 <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5">
-                  {detail.answerMarkdown ? (
-                    <HistoryBriefing
+                  {/* Same branching the New Advisory view uses: if a
+                      structured payload was stored we render the rich
+                      card layout; otherwise fall back to the shared
+                      ResponseBriefing built from markdown. */}
+                  {detail.structured ? (
+                    <StructuredAdvisoryView data={detail.structured} />
+                  ) : detail.answerMarkdown ? (
+                    <ResponseBriefing
                       content={detail.answerMarkdown}
                       payload={detail.payload}
                       currency={currency}
                     />
                   ) : (
-                    <div className="text-sm text-slate-400 italic">
+                    <div className="t-body text-slate-400 italic">
                       No answer was recorded for this consultation.
                     </div>
                   )}
@@ -200,165 +218,3 @@ export default function HistoryClient({
   );
 }
 
-// Lightweight Decision Briefing renderer scoped to the History viewer.
-// Mirrors the structure of ConsultationClient's ResponseBriefing so
-// past consultations read the same way fresh ones do.
-function HistoryBriefing({
-  content,
-  payload,
-  currency,
-}: {
-  content: string;
-  payload: string | null;
-  currency: string;
-}) {
-  const briefing = buildDecisionBriefing(content, payload, currency);
-  const hasReasoning = briefing.reasoning.trim().length > 0;
-  const hasAnchors = briefing.anchors.length > 0;
-  const hasPaths = briefing.paths.length > 0;
-  const hasRisks = briefing.risks.length > 0;
-  return (
-    <div className="space-y-5">
-      {briefing.takeaway ? (
-        <div className="rounded-xl border border-accent/40 bg-accent-soft/15 p-4 md:p-5">
-          <div className="text-[10px] uppercase tracking-wide text-accent font-semibold mb-1">
-            Executive Takeaway
-          </div>
-          <div className="text-base md:text-lg font-semibold text-slate-100 leading-snug">
-            {briefing.takeaway.headline}
-          </div>
-          {briefing.takeaway.subhead ? (
-            <div className="text-sm text-slate-300 mt-1.5 leading-relaxed">
-              {briefing.takeaway.subhead}
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-
-      {hasReasoning || hasAnchors ? (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8">
-          {hasReasoning ? (
-            <div className={hasAnchors ? "lg:col-span-8" : "lg:col-span-12"}>
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
-                AI Reasoning
-              </div>
-              <div className="space-y-1.5 text-sm text-slate-200">
-                {renderMarkdown(briefing.reasoning)}
-              </div>
-            </div>
-          ) : null}
-          {hasAnchors ? (
-            <aside className={`lg:col-span-4 ${hasReasoning ? "lg:border-l lg:border-line/60 lg:pl-6" : ""}`}>
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
-                Decision Anchors
-              </div>
-              <ul className="divide-y divide-line/40">
-                {briefing.anchors.map((a, i) => (
-                  <li key={i} className="py-2.5 flex items-start justify-between gap-3">
-                    <span className="text-xs text-slate-400 shrink-0">{a.label}</span>
-                    <span
-                      className={`text-sm font-medium text-right ${
-                        a.tone === "good" ? "text-good" :
-                        a.tone === "warn" ? "text-warn" :
-                        a.tone === "bad"  ? "text-bad"  :
-                                            "text-slate-100"
-                      }`}
-                    >
-                      {a.value}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </aside>
-          ) : null}
-        </div>
-      ) : null}
-
-      {hasPaths ? (
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-3">
-            Strategic Paths
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-            {[...briefing.paths]
-              .sort((a, b) => {
-                const r = (t: typeof a.tier) => (t === "primary" ? 0 : t === "high_impact" ? 1 : 2);
-                return r(a.tier) - r(b.tier);
-              })
-              .map((p, i) => {
-                const tierLabel =
-                  p.tier === "primary"     ? "Primary"     :
-                  p.tier === "high_impact" ? "High Impact" :
-                                             "Low Impact";
-                const tierPill =
-                  p.tier === "primary"     ? "pill-accent" :
-                  p.tier === "high_impact" ? "pill-warn"   :
-                                             "pill";
-                return (
-                  <div
-                    key={i}
-                    className={`rounded-lg border p-4 flex flex-col gap-2 ${
-                      p.tier === "primary"     ? "border-accent/40 bg-accent-soft/10" :
-                      p.tier === "high_impact" ? "border-warn/40 bg-warn/5"            :
-                                                 "border-line bg-ink-900/30"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between gap-2 flex-wrap">
-                      <span className={`${tierPill} text-[10px]`}>{tierLabel}</span>
-                      <div className="pill-good">{formatMoney(p.option.monthlySavings, currency)}/mo</div>
-                    </div>
-                    <div className="font-medium text-sm text-slate-100">{p.option.title}</div>
-                    <div className="text-xs text-slate-400">
-                      {formatMoney(p.option.annualSavings, currency)} per year · covers {Math.round(p.coveragePct * 100)}% over {p.horizonMonths}mo
-                    </div>
-                  </div>
-                );
-              })}
-          </div>
-        </div>
-      ) : null}
-
-      {hasRisks ? (
-        <div>
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
-            Risks &amp; Tradeoffs
-          </div>
-          <ul className="space-y-2">
-            {briefing.risks.map((r, i) => (
-              <li
-                key={i}
-                className={`rounded-lg border px-3 py-2 ${
-                  r.tone === "bad"  ? "border-bad/40 bg-bad/5"  :
-                  r.tone === "warn" ? "border-warn/40 bg-warn/5" :
-                                      "border-line bg-ink-900/30"
-                }`}
-              >
-                <div className={`text-xs font-medium ${
-                  r.tone === "bad"  ? "text-bad"  :
-                  r.tone === "warn" ? "text-warn" :
-                                      "text-slate-200"
-                }`}>
-                  {r.label}
-                </div>
-                <div className="text-xs text-slate-300 leading-relaxed mt-0.5">
-                  {r.text}
-                </div>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
-function formatMoney(value: number, currency: string): string {
-  try {
-    return new Intl.NumberFormat("en-US", {
-      style: "currency", currency,
-      minimumFractionDigits: 0, maximumFractionDigits: 0,
-    }).format(value);
-  } catch {
-    return `${currency} ${Math.round(value).toLocaleString("en-US")}`;
-  }
-}

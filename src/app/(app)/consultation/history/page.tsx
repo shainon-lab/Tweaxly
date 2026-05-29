@@ -29,6 +29,12 @@ export default async function ConsultationHistoryPage({
     question: string;
     answer: string | null;
     payload: string | null;
+    // The Phase-1 structured advisor payload, when the assistant
+    // turn produced one. History needs this so re-opened sessions
+    // render through StructuredAdvisoryView - the same component
+    // the New Advisory view uses - instead of falling back to the
+    // markdown-only briefing.
+    structured: import("@/lib/advisorTypes").StructuredAdvice | null;
     askedAt: Date;
   };
   const pairs: Pair[] = [];
@@ -45,6 +51,7 @@ export default async function ConsultationHistoryPage({
       question: m.content,
       answer: paired?.content ?? null,
       payload: paired?.payload ?? null,
+      structured: (paired?.structured as import("@/lib/advisorTypes").StructuredAdvice | null) ?? null,
       askedAt: m.createdAt,
     });
   }
@@ -67,6 +74,7 @@ export default async function ConsultationHistoryPage({
         askedAt: chosen.askedAt.toISOString(),
         answerMarkdown: chosen.answer,
         payload: chosen.payload,
+        structured: chosen.structured,
       };
     }
   }
