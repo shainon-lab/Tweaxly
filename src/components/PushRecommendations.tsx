@@ -339,6 +339,27 @@ export default function PushRecommendations({
     setResolvedState(readResolved());
   }, []);
 
+  // URL hygiene for the bell-notification deep link. When the page is
+  // hit with /business-signals?signal=<id> we open the detail panel
+  // on first render (above). After that we strip the query param so a
+  // browser refresh does NOT keep auto-opening the same panel - the
+  // owner expects refresh to land them on the deck, not on whichever
+  // signal a notification pointed at last time. Detail-panel state
+  // lives in React from this point on, not in the URL.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    if (url.searchParams.has("signal")) {
+      url.searchParams.delete("signal");
+      const query = url.searchParams.toString();
+      const next  = url.pathname + (query ? `?${query}` : "");
+      window.history.replaceState(null, "", next);
+    }
+    // Intentionally runs once on mount only - subsequent panel
+    // open/close events update component state, not the URL.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Compute lifecycle (new / ongoing / escalating / improving / resolved)
   // for each signal by comparing the current snapshot to the last-seen
   // state. Persist the snapshot so next visit can diff against this one.

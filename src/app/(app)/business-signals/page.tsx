@@ -83,6 +83,39 @@ export default async function BusinessSignalsPage({
     createdAt:      s.firstSeenAt.toISOString(),
   }));
 
+  // Bell notification deep-link recovery. If the URL says
+  // ?signal=<id> but the active list doesn't contain it (because
+  // the signal has since been resolved / archived), look the row up
+  // directly so View Details from the notification still opens the
+  // correct content. The matched row is appended to pushRecs only
+  // when it's absent - active signals already in pushRecs come from
+  // the same source of truth.
+  let deeplinkedSignalId: string | null = openSignalId;
+  if (openSignalId && !pushRecs.some((r) => r.id === openSignalId)) {
+    const orphan = await prisma.businessSignal.findUnique({
+      where: { id: openSignalId },
+    });
+    if (orphan && orphan.businessId === business.id) {
+      pushRecs.push({
+        id:             orphan.id,
+        signalKey:      orphan.signalKey,
+        level:          orphan.level,
+        observation:    orphan.observation,
+        interpretation: orphan.interpretation,
+        recommendation: orphan.recommendation,
+        impact:         orphan.impact,
+        category:       orphan.category,
+        status:         orphan.status,
+        createdAt:      orphan.firstSeenAt.toISOString(),
+      });
+    } else {
+      // Stale link (signal belongs to a different workspace or was
+      // hard-deleted). Drop the request so the URL-cleanup hook can
+      // remove the dead query param.
+      deeplinkedSignalId = null;
+    }
+  }
+
   const { t } = await getServerT();
   return (
     <>
@@ -98,7 +131,7 @@ export default async function BusinessSignalsPage({
         cap={cap}
         activeCount={activeSignals.length}
       />
-      <PushRecommendations initial={pushRecs} currency={ccy} initialSelectedId={openSignalId} />
+      <PushRecommendations initial={pushRecs} currency={ccy} initialSelectedId={deeplinkedSignalId} />
     </>
   );
 }
