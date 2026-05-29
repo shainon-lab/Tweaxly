@@ -395,11 +395,14 @@
   border: 0;
   padding: 0;
   font: inherit;
-  color: inherit;
+  /* Colour is intentionally NOT set here - the caller passes Tailwind
+     classes (text-slate-400 hover:text-white) so the Privacy
+     Preferences link matches every other footer link. Setting
+     `color: inherit` here would override those utilities because
+     consent.css loads after Tailwind. */
   cursor: pointer;
   transition: color 140ms ease;
 }
-.consent-footer-link:hover { color: #e2e8f0; }
 .consent-footer-link:focus-visible {
   outline: 2px solid #a78bfa;
   outline-offset: 4px;
