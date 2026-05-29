@@ -313,7 +313,15 @@ export default function NotificationCenter({
                               onClick={() => openAlert(n)}
                               className="text-xs font-medium px-3 py-1 rounded-md border border-accent/40 text-accent hover:bg-accent-soft hover:text-white transition"
                             >
-                              Open →
+                              {/* Signal-event notifications deep-link straight to
+                                  the signal's detail panel (same UI the user
+                                  gets when clicking a signal card). Label the
+                                  action accordingly so the user knows the
+                                  button == "View details" on the card.
+                                  Monitor fires + coverage-gap notifications
+                                  navigate to a page, not a detail panel, so
+                                  they keep the generic "Open" label. */}
+                              {n.category.startsWith("signal_") ? "View details" : "Open →"}
                             </button>
                           ) : null}
                           {unread ? (
