@@ -72,6 +72,7 @@ export default function Home() {
       <SeoUnifiedSection />
       <HowItWorks />
       <ConnectYourDataBanner />
+      <LearningCenterSection />
       <BrandPhilosophy />
       <FinalCTA />
     </main>
@@ -676,6 +677,104 @@ function FinalCTA() {
 // business forecasting platform / financial dashboard / SMB
 // financial intelligence.
 // ─────────────────────────────────────────────────────────────────────
+
+// ─────────────────────────────────────────────────────────────────────
+// Learning Center surfaced on the marketing homepage. Passes
+// homepage authority into the Resources cluster (Layer 10 of the
+// internal linking architecture) and gives top-of-funnel visitors
+// an educational entry point before the final CTA.
+// ─────────────────────────────────────────────────────────────────────
+
+function LearningCenterSection() {
+  // Three editorial picks across the highest-traffic categories.
+  // Plain links so the section ships as static HTML with no
+  // additional bundle weight.
+  const FEATURED_CATEGORIES = [
+    { slug: "financial-fundamentals",  label: "Financial Fundamentals",  blurb: "Revenue, profit, margin, cash - in plain English." },
+    { slug: "cash-flow-management",    label: "Cash Flow Management",    blurb: "Forecast, protect, and improve the cash that keeps you in business." },
+    { slug: "business-metrics-kpis",   label: "Business Metrics & KPIs", blurb: "CAC, LTV, MRR, ARR - what to track and how to read it." },
+  ];
+
+  // Highest-search-volume glossary terms. Curated to match the
+  // popularGlossaryTerms() list in src/content/resources/relations.ts.
+  const POPULAR_TERMS = [
+    { slug: "ebitda",      label: "EBITDA"      },
+    { slug: "arr",         label: "ARR"         },
+    { slug: "mrr",         label: "MRR"         },
+    { slug: "cac",         label: "CAC"         },
+    { slug: "ltv",         label: "LTV"         },
+    { slug: "cash-flow",   label: "Cash Flow"   },
+    { slug: "burn-rate",   label: "Burn Rate"   },
+    { slug: "runway",      label: "Runway"      },
+    { slug: "revenue",     label: "Revenue"     },
+    { slug: "gross-margin", label: "Gross Margin" },
+  ];
+
+  return (
+    <section className="container-wide py-24 lg:py-32 max-w-6xl">
+      <div className="max-w-3xl">
+        <div className="eyebrow mb-4">Learning Center</div>
+        <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
+          Learn the language of your business.
+        </h2>
+        <p className="mt-5 text-base text-slate-300 leading-relaxed">
+          The vocabulary, metrics and frameworks every small business
+          owner should know - written without finance jargon. Over 50
+          articles and 50 glossary terms, organised by topic.
+        </p>
+      </div>
+
+      {/* Featured category cards */}
+      <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {FEATURED_CATEGORIES.map((c) => (
+          <Link
+            key={c.slug}
+            href={`/resources/${c.slug}`}
+            className="block group card hover:border-brand-purple/40 transition"
+          >
+            <div className="text-base sm:text-lg font-semibold text-white leading-snug">
+              {c.label}
+            </div>
+            <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+              {c.blurb}
+            </div>
+            <div className="mt-4 text-[11px] uppercase tracking-wider text-brand-purple">
+              Explore →
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Popular business terms - direct entry into the glossary */}
+      <div className="mt-10">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3">
+          Popular business terms
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {POPULAR_TERMS.map((t) => (
+            <Link
+              key={t.slug}
+              href={`/resources/business-glossary/${t.slug}`}
+              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-200 hover:border-brand-purple/60 hover:text-white transition"
+            >
+              {t.label}
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      {/* Browse-all hand-off */}
+      <div className="mt-10 flex items-center gap-3 flex-wrap">
+        <Link href="/resources" className="btn-brand text-sm px-5 py-2.5">
+          Browse all 10 categories
+        </Link>
+        <Link href="/resources/business-glossary" className="btn-ghost text-sm px-5 py-2.5">
+          Open the Business Glossary →
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 function SeoUnifiedSection() {
   return (

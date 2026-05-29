@@ -6,6 +6,7 @@ import {
 } from "@/content/resources";
 import ResourcesSearch from "./ResourcesSearch";
 import { JsonLd, breadcrumbJsonLd } from "@/lib/schema";
+import { popularGlossaryTerms } from "@/content/resources/relations";
 
 const SITE_ORIGIN = "https://tweaxly.com";
 
@@ -114,7 +115,7 @@ export default function ResourcesIndexPage() {
 
       {/* Business Glossary highlight - separate so it stands out as a
           reference resource vs the topical categories above. */}
-      <section className="container-wide pb-12 max-w-6xl">
+      <section className="container-wide pb-8 max-w-6xl">
         <Link
           href={categoryHref(glossary.id)}
           className="block group rounded-3xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-transparent to-brand-teal/10 p-7 sm:p-9 hover:border-brand-purple/60 transition"
@@ -134,6 +135,28 @@ export default function ResourcesIndexPage() {
             </div>
           </div>
         </Link>
+      </section>
+
+      {/* Popular Business Terms (Layer 10).
+          Direct quick-links into the highest-traffic glossary
+          entries. Acts as a low-friction entry point for readers
+          searching for specific definitions, and passes homepage
+          authority into the glossary cluster. */}
+      <section className="container-wide pb-12 max-w-6xl">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3">
+          Popular business terms
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {popularGlossaryTerms(12).map((t) => (
+            <Link
+              key={t.meta.slug}
+              href={articleHref(t.meta)}
+              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-200 hover:border-brand-purple/60 hover:text-white transition"
+            >
+              {t.meta.title}
+            </Link>
+          ))}
+        </div>
       </section>
 
       {/* Featured articles */}

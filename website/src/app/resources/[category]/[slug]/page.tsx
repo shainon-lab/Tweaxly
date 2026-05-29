@@ -9,6 +9,7 @@ import {
 import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, TLDR, FAQ } from "@/components/article";
 import { JsonLd, articleJsonLd, faqJsonLd } from "@/lib/schema";
+import { featuresForCategory, EXPLORE_LINKS } from "@/content/resources/relations";
 
 // Pre-generate every article route at build time.
 export function generateStaticParams() {
@@ -168,8 +169,45 @@ export default async function ArticlePage(
         </section>
       ) : null}
 
+      {/* Practical Application (Layer 8).
+          Contextual product CTA - each category maps to 1-2
+          Tweaxly features that fit the topic. Phrased as a
+          natural follow-on to the educational content, not as
+          sales copy. Skipped entirely for the Business Glossary
+          category since glossary entries are reference, not
+          guidance. */}
+      {(() => {
+        const features = featuresForCategory(article.meta.category);
+        if (features.length === 0) return null;
+        return (
+          <section className="container-wide pb-16 max-w-3xl">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">
+              Practical application
+            </div>
+            <div className="rounded-2xl border border-line bg-ink-900/40 p-6">
+              <p className="text-sm text-slate-300 leading-relaxed">
+                The concepts above show up in two Tweaxly features in particular:
+              </p>
+              <div className="mt-4 grid sm:grid-cols-2 gap-3">
+                {features.map((f) => (
+                  <Link
+                    key={f.slug}
+                    href={`/features/${f.slug}`}
+                    className="block rounded-xl border border-line bg-ink-950/40 p-4 hover:border-brand-purple/40 transition"
+                  >
+                    <div className="text-sm font-semibold text-white">{f.label}</div>
+                    <div className="mt-1.5 text-xs text-slate-400 leading-relaxed">{f.hook}</div>
+                    <div className="mt-3 text-[11px] text-brand-purple">Read more →</div>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        );
+      })()}
+
       {/* Final CTA */}
-      <section className="container-wide pb-24 max-w-5xl">
+      <section className="container-wide pb-16 max-w-5xl">
         <div className="rounded-3xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-transparent to-brand-teal/10 p-8 sm:p-10 text-center">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             Bring AI financial intelligence to your business.
@@ -181,6 +219,30 @@ export default async function ArticlePage(
           <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
             <a href="https://app.tweaxly.com/register" className="btn-brand text-base px-6 py-3">Start Free</a>
             <Link href="/resources" className="btn-ghost text-base px-6 py-3">Browse all resources →</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Explore Tweaxly (Layer 9).
+          Small navigation rail at the bottom of every article so
+          pages aren't dead ends. Pure navigation, no marketing
+          copy. Helps crawlers discover the rest of the site and
+          gives readers a clear next step. */}
+      <section className="container-wide pb-20 max-w-5xl">
+        <div className="border-t border-line/40 pt-8">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3">
+            Explore Tweaxly
+          </div>
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm">
+            {EXPLORE_LINKS.map((l) => (
+              <Link
+                key={l.href}
+                href={l.href}
+                className="text-slate-400 hover:text-white transition"
+              >
+                {l.label}
+              </Link>
+            ))}
           </div>
         </div>
       </section>

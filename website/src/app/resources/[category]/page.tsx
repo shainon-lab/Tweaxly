@@ -9,6 +9,7 @@ import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, FAQ } from "@/components/article";
 import { JsonLd, breadcrumbJsonLd, collectionJsonLd, faqJsonLd } from "@/lib/schema";
 import GlossaryFilter from "./GlossaryFilter";
+import { keyTermsForCategory } from "@/content/resources/relations";
 
 const SITE_ORIGIN = "https://tweaxly.com";
 
@@ -202,6 +203,44 @@ export default async function CategoryPage(
           </>
         )}
       </section>
+
+      {/* Key Terms in this Category (Layer 7).
+          Glossary entries that align with the category by shared
+          tags. Strengthens the topic cluster - readers browsing the
+          category can jump straight to the underlying vocabulary
+          without leaving the topic. */}
+      {(() => {
+        const keyTerms = keyTermsForCategory(cat.id, 8);
+        if (keyTerms.length === 0) return null;
+        return (
+          <section className="container-wide pb-12 max-w-5xl">
+            <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">
+              Key terms in {cat.label}
+            </div>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {keyTerms.map((t) => (
+                <Link
+                  key={t.meta.slug}
+                  href={articleHref(t.meta)}
+                  className="block group card hover:border-brand-purple/40 transition"
+                >
+                  <div className="text-sm font-semibold text-white leading-snug">
+                    {t.meta.title}
+                  </div>
+                  <div className="mt-1.5 text-xs text-slate-400 leading-relaxed line-clamp-2">
+                    {t.meta.excerpt}
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4 text-xs text-slate-500">
+              <Link href="/resources/business-glossary" className="text-brand-purple hover:underline">
+                Browse the full Business Glossary →
+              </Link>
+            </div>
+          </section>
+        );
+      })()}
 
       {/* Related categories */}
       {relatedCategories.length > 0 ? (
