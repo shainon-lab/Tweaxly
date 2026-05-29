@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "intermediate",
   tldr: [
     "Stands for: Monthly Recurring Revenue.",
     "Definition: The sum of all subscription revenue, normalized to a monthly figure.",

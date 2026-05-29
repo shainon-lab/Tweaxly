@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "beginner",
   tldr: [
     "Definition: Revenue minus the direct cost of producing or delivering what was sold (Cost of Goods Sold).",
     "Calculated as: Revenue − COGS. Gross margin = Gross Profit ÷ Revenue × 100%.",

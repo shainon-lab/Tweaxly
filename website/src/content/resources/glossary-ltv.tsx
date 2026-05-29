@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "intermediate",
   tldr: [
     "Stands for: Customer Lifetime Value (sometimes CLV or CLTV).",
     "Definition: The total gross profit expected from one customer across the entire relationship.",

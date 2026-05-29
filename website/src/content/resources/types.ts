@@ -211,6 +211,10 @@ export interface ArticleMeta {
   // (TL;DR, definition, formula, comparison, takeaways, FAQ). Default
   // is "article".
   kind?:       "article" | "glossary";
+  // Glossary-only: a hint to the reader about the conceptual depth of
+  // the term. Drives the BEGINNER / INTERMEDIATE / ADVANCED filter on
+  // the glossary landing page. Ignored for kind === "article".
+  difficulty?: "beginner" | "intermediate" | "advanced";
   // 3-7 bullet TL;DR rendered at the top of the article body. Empty
   // array hides the block. Strongly recommended for GEO pickup -
   // generative engines prefer articles that lead with a direct answer.

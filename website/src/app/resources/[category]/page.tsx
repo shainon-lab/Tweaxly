@@ -8,6 +8,7 @@ import {
 import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, FAQ } from "@/components/article";
 import { JsonLd, breadcrumbJsonLd, collectionJsonLd, faqJsonLd } from "@/lib/schema";
+import GlossaryFilter from "./GlossaryFilter";
 
 const SITE_ORIGIN = "https://tweaxly.com";
 
@@ -146,42 +147,59 @@ export default async function CategoryPage(
         </section>
       ) : null}
 
-      {/* Latest articles */}
+      {/* Latest articles - the glossary category renders as a
+          filterable grid of all entries instead of the standard
+          latest list (the glossary doesn't have a meaningful
+          "latest" - it's a reference). */}
       <section className="container-wide pb-12 max-w-5xl">
-        <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">
-          {featured.length ? "Latest" : "All articles"}
-        </div>
-        {latest.length === 0 && featured.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-line bg-ink-900/30 p-10 text-center">
-            <div className="text-base font-medium text-slate-200 mb-1">
-              Articles for this category are on the way
-            </div>
-            <div className="text-sm text-slate-400 max-w-md mx-auto">
-              We&apos;re building out the {cat.label} library. In the meantime, explore
-              {" "}
-              <Link href="/resources" className="text-brand-purple hover:underline">
-                related categories
-              </Link>.
-            </div>
-          </div>
+        {cat.id === "business-glossary" ? (
+          <GlossaryFilter
+            entries={articles.map((a) => ({
+              slug:       a.meta.slug,
+              title:      a.meta.title,
+              excerpt:    a.meta.excerpt,
+              difficulty: a.meta.difficulty ?? "beginner",
+              href:       articleHref(a.meta),
+            }))}
+          />
         ) : (
-          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {latest.map((a) => (
-              <Link
-                key={a.meta.slug}
-                href={articleHref(a.meta)}
-                className="block group card hover:border-brand-purple/40 transition"
-              >
-                <div className="text-base font-semibold text-white leading-snug">{a.meta.title}</div>
-                <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
-                <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-2">
-                  <span>{fmtDate(a.meta.publishedAt)}</span>
-                  <span aria-hidden="true">·</span>
-                  <span>{a.meta.readingTime} min read</span>
+          <>
+            <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">
+              {featured.length ? "Latest" : "All articles"}
+            </div>
+            {latest.length === 0 && featured.length === 0 ? (
+              <div className="rounded-2xl border border-dashed border-line bg-ink-900/30 p-10 text-center">
+                <div className="text-base font-medium text-slate-200 mb-1">
+                  Articles for this category are on the way
                 </div>
-              </Link>
-            ))}
-          </div>
+                <div className="text-sm text-slate-400 max-w-md mx-auto">
+                  We&apos;re building out the {cat.label} library. In the meantime, explore
+                  {" "}
+                  <Link href="/resources" className="text-brand-purple hover:underline">
+                    related categories
+                  </Link>.
+                </div>
+              </div>
+            ) : (
+              <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {latest.map((a) => (
+                  <Link
+                    key={a.meta.slug}
+                    href={articleHref(a.meta)}
+                    className="block group card hover:border-brand-purple/40 transition"
+                  >
+                    <div className="text-base font-semibold text-white leading-snug">{a.meta.title}</div>
+                    <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
+                    <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-2">
+                      <span>{fmtDate(a.meta.publishedAt)}</span>
+                      <span aria-hidden="true">·</span>
+                      <span>{a.meta.readingTime} min read</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 

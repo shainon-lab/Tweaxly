@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "beginner",
   tldr: [
     "Definition: Revenue minus every cost - direct costs, operating expenses, interest, and taxes.",
     "Also called: \"Bottom line,\" net income, or net earnings.",

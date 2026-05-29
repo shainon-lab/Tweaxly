@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "intermediate",
   tldr: [
     "Definition: The rate at which a business is spending cash, usually quoted as a monthly net amount.",
     "Gross burn = total cash spent per month. Net burn = total cash spent minus cash collected.",

@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "intermediate",
   tldr: [
     "Definition: The number of months a business can operate at its current cash burn rate before running out of money.",
     "Formula: Cash on hand ÷ Monthly net burn = Runway in months.",

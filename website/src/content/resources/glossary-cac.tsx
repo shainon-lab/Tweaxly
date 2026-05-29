@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "intermediate",
   tldr: [
     "Stands for: Customer Acquisition Cost.",
     "Calculated as: Total sales & marketing spend ÷ new customers acquired (same period).",

@@ -81,6 +81,48 @@ import * as glossaryNetProfit  from "./glossary-net-profit";
 import * as glossaryGrossProfit from "./glossary-gross-profit";
 import * as glossaryMrr        from "./glossary-mrr";
 import * as glossaryLtv        from "./glossary-ltv";
+// Glossary batch 2
+import * as glRevenue          from "./glossary-revenue";
+import * as glNetRevenue       from "./glossary-net-revenue";
+import * as glCashFlow         from "./glossary-cash-flow";
+import * as glCogs             from "./glossary-cogs";
+import * as glAr               from "./glossary-accounts-receivable";
+import * as glAp               from "./glossary-accounts-payable";
+import * as glOpex             from "./glossary-opex";
+import * as glFixedCosts       from "./glossary-fixed-costs";
+import * as glVariableCosts    from "./glossary-variable-costs";
+import * as glRoi              from "./glossary-roi";
+import * as glConversionRate   from "./glossary-conversion-rate";
+import * as glBudget           from "./glossary-budget";
+import * as glForecast         from "./glossary-forecast";
+import * as glGrossMargin      from "./glossary-gross-margin";
+import * as glNetMargin        from "./glossary-net-margin";
+import * as glOperatingProfit  from "./glossary-operating-profit";
+import * as glBreakEven        from "./glossary-break-even-point";
+import * as glMom              from "./glossary-mom-growth";
+import * as glYoy              from "./glossary-yoy-growth";
+import * as glGrowthRate       from "./glossary-growth-rate";
+import * as glChurnRate        from "./glossary-churn-rate";
+import * as glRetentionRate    from "./glossary-retention-rate";
+import * as glWorkingCapital   from "./glossary-working-capital";
+import * as glCashReserve      from "./glossary-cash-reserve";
+import * as glFcf              from "./glossary-free-cash-flow";
+import * as glRoas             from "./glossary-roas";
+import * as glPayback          from "./glossary-customer-payback-period";
+import * as glAov              from "./glossary-aov";
+import * as glCrc              from "./glossary-customer-retention-cost";
+import * as glVariance         from "./glossary-variance";
+import * as glScenario         from "./glossary-scenario-planning";
+import * as glRevForecast      from "./glossary-revenue-forecast";
+import * as glExpForecast      from "./glossary-expense-forecast";
+import * as glCapex            from "./glossary-capex";
+import * as glAging            from "./glossary-accounts-aging";
+import * as glInventory        from "./glossary-inventory-turnover";
+import * as glRunRate          from "./glossary-financial-run-rate";
+import * as glDti              from "./glossary-debt-to-income-ratio";
+import * as glLiquidity        from "./glossary-liquidity";
+import * as glSolvency         from "./glossary-solvency";
+import * as glProfRatio        from "./glossary-profitability-ratio";
 
 import type { ArticleModule, CategoryId } from "./types";
 
@@ -143,6 +185,47 @@ export const ARTICLES: ArticleModule[] = [
   { meta: glossaryGrossProfit.meta, Body: glossaryGrossProfit.Body },
   { meta: glossaryMrr.meta,         Body: glossaryMrr.Body         },
   { meta: glossaryLtv.meta,         Body: glossaryLtv.Body         },
+  { meta: glRevenue.meta,           Body: glRevenue.Body           },
+  { meta: glNetRevenue.meta,        Body: glNetRevenue.Body        },
+  { meta: glCashFlow.meta,          Body: glCashFlow.Body          },
+  { meta: glCogs.meta,              Body: glCogs.Body              },
+  { meta: glAr.meta,                Body: glAr.Body                },
+  { meta: glAp.meta,                Body: glAp.Body                },
+  { meta: glOpex.meta,              Body: glOpex.Body              },
+  { meta: glFixedCosts.meta,        Body: glFixedCosts.Body        },
+  { meta: glVariableCosts.meta,     Body: glVariableCosts.Body     },
+  { meta: glRoi.meta,               Body: glRoi.Body               },
+  { meta: glConversionRate.meta,    Body: glConversionRate.Body    },
+  { meta: glBudget.meta,            Body: glBudget.Body            },
+  { meta: glForecast.meta,          Body: glForecast.Body          },
+  { meta: glGrossMargin.meta,       Body: glGrossMargin.Body       },
+  { meta: glNetMargin.meta,         Body: glNetMargin.Body         },
+  { meta: glOperatingProfit.meta,   Body: glOperatingProfit.Body   },
+  { meta: glBreakEven.meta,         Body: glBreakEven.Body         },
+  { meta: glMom.meta,               Body: glMom.Body               },
+  { meta: glYoy.meta,               Body: glYoy.Body               },
+  { meta: glGrowthRate.meta,        Body: glGrowthRate.Body        },
+  { meta: glChurnRate.meta,         Body: glChurnRate.Body         },
+  { meta: glRetentionRate.meta,     Body: glRetentionRate.Body     },
+  { meta: glWorkingCapital.meta,    Body: glWorkingCapital.Body    },
+  { meta: glCashReserve.meta,       Body: glCashReserve.Body       },
+  { meta: glFcf.meta,               Body: glFcf.Body               },
+  { meta: glRoas.meta,              Body: glRoas.Body              },
+  { meta: glPayback.meta,           Body: glPayback.Body           },
+  { meta: glAov.meta,               Body: glAov.Body               },
+  { meta: glCrc.meta,               Body: glCrc.Body               },
+  { meta: glVariance.meta,          Body: glVariance.Body          },
+  { meta: glScenario.meta,          Body: glScenario.Body          },
+  { meta: glRevForecast.meta,       Body: glRevForecast.Body       },
+  { meta: glExpForecast.meta,       Body: glExpForecast.Body       },
+  { meta: glCapex.meta,             Body: glCapex.Body             },
+  { meta: glAging.meta,             Body: glAging.Body             },
+  { meta: glInventory.meta,         Body: glInventory.Body         },
+  { meta: glRunRate.meta,           Body: glRunRate.Body           },
+  { meta: glDti.meta,               Body: glDti.Body               },
+  { meta: glLiquidity.meta,         Body: glLiquidity.Body         },
+  { meta: glSolvency.meta,          Body: glSolvency.Body          },
+  { meta: glProfRatio.meta,         Body: glProfRatio.Body         },
 ];
 
 export function getArticle(category: CategoryId, slug: string): ArticleModule | null {

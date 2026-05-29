@@ -15,6 +15,7 @@ export const meta: ArticleModule["meta"] = {
   publishedAt: "2026-05-29",
   readingTime: 3,
   kind: "glossary",
+  difficulty: "intermediate",
   tldr: [
     "Stands for: Earnings Before Interest, Taxes, Depreciation, and Amortization.",
     "Used as: A profit measure that strips out financing decisions and accounting choices, making businesses more comparable.",
