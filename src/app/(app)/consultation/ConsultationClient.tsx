@@ -11,6 +11,7 @@ import { MessageSquareText } from "lucide-react";
 import StructuredAdvisoryView from "@/components/advisory/StructuredAdvisoryView";
 import ThinkingProgress from "@/components/advisory/ThinkingProgress";
 import ResponseBriefing from "@/components/advisory/ResponseBriefing";
+import ShareAnalysisButton from "@/components/sharing/ShareAnalysisButton";
 import UpgradeTriggerButton from "@/components/billing/UpgradeTriggerButton";
 import BuyCreditsTriggerButton from "@/components/billing/BuyCreditsTriggerButton";
 import { notify } from "@/lib/notify";
@@ -34,6 +35,15 @@ type Active = {
 
 // Placeholder for the freeform consultation textarea. The conversational
 // framing reinforces the AI-advisor positioning over a generic chat box.
+// First-line, ~80-char excerpt used as the share's title. Keeps the
+// public viewer header short without truncating the full question
+// (which still renders in the question card).
+function truncateForTitle(text: string, max = 80): string {
+  const firstLine = text.split("\n")[0]?.trim() ?? "";
+  if (firstLine.length <= max) return firstLine;
+  return firstLine.slice(0, max - 1).trimEnd() + "…";
+}
+
 const PLACEHOLDER =
   "e.g. \"Why did profitability decline this quarter?\" or \"Can I safely hire another employee?\"";
 
@@ -52,6 +62,8 @@ export default function ConsultationClient({
   claudeEnabled,
   initialDraft,
   autoSubmit,
+  canShareAnalyses,
+  currentPlan,
 }: {
   active: Active | null;
   currency: string;
@@ -61,6 +73,13 @@ export default function ConsultationClient({
   // The component fires `send()` once on mount so the user lands
   // directly on the answer.
   autoSubmit?: boolean;
+  // Whether the current workspace's plan grants the
+  // `shareAnalyses` entitlement. Passed through to the Share button
+  // so Free users see the upgrade card instead of the share form.
+  canShareAnalyses: boolean;
+  // Effective plan key ("free" | "pro") - feeds the upgrade modal
+  // bundled inside ShareAnalysisModal.
+  currentPlan: string;
 }) {
   const router = useRouter();
   const [active, setActive] = useState<Active | null>(initialActive);
@@ -272,11 +291,11 @@ export default function ConsultationClient({
           Consultation History tab; this view keeps focus on the latest. */}
       {hasResponse && lastUserMsg && lastAssistantMsg ? (
         <div ref={responseRef} className="space-y-4">
-          {/* Question header. Right-side affordance re-opens the
-              composer so the user can ask a follow-up without
-              hunting for it - we deliberately collapse the textarea
-              after every answer to keep the screen focused on
-              reading, so this button is the one way back. */}
+          {/* Question header. Right-side affordances: re-open the
+              composer for a follow-up + share the analysis. We
+              deliberately collapse the textarea after every answer
+              to keep the screen focused on reading, so the
+              "Ask another question" button is the one way back. */}
           <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3 flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
@@ -285,24 +304,50 @@ export default function ConsultationClient({
                 {new Date(lastUserMsg.createdAt).toLocaleString()}
               </div>
             </div>
-            {!composerOpen ? (
-              <button
-                type="button"
-                onClick={() => {
-                  setComposerOpen(true);
-                  setDraft("");
-                  // Defer focus until after the composer mounts.
-                  setTimeout(() => {
-                    textareaRef.current?.focus();
-                    textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                  }, 0);
+            <div className="flex items-center gap-2 flex-wrap shrink-0">
+              {/* Share button. Snapshot captures everything the public
+                  viewer needs: the assistant content + payload +
+                  structured payload (so StructuredAdvisoryView /
+                  ResponseBriefing render the share identically), plus
+                  meta (the question, askedAt, currency, derived
+                  title). canShare/currentPlan gate the upgrade card
+                  vs. the share form inside the modal. */}
+              <ShareAnalysisButton
+                sourceType="consultation"
+                sourceId={lastAssistantMsg.id}
+                snapshotContent={{
+                  content:    lastAssistantMsg.content,
+                  payload:    lastAssistantMsg.payload,
+                  structured: lastAssistantMsg.structured ?? null,
                 }}
-                className="btn-ghost text-sm whitespace-nowrap shrink-0 inline-flex items-center gap-1.5"
-              >
-                <MessageSquareText size={14} strokeWidth={2} />
-                Ask another question
-              </button>
-            ) : null}
+                snapshotMeta={{
+                  title:    truncateForTitle(lastUserMsg.content),
+                  question: lastUserMsg.content,
+                  askedAt:  lastUserMsg.createdAt,
+                  currency,
+                }}
+                canShare={canShareAnalyses}
+                currentPlan={currentPlan}
+              />
+              {!composerOpen ? (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setComposerOpen(true);
+                    setDraft("");
+                    // Defer focus until after the composer mounts.
+                    setTimeout(() => {
+                      textareaRef.current?.focus();
+                      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                    }, 0);
+                  }}
+                  className="btn-ghost text-sm whitespace-nowrap inline-flex items-center gap-1.5"
+                >
+                  <MessageSquareText size={14} strokeWidth={2} />
+                  Ask another question
+                </button>
+              ) : null}
+            </div>
           </div>
 
           {/* When the Claude response includes a structured payload

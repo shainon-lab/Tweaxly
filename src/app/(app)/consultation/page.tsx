@@ -12,6 +12,7 @@ import PageHeader from "@/components/PageHeader";
 import AdvisoryHelp from "@/components/AdvisoryHelp";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasFeature, getEffectivePlan } from "@/lib/billing";
 import ConsultationClient from "./ConsultationClient";
 import ConsultationTabs from "./ConsultationTabs";
 import EmptyDataPreview from "@/components/EmptyDataPreview";
@@ -24,11 +25,13 @@ export default async function ConsultationPage({
   const { business } = await requireBusiness();
   const sp = await searchParams;
 
-  const [totalQuestions, totalTxnCount] = await Promise.all([
+  const [totalQuestions, totalTxnCount, canShareAnalyses, effectivePlan] = await Promise.all([
     prisma.consultationMessage.count({
       where: { consultation: { businessId: business.id }, role: "user" },
     }),
     prisma.transaction.count({ where: { businessId: business.id } }),
+    hasFeature(business.id, "shareAnalyses"),
+    getEffectivePlan(business.id),
   ]);
   // Without transactions the advisor has nothing to ground its
   // answers in - show the platform-wide bank-intelligence empty state
@@ -63,6 +66,8 @@ export default async function ConsultationPage({
           active={null}
           initialDraft={initialDraft}
           autoSubmit={autoSubmit}
+          canShareAnalyses={canShareAnalyses}
+          currentPlan={effectivePlan.plan}
         />
       )}
     </>
