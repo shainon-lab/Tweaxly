@@ -8,9 +8,9 @@ import {
   SHARE_EXPIRY_HOURS,
   type ShareExpiryKey,
   isShareSourceType,
-  generateShareToken,
   buildShareUrl,
 } from "@/lib/sharedAnalyses";
+import { generateShareToken } from "@/lib/sharedAnalyses.server";
 
 export const runtime = "nodejs";
 

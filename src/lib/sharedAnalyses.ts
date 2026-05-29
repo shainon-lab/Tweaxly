@@ -1,16 +1,15 @@
-// Helpers for the Secure Analysis Sharing feature.
+// Client-and-server safe helpers for the Secure Analysis Sharing
+// feature. Anything that depends on Node built-ins (`node:crypto`,
+// `fs`, etc.) lives in sharedAnalyses.server.ts so this file can be
+// imported from "use client" components without webpack tripping on
+// browser-incompatible modules.
 //
-// The actual storage + read of SharedAnalysis rows lives in the API
-// routes (`/api/shared-analyses/...`) and the public viewer
-// (`/share/[token]/...` — Phase 2). This module is the single place
-// to look up:
-//   - the canonical token format + URL builder
+// This module is the single place to look up:
 //   - the allowed expiration buckets the create form exposes
 //   - the allowed sourceType strings
+//   - the canonical share URL builder
 // so adding a new source surface or rotating the URL shape is one
 // edit rather than a sweep.
-
-import { randomBytes } from "node:crypto";
 
 // User-facing expiry choices on the Share modal. Stored on
 // SharedAnalysis.expiresAt as an absolute timestamp; the bucket the
@@ -36,16 +35,6 @@ export type ShareSourceType = (typeof SHARE_SOURCE_TYPES)[number];
 export function isShareSourceType(v: unknown): v is ShareSourceType {
   return typeof v === "string"
     && (SHARE_SOURCE_TYPES as readonly string[]).includes(v);
-}
-
-// 32 random bytes (256 bits) base64url-encoded — same shape as the
-// unsubscribe / email-verification tokens elsewhere in the codebase
-// so security review only has to look at one pattern. The token IS
-// the secret: anyone who has it can view the share subject to
-// expiry + password.
-const SHARE_TOKEN_BYTES = 32;
-export function generateShareToken(): string {
-  return randomBytes(SHARE_TOKEN_BYTES).toString("base64url");
 }
 
 // Canonical URL the create response hands back to the caller. Reads
