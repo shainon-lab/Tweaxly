@@ -6,6 +6,8 @@
 
 import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { Users, TrendingUp, Calculator } from "lucide-react";
 import ForecastTabs from "@/components/ForecastTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
@@ -211,6 +213,18 @@ export default async function WorkforcePage() {
       <PageHeader
         title={t("page.workforce.title")}
         subtitle={t("page.workforce.subtitle")}
+        help={
+          <HowItWorks
+            title="How workforce planning works"
+            intro="A dedicated workspace for payroll - live total cost, how it's trending, what's planned, and what changes do to the next 12 months. Roots through to your team roster so the numbers are your actual people, not generic categories."
+            cards={[
+              { icon: <Users size={16} strokeWidth={1.7} />,      title: "Live payroll",       body: "Total monthly cost, share of revenue, and change vs. last month - pulled straight from your active employees and contractors." },
+              { icon: <TrendingUp size={16} strokeWidth={1.7} />, title: "12-month forecast",  body: "Projects payroll forward from your roster, so planned hires, raises, and end-dates are already baked in. No re-running needed." },
+              { icon: <Calculator size={16} strokeWidth={1.7} />, title: "Model changes",      body: "Workforce Builder lets you model hires, raises, contractor swaps, and end-dates on top of the current roster - see the impact on the next 12 months before committing." },
+            ]}
+            outro="Roster edits live on the Employees tab. Cost per employee is fully-loaded - salary plus the payload (taxes, benefits) you set per region."
+          />
+        }
         right={
           <div className="flex items-center gap-2">
             <Link href="/employees" className="btn-ghost">Edit roster</Link>

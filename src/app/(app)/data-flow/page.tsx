@@ -1,4 +1,6 @@
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { Layers, Filter, TrendingUp } from "lucide-react";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
@@ -70,6 +72,18 @@ export default async function DataFlowPage({
       <PageHeader
         title={t("page.trends.title")}
         subtitle={`${RANGE_LABEL[range]}${categoryFilter ? ` · ${categoryFilter}` : ""}. ${view === "summary" ? "P&L summary" : "Per-month detail"}.`}
+        help={
+          <HowItWorks
+            title="How the data flow works"
+            intro="The full breakdown of every dollar that moved through your business. Stacks revenue and expenses by category, month-by-month, with totals and per-category trends so you can see where the money came from and where it went."
+            cards={[
+              { icon: <Layers size={16} strokeWidth={1.7} />,     title: "Category grid",   body: "Each row is a category, each column is a month. Cells show the total amount in that category for that month - red for outflows, green for inflows. Sums to your monthly P&L." },
+              { icon: <Filter size={16} strokeWidth={1.7} />,     title: "Filters",         body: "Scope by date range and drill into a single category by clicking its row. Useful for confirming a hunch about where a cost increase actually came from." },
+              { icon: <TrendingUp size={16} strokeWidth={1.7} />, title: "Trend signals",   body: "Trend mini-charts next to each row show the category's last 6-12 months at a glance. Rising trends in expense categories are flagged for attention." },
+            ]}
+            outro="If a category looks wrong, fix it on the Settings -> Categories tab. Auto-categorization rules survive every future import."
+          />
+        }
         right={
           <DataFlowFilters
             range={range}

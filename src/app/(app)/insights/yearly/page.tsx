@@ -2,6 +2,8 @@
 // view lives at /insights/yearly/insights.
 
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { CalendarRange, Lightbulb, FileText } from "lucide-react";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { requireBusiness } from "@/lib/auth";
 import {
@@ -65,6 +67,18 @@ export default async function YearlyNumbersPage({
       <PageHeader
         title={`Insights · ${selected} Summary`}
         subtitle="Headline numbers across financials, workforce, and cost composition for the chosen year."
+        help={
+          <HowItWorks
+            title="How the yearly summary works"
+            intro="A full retrospective on any completed calendar year. Headline financials, workforce changes, cost composition, biggest swings, plus AI-written insights and tips ranked by importance - everything you'd want to know before planning next year."
+            cards={[
+              { icon: <CalendarRange size={16} strokeWidth={1.7} />, title: "Year picker",      body: "Switch between any completed year using the selector below. Only years with at least one month of transactions appear. The current year shows up here once it ends." },
+              { icon: <Lightbulb size={16} strokeWidth={1.7} />,     title: "Top insights & tips", body: "Twenty observations ranked by importance - revenue and expense movements, margin trajectory, payroll ratio, vendor concentration, marketing efficiency, headcount trajectory. Each one comes with a one-line tip on what to do with it." },
+              { icon: <FileText size={16} strokeWidth={1.7} />,      title: "PDF export",       body: "Download the whole summary as a clean PDF for sharing with stakeholders, accountants, or board members. Pro feature." },
+            ]}
+            outro="Everything here is computed deterministically from your data - same year, same data, same report. AI is only used to write the prose narrative; the numbers come straight from your transactions."
+          />
+        }
       />
       {!canYearly ? (
         <LockedOverlay

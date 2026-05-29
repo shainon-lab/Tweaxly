@@ -1,4 +1,6 @@
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { UserPlus, ClipboardList, History } from "lucide-react";
 import ForecastTabs from "@/components/ForecastTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
@@ -25,6 +27,18 @@ export default async function EmployeesPage() {
       <PageHeader
         title={t("page.employees.title")}
         subtitle={t("page.employees.subtitle")}
+        help={
+          <HowItWorks
+            title="How the team roster works"
+            intro="Your active team - employees and contractors - with their gross monthly cost, start date, and (optional) end date. The roster feeds Workforce Planning's live payroll number and the 12-month forecast, so changes here ripple through every cash projection."
+            cards={[
+              { icon: <UserPlus size={16} strokeWidth={1.7} />,      title: "Add a person",   body: "Name, role, gross monthly salary, start date. Contractor flag for non-employees so taxes and benefits don't get added on top of their stated rate." },
+              { icon: <ClipboardList size={16} strokeWidth={1.7} />, title: "Loaded cost",    body: "Tweaxly adds employer taxes and benefits on top of gross salary using a region-specific payload rate. Contractors are billed at their stated rate with no payload." },
+              { icon: <History size={16} strokeWidth={1.7} />,       title: "Events log",     body: "Raises, role changes, end dates - log them as events so the 12-month forecast picks them up at the right moment in time, not just from today." },
+            ]}
+            outro="Future-dated events (a hire starting in two months, a planned raise next quarter) are honored by the forecast. End-dated employees drop out of the roster automatically when their date passes."
+          />
+        }
       />
       <ForecastTabs />
       <EmployeesClient
