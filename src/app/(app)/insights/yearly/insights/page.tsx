@@ -5,6 +5,7 @@ import PageHeader from "@/components/PageHeader";
 import ReportsHelp from "@/components/ReportsHelp";
 import ReportsInnerTabs from "@/components/ReportsInnerTabs";
 import { requireBusiness } from "@/lib/auth";
+import { hasFeature, getPlanFor } from "@/lib/billing";
 import {
   computeYearlyStats,
   generateYearlyInsights,
@@ -49,6 +50,10 @@ export default async function YearlyInsightsTextPage({
 
   const stats = await computeYearlyStats(business.id, selected);
   const insights = generateYearlyInsights(stats, ccy);
+  const [canShareAnalyses, currentPlan] = await Promise.all([
+    hasFeature(business.id, "shareAnalyses"),
+    getPlanFor(business.id),
+  ]);
 
   return (
     <>
@@ -72,7 +77,13 @@ export default async function YearlyInsightsTextPage({
         </div>
       ) : null}
 
-      <YearlyInsightsList insights={insights} />
+      <YearlyInsightsList
+        insights={insights}
+        year={selected}
+        currency={ccy}
+        canShareAnalyses={canShareAnalyses}
+        currentPlan={currentPlan}
+      />
     </>
   );
 }

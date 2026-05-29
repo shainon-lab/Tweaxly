@@ -65,6 +65,7 @@ export default async function ForecastPage({
 }) {
   const { business } = await requireBusiness();
   const canScenarios = await hasFeature(business.id, "scenarioBuilder");
+  const canShareAnalyses = await hasFeature(business.id, "shareAnalyses");
   const currentPlan  = await getPlanFor(business.id);
   const sp = await searchParams;
   const view: "overview" | "scenarios" = sp.view === "scenarios" ? "scenarios" : "overview";
@@ -297,7 +298,12 @@ export default async function ForecastPage({
       ) : (
         <>
           <ForecastReadinessBanner readiness={readiness} />
-          <ForecastExplanationPanel result={engineResult} currency={ccy} />
+          <ForecastExplanationPanel
+            result={engineResult}
+            currency={ccy}
+            canShareAnalyses={canShareAnalyses}
+            currentPlan={currentPlan}
+          />
         </>
       )}
 

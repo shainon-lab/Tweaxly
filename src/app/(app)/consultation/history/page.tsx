@@ -8,6 +8,7 @@ import PageHeader from "@/components/PageHeader";
 import AdvisoryHelp from "@/components/AdvisoryHelp";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { hasFeature, getEffectivePlan } from "@/lib/billing";
 import ConsultationTabs from "../ConsultationTabs";
 import HistoryClient, { type HistoryListItem, type HistoryDetail } from "./HistoryClient";
 
@@ -18,6 +19,10 @@ export default async function ConsultationHistoryPage({
 }) {
   const { business } = await requireBusiness();
   const sp = await searchParams;
+  const [canShareAnalyses, effectivePlan] = await Promise.all([
+    hasFeature(business.id, "shareAnalyses"),
+    getEffectivePlan(business.id),
+  ]);
 
   const allMessages = await prisma.consultationMessage.findMany({
     where: { consultation: { businessId: business.id } },
@@ -91,6 +96,8 @@ export default async function ConsultationHistoryPage({
         list={list}
         detail={detail}
         currency={business.currency}
+        canShareAnalyses={canShareAnalyses}
+        currentPlan={effectivePlan.plan}
       />
     </>
   );

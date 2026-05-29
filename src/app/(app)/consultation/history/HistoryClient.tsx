@@ -17,8 +17,18 @@ import { useState, useTransition } from "react";
 import { Trash2 } from "lucide-react";
 import StructuredAdvisoryView from "@/components/advisory/StructuredAdvisoryView";
 import ResponseBriefing from "@/components/advisory/ResponseBriefing";
+import ShareAnalysisButton from "@/components/sharing/ShareAnalysisButton";
 import type { StructuredAdvice } from "@/lib/advisorTypes";
 import { notify } from "@/lib/notify";
+
+// First-line, ~80-char excerpt used as the share's title. Same helper
+// is duplicated in ConsultationClient - cheap enough to leave in both
+// places rather than create a one-line shared util.
+function truncateForTitle(text: string, max = 80): string {
+  const firstLine = text.split("\n")[0]?.trim() ?? "";
+  if (firstLine.length <= max) return firstLine;
+  return firstLine.slice(0, max - 1).trimEnd() + "…";
+}
 
 export type HistoryListItem = {
   id: string;
@@ -47,10 +57,17 @@ export default function HistoryClient({
   list,
   detail,
   currency,
+  canShareAnalyses,
+  currentPlan,
 }: {
   list: HistoryListItem[];
   detail: HistoryDetail | null;
   currency: string;
+  // Pro-only entitlement passthrough. Free workspaces still see the
+  // Share button but click-through lands on the upgrade card inside
+  // the modal rather than the share form.
+  canShareAnalyses: boolean;
+  currentPlan: string;
 }) {
   const router = useRouter();
   const sp = useSearchParams();
@@ -177,16 +194,37 @@ export default function HistoryClient({
                 {/* Question header - mirrors the New Advisory question
                     card (same accent border, "Your question" eyebrow,
                     t-meta/t-body typography) so a re-opened session
-                    feels identical to the moment it was asked. */}
+                    feels identical to the moment it was asked. Share
+                    button on the right lets the user re-share a past
+                    answer without going back to the live view. */}
                 <div className="px-5 md:px-6 py-4 border-b border-line bg-ink-900/60">
-                  <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3">
-                    <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
-                    <div className="t-body text-slate-100 whitespace-pre-wrap">
-                      {detail.question}
+                  <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3 flex items-start justify-between gap-3">
+                    <div className="min-w-0 flex-1">
+                      <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
+                      <div className="t-body text-slate-100 whitespace-pre-wrap">
+                        {detail.question}
+                      </div>
+                      <div className="t-meta text-slate-500 mt-1">
+                        {new Date(detail.askedAt).toLocaleString()}
+                      </div>
                     </div>
-                    <div className="t-meta text-slate-500 mt-1">
-                      {new Date(detail.askedAt).toLocaleString()}
-                    </div>
+                    <ShareAnalysisButton
+                      sourceType="consultation"
+                      sourceId={detail.id}
+                      snapshotContent={{
+                        content:    detail.answerMarkdown ?? "",
+                        payload:    detail.payload,
+                        structured: detail.structured,
+                      }}
+                      snapshotMeta={{
+                        title:    truncateForTitle(detail.question),
+                        question: detail.question,
+                        askedAt:  detail.askedAt,
+                        currency,
+                      }}
+                      canShare={canShareAnalyses}
+                      currentPlan={currentPlan}
+                    />
                   </div>
                 </div>
 

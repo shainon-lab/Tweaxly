@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
 import { CONSULT_OPEN_EVENT, DETAIL_PANEL_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 import NarrativeBody from "./NarrativeBody";
+import ShareAnalysisButton from "@/components/sharing/ShareAnalysisButton";
 import { notify } from "@/lib/notify";
 
 // Open the floating Consult panel pre-loaded with a question and a
@@ -307,12 +308,19 @@ export default function PushRecommendations({
   initial,
   currency,
   initialSelectedId,
+  canShareAnalyses = false,
+  currentPlan = "free",
 }: {
   initial: PushRec[];
   currency: string;
   // When the page is hit with ?signal=ID (bell-notification deeplink)
   // we pre-open that signal's detail panel on first render.
   initialSelectedId?: string | null;
+  // Pro-only Share button gating. Defaults are intentionally conservative
+  // so any other surface that still mounts this component without the
+  // share props falls through to "Share button shows the upgrade card".
+  canShareAnalyses?: boolean;
+  currentPlan?: string;
 }) {
   const router = useRouter();
   const [recs, setRecs] = useState<PushRec[]>(initial);
@@ -613,6 +621,8 @@ export default function PushRecommendations({
                 onClose={closePanel}
                 onResolve={() => resolveSignal(selectedRec)}
                 onMarkRead={() => markSignalRead(selectedRec)}
+                canShareAnalyses={canShareAnalyses}
+                currentPlan={currentPlan}
               />
             </div>
           ) : null}
@@ -813,6 +823,8 @@ function SignalDetailPanel({
   onClose,
   onResolve,
   onMarkRead,
+  canShareAnalyses,
+  currentPlan,
 }: {
   rec: PushRec | null;
   lifecycle?: Lifecycle;
@@ -820,6 +832,10 @@ function SignalDetailPanel({
   onClose: () => void;
   onResolve: () => void;
   onMarkRead: () => void;
+  // Forwarded straight through to the inline Share button below
+  // (entitlement gate + plan label for the upgrade flow).
+  canShareAnalyses: boolean;
+  currentPlan: string;
 }) {
   const router = useRouter();
   // When the user closes the panel, unmount it immediately - no exit
@@ -936,6 +952,32 @@ function SignalDetailPanel({
           >
             Mark as resolved
           </button>
+          {/* Share the signal as a secure read-only link. Snapshot is
+              the rendered structure (title + observation + interpretation
+              + recommendation + impact) - everything the public viewer
+              needs to redraw this panel without the workspace context. */}
+          <ShareAnalysisButton
+            sourceType="signal"
+            sourceId={rec.id}
+            snapshotContent={{
+              title:          display.title,
+              level:          rec.level,
+              category:       rec.category,
+              signalKey:      rec.signalKey ?? null,
+              observation:    rec.observation,
+              interpretation: rec.interpretation,
+              recommendation: rec.recommendation,
+              impact:         rec.impact,
+            }}
+            snapshotMeta={{
+              title:     display.title,
+              createdAt: typeof rec.createdAt === "string" ? rec.createdAt : new Date(rec.createdAt).toISOString(),
+              currency,
+            }}
+            canShare={canShareAnalyses}
+            currentPlan={currentPlan}
+            className="t-meta px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-accent hover:border-accent/60 transition inline-flex items-center gap-1.5"
+          />
         </div>
         <button
           type="button"

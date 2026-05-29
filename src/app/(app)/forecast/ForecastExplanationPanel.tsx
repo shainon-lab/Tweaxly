@@ -17,6 +17,7 @@ import { useState } from "react";
 import { fmtMoney } from "@/lib/format";
 import type { ForecastResult } from "@/lib/forecastEngine";
 import NarrativeBody from "@/components/NarrativeBody";
+import ShareAnalysisButton from "@/components/sharing/ShareAnalysisButton";
 
 type Tone = "positive" | "warning" | "neutral";
 
@@ -49,7 +50,22 @@ const TONE_RANK: Record<Tone, number> = {
 export default function ForecastExplanationPanel({
   result,
   currency,
-}: { result: ForecastResult; currency: string }) {
+  canShareAnalyses = false,
+  currentPlan = "free",
+  sourceId,
+}: {
+  result: ForecastResult;
+  currency: string;
+  // Pro entitlement passthrough. Defaults are conservative so other
+  // callers that don't pass them get the upgrade card on click.
+  canShareAnalyses?: boolean;
+  currentPlan?: string;
+  // Identifier for the originating forecast (e.g. a saved scenario id
+  // or a deterministic hash of the baseline window). Used as
+  // SharedAnalysis.sourceId for back-tracing; defaults to a synthesised
+  // string when the caller doesn't have one handy.
+  sourceId?: string;
+}) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
   // Sort drivers by impact (warnings first, then positives, then
@@ -88,15 +104,51 @@ export default function ForecastExplanationPanel({
           confidence chip on wide screens. */}
       <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
         <div className="t-section text-slate-100 shrink-0">Why this forecast?</div>
-        <div className="flex items-center gap-3 shrink-0 rounded-md border border-line bg-ink-900/50 px-3 py-1.5">
-          <div className="text-right">
-            <div className="t-meta uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
-            <div className={`t-section font-bold leading-tight ${TONE_TEXT[confTone]}`}>
-              {confidencePct}%
+        <div className="flex items-center gap-3 shrink-0">
+          {/* Share the structured explanation as a secure read-only
+              link. Snapshot mirrors the ForecastResult fields the
+              public renderer needs to redraw this panel - the engine
+              narrative, drivers, baseline range, confidence, recurring
+              items, outliers, seasonality note and warnings. */}
+          <ShareAnalysisButton
+            sourceType="forecast_explanation"
+            sourceId={sourceId ?? `forecast:${result.baselinePeriod.fromYM}:${result.baselinePeriod.toYM}:h${result.forecastHorizon.months}`}
+            snapshotContent={{
+              title:              `Forecast - next ${result.forecastHorizon.months} months`,
+              confidence:         result.confidence,
+              confidenceScore:    result.confidenceScore,
+              baselinePeriod:     result.baselinePeriod,
+              forecastHorizon:    result.forecastHorizon,
+              actualsUsed:        result.actualsUsed,
+              scenariosApplied:   result.scenariosApplied,
+              explanationText:    result.explanationText,
+              drivers,
+              recurringDetected:  result.recurringDetected,
+              outliersDetected:   result.outliersDetected,
+              excludedRecords:    result.excludedRecords,
+              seasonalityApplied: result.seasonalityApplied,
+              seasonalityNote:    result.seasonalityNote,
+              warnings:           result.warnings,
+              basedOn,
+            }}
+            snapshotMeta={{
+              title: `Forecast explanation - next ${result.forecastHorizon.months} months`,
+              currency,
+              generatedAt: new Date().toISOString(),
+            }}
+            canShare={canShareAnalyses}
+            currentPlan={currentPlan}
+          />
+          <div className="flex items-center gap-3 rounded-md border border-line bg-ink-900/50 px-3 py-1.5">
+            <div className="text-right">
+              <div className="t-meta uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
+              <div className={`t-section font-bold leading-tight ${TONE_TEXT[confTone]}`}>
+                {confidencePct}%
+              </div>
             </div>
-          </div>
-          <div className="t-meta text-slate-400 leading-snug max-w-[220px]">
-            {basedOn}
+            <div className="t-meta text-slate-400 leading-snug max-w-[220px]">
+              {basedOn}
+            </div>
           </div>
         </div>
       </div>

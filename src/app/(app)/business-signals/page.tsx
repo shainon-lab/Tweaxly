@@ -15,7 +15,7 @@ import PushRecommendations, { type PushRec } from "@/components/PushRecommendati
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { evaluateNotificationRules } from "@/lib/notificationsEval";
-import { getPlanFor } from "@/lib/billing";
+import { getPlanFor, hasFeature } from "@/lib/billing";
 import EmptyDataPreview from "@/components/EmptyDataPreview";
 import BusinessSignalsTabs from "./BusinessSignalsTabs";
 import { sweepAndDispatch } from "@/lib/alerts/sweep";
@@ -58,10 +58,11 @@ export default async function BusinessSignalsPage({
     );
   }
 
-  const [activeSignals, triggeredAlerts, plan] = await Promise.all([
+  const [activeSignals, triggeredAlerts, plan, canShareAnalyses] = await Promise.all([
     listActiveSignals(business.id),
     evaluateNotificationRules(business.id),
     getPlanFor(business.id),
+    hasFeature(business.id, "shareAnalyses"),
   ]);
   const cap = planSignalCap(plan);
 
@@ -126,7 +127,13 @@ export default async function BusinessSignalsPage({
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}
       />
-      <PushRecommendations initial={pushRecs} currency={ccy} initialSelectedId={deeplinkedSignalId} />
+      <PushRecommendations
+        initial={pushRecs}
+        currency={ccy}
+        initialSelectedId={deeplinkedSignalId}
+        canShareAnalyses={canShareAnalyses}
+        currentPlan={plan}
+      />
     </>
   );
 }
