@@ -710,7 +710,7 @@ function SignalCard({
       onClick={onSelect}
       aria-pressed={selected}
       aria-label={`Open details for ${display.title}`}
-      className={`h-48 rounded-2xl border ${borderColor} ${isCritical ? criticalWash : "bg-ink-900/50"} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
+      className={`min-h-48 rounded-2xl border ${borderColor} ${isCritical ? criticalWash : "bg-ink-900/50"} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
     >
       {/* Meta line - severity dot + badge + category + lifecycle */}
       <div className="flex items-center gap-2 text-[11px] text-slate-400">
