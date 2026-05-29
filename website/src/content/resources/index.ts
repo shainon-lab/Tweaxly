@@ -4,11 +4,34 @@
 // /resources/[category] route uses it to list each category's
 // articles.
 
+// Existing (pre-Learning-Center) articles, migrated into the new IA.
 import * as advisor   from "./ai-financial-advisor";
 import * as cashFlow  from "./cash-flow-early-warning";
 import * as forecast  from "./financial-forecasting-small-business-guide";
 import * as signals   from "./business-signals-founders-monitor";
 import * as sheets    from "./spreadsheets-not-enough";
+
+// Financial Fundamentals
+import * as revenueProfit from "./revenue-vs-profit";
+import * as grossProfit   from "./gross-profit-explained";
+import * as netProfit     from "./net-profit-explained";
+import * as ebitda        from "./ebitda-explained";
+import * as cashVsProfit  from "./cash-flow-vs-profit";
+
+// Business Metrics & KPIs
+import * as cac           from "./what-is-customer-acquisition-cost-cac";
+import * as ltv           from "./what-is-customer-lifetime-value-ltv";
+import * as mrr           from "./what-is-monthly-recurring-revenue-mrr";
+import * as arr           from "./what-is-annual-recurring-revenue-arr";
+import * as momYoy        from "./mom-vs-yoy-growth";
+
+// Cash Flow Management
+import * as whatIsCf      from "./what-is-cash-flow";
+import * as improveCf     from "./how-to-improve-cash-flow";
+import * as cfForecast    from "./cash-flow-forecasting";
+import * as profitableNoCash from "./why-profitable-businesses-run-out-of-cash";
+import * as cashReserve   from "./how-much-cash-reserve";
+
 import type { ArticleModule, CategoryId } from "./types";
 
 // Order matters here - it controls the default sort on the index page.
@@ -19,6 +42,21 @@ export const ARTICLES: ArticleModule[] = [
   { meta: forecast.meta, Body: forecast.Body },
   { meta: signals.meta,  Body: signals.Body  },
   { meta: sheets.meta,   Body: sheets.Body   },
+  { meta: revenueProfit.meta, Body: revenueProfit.Body },
+  { meta: grossProfit.meta,   Body: grossProfit.Body   },
+  { meta: netProfit.meta,     Body: netProfit.Body     },
+  { meta: ebitda.meta,        Body: ebitda.Body        },
+  { meta: cashVsProfit.meta,  Body: cashVsProfit.Body  },
+  { meta: cac.meta,           Body: cac.Body           },
+  { meta: ltv.meta,           Body: ltv.Body           },
+  { meta: mrr.meta,           Body: mrr.Body           },
+  { meta: arr.meta,           Body: arr.Body           },
+  { meta: momYoy.meta,        Body: momYoy.Body        },
+  { meta: whatIsCf.meta,      Body: whatIsCf.Body      },
+  { meta: improveCf.meta,     Body: improveCf.Body     },
+  { meta: cfForecast.meta,    Body: cfForecast.Body    },
+  { meta: profitableNoCash.meta, Body: profitableNoCash.Body },
+  { meta: cashReserve.meta,   Body: cashReserve.Body   },
 ];
 
 export function getArticle(category: CategoryId, slug: string): ArticleModule | null {
