@@ -681,7 +681,7 @@ export async function buildForecastEngine(
         outliers.push({
           ym: "trend_refit",
           metric: "expense",
-          reason: `Growth slopes re-fit excluding outlier months: revenue ${(oldRev * 100).toFixed(1)}% → ${(refittedRev * 100).toFixed(1)}% MoM, expenses ${(oldExp * 100).toFixed(1)}% → ${(refittedExp * 100).toFixed(1)}% MoM.`,
+          reason: `Growth rates re-calculated after excluding outlier months: revenue ${(oldRev * 100).toFixed(1)}% to ${(refittedRev * 100).toFixed(1)}% per month, expenses ${(oldExp * 100).toFixed(1)}% to ${(refittedExp * 100).toFixed(1)}% per month.`,
         });
       }
     }

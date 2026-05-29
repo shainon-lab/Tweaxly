@@ -15,7 +15,7 @@ export const ALERT_CATEGORIES = [
   { value: "expense",          label: "Expense alerts",
     helper: "Cost spikes, category overruns, runaway spend." },
   { value: "cashflow",         label: "Cash flow alerts",
-    helper: "Burn-rate changes, runway risk, projected dips." },
+    helper: "Changes in how fast cash is being spent, low cash warnings, projected dips." },
   { value: "forecast",         label: "Forecast alerts",
     helper: "Material changes to the forecast outlook." },
   { value: "vendor_anomaly",   label: "Vendor anomaly alerts",

@@ -440,9 +440,9 @@ function evergreenSituations(ctx: BusinessContext): StrategicSituation[] {
 
   out.push({
     id: "evergreen_runway",
-    title: "Runway",
-    blurb: "How long does the current burn buy me?",
-    question: `How long is my runway at the current pace?`,
+    title: "How long my cash lasts",
+    blurb: "How many months of cash do I have at this spending level?",
+    question: `How long can my cash support the business at the current pace?`,
     tone: "neutral",
   });
 

@@ -382,7 +382,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
         ? "Heavy payroll-to-revenue ratio leaves little room for overheads or downturns. Either grow revenue or rebalance the team."
         : r > 0.35
           ? "Workable but watch the slope - if payroll keeps growing faster than revenue you'll be in the same conversation a year from now."
-          : "Comfortable ratio - you have room to make a strategic hire if there's a clear ROI case.",
+          : "Comfortable ratio - you have room to make a strategic hire if there's a clear case for how it pays back.",
     });
   }
 
@@ -392,8 +392,8 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: s.marketingPctRevenue > 0.20 ? 8 : 6,
       text: `Marketing spend hit ${fmtMoney(s.totalMarketing, ccy)} - ${fmtPct(s.marketingPctRevenue)} of revenue.`,
       tip: s.marketingPctRevenue > 0.20
-        ? "Above 20% of revenue is aggressive. Confirm payback period and CAC trend before committing the same intensity next year."
-        : "Below the typical 15–20% band for growth-stage SMBs. If revenue growth is healthy, this is efficient marketing; if growth is flat, may signal under-investment.",
+        ? "Above 20% of revenue is aggressive. Before committing the same level next year, confirm the marketing is still paying back and that each new customer is worth what you're spending to win them."
+        : "Below the typical 15-20% range for growth-stage small businesses. If revenue is growing, the marketing is efficient; if it's flat, you may be under-investing.",
     });
   }
 
@@ -404,7 +404,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       importance: share > 0.30 ? 8 : 6,
       text: `${s.topCategoryByExpense.name} was the largest cost center - ${fmtMoney(s.topCategoryByExpense.amount, ccy)} (${fmtPct(share)} of total expenses).`,
       tip: share > 0.30
-        ? "Concentrated cost. A 10% efficiency gain here moves the P&L more than effort spent on smaller categories."
+        ? "Concentrated cost. A 10% efficiency gain here moves your bottom line more than effort spent on smaller categories."
         : "Worth a once-a-year review even if it's not concentrated - every line above 10% of expenses deserves a fresh look.",
     });
   }
@@ -453,7 +453,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     out.push({
       importance: 5,
       text: `${fmtMoney(s.totalOneTime, ccy)} of expenses (${fmtPct(s.oneTimeShareOfExpenses)}) were tagged one-time.`,
-      tip: "Strip these out when calculating run-rate. The recurring expense base - what repeats every month - is what matters for budgeting next year.",
+      tip: "Strip these out when looking at your typical monthly spending. The recurring expense base - what repeats every month - is what matters for budgeting next year.",
     });
   }
 
@@ -511,17 +511,17 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
       text: `Worked with ${s.uniqueVendorCount} distinct vendor${s.uniqueVendorCount === 1 ? "" : "s"} over the year.`,
       tip: s.uniqueVendorCount > 30
         ? "Long tail of vendors - consolidating the smallest 20 could save more than the spend justifies in admin overhead."
-        : "Compact vendor list - easier to negotiate but watch concentration risk on the top few.",
+        : "Compact vendor list - easier to negotiate, but be aware of how much of your spend goes to the top few; losing one could be disruptive.",
     });
   }
 
-  // 19. Operating leverage observation (revenue per employee)
+  // 19. Revenue per employee
   if (s.avgHeadcount > 0) {
     const revPerEmployee = s.totalRevenue / s.avgHeadcount;
     out.push({
       importance: 5,
       text: `Revenue per employee landed at ${fmtMoney(revPerEmployee, ccy)} (averaged over the year).`,
-      tip: "Compare against last year - if this number is rising, you're getting more leverage out of each hire; if it's falling, the team grew faster than revenue.",
+      tip: "Compare against last year - if this number is rising, you're getting more value out of each hire; if it's falling, the team grew faster than revenue.",
     });
   }
 
@@ -534,7 +534,7 @@ export function generateYearlyInsights(s: YearlyStats, ccy: string): Insight[] {
     const recurringRunRate = (s.totalExpenses - s.totalOneTime) / Math.max(s.coverage.monthCount, 1) * 12;
     out.push({
       importance: 4,
-      text: `Recurring expense run-rate (one-times stripped): ~${fmtMoney(recurringRunRate, ccy)}/year.`,
+      text: `Typical yearly spending (one-times stripped out): about ${fmtMoney(recurringRunRate, ccy)}.`,
       tip: "Use this as the floor in your next-year budget - anything below this means cuts; anything above means real growth, not just one-offs returning.",
     });
   }
@@ -572,7 +572,7 @@ export function statBoxes(s: YearlyStats, ccy: string): { label: string; value: 
   return [
     { label: "Total revenue",       value: money(s.totalRevenue),     hint: `${s.coverage.monthCount} mo` },
     { label: "Total expenses",      value: money(s.totalExpenses) },
-    { label: "Net profit (P&L)",    value: money(s.netProfit),         tone: tone(s.netProfit) },
+    { label: "Net profit",          value: money(s.netProfit),         tone: tone(s.netProfit) },
     { label: "Net margin",          value: pct(s.netMarginPct),        tone: tone(s.netMarginPct) },
     { label: "Avg monthly revenue", value: money(s.avgMonthlyRevenue) },
     { label: "Avg monthly expenses",value: money(s.avgMonthlyExpenses) },

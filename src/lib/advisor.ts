@@ -475,7 +475,7 @@ export async function recommendProactive(
       level: "good",
       observation: `Marketing cut held in ${curLabel} without hurting revenue.`,
       interpretation: `Marketing went from ${fmtMoney(prev.marketing, ccy)} in ${prevLabel} to ${fmtMoney(current.marketing, ccy)} in ${curLabel} while revenue stayed flat - efficiency improved, not just spend.`,
-      recommendation: `Lock in the savings unless you start seeing pipeline drop in 60–90 days. Watch CAC and conversion rates as your leading indicators.`,
+      recommendation: `Lock in the savings unless you start seeing your sales pipeline drop in 60-90 days. The early signs to watch: cost to bring in each new customer creeping up, and a smaller share of leads turning into customers.`,
       impact: round0(prev.marketing - current.marketing),
       category: "marketing",
       signalKey: "marketing_cut_held",
@@ -564,7 +564,7 @@ export async function recommendProactive(
       level: "info",
       observation: `Healthy margin with light marketing in ${curLabel} - you have growth headroom.`,
       interpretation: `Net profit is ${fmtPct(current.netProfit / avgRevenue)} of revenue and marketing is only ${fmtPct(marketingRatio)}. Profitable businesses under-investing in acquisition tend to plateau - you're leaving growth on the table.`,
-      recommendation: `Test a +25% marketing month and measure CAC against your current baseline. Use Consultation to model the cashflow impact before committing.`,
+      recommendation: `Try one month with marketing spend up 25%, then check whether the cost to win each new customer stayed the same or got better. Use Consultation to model the cash impact before committing.`,
       impact: 0,
       category: "growth",
       signalKey: "growth_headroom",
@@ -778,7 +778,7 @@ export async function recommendProactive(
       level: "info",
       observation: `Recurring expense base: ${fmtMoney(recurringMonthly, ccy)}/mo.`,
       interpretation: `${curLabel} expenses with one-time items stripped out. This is the number you have to cover every month no matter what happens to revenue - the structural floor of the business.`,
-      recommendation: `Know this number cold. It's your minimum-revenue target and your runway divisor when calculating how long reserves will last.`,
+      recommendation: `Know this number cold. It's the minimum you need to bring in every month, and it's what you'd divide your cash balance by to see how many months of reserves you have.`,
       impact: 0,
       category: "cashflow",
       signalKey: "recurring_expense_base",
@@ -1208,18 +1208,18 @@ function growthLeversFor(
   }
   if (months <= 12) {
     return [
-      `**Marketing investment** - bring spend to ~10% of revenue if you're below it. Set a CAC ceiling = 1/3 of annual contract value. 60–90-day payback expected.`,
-      `**Pricing** - still the fastest lever; revisit in Q2 once you have signal on demand elasticity.`,
-      `**One sales hire** - only if you have a repeatable channel. Adds ${fmtMoney(8000, ccy)}–${fmtMoney(15000, ccy)}/mo loaded cost; expect break-even in month 4–6.`,
-      `**Retention** - every 1pt churn improvement adds 1pt LTV. Cheapest-to-action growth.`,
+      `**Marketing investment** - bring spend to about 10% of revenue if you're below it. As a rule of thumb, don't spend more than a third of a customer's annual value to win them. Expect payback within 60-90 days.`,
+      `**Pricing** - still the fastest lever; revisit in three months once you have a read on how customers respond.`,
+      `**One sales hire** - only if you have a repeatable channel. Adds ${fmtMoney(8000, ccy)}-${fmtMoney(15000, ccy)}/mo loaded cost; expect break-even in month 4-6.`,
+      `**Retention** - each percentage point of churn you eliminate adds the same to customer lifetime value. Cheapest growth move you can make.`,
     ];
   }
   if (months <= 36) {
     return [
       `**Channel diversification** - add a second acquisition channel that isn't correlated with the first. Risk of single-channel saturation grows over 2-year windows.`,
       `**Selective hiring** - sales/CS first if revenue-bottlenecked, ops/eng if delivery-bottlenecked. Plan in cohorts of 1–2, not waves.`,
-      `**Pricing tier expansion** - launch a higher-tier or annual plan; uplift to ARPU is usually 15–25% over 24 months.`,
-      `**Retention motion** - onboarding revamp + QBRs for top accounts. Reduces churn by 20–40% typical.`,
+      `**Pricing tier expansion** - launch a higher-tier or annual plan; this typically lifts average revenue per customer 15-25% over 24 months.`,
+      `**Retention motion** - onboarding revamp + quarterly check-ins with top accounts. Reduces churn by 20-40% typical.`,
       `**Geographic or vertical expansion** - feasible at this horizon if your motion is repeatable in your home market.`,
     ];
   }
@@ -1228,7 +1228,7 @@ function growthLeversFor(
     `**Product breadth** - second product line or platform play. Usually requires hiring a product+eng pod for 12+ months ahead of revenue.`,
     `**Brand and category creation** - only worthwhile if you can dominate; otherwise a value trap.`,
     `**M&A or partnerships** - realistic at this horizon; can compress 3 years of growth into 12 months but adds integration risk.`,
-    `**Org scaling** - leadership layer (VPs, finance, HR). Comes with a step-function cost increase; usually right at the $5–10M ARR mark.`,
+    `**Org scaling** - leadership layer (VPs, finance, HR). Comes with a step-function cost increase; usually right around the $5-10M annual recurring revenue mark.`,
   ];
 }
 
@@ -1248,7 +1248,7 @@ function growthAnswer(
   if (marketingRatio < 0.10 && current.netProfit > 0) {
     const test = round0(avgMarketing > 0 ? avgMarketing * 1.5 : avgRevenue * 0.10);
     lines.push(
-      `**Marketing is light at ${fmtPct(marketingRatio)} of revenue** while you're profitable - the cheapest growth lever is to test increasing it to ~10% of revenue (about ${fmtMoney(test, ccy)}/mo). Run for 60 days and measure CAC + new-customer revenue before scaling further.`,
+      `**Marketing is light at ${fmtPct(marketingRatio)} of revenue** while you're profitable - the cheapest growth move is to test raising it to about 10% of revenue (around ${fmtMoney(test, ccy)}/mo). Run for 60 days and check the cost to win each new customer plus the revenue from those customers before scaling further.`,
     );
   } else if (marketingRatio > 0.25) {
     lines.push(
@@ -1283,40 +1283,40 @@ function runwayAnswer(
   horizons: { months: number; label: string }[],
 ): ConsultationAnswer {
   const { ccy, avgRevenue, avgExpenses, current } = ctx;
-  const monthlyBurn = Math.max(0, avgExpenses - avgRevenue);
+  const monthlyShortfall = Math.max(0, avgExpenses - avgRevenue);
   const lines: string[] = [];
-  lines.push(`### Cash runway`);
+  lines.push(`### How long your cash can support the business`);
   lines.push("");
-  if (monthlyBurn <= 0) {
+  if (monthlyShortfall <= 0) {
     lines.push(
-      `You're net-positive on the trailing 3-month average (revenue ${fmtMoney(avgRevenue, ccy)}/mo vs expenses ${fmtMoney(avgExpenses, ccy)}/mo). At current rates you're not burning runway - runway is bounded by cash reserves only, not by your operating losses.`,
+      `Good news: on the last 3 months you're bringing in more than you're spending (revenue ${fmtMoney(avgRevenue, ccy)}/mo vs expenses ${fmtMoney(avgExpenses, ccy)}/mo). At this pace you're not eating into your cash - how long your cash lasts depends only on what's already in the bank, not on your operations.`,
     );
     if (horizons.length > 0) {
       lines.push("");
-      lines.push(`Asked about specific horizons:`);
+      lines.push(`If you stay on this trajectory:`);
       for (const h of horizons) {
         const cumNet = (avgRevenue - avgExpenses) * h.months;
         lines.push(
-          `- **${h.label} (${h.months}mo):** cumulative net ${fmtMoney(cumNet, ccy)} on current trajectory. Cash position would *grow* by that amount if reserves are flat.`,
+          `- **${h.label} (${h.months} months):** about ${fmtMoney(cumNet, ccy)} added to cash - your reserves would *grow* by that amount.`,
         );
       }
     }
   } else {
     lines.push(
-      `Trailing burn = ${fmtMoney(monthlyBurn, ccy)}/mo (${fmtMoney(avgExpenses, ccy)} expenses − ${fmtMoney(avgRevenue, ccy)} revenue).`,
+      `You're spending about ${fmtMoney(monthlyShortfall, ccy)} more per month than you bring in (${fmtMoney(avgExpenses, ccy)} expenses minus ${fmtMoney(avgRevenue, ccy)} revenue).`,
     );
     lines.push("");
     if (horizons.length > 0) {
-      lines.push(`To survive each horizon you'd need at least:`);
+      lines.push(`To make it through each window you'd need at least this much cash on hand at the start:`);
       for (const h of horizons) {
         lines.push(
-          `- **${h.label} (${h.months}mo):** ${fmtMoney(monthlyBurn * h.months, ccy)} of cash on hand at the start.`,
+          `- **${h.label} (${h.months} months):** ${fmtMoney(monthlyShortfall * h.months, ccy)}.`,
         );
       }
       lines.push("");
     }
     lines.push(
-      `If you tell me your current cash balance in a follow-up ("we have $X in the bank"), I can give a runway figure. Otherwise: divide cash on hand by ${fmtMoney(monthlyBurn, ccy)}/mo.`,
+      `If you tell me your current cash balance in a follow-up ("we have $X in the bank"), I can give you a months-of-cash figure. Otherwise: divide cash on hand by ${fmtMoney(monthlyShortfall, ccy)} to see how many months it covers.`,
     );
   }
   lines.push("");
