@@ -1,38 +1,34 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
-import { ARTICLES, CATEGORIES } from "@/content/resources";
+import {
+  ARTICLES, CATEGORIES, articleHref, articlesByCategory, categoryHref,
+} from "@/content/resources";
+import ResourcesSearch from "./ResourcesSearch";
+import { JsonLd, breadcrumbJsonLd } from "@/lib/schema";
+
+const SITE_ORIGIN = "https://tweaxly.com";
 
 const DESCRIPTION =
-  "Modern financial intelligence insights for business owners. Forecasting, cash flow, business signals, AI financial advisory, and financial planning - in one resource hub.";
+  "Tweaxly Learning Center - plain-English guides on financial fundamentals, KPIs, cash flow, forecasting, growth, expense management, business intelligence and small business operations.";
 
 export const metadata: Metadata = {
-  title: { absolute: "Resources - Your AI Business Pulse Hub | Tweaxly" },
+  title: { absolute: "Learning Center - Tweaxly Resources" },
   description: DESCRIPTION,
-  keywords: [
-    "AI financial intelligence",
-    "financial forecasting",
-    "cash flow forecasting",
-    "AI financial advisor",
-    "business signals",
-    "financial planning",
-  ],
   alternates: { canonical: "/resources" },
   openGraph: {
-    title: "Resources - Your AI Business Pulse Hub | Tweaxly",
+    title:       "Learning Center - Tweaxly Resources",
     description: DESCRIPTION,
-    url: "/resources",
-    type: "website",
+    url:         "/resources",
+    type:        "website",
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Resources - Your AI Business Pulse Hub | Tweaxly",
+    card:        "summary_large_image",
+    title:       "Learning Center - Tweaxly Resources",
     description: DESCRIPTION,
   },
 };
 
-// Date formatting kept consistent across cards. The articles publish
-// dates as YYYY-MM-DD; we render them as "May 20, 2026" for the UI.
 function fmtDate(iso: string): string {
   const d = new Date(iso);
   return Number.isNaN(d.getTime())
@@ -41,166 +37,181 @@ function fmtDate(iso: string): string {
 }
 
 export default function ResourcesIndexPage() {
-  // Featured first (if any), then chronological. Two featured articles
-  // are surfaced in the top hero; everything else falls into the grid.
-  const featured = ARTICLES.filter((a) => a.meta.featured);
-  const everythingElse = ARTICLES
-    .filter((a) => !a.meta.featured)
-    .sort((a, b) => b.meta.publishedAt.localeCompare(a.meta.publishedAt));
+  // Latest articles across every category (chronological).
+  const latest = [...ARTICLES]
+    .sort((a, b) => b.meta.publishedAt.localeCompare(a.meta.publishedAt))
+    .slice(0, 6);
+
+  // Featured for the homepage hero rail. If none flagged, the rail
+  // gracefully falls back to the 3 most recent.
+  const featured = ARTICLES.filter((a) => a.meta.featured).slice(0, 3);
+  const featuredOrLatest = featured.length ? featured : latest.slice(0, 3);
+
+  // Categories minus the glossary (highlighted separately below).
+  const topicalCategories = CATEGORIES.filter((c) => c.id !== "business-glossary");
+  const glossary          = CATEGORIES.find((c) => c.id === "business-glossary")!;
 
   return (
     <main id="main-content" className="flex-1">
+      <JsonLd data={breadcrumbJsonLd([
+        { name: "Home",      url: `${SITE_ORIGIN}/` },
+        { name: "Resources", url: `${SITE_ORIGIN}/resources` },
+      ])} />
       <SiteHeader />
 
       {/* Hero */}
-      <section className="container-wide pt-10 pb-16 lg:pt-16 lg:pb-20 max-w-5xl">
-        <div className="eyebrow mb-4">Financial Intelligence Hub</div>
+      <section className="container-wide pt-10 pb-12 lg:pt-16 lg:pb-16 max-w-5xl">
+        <div className="eyebrow mb-4">Learning Center</div>
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
-          Modern financial intelligence,<br className="hidden sm:inline" />{" "}
-          <span className="gradient-text">written for business owners</span>.
+          Small business finance,<br className="hidden sm:inline" />{" "}
+          <span className="gradient-text">in plain English</span>.
         </h1>
-        <p className="mt-6 text-lg text-slate-300 leading-relaxed max-w-2xl">
-          Practical insights on AI financial advisory, forecasting, cash flow
-          intelligence, business signals, and financial planning - the
-          decision-grade material a senior CFO would walk you through, if you
-          had one.
+        <p className="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed max-w-3xl">
+          A growing knowledge base for business owners. Financial fundamentals,
+          the metrics worth tracking, cash flow, forecasting, growth, expenses,
+          operations, and a glossary you can actually understand. No MBA required.
         </p>
+
+        <div className="mt-8">
+          <ResourcesSearch articles={ARTICLES.map((a) => ({
+            slug: a.meta.slug,
+            title: a.meta.title,
+            excerpt: a.meta.excerpt,
+            category: a.meta.category,
+            href: articleHref(a.meta),
+          }))} categories={CATEGORIES.map((c) => ({
+            id: c.id, label: c.label, href: categoryHref(c.id),
+          }))} />
+        </div>
       </section>
 
-      {/* Featured strip */}
-      {featured.length > 0 ? (
-        <section className="container-wide pb-12 lg:pb-16">
-          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">Featured</div>
-          <div className="grid lg:grid-cols-2 gap-6">
-            {featured.map((a) => (
-              <FeaturedCard key={a.meta.slug} article={a} />
-            ))}
+      {/* Featured categories grid */}
+      <section className="container-wide pb-12 max-w-6xl">
+        <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">Explore by topic</div>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {topicalCategories.map((cat) => {
+            const count = articlesByCategory(cat.id).length;
+            return (
+              <Link
+                key={cat.id}
+                href={categoryHref(cat.id)}
+                className="block group card hover:border-brand-purple/40 transition"
+              >
+                <div className="text-base sm:text-lg font-semibold text-white leading-snug">
+                  {cat.label}
+                </div>
+                <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+                  {cat.blurb}
+                </div>
+                <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide">
+                  {count} {count === 1 ? "article" : "articles"}
+                </div>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Business Glossary highlight - separate so it stands out as a
+          reference resource vs the topical categories above. */}
+      <section className="container-wide pb-12 max-w-6xl">
+        <Link
+          href={categoryHref(glossary.id)}
+          className="block group rounded-3xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-transparent to-brand-teal/10 p-7 sm:p-9 hover:border-brand-purple/60 transition"
+        >
+          <div className="flex flex-wrap items-start justify-between gap-6">
+            <div className="max-w-2xl">
+              <div className="eyebrow mb-3">Reference</div>
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+                {glossary.label}
+              </div>
+              <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+                {glossary.blurb} Look up any term you&apos;ve heard but never had clearly explained - one entry per term, written for owners, not analysts.
+              </p>
+            </div>
+            <div className="text-sm text-brand-purple group-hover:underline shrink-0 self-end">
+              Open the glossary →
+            </div>
+          </div>
+        </Link>
+      </section>
+
+      {/* Featured articles */}
+      {featuredOrLatest.length > 0 ? (
+        <section className="container-wide pb-12 max-w-6xl">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">
+            {featured.length ? "Featured articles" : "Recently published"}
+          </div>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {featuredOrLatest.map((a) => {
+              const cat = CATEGORIES.find((c) => c.id === a.meta.category);
+              return (
+                <Link
+                  key={`${a.meta.category}-${a.meta.slug}`}
+                  href={articleHref(a.meta)}
+                  className="block group card hover:border-brand-purple/40 transition"
+                >
+                  <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-2">
+                    {cat?.label ?? a.meta.category}
+                  </div>
+                  <div className="text-base font-semibold text-white leading-snug">{a.meta.title}</div>
+                  <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
+                  <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide">
+                    {a.meta.readingTime} min read
+                  </div>
+                </Link>
+              );
+            })}
           </div>
         </section>
       ) : null}
 
-      {/* Category chips */}
-      <section className="container-wide pb-8">
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mr-2">Categories</span>
-          {CATEGORIES.map((c) => (
-            <a
-              key={c.id}
-              href={`#cat-${c.id}`}
-              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-3 py-1 text-xs text-slate-300 hover:border-brand-purple/40 hover:text-white transition"
-            >
-              {c.label}
-            </a>
-          ))}
-        </div>
-      </section>
+      {/* Latest resources - up to 6, mixing every category. Repeats
+          some of the featured cards above when the library is small;
+          this is fine and reflects the genuine state of the catalog. */}
+      {latest.length > 0 ? (
+        <section className="container-wide pb-16 max-w-6xl">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">Latest resources</div>
+          <ul className="space-y-3">
+            {latest.map((a) => {
+              const cat = CATEGORIES.find((c) => c.id === a.meta.category);
+              return (
+                <li key={`${a.meta.category}-${a.meta.slug}`} className="card hover:border-brand-purple/40 transition">
+                  <Link href={articleHref(a.meta)} className="block">
+                    <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-1.5">
+                      {cat?.label ?? a.meta.category}
+                    </div>
+                    <div className="text-base font-semibold text-white">{a.meta.title}</div>
+                    <div className="text-sm text-slate-400 mt-1 leading-relaxed">{a.meta.excerpt}</div>
+                    <div className="mt-3 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-3">
+                      <span>{fmtDate(a.meta.publishedAt)}</span>
+                      <span>·</span>
+                      <span>{a.meta.readingTime} min read</span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ) : null}
 
-      {/* Latest insights grid */}
-      <section className="container-wide pb-12 lg:pb-16">
-        <div className="flex items-baseline justify-between mb-6">
-          <h2 className="text-xl sm:text-2xl font-semibold tracking-tight">Latest Insights</h2>
-        </div>
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          {everythingElse.map((a) => (
-            <ArticleCard key={a.meta.slug} article={a} />
-          ))}
-        </div>
-      </section>
-
-      {/* Category sections - render every category with its articles
-          listed underneath. Improves internal linking + crawl depth. */}
-      {CATEGORIES.map((cat) => {
-        const inCat = ARTICLES.filter((a) => a.meta.category === cat.id);
-        if (inCat.length === 0) return null;
-        return (
-          <section key={cat.id} id={`cat-${cat.id}`} className="container-wide py-10 border-t border-line/40 scroll-mt-20">
-            <div className="grid lg:grid-cols-3 gap-6 lg:gap-10">
-              <div className="lg:col-span-1">
-                <div className="eyebrow mb-3">{cat.label}</div>
-                <p className="text-slate-400 text-sm leading-relaxed">{cat.blurb}</p>
-              </div>
-              <div className="lg:col-span-2">
-                <ul className="space-y-3">
-                  {inCat.map((a) => (
-                    <li key={a.meta.slug} className="card hover:border-brand-purple/40 transition">
-                      <Link href={`/resources/${a.meta.slug}`} className="block">
-                        <div className="text-base font-semibold text-white">{a.meta.title}</div>
-                        <div className="text-sm text-slate-400 mt-1 leading-relaxed">{a.meta.excerpt}</div>
-                        <div className="mt-3 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-3">
-                          <span>{fmtDate(a.meta.publishedAt)}</span>
-                          <span>·</span>
-                          <span>{a.meta.readingTime} min read</span>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-          </section>
-        );
-      })}
-
-      {/* Newsletter CTA */}
+      {/* CTA */}
       <section className="container-wide py-16">
         <div className="rounded-3xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-transparent to-brand-teal/10 p-8 sm:p-10 text-center">
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-            Get new insights as they publish
+            Run your business with clearer numbers
           </h2>
           <p className="mt-3 text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
-            Practical, no-fluff financial intelligence for business owners.
-            New articles every other week. No noise.
+            Tweaxly turns your real financial activity into business signals,
+            forecasts, and advice you can actually understand - in plain English.
           </p>
           <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">
-            <Link href="/contact" className="btn-brand text-base px-6 py-3">Subscribe via contact form</Link>
-            <a href="https://app.tweaxly.com/register" className="btn-ghost text-base px-6 py-3">Start Free</a>
+            <a href="https://app.tweaxly.com/register" className="btn-brand text-base px-6 py-3">Start Free</a>
+            <Link href="/contact" className="btn-ghost text-base px-6 py-3">Get in touch</Link>
           </div>
         </div>
       </section>
     </main>
-  );
-}
-
-function FeaturedCard({ article }: { article: { meta: typeof ARTICLES[number]["meta"] } }) {
-  const cat = CATEGORIES.find((c) => c.id === article.meta.category);
-  return (
-    <Link
-      href={`/resources/${article.meta.slug}`}
-      className="block group relative overflow-hidden rounded-2xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-transparent to-brand-teal/10 p-6 sm:p-8 transition hover:border-brand-purple/60"
-    >
-      <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-3">{cat?.label ?? article.meta.category}</div>
-      <h3 className="text-2xl sm:text-3xl font-bold tracking-tight text-white leading-tight">
-        {article.meta.title}
-      </h3>
-      <p className="mt-3 text-sm text-slate-300 leading-relaxed">
-        {article.meta.excerpt}
-      </p>
-      <div className="mt-5 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-3">
-        <span>{fmtDate(article.meta.publishedAt)}</span>
-        <span>·</span>
-        <span>{article.meta.readingTime} min read</span>
-        <span className="ml-auto text-brand-purple group-hover:translate-x-0.5 transition">Read →</span>
-      </div>
-    </Link>
-  );
-}
-
-function ArticleCard({ article }: { article: { meta: typeof ARTICLES[number]["meta"] } }) {
-  const cat = CATEGORIES.find((c) => c.id === article.meta.category);
-  return (
-    <Link
-      href={`/resources/${article.meta.slug}`}
-      className="block group card hover:border-brand-purple/40 transition"
-    >
-      <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-2">{cat?.label ?? article.meta.category}</div>
-      <h3 className="text-base font-semibold text-white leading-snug">{article.meta.title}</h3>
-      <p className="mt-2 text-sm text-slate-400 leading-relaxed line-clamp-3">{article.meta.excerpt}</p>
-      <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-3">
-        <span>{fmtDate(article.meta.publishedAt)}</span>
-        <span>·</span>
-        <span>{article.meta.readingTime} min</span>
-        <span className="ml-auto text-brand-purple group-hover:translate-x-0.5 transition">Read →</span>
-      </div>
-    </Link>
   );
 }

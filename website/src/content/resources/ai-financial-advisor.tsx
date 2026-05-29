@@ -7,17 +7,32 @@ export const meta: ArticleModule["meta"] = {
   slug: "what-is-ai-financial-advisor",
   title: "What Is an AI Financial Advisor for Businesses?",
   excerpt:
-    "The AI financial advisor is replacing the spreadsheet-plus-bookkeeper combo for SMB owners. Here's what it actually is, how it works, and where it fits.",
-  category: "ai-finance",
+    "The AI financial advisor is replacing the spreadsheet-plus-bookkeeper combo for small business owners. Here's what it actually is, how it works, and where it fits.",
+  category: "business-intelligence",
   tags: ["AI Financial Advisor", "AI CFO", "AI-powered financial planning"],
   author: { name: "Tweaxly Team", role: "Financial Intelligence" },
   publishedAt: "2026-05-20",
   readingTime: 9,
   featured: true,
+  tldr: [
+    "An AI financial advisor reads your real numbers and explains what's happening in plain English - it's not a chatbot bolted onto bookkeeping software.",
+    "It combines deterministic finance code (categorization, forecasting, anomaly detection) with AI reasoning (explanations and free-form Q&A about your data).",
+    "Small businesses adopt it because a fractional CFO costs $3-15K per month and most owners can't justify the spend.",
+    "It's a replacement for the day-to-day CFO work - forecasting, variance analysis, scenario modeling - not for senior CFO strategy.",
+    "The shift is from \"answer questions when asked\" to \"surface what to look at this morning\" before you ask.",
+  ],
+  faq: [
+    { q: "What's the difference between an AI financial advisor and bookkeeping software?", a: "Bookkeeping software records what happened. An AI financial advisor reads those records, explains what's changing, projects where you're heading, and answers questions about your numbers in plain English." },
+    { q: "Is an AI financial advisor a replacement for a CFO?", a: "Not for a senior CFO doing M&A or capital strategy. Yes, for the day-to-day CFO work most small businesses were never going to hire for - forecasting, variance analysis, scenario modeling, and answering financial questions on demand." },
+    { q: "How does an AI financial advisor avoid making up numbers?", a: "A well-built advisor combines deterministic finance code (which does the math) with language-model reasoning (which explains the math). The AI reads your real categorized data; it doesn't generate plausible-sounding numbers out of thin air." },
+    { q: "Do I need to switch accounting software to use one?", a: "No. A modern AI financial advisor sits above your existing accounting stack and reads your data. It supplements your bookkeeping; it doesn't replace it." },
+    { q: "What kind of decisions does it actually help with?", a: "Hiring decisions (can we afford another role?), pricing changes (what's the margin impact?), and early-warning signals (vendor cost creep, missing income, category drift) - the everyday operational decisions that drive most small businesses." },
+    { q: "Is my financial data safe with an AI advisor?", a: "Look for vendors that explicitly state where data is stored, who can access it, and whether your data is used to train models. Ask about encryption in transit and at rest, and whether the vendor will sign a data processing agreement." },
+  ],
   seo: {
     title: "What Is an AI Financial Advisor for Businesses? | Tweaxly",
     description:
-      "Understand the AI financial advisor, how it works, why SMBs are adopting it, and how it differs from a traditional CFO or bookkeeping software.",
+      "Understand the AI financial advisor, how it works, why small businesses are adopting it, and how it differs from a traditional CFO or bookkeeping software.",
     keywords: [
       "AI financial advisor",
       "AI CFO",
@@ -202,11 +217,11 @@ export const Body = () => (
 
     <p>
       For more on related practice, see{" "}
-      <ArticleLink href="/resources/financial-forecasting-small-business-guide">
+      <ArticleLink href="/resources/business-forecasting/financial-forecasting-small-business-guide">
         Financial Forecasting for Small Businesses
       </ArticleLink>{" "}
       and{" "}
-      <ArticleLink href="/resources/spreadsheets-not-enough">
+      <ArticleLink href="/resources/business-intelligence/spreadsheets-not-enough">
         Why Spreadsheets Are No Longer Enough for Financial Planning
       </ArticleLink>
       .

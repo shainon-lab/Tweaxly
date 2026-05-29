@@ -3,23 +3,26 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import SiteHeader from "@/components/SiteHeader";
 import {
-  ARTICLES, CATEGORIES, articleSlugs, getArticle, relatedArticles,
+  CATEGORIES, allArticleParams, articleHref, categoryHref,
+  getArticle, getCategory, relatedArticles,
 } from "@/content/resources";
-import type { ArticleModule } from "@/content/resources/types";
+import type { CategoryId } from "@/content/resources/types";
+import { Breadcrumb, TLDR, FAQ } from "@/components/article";
+import { JsonLd, articleJsonLd, faqJsonLd } from "@/lib/schema";
 
 // Pre-generate every article route at build time.
 export function generateStaticParams() {
-  return articleSlugs().map((slug) => ({ slug }));
+  return allArticleParams();
 }
 
 export async function generateMetadata(
-  { params }: { params: Promise<{ slug: string }> },
+  { params }: { params: Promise<{ category: string; slug: string }> },
 ): Promise<Metadata> {
-  const { slug } = await params;
-  const article = getArticle(slug);
+  const { category, slug } = await params;
+  const article = getArticle(category as CategoryId, slug);
   if (!article) return { title: "Resource not found | Tweaxly" };
-  const { seo, title, excerpt } = article.meta;
-  const url = `/resources/${slug}`;
+  const { seo } = article.meta;
+  const url = `/resources/${category}/${slug}`;
   return {
     title: { absolute: seo.title },
     description: seo.description,
@@ -31,6 +34,7 @@ export async function generateMetadata(
       url,
       type: "article",
       publishedTime: article.meta.publishedAt,
+      modifiedTime:  article.meta.updatedAt ?? article.meta.publishedAt,
       authors: [article.meta.author.name],
       tags: article.meta.tags,
     },
@@ -40,9 +44,6 @@ export async function generateMetadata(
       description: seo.description,
     },
     other: { "article:section": article.meta.category },
-    // Defensive: also surface the excerpt for previewers that read
-    // the description fallback.
-    ...({ description: excerpt } as object),
   };
 }
 
@@ -53,64 +54,33 @@ function fmtDate(iso: string): string {
     : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
-// JSON-LD Article schema lets Google render rich results (author,
-// date, image, breadcrumb). Same data the on-page metadata exposes,
-// in a separate machine-readable form.
-function ArticleStructuredData({ article }: { article: ArticleModule }) {
-  const data = {
-    "@context": "https://schema.org",
-    "@type": "Article",
-    headline: article.meta.title,
-    description: article.meta.seo.description,
-    datePublished: article.meta.publishedAt,
-    dateModified: article.meta.publishedAt,
-    author: { "@type": "Organization", name: article.meta.author.name },
-    publisher: {
-      "@type": "Organization",
-      name: "Tweaxly",
-      url: "https://tweaxly.com",
-      logo: { "@type": "ImageObject", url: "https://tweaxly.com/og-image.svg" },
-    },
-    mainEntityOfPage: { "@type": "WebPage", "@id": `https://tweaxly.com/resources/${article.meta.slug}` },
-    image: ["https://tweaxly.com/og-share.png"],
-    keywords: article.meta.seo.keywords.join(", "),
-    articleSection: article.meta.category,
-  };
-  return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-    />
-  );
-}
-
 export default async function ArticlePage(
-  { params }: { params: Promise<{ slug: string }> },
+  { params }: { params: Promise<{ category: string; slug: string }> },
 ) {
-  const { slug } = await params;
-  const article = getArticle(slug);
+  const { category, slug } = await params;
+  const article = getArticle(category as CategoryId, slug);
   if (!article) notFound();
 
-  const cat = CATEGORIES.find((c) => c.id === article.meta.category);
-  const related = relatedArticles(article.meta.slug, 3);
+  const cat = getCategory(article.meta.category);
+  if (!cat) notFound();
+  const related = relatedArticles(article.meta.category, article.meta.slug, 3);
   const Body = article.Body;
 
   return (
     <main id="main-content" className="flex-1">
-      <ArticleStructuredData article={article} />
+      <JsonLd data={articleJsonLd({ article: article.meta, categoryLabel: cat.label })} />
+      <JsonLd data={faqJsonLd(article.meta.faq ?? [])} />
       <SiteHeader />
 
       {/* Hero */}
       <article className="container-wide pt-10 pb-16 lg:pt-16 lg:pb-20 max-w-3xl">
-        <div className="mb-4 flex items-center gap-3 text-xs text-slate-500">
-          <Link href="/resources" className="text-brand-purple hover:underline">Resources</Link>
-          <span>·</span>
-          {cat ? (
-            <Link href={`/resources#cat-${cat.id}`} className="hover:text-white transition">
-              {cat.label}
-            </Link>
-          ) : <span>{article.meta.category}</span>}
-        </div>
+        <Breadcrumb
+          items={[
+            { label: "Resources", href: "/resources" },
+            { label: cat.label,   href: categoryHref(cat.id) },
+            { label: article.meta.title },
+          ]}
+        />
         <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-white">
           {article.meta.title}
         </h1>
@@ -129,17 +99,33 @@ export default async function ArticlePage(
               <div className="text-[11px] uppercase tracking-[0.12em] text-slate-500">{article.meta.author.role}</div>
             </div>
           </div>
-          <div className="ml-auto flex items-center gap-3">
+          <div className="ml-auto flex items-center gap-3 flex-wrap">
             <span>{fmtDate(article.meta.publishedAt)}</span>
             <span>·</span>
             <span>{article.meta.readingTime} min read</span>
           </div>
         </div>
 
+        {/* TL;DR (from meta.tldr) - sits BEFORE the article body so
+            both human readers and generative engines land on a direct
+            answer immediately. */}
+        {article.meta.tldr?.length ? (
+          <div className="mt-10">
+            <TLDR items={article.meta.tldr} />
+          </div>
+        ) : null}
+
         {/* Body */}
         <div className="article-body mt-10">
           <Body />
         </div>
+
+        {/* Article FAQ - rendered from meta.faq. The visible accordion
+            doubles as the data source for FAQPage JSON-LD emitted in
+            the page <head>. */}
+        {article.meta.faq?.length ? (
+          <FAQ items={article.meta.faq} />
+        ) : null}
 
         {/* Tags */}
         {article.meta.tags.length > 0 ? (
@@ -163,8 +149,8 @@ export default async function ArticlePage(
               const rcat = CATEGORIES.find((c) => c.id === r.meta.category);
               return (
                 <Link
-                  key={r.meta.slug}
-                  href={`/resources/${r.meta.slug}`}
+                  key={`${r.meta.category}-${r.meta.slug}`}
+                  href={articleHref(r.meta)}
                   className="block group card hover:border-brand-purple/40 transition"
                 >
                   <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-2">
@@ -201,6 +187,3 @@ export default async function ArticlePage(
     </main>
   );
 }
-
-// Silence unused-import warning if ARTICLES were imported lazily.
-void ARTICLES;

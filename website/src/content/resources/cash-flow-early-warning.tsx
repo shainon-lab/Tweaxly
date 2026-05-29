@@ -8,12 +8,26 @@ export const meta: ArticleModule["meta"] = {
   title: "How to Detect Cash Flow Problems Before They Happen",
   excerpt:
     "Cash flow rarely fails overnight. It fails in slow, recognisable patterns. Here's how to read the warning signs months before they become a crisis.",
-  category: "cash-flow",
+  category: "cash-flow-management",
   tags: ["Cash Flow Forecasting", "Financial Forecasting", "Business Signals"],
   author: { name: "Tweaxly Team", role: "Financial Intelligence" },
   publishedAt: "2026-05-20",
   readingTime: 8,
   featured: true,
+  tldr: [
+    "Cash flow problems rarely show up overnight - they build over months through small, recognizable patterns.",
+    "The five most reliable early warnings: receivables aging out, revenue softening month over month, expenses growing faster than revenue, customer concentration drifting, and seasonal dips with no matching expense cuts.",
+    "A 13-week rolling cash flow forecast catches most cash crunches with enough warning to act.",
+    "Profitability on the profit & loss statement is not the same as cash in the bank - profitable businesses can still run out.",
+    "The fix is operational, not financial: tighter receivables discipline, leaner fixed costs, and clearer monthly visibility.",
+  ],
+  faq: [
+    { q: "How early can I really catch a cash flow problem?", a: "Most cash crunches telegraph themselves 60-90 days in advance through one or more of: slowing receivables, softening revenue, expense creep, or customer concentration. Weekly review of those four metrics catches almost everything in time to act." },
+    { q: "Why do profitable businesses run out of cash?", a: "Timing. Profit is recognized when revenue is earned; cash arrives when customers pay. A business growing 50% can be profitable on paper but cash-strapped because every new dollar of revenue requires more working capital before the cash actually arrives." },
+    { q: "What's the difference between cash flow forecasting and a budget?", a: "A budget is what you plan to spend. A cash flow forecast is what you expect to actually have in the bank, week by week or month by month. Budgets are commitments; forecasts are predictions." },
+    { q: "How much cash reserve should a small business hold?", a: "A common rule of thumb is 3-6 months of fixed operating expenses. The exact number depends on revenue volatility, customer concentration, and seasonality. Highly cyclical or concentrated businesses should sit at the higher end." },
+    { q: "What's the single most useful cash flow report?", a: "A 13-week rolling forecast - short enough to be accurate, long enough to give you room to act. Most cash crunches are visible at the 8-10 week mark on this report." },
+  ],
   seo: {
     title: "Detect Cash Flow Problems Before They Happen | Tweaxly",
     description:
@@ -205,11 +219,11 @@ export const Body = () => (
 
     <p>
       Related reading:{" "}
-      <ArticleLink href="/resources/business-signals-founders-monitor">
+      <ArticleLink href="/resources/business-signals/business-signals-founders-monitor">
         Business Signals Every Founder Should Monitor
       </ArticleLink>{" "}
       and{" "}
-      <ArticleLink href="/resources/financial-forecasting-small-business-guide">
+      <ArticleLink href="/resources/business-forecasting/financial-forecasting-small-business-guide">
         Financial Forecasting for Small Businesses
       </ArticleLink>
       .

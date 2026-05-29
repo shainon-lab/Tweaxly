@@ -5,14 +5,28 @@ import type { ArticleModule } from "./types";
 
 export const meta: ArticleModule["meta"] = {
   slug: "business-signals-founders-monitor",
-  title: "Business Signals Every Founder Should Monitor",
+  title: "Business Signals Every Owner Should Monitor",
   excerpt:
-    "Most founders track revenue and call it a day. The signals that actually predict business health sit one layer deeper. Here are the ones worth watching.",
+    "Most owners track revenue and call it a day. The signals that actually predict business health sit one layer deeper. Here are the ones worth watching.",
   category: "business-signals",
   tags: ["Business Signals", "Business Insights", "Financial Analytics"],
   author: { name: "Tweaxly Team", role: "Financial Intelligence" },
   publishedAt: "2026-05-20",
   readingTime: 9,
+  tldr: [
+    "Revenue alone is a lagging indicator - the signals that predict business health sit one layer beneath it.",
+    "Five signals to watch weekly: gross margin trend, expense growth vs revenue growth, customer concentration, receivables aging, and recurring vs one-off revenue mix.",
+    "A signal worth acting on usually shows direction (consistent over multiple months), magnitude (material relative to history), and breadth (visible in more than one metric).",
+    "Most business problems telegraph themselves 60-90 days before they show up in headline results.",
+    "Build a 15-minute weekly review that surfaces these signals - that beats a once-a-quarter deep dive almost every time.",
+  ],
+  faq: [
+    { q: "What's a business signal in plain English?", a: "An observable change in your numbers that's worth investigating - revenue softening, expenses creeping, margins compressing, a customer slowing payments - because it tends to predict a future problem or opportunity." },
+    { q: "How do I know if a signal is real or just noise?", a: "Three filters: direction (is the trend consistent month over month?), magnitude (is the change material relative to history?), and breadth (does it show up in more than one metric?). Fails all three: probably noise." },
+    { q: "Which signals should every owner watch?", a: "Revenue growth rate, gross margin trend, expense growth vs revenue growth, customer concentration, and accounts receivable aging. Those five catch most early-warning patterns across most business models." },
+    { q: "How often should I review signals?", a: "Weekly for operational signals (pipeline, cash, accounts receivable). Monthly for financial signals (revenue trend, margin, expense growth). Quarterly for strategic signals (customer mix, market share, retention)." },
+    { q: "What's the difference between a signal and a KPI?", a: "A KPI is a number you measure regularly. A signal is when one of those KPIs changes in a way that demands attention. Every KPI can produce signals; not every signal lives inside a tracked KPI." },
+  ],
   seo: {
     title: "Business Signals Every Founder Should Monitor | Tweaxly",
     description:
@@ -226,11 +240,11 @@ export const Body = () => (
 
     <p>
       Continue:{" "}
-      <ArticleLink href="/resources/cash-flow-problems-early-warning">
+      <ArticleLink href="/resources/cash-flow-management/cash-flow-problems-early-warning">
         How to Detect Cash Flow Problems Before They Happen
       </ArticleLink>{" "}
       ·{" "}
-      <ArticleLink href="/resources/spreadsheets-not-enough">
+      <ArticleLink href="/resources/business-intelligence/spreadsheets-not-enough">
         Why Spreadsheets Are No Longer Enough
       </ArticleLink>
       .

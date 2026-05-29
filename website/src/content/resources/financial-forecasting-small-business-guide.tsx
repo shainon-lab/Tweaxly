@@ -8,11 +8,26 @@ export const meta: ArticleModule["meta"] = {
   title: "Financial Forecasting for Small Businesses: A Modern Guide",
   excerpt:
     "Modern financial forecasting for SMBs isn't a quarterly spreadsheet ritual. It's a continuously-updated, explainable projection of where the business is heading.",
-  category: "forecasting",
+  category: "business-forecasting",
   tags: ["Financial Forecasting", "Financial Planning", "Revenue Forecasting"],
   author: { name: "Tweaxly Team", role: "Financial Intelligence" },
   publishedAt: "2026-05-20",
   readingTime: 10,
+  tldr: [
+    "A small business forecast is a working projection of where the numbers are heading - revenue, expenses, cash - updated as new actuals come in.",
+    "Aim for ±10% accuracy at 3 months, ±15-20% at 6 months, and treat 12+ month forecasts as directional rather than precise.",
+    "Two forecasts beat one: a base case and a downside case bracket the range of realistic outcomes.",
+    "Update monthly with actuals; re-baseline assumptions any time the business model materially changes (pricing, headcount, channel mix).",
+    "The most common mistake is forecasting revenue alone - cash flow and expense behavior are what actually drive decisions.",
+  ],
+  faq: [
+    { q: "How is a forecast different from a budget?", a: "A budget is what you decide to spend. A forecast is what you expect to happen. Budgets are commitments; forecasts are predictions. Most businesses need both." },
+    { q: "How often should I update my forecast?", a: "Monthly is the right cadence for most small businesses. After every month closes, plug in actuals, revise the assumptions that turned out wrong, and re-project forward." },
+    { q: "What's a realistic forecast accuracy target?", a: "For a 3-month horizon, ±10% on revenue is achievable. For 6 months, ±15-20%. Beyond 12 months, you're forecasting the shape of the future, not exact numbers." },
+    { q: "Do I need software to forecast?", a: "No. A clear spreadsheet with explicit assumptions beats expensive software with hidden assumptions. The discipline of updating monthly matters far more than the tool." },
+    { q: "What's scenario planning?", a: "Running two or three versions of the same forecast under different assumptions (base case, downside, upside) so you see the range of outcomes before committing to any single decision." },
+    { q: "What should I forecast besides revenue?", a: "Always pair revenue with expenses (especially the variable ones that move with revenue), cash flow (because timing matters), and at least one operational driver (headcount, customer count, units sold) so the forecast reflects what's actually happening in the business." },
+  ],
   seo: {
     title: "Financial Forecasting for Small Businesses: A Modern Guide | Tweaxly",
     description:
@@ -232,11 +247,11 @@ export const Body = () => (
 
     <p>
       Related reading:{" "}
-      <ArticleLink href="/resources/cash-flow-problems-early-warning">
+      <ArticleLink href="/resources/cash-flow-management/cash-flow-problems-early-warning">
         How to Detect Cash Flow Problems Before They Happen
       </ArticleLink>{" "}
       and{" "}
-      <ArticleLink href="/resources/what-is-ai-financial-advisor">
+      <ArticleLink href="/resources/business-intelligence/what-is-ai-financial-advisor">
         What Is an AI Financial Advisor for Businesses?
       </ArticleLink>
       .

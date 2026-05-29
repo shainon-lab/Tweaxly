@@ -8,11 +8,25 @@ export const meta: ArticleModule["meta"] = {
   title: "Why Spreadsheets Are No Longer Enough for Financial Planning",
   excerpt:
     "Spreadsheets shaped the last forty years of finance. They aren't the right tool for the next ten. Here's what they get wrong, and what's replacing them.",
-  category: "financial-planning",
+  category: "business-intelligence",
   tags: ["Financial Planning", "Financial Dashboard", "AI Business Intelligence"],
   author: { name: "Tweaxly Team", role: "Financial Intelligence" },
   publishedAt: "2026-05-20",
   readingTime: 9,
+  tldr: [
+    "Spreadsheets are still useful, but they break as a primary financial planning tool past a certain business size and complexity.",
+    "The four limitations that matter most: stale data, fragile formulas, no concept of \"current state of the business,\" and no proactive surface for what changed.",
+    "Modern financial intelligence platforms read your real data continuously, surface changes automatically, and answer free-form questions in plain English.",
+    "The shift isn't \"spreadsheets are bad\" - it's \"spreadsheets are the wrong tool for the job they're being asked to do.\"",
+    "A practical migration path: keep spreadsheets for ad-hoc analysis, move recurring reporting and forecasting to a dedicated platform.",
+  ],
+  faq: [
+    { q: "Are spreadsheets bad for small business finance?", a: "No - they're a great tool for ad-hoc analysis, one-off modeling, and quick math. The problem is using them as the primary system of record for recurring financial planning, where their limitations compound over time." },
+    { q: "What do spreadsheets actually fail at?", a: "Four things: keeping data current as new transactions land, surviving formula errors across hundreds of cells, holding a clear \"current state\" view of the business, and proactively surfacing what changed since last month." },
+    { q: "What replaces spreadsheets for financial planning?", a: "A combination of automated bookkeeping (recording what happened), a business intelligence layer (reading what's changing), and an analytical front end - whether that's an AI-powered platform, a dashboard tool, or a fractional CFO with their own stack." },
+    { q: "Do I still need to know Excel for business?", a: "Yes. Spreadsheet fluency is still one of the highest-ROI skills in business. But \"using Excel well\" is different from \"running the business out of Excel.\"" },
+    { q: "How do I know when I've outgrown spreadsheets?", a: "When you spend more time updating the spreadsheet than reading it, when nobody else on the team trusts the version they're looking at, or when you've made a decision from numbers that turned out to be wrong because a row didn't update - any of those mean the spreadsheet is the bottleneck." },
+  ],
   seo: {
     title: "Why Spreadsheets Are No Longer Enough for Financial Planning | Tweaxly",
     description:
@@ -269,11 +283,11 @@ export const Body = () => (
 
     <p>
       Continue with{" "}
-      <ArticleLink href="/resources/what-is-ai-financial-advisor">
+      <ArticleLink href="/resources/business-intelligence/what-is-ai-financial-advisor">
         What Is an AI Financial Advisor for Businesses?
       </ArticleLink>{" "}
       or{" "}
-      <ArticleLink href="/resources/financial-forecasting-small-business-guide">
+      <ArticleLink href="/resources/business-forecasting/financial-forecasting-small-business-guide">
         Financial Forecasting for Small Businesses
       </ArticleLink>
       .

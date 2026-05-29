@@ -5,7 +5,7 @@
 // Submit to Google Search Console as: https://tweaxly.com/sitemap.xml
 
 import type { MetadataRoute } from "next";
-import { ARTICLES } from "@/content/resources";
+import { ARTICLES, CATEGORIES, articleHref, categoryHref } from "@/content/resources";
 import { SUBPAGES as FEATURE_SUBPAGES } from "@/content/features";
 import { COMPARISONS } from "@/content/comparisons";
 
@@ -39,13 +39,23 @@ export default function sitemap(): MetadataRoute.Sitemap {
   }));
 
   const articleEntries: MetadataRoute.Sitemap = ARTICLES.map((a) => ({
-    url:            `${SITE_URL}/resources/${a.meta.slug}`,
+    url:            `${SITE_URL}${articleHref(a.meta)}`,
     // Articles use their own published date so Google can see how
     // fresh each one is - sitemap-level signal that matters for
     // ranking of evergreen content.
-    lastModified:    new Date(a.meta.publishedAt),
+    lastModified:    new Date(a.meta.updatedAt ?? a.meta.publishedAt),
     changeFrequency: "monthly",
     priority:        0.7,
+  }));
+
+  // Every Learning Center category gets its own sitemap entry so the
+  // category landing pages get crawled and indexed independently of
+  // the articles inside them.
+  const categoryEntries: MetadataRoute.Sitemap = CATEGORIES.map((c) => ({
+    url:            `${SITE_URL}${categoryHref(c.id)}`,
+    lastModified:   now,
+    changeFrequency: "weekly",
+    priority:        0.85,
   }));
 
   // Per-feature deep-dive pages - high-priority product surface.
@@ -65,5 +75,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority:        0.85,
   }));
 
-  return [...staticEntries, ...articleEntries, ...featureSubpageEntries, ...comparisonEntries];
+  return [
+    ...staticEntries,
+    ...categoryEntries,
+    ...articleEntries,
+    ...featureSubpageEntries,
+    ...comparisonEntries,
+  ];
 }
