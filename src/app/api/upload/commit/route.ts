@@ -634,6 +634,13 @@ export async function POST(req: NextRequest) {
     request: req,
   });
 
+  // Fire-and-forget: fresh data landed, so signals should re-evaluate.
+  // The deterministic evaluator + diff dispatcher are zero-credit.
+  if (created.length > 0) {
+    const { triggerSignalEvaluation } = await import("@/lib/signals/triggerEvaluation");
+    triggerSignalEvaluation(business.id, "csv_upload");
+  }
+
   return NextResponse.json({
     imported: created.length,
     duplicateGroups: createdGroups,

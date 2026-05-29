@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, MessageSquareText, X as XIcon } from "lucide-react";
 import { CONSULT_OPEN_EVENT, DETAIL_PANEL_EVENT, type ConsultOpenDetail } from "./GlobalConsult";
 import NarrativeBody from "./NarrativeBody";
+import { notify } from "@/lib/notify";
 
 // Open the floating Consult panel pre-loaded with a question and a
 // per-signal title/subtitle.
@@ -305,9 +306,13 @@ function relTime(d: string | Date) {
 export default function PushRecommendations({
   initial,
   currency,
+  initialSelectedId,
 }: {
   initial: PushRec[];
   currency: string;
+  // When the page is hit with ?signal=ID (bell-notification deeplink)
+  // we pre-open that signal's detail panel on first render.
+  initialSelectedId?: string | null;
 }) {
   const router = useRouter();
   const [recs, setRecs] = useState<PushRec[]>(initial);
@@ -316,7 +321,12 @@ export default function PushRecommendations({
   const [lifecycles, setLifecycles] = useState<Record<string, Lifecycle>>({});
   const [resolved, setResolvedState] = useState<Set<string>>(new Set());
   // Selected signal - drives the slide-in detail panel. Null = closed.
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  // If the page passed initialSelectedId AND that id exists in the
+  // current set, open the panel for it. Falls back to closed if the
+  // signal has since been resolved / out-of-scope.
+  const [selectedId, setSelectedId] = useState<string | null>(
+    initialSelectedId && initial.some((r) => r.id === initialSelectedId) ? initialSelectedId : null,
+  );
   const prevInitialRef = useRef(initial);
 
   if (initial !== prevInitialRef.current) {
@@ -365,12 +375,63 @@ export default function PushRecommendations({
     setLifecycles(next);
   }, [recs, resolved]);
 
-  function refresh() {
-    setRefreshing(true);
-    startTransition(() => {
-      router.refresh();
-      setTimeout(() => setRefreshing(false), 600);
+  // User-initiated refresh consumes 3 AI Credits. Confirmation modal
+  // states the cost; on 402 we route to upgrade (Free) or buy credits
+  // (Pro) based on the fallback the server returns. Automatic
+  // refreshes (data upload / weekly cron) are free and don't pass
+  // through here.
+  async function refresh() {
+    const ok = await notify.confirm({
+      title:        "Refresh signals?",
+      body:         "Refreshing runs a fresh AI signal analysis and uses 3 AI Credits from your balance. Automatic updates after a data upload or the weekly evaluation are always free.",
+      confirmLabel: "Use 3 credits",
+      cancelLabel:  "Cancel",
     });
+    if (!ok) return;
+
+    setRefreshing(true);
+    try {
+      const res  = await fetch("/api/signals/refresh", { method: "POST" });
+      const data = await res.json().catch(() => ({}));
+
+      if (res.status === 402) {
+        // Out of credits - branch on the plan-aware fallback.
+        const isUpgrade = data.fallback === "upgrade";
+        await notify.alert({
+          title: isUpgrade ? "Out of AI Credits" : "Not enough AI Credits",
+          body:  isUpgrade
+            ? `You're on the Free plan and don't have enough AI Credits to refresh signals. Upgrade to Pro for 100 AI Credits every month plus the ability to buy more anytime.`
+            : `You need ${data.cost ?? 3} AI Credits to refresh signals. Your current balance is ${data.balance ?? 0}. Buy a credit pack from Settings -> Business Plan to top up.`,
+        });
+        // Pop the user over to the right surface so the next action
+        // is one click away. Both surfaces are on /settings?tab=plan.
+        router.push("/settings?tab=plan");
+        return;
+      }
+
+      if (!res.ok) {
+        await notify.alert({
+          title: "Couldn't refresh signals",
+          body:  "Something went wrong - your credits were not charged. Please try again in a moment.",
+        });
+        return;
+      }
+
+      // Success: re-render the server component so the new signal
+      // set is shown.
+      startTransition(() => {
+        router.refresh();
+        setTimeout(() => setRefreshing(false), 600);
+      });
+      return;
+    } catch {
+      await notify.alert({
+        title: "Couldn't refresh signals",
+        body:  "Network error - please check your connection and try again.",
+      });
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   // Server-backed "Mark as resolved". Drops the card from the active

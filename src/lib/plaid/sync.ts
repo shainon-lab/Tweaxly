@@ -114,6 +114,14 @@ export async function syncPlaidConnection(connectionId: string): Promise<SyncRes
       },
     });
 
+    // Fire-and-forget: new transactions changed the workspace state,
+    // so re-evaluate signals so the dashboard / signals page reflect
+    // them on next render. Zero AI credits.
+    if (addedCount > 0 || modifiedCount > 0 || removedCount > 0) {
+      const { triggerSignalEvaluation } = await import("@/lib/signals/triggerEvaluation");
+      triggerSignalEvaluation(conn.businessId, "plaid_sync");
+    }
+
     return {
       ok:       true,
       added:    addedCount,

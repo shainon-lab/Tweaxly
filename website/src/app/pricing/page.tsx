@@ -80,7 +80,7 @@ const PLANS: Plan[] = [
     bullets: [
       "1 workspace owner (no team invites on Free)",
       "90 days of visible history",
-      "Up to 3 business signals per month",
+      "Up to 3 active business signals (ranked by impact)",
       "Forecast up to 3 months ahead",
       "On-screen reports (no export)",
     ],
@@ -102,7 +102,7 @@ const PLANS: Plan[] = [
       "Advanced AI analysis & faster responses",
       "Real-Time Business Alerts (desktop push + custom monitors)",
       "Unlimited historical data + custom date ranges",
-      "Unlimited business signals + smart alerts",
+      "Up to 6 active business signals (ranked by impact) + smart alerts",
       "Long-horizon forecasting (6, 12, 24, 36, 60 months)",
       "Scenario Builder + multi-scenario compare",
       "Workforce Planning + hire/cost modelling",
@@ -137,7 +137,7 @@ const MATRIX: MatrixGroup[] = [
     label: "AI & intelligence",
     rows: [
       { dimension: "Included AI Credits",             free: "30 (starter, one-time)", pro: "100 / month (+ packs)" },
-      { dimension: "Business signals / month",        free: "Up to 3",   pro: "Unlimited" },
+      { dimension: "Active business signals",          free: "Up to 3",   pro: "Up to 6" },
       { dimension: "Smart alerts",                    free: "—",         pro: "✓" },
       { dimension: "Real-Time Business Alerts (desktop push)", free: "—", pro: "✓" },
       { dimension: "Custom monitors",                 free: "1 threshold", pro: "Unlimited + severity routing" },
@@ -212,6 +212,22 @@ const PRICING_FAQS: { q: string; a: string }[] = [
     a: "Free uses a lightweight AI tier so the starter credits go further - you still get useful consultation, signals, and basic forecasting. Pro switches you to the advanced tier: deeper analysis, longer reasoning, priority processing, and access to the full feature set (Scenario Builder, Workforce Planning, multi-scenario compare, Smart Alerts). The metering (credits per action) stays the same on both tiers.",
   },
   {
+    q: "What are business signals?",
+    a: "Signals are the most important business observations currently affecting your business. We generate them automatically from your data and continuously re-evaluate them as new data arrives. We only display signals that pass our significance threshold - if there's nothing meaningful to flag, the slot stays empty. Quality over quantity. Free workspaces show up to 3 active signals, Pro shows up to 6, both ranked by business impact.",
+  },
+  {
+    q: "What are notifications and how are they different from signals?",
+    a: "Notifications are events that happened to a signal. You get a notification when a signal is created, updated, escalated to a higher severity, or resolved. Signals are the current state of your business; notifications are the history of what changed. Notifications never repeat for a signal that's simply still present - so you'll never have 23 notifications for 9 signals.",
+  },
+  {
+    q: "Do signals use AI credits?",
+    a: "No. Automatic signal generation - new data uploads, the weekly re-evaluation, the lifecycle updates - is part of the platform and uses zero credits. Only the user-initiated 'Refresh signals' button consumes credits (3 per refresh), and that's optional. You'll always have a calm, free baseline running in the background.",
+  },
+  {
+    q: "Why don't I always see the maximum number of signals?",
+    a: "Tweaxly only displays signals that pass its significance threshold. We prioritize relevance over filling slots. If your business is running smoothly and there's nothing meaningful to flag right now, you'll see fewer signals - which is the signal that everything is fine.",
+  },
+  {
     q: "Can I invite team members to my workspace?",
     a: "Yes, on Pro. A Pro workspace supports the owner plus up to 2 additional members - 3 people total - with role-based access. Invite by email from Settings > Members & Access; the invited person gets a one-click link, accepts, and lands inside your workspace with their own login. Pending invitations count toward the 3-person cap. Free workspaces have a single owner only.",
   },
@@ -221,7 +237,7 @@ const PRICING_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What happens when my starter credits run out on Free?",
-    a: "Your workspace data, dashboards, past reports and historical signals remain fully available. AI-powered features (the advisor, deep analysis, fresh forecast runs) pause - starter credits are a one-time onboarding grant on Free workspaces, not a recurring monthly allowance. Upgrade to Pro to continue using AI continuously with 500 monthly credits + add-on packs.",
+    a: "Your workspace data, dashboards, past reports and historical signals remain fully available. AI-powered features (the advisor, deep analysis, fresh forecast runs) pause - starter credits are a one-time onboarding grant on Free workspaces, not a recurring monthly allowance. Upgrade to Pro to continue using AI continuously with 100 monthly credits + add-on packs.",
   },
   {
     q: "What happens when I run out of AI Credits on Pro?",
@@ -229,7 +245,7 @@ const PRICING_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "Can Free users buy more AI Credits?",
-    a: "No. Buying add-on AI Credits is a Pro feature. On Free workspaces, the starter grant is a one-time experience - if you want to keep using the AI, upgrade to Pro for 500 monthly credits + the ability to buy packs anytime.",
+    a: "No. Buying add-on AI Credits is a Pro feature. On Free workspaces, the starter grant is a one-time experience - if you want to keep using the AI, upgrade to Pro for 100 monthly credits + the ability to buy packs anytime.",
   },
   {
     q: "How far into the future does Tweaxly forecast?",

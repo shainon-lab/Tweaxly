@@ -25,8 +25,17 @@ import SignalsExplanation from "./SignalsExplanation";
 
 export const dynamic = "force-dynamic";
 
-export default async function BusinessSignalsPage() {
+export default async function BusinessSignalsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ signal?: string }>;
+}) {
   const { user, business } = await requireBusiness();
+  const sp = await searchParams;
+  // ?signal=<BusinessSignal.id> opens the detail panel for that
+  // signal on first render. Bell notification deeplinks use this so
+  // the user lands on the actual content, not a generic list.
+  const openSignalId = typeof sp.signal === "string" ? sp.signal : null;
   const ccy = business.currency;
   // Background sweep: persists / diffs / dispatches notifications on
   // real change events. Throttled to once per 5 minutes inside the lib.
@@ -89,7 +98,7 @@ export default async function BusinessSignalsPage() {
         cap={cap}
         activeCount={activeSignals.length}
       />
-      <PushRecommendations initial={pushRecs} currency={ccy} />
+      <PushRecommendations initial={pushRecs} currency={ccy} initialSelectedId={openSignalId} />
     </>
   );
 }
