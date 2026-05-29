@@ -27,6 +27,7 @@ import OrdersInvoicesSection from "@/components/billing/OrdersInvoicesSection";
 import LoadingBar from "@/components/LoadingBar";
 import PageHeader from "@/components/PageHeader";
 import AccountHelp from "@/components/AccountHelp";
+import { Plus } from "lucide-react";
 import {
   readA11yWidgetEnabled,
   setA11yWidgetEnabled,
@@ -136,14 +137,15 @@ export default function AccountClient({
 }
 
 // Cross-workspace overview grid. Each card shows plan + AI credits +
-// alerts + activity; clicking "Manage plan" switches workspace and
-// drops the user into that workspace's Settings → Business Profile,
-// where the per-workspace billing UI lives.
+// alerts + activity, plus inline management actions (rename / leave /
+// delete). The "Create workspace" button at the top of the pane opens
+// the same dialog that used to live under /settings/workspaces.
 function WorkspacesPane({ workspaces }: { workspaces: WorkspaceCardData[] }) {
   const totalCredits    = workspaces.reduce((s, c) => s + c.balance, 0);
   const totalAllowance  = workspaces.reduce((s, c) => s + c.monthlyAllowance, 0);
   const totalAlerts     = workspaces.reduce((s, c) => s + c.firingAlerts, 0);
   const readOnlyCount   = workspaces.filter((c) => c.readOnly).length;
+  const [createOpen, setCreateOpen] = useState(false);
 
   return (
     <>
@@ -154,15 +156,29 @@ function WorkspacesPane({ workspaces }: { workspaces: WorkspaceCardData[] }) {
         <Stat label="Read-only"          value={readOnlyCount.toString()} tone={readOnlyCount > 0 ? "bad" : undefined} />
       </div>
 
+      <div className="flex items-center justify-between gap-3 flex-wrap mb-4">
+        <div className="text-sm text-slate-400">
+          {workspaces.length} workspace{workspaces.length === 1 ? "" : "s"} under your account.
+        </div>
+        <button
+          type="button"
+          onClick={() => setCreateOpen(true)}
+          className="text-sm px-4 py-1.5 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition inline-flex items-center gap-1.5"
+        >
+          <Plus size={14} strokeWidth={2} /> Create new workspace
+        </button>
+      </div>
+
       {workspaces.length === 0 ? (
         <div className="card text-center py-12">
           <div className="text-sm text-slate-300">You aren&apos;t a member of any workspaces yet.</div>
-          <Link
-            href="/settings/workspaces"
+          <button
+            type="button"
+            onClick={() => setCreateOpen(true)}
             className="inline-block mt-4 text-sm px-4 py-1.5 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
           >
             Create your first workspace
-          </Link>
+          </button>
         </div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -170,14 +186,82 @@ function WorkspacesPane({ workspaces }: { workspaces: WorkspaceCardData[] }) {
         </div>
       )}
 
-      <div className="mt-8 text-xs text-slate-500 flex items-center gap-4 flex-wrap">
-        <Link href="/settings/workspaces" className="text-accent hover:underline">
-          Manage workspaces (rename / leave / delete) →
-        </Link>
-        <span className="text-slate-700">·</span>
-        <span>Each workspace is billed and metered independently - upgrading one never affects another.</span>
+      <div className="mt-8 text-xs text-slate-500">
+        Each workspace is billed and metered independently - upgrading one never affects another.
       </div>
+
+      {createOpen ? <CreateWorkspaceDialog onClose={() => setCreateOpen(false)} /> : null}
     </>
+  );
+}
+
+function CreateWorkspaceDialog({ onClose }: { onClose: () => void }) {
+  const [name, setName] = useState("");
+  const [industry, setIndustry] = useState("");
+  const [country, setCountry] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function submit() {
+    if (!name.trim()) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch("/api/businesses/create", {
+        method:  "POST",
+        headers: { "content-type": "application/json" },
+        body:    JSON.stringify({ name, industry: industry || undefined, country: country || undefined }),
+      });
+      if (!res.ok) {
+        const t = await res.text();
+        let msg = `Create failed (${res.status})`;
+        try { msg = JSON.parse(t).error ?? msg; } catch { /* keep */ }
+        setError(msg);
+        return;
+      }
+      window.location.assign("/dashboard");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm px-4"
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+    >
+      <div className="card w-full max-w-md">
+        <div className="mb-4">
+          <div className="text-lg font-semibold text-slate-100">New workspace</div>
+          <div className="text-sm text-slate-400 mt-1">
+            Belongs to your account. No new login required.
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div>
+            <label className="label">Business name *</label>
+            <input autoFocus className="input" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Side Co." />
+          </div>
+          <div>
+            <label className="label">Business type <span className="text-slate-500">(optional)</span></label>
+            <input className="input" value={industry} onChange={(e) => setIndustry(e.target.value)} placeholder="e.g. SaaS, Retail, Agency" />
+          </div>
+          <div>
+            <label className="label">Country <span className="text-slate-500">(optional)</span></label>
+            <input className="input" value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. United States" />
+          </div>
+          {error ? <div className="text-sm text-bad">{error}</div> : null}
+        </div>
+        <div className="mt-5 flex items-center justify-end gap-2">
+          <button type="button" onClick={onClose} className="btn-ghost text-sm">Cancel</button>
+          <button type="button" disabled={!name.trim() || busy} onClick={() => void submit()} className="btn-primary text-sm disabled:opacity-50">
+            {busy ? "Creating…" : "Create workspace"}
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 

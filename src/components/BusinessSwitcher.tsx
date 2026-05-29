@@ -8,7 +8,7 @@
 //
 // The bottom row opens an inline 'Create new workspace' dialog (name +
 // optional industry + optional country). The full management surface
-// lives at /settings/workspaces.
+// (overview + rename / leave / delete) lives at /account.
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
@@ -160,13 +160,6 @@ export default function BusinessSwitcher({
                 className="block w-full text-left px-3 py-2 text-xs text-slate-200 hover:bg-ink-700 hover:text-white transition border-t border-line"
               >
                 All workspaces overview →
-              </Link>
-              <Link
-                href="/settings/workspaces"
-                onClick={() => setOpen(false)}
-                className="block w-full text-left px-3 py-2 text-xs text-slate-400 hover:bg-ink-700 hover:text-slate-100 transition border-t border-line"
-              >
-                Manage workspaces →
               </Link>
             </div>
           </div>

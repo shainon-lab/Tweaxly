@@ -48,9 +48,10 @@ export default async function AccountPage() {
           id:             true,
           name:           true,
           status:         true,
+          ownerId:        true,
           lastActivityAt: true,
           createdAt:      true,
-          _count:         { select: { transactions: true } },
+          _count:         { select: { transactions: true, memberships: true } },
         },
       },
     },
@@ -83,6 +84,9 @@ export default async function AccountPage() {
         transactions:      m.business._count.transactions,
         lastActivityLabel: fmtRel(m.business.lastActivityAt ?? m.business.createdAt),
         hasActivity:       !!m.business.lastActivityAt,
+        membershipId:      m.id,
+        isOwner:           m.business.ownerId === user.id,
+        memberCount:       m.business._count.memberships,
       };
     }),
   );

@@ -1,14 +1,17 @@
 "use client";
 
-// One card per workspace in the overview grid. Shows plan badge,
-// AI credit balance + progress bar, alert count, last activity,
-// and two CTAs: Open (POST switch + reload) and Manage plan (link
-// to /settings after switching - billing lives inside Settings →
-// Business Profile per workspace).
+// One card per workspace in the Account → Workspaces overview grid.
+// Shows plan badge, AI credit balance + progress bar, alert count,
+// last activity, the primary CTAs (Open / Manage plan / Upgrade) and
+// the per-workspace management actions (Rename / Leave / Delete).
+// The full management surface lives here now - the old
+// /settings/workspaces route was retired in favor of inline actions
+// next to each card.
 
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Pencil, LogOut, Trash2 } from "lucide-react";
 import { notify } from "@/lib/notify";
 
 export interface WorkspaceCardData {
@@ -25,6 +28,10 @@ export interface WorkspaceCardData {
   transactions:      number;
   lastActivityLabel: string;
   hasActivity:       boolean;
+  // Membership-side fields used by the inline management actions.
+  membershipId:      string;
+  isOwner:           boolean;
+  memberCount:       number;
 }
 
 const PLAN_BADGE: Record<string, { label: string; cls: string }> = {
@@ -38,6 +45,61 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [, startTransition] = useTransition();
+  const [editing, setEditing] = useState(false);
+  const [editName, setEditName] = useState(card.name);
+  const [error, setError] = useState<string | null>(null);
+
+  function refresh() { startTransition(() => router.refresh()); }
+
+  async function saveRename() {
+    if (!editName.trim() || editName.trim() === card.name) {
+      setEditing(false);
+      return;
+    }
+    setError(null);
+    const res = await fetch(`/api/businesses/${card.id}`, {
+      method:  "PATCH",
+      headers: { "content-type": "application/json" },
+      body:    JSON.stringify({ name: editName.trim() }),
+    });
+    if (!res.ok) { setError("Rename failed"); return; }
+    setEditing(false);
+    refresh();
+  }
+
+  async function leave() {
+    const ok = await notify.confirm({
+      title:        "Leave workspace?",
+      body:         `Leave "${card.name}"? You won't be able to access this workspace until you're re-invited.`,
+      confirmLabel: "Leave",
+      danger:       true,
+    });
+    if (!ok) return;
+    setError(null);
+    const res = await fetch(`/api/businesses/${card.id}/leave`, { method: "POST" });
+    if (!res.ok) {
+      const t = await res.json().catch(() => ({}));
+      setError(t.message ?? "Leave failed");
+      return;
+    }
+    if (card.isCurrent) { window.location.assign("/dashboard"); return; }
+    refresh();
+  }
+
+  async function destroy() {
+    const confirmText = window.prompt(
+      `Permanently delete "${card.name}"?\n\nThis cascade-deletes ${card.transactions.toLocaleString()} transaction(s), uploads, employees, forecasts, and every member. There is no undo.\n\nType the workspace name to confirm:`
+    );
+    if (confirmText !== card.name) {
+      if (confirmText !== null) notify.alert("Name didn't match - deletion cancelled.");
+      return;
+    }
+    setError(null);
+    const res = await fetch(`/api/businesses/${card.id}?confirm=delete`, { method: "DELETE" });
+    if (!res.ok) { setError("Delete failed"); return; }
+    if (card.isCurrent) { window.location.assign("/dashboard"); return; }
+    refresh();
+  }
 
   const pct = card.monthlyAllowance > 0
     ? Math.max(0, Math.min(100, Math.round((card.balance / card.monthlyAllowance) * 100)))
@@ -106,15 +168,36 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <h3 className="text-base font-semibold text-white truncate">{card.name}</h3>
-            {card.isCurrent ? (
-              <span className="shrink-0 text-[9px] uppercase tracking-wider text-accent font-semibold px-1.5 py-0.5 rounded border border-accent/40 bg-accent-soft/30">
-                Current
-              </span>
-            ) : null}
+            {editing ? (
+              <div className="flex items-center gap-1.5 min-w-0">
+                <input
+                  autoFocus
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") { e.preventDefault(); void saveRename(); }
+                    if (e.key === "Escape") { setEditing(false); setEditName(card.name); }
+                  }}
+                  className="input text-base font-semibold py-1 px-2"
+                />
+                <button type="button" onClick={() => void saveRename()} className="btn-primary text-[11px] px-2 py-1 rounded-md">Save</button>
+                <button type="button" onClick={() => { setEditing(false); setEditName(card.name); }} className="btn-ghost text-[11px] px-2 py-1 rounded-md">Cancel</button>
+              </div>
+            ) : (
+              <>
+                <h3 className="text-base font-semibold text-white truncate">{card.name}</h3>
+                {card.isCurrent ? (
+                  <span className="shrink-0 text-[9px] uppercase tracking-wider text-accent font-semibold px-1.5 py-0.5 rounded border border-accent/40 bg-accent-soft/30">
+                    Current
+                  </span>
+                ) : null}
+              </>
+            )}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+          <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5 flex-wrap">
             <span>{card.role.replace("_", " ")}</span>
+            <span className="text-slate-600">·</span>
+            <span>{card.memberCount} member{card.memberCount === 1 ? "" : "s"}</span>
             <span className="text-slate-600">·</span>
             <span>{card.lastActivityLabel}</span>
             {card.readOnly ? (
@@ -132,6 +215,10 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
           {badge.label}
         </span>
       </div>
+
+      {error ? (
+        <div className="rounded-md border border-bad/40 bg-bad/10 text-bad text-xs px-2.5 py-1.5">{error}</div>
+      ) : null}
 
       {/* AI Credits bar */}
       <div>
@@ -166,8 +253,8 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
         </div>
       </div>
 
-      {/* CTAs */}
-      <div className="mt-auto pt-2 flex items-center gap-2 flex-wrap">
+      {/* Primary CTAs */}
+      <div className="pt-1 flex items-center gap-2 flex-wrap">
         <button
           type="button"
           onClick={openWorkspace}
@@ -192,6 +279,44 @@ export function WorkspaceCard({ card }: { card: WorkspaceCardData }) {
           >
             Upgrade →
           </Link>
+        ) : null}
+      </div>
+
+      {/* Per-workspace management actions. Rename (account_admin),
+          Leave (non-owner), Delete (owner only). Kept in a separate
+          row so they don't compete with the primary "Switch / Manage"
+          CTAs above. */}
+      <div className="mt-auto pt-2 border-t border-line/40 flex items-center gap-2 flex-wrap text-[11px] text-slate-500">
+        <span className="uppercase tracking-wider">Manage</span>
+        {card.role === "account_admin" && !editing ? (
+          <button
+            type="button"
+            onClick={() => { setEditName(card.name); setEditing(true); }}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
+            title="Rename workspace"
+          >
+            <Pencil size={11} strokeWidth={2} /> Rename
+          </button>
+        ) : null}
+        {!card.isOwner ? (
+          <button
+            type="button"
+            onClick={() => void leave()}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-line text-slate-300 hover:text-bad hover:border-bad/50 transition"
+            title="Leave workspace"
+          >
+            <LogOut size={11} strokeWidth={2} /> Leave
+          </button>
+        ) : null}
+        {card.isOwner ? (
+          <button
+            type="button"
+            onClick={() => void destroy()}
+            className="inline-flex items-center gap-1 px-2 py-1 rounded-md border border-line text-slate-400 hover:text-bad hover:border-bad/50 transition"
+            title="Delete workspace (owner only)"
+          >
+            <Trash2 size={11} strokeWidth={2} /> Delete
+          </button>
         ) : null}
       </div>
     </article>
