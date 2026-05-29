@@ -103,6 +103,7 @@ model User {
   alertPreferences          AlertPreference[]
   pushSubscriptions         PushSubscription[]
   alertNotifications        AlertNotification[]
+  createdSharedAnalyses     SharedAnalysis[]     @relation("SharedAnalysisCreator")
 }
 
 // Suppression list for sent campaigns. Even if a user has the matching
@@ -369,6 +370,7 @@ model Business {
   profile             BusinessProfile?
   alertPreferences    AlertPreference[]
   alertNotifications  AlertNotification[]
+  sharedAnalyses      SharedAnalysis[]
 }
 
 // Real-Time Business Alerts (Premium) - per-user × per-business
@@ -1460,4 +1462,82 @@ model BusinessSignal {
   @@index([businessId, status])
   @@index([businessId, signalKey, status])
   @@index([businessId, status, impact(sort: Desc)])
+}
+
+// Secure read-only share of a single AI-generated analysis (consultation
+// answer, business signal, forecast explanation, or insight). Recipients
+// open `/share/<token>` without a Tweaxly account and see a snapshot of
+// the analysis as it existed at share-time — never re-running the AI,
+// never pulling fresh workspace data.
+//
+// Entitlement gate: SharedAnalysis is only writable when the workspace's
+// effective plan has PlanFeatures.shareAnalyses === true (Pro at launch).
+// Reads on /share/<token> never check the workspace plan — once a link
+// is generated and active, expiry and password are the only gates.
+model SharedAnalysis {
+  id                String   @id @default(cuid())
+  // Workspace scoping. Cascade delete: when a workspace is deleted
+  // its share links are revoked along with it.
+  businessId        String
+  business          Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // Author of the share link. NOT cascade-delete — if the creator's
+  // user record is wiped we still want the workspace owner to be
+  // able to revoke active shares, so keep the row and let the FK
+  // hold a stale id (the management UI shows "deleted user").
+  createdByUserId   String
+  createdByUser     User     @relation("SharedAnalysisCreator", fields: [createdByUserId], references: [id], onDelete: NoAction)
+
+  // What was shared. `sourceType` is one of: "consultation",
+  // "signal", "forecast_explanation", "insight". `sourceId` points
+  // at the originating row (e.g. ConsultationMessage.id for a
+  // consultation answer) for back-tracing but is not relied on at
+  // read time — the snapshot below is authoritative.
+  sourceType        String
+  sourceId          String
+
+  // The snapshot. `snapshotContent` is the JSON-serialised payload
+  // the public viewer renders through ResponseBriefing /
+  // StructuredAdvisoryView — same shape as ConsultationMessage's
+  // {content, payload, structured} so the public page reuses the
+  // exact components used in the New Advisory view.
+  // `snapshotMeta` carries lightweight display context like the
+  // user's question, asked-at timestamp, workspace currency, and
+  // the analysis title.
+  snapshotContent   Json
+  snapshotMeta      Json
+
+  // Lookup token. The user-facing URL is /share/<token>. Generated
+  // via crypto.randomBytes(32).toString("base64url") so it is
+  // unguessable; unique-indexed for O(1) lookup. The token IS the
+  // secret — anyone who has it can view the share (subject to
+  // expiry + password).
+  token             String   @unique
+
+  // Optional password gate. Hashed with bcrypt (same library +
+  // cost factor used elsewhere in the codebase). Null means no
+  // password required. Plaintext is never stored.
+  passwordHash      String?
+
+  // Hard cutoff. After this moment the public viewer returns the
+  // "expired" state regardless of `isActive`.
+  expiresAt         DateTime
+
+  // Manual revoke. Defaults to true; setting false from the
+  // management UI immediately disables the link without losing
+  // the row (so we keep analytics + can re-enable later).
+  isActive          Boolean  @default(true)
+
+  // View analytics — updated on every successful render of the
+  // public page (after auth-by-token + password check pass).
+  viewCount         Int      @default(0)
+  firstViewedAt     DateTime?
+  lastViewedAt      DateTime?
+
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Lookup patterns: workspace management list (newest first),
+  // creator-scoped list for the per-user "my shares" view.
+  @@index([businessId, createdAt(sort: Desc)])
+  @@index([createdByUserId, createdAt(sort: Desc)])
 }

@@ -60,6 +60,12 @@ export interface PlanFeatures {
   priorityAI:            boolean;
   auditLogs:             boolean;
   dedicatedOnboarding:   boolean;
+  // Secure read-only share links for AI consultation answers,
+  // signals, forecast explanations, and insights. The recipient
+  // does not need a Tweaxly account. Phase 1 ships on Pro; the
+  // flag is intentionally a separate entitlement so a future
+  // higher tier can claim it without refactoring the wiring.
+  shareAnalyses:         boolean;
 }
 
 export interface PlanLimits {
@@ -139,6 +145,7 @@ export const PLANS: Plan[] = [
         priorityAI:             false,
         auditLogs:              false,
         dedicatedOnboarding:    false,
+        shareAnalyses:          false,
       },
     },
   },
@@ -198,6 +205,7 @@ export const PLANS: Plan[] = [
         priorityAI:             true,
         auditLogs:              false,
         dedicatedOnboarding:    true,
+        shareAnalyses:          true,
       },
     },
   },
