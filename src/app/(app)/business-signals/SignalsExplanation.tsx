@@ -48,9 +48,10 @@ export default function SignalsExplanation({
         onClick={() => setOpen(true)}
         aria-label="How business signals work"
         title="How business signals work"
-        className="inline-flex items-center justify-center w-8 h-8 rounded-full border border-line text-slate-400 hover:text-accent hover:border-accent/60 hover:bg-accent-soft/20 transition"
+        className="inline-flex items-center gap-1.5 h-8 px-3 rounded-full border border-line text-xs font-medium text-slate-400 hover:text-accent hover:border-accent/60 hover:bg-accent-soft/20 transition"
       >
-        <HelpCircle size={16} strokeWidth={1.75} aria-hidden="true" />
+        <HelpCircle size={14} strokeWidth={1.75} aria-hidden="true" />
+        <span>How it Works?</span>
       </button>
 
       {open && portalTarget ? createPortal(
