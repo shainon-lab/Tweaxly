@@ -11,6 +11,8 @@
 // route so a single round-trip hydrates AccountClient.
 
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { Briefcase, CreditCard, MailCheck } from "lucide-react";
 import { requireUser } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/db";
@@ -99,6 +101,17 @@ export default async function AccountPage() {
       <PageHeader
         title={t("account.title")}
         subtitle={t("account.subtitle")}
+        right={
+          <HowItWorks
+            title="How the account section works"
+            intro="Your personal account, separate from any workspace. Workspaces you can switch into, billing across all of them, language and region, communication preferences. Settings here apply across every workspace you own or belong to."
+            cards={[
+              { icon: <Briefcase size={16} strokeWidth={1.7} />,  title: "Workspaces",  body: "Every workspace you own or belong to. Switch between them, or create a new one for a different business. Each workspace has its own subscription." },
+              { icon: <CreditCard size={16} strokeWidth={1.7} />, title: "Orders & Invoices", body: "Every payment across every workspace - your personal billing history. Download invoices directly from Polar." },
+              { icon: <MailCheck size={16} strokeWidth={1.7} />,  title: "Communications", body: "Pause marketing channels you don't want. Transactional emails (billing, security) always come through while the account is active." },
+            ]}
+          />
+        }
       />
       <AccountClient
         user={{

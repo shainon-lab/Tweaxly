@@ -1,5 +1,7 @@
 import { Suspense } from "react";
+import { Activity, Sparkles, BarChart3 } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
 import { Stat, StatGroup } from "@/components/Stat";
 import DashboardPeriodPicker from "@/components/DashboardPeriodPicker";
 import ExecutiveSummaryStream, { ExecutiveSummarySkeleton } from "./ExecutiveSummaryStream";
@@ -175,12 +177,24 @@ export default async function DashboardPage({
         title={t("page.dashboard.title")}
         subtitle={`${DASHBOARD_RANGE_LABEL[range]}: ${resolved.label} (${current.monthCount} month${current.monthCount === 1 ? "" : "s"}) - ${business.name}`}
         right={
-          <DashboardPeriodPicker
-            range={range}
-            start={initialStart}
-            end={initialEnd}
-            compare={compare}
-          />
+          <>
+            <DashboardPeriodPicker
+              range={range}
+              start={initialStart}
+              end={initialEnd}
+              compare={compare}
+            />
+            <HowItWorks
+              title="How the dashboard works"
+              intro="Your business at a glance for the period you select. Every metric and chart on the page re-computes when you change the period picker; the AI executive summary refreshes alongside it."
+              cards={[
+                { icon: <BarChart3 size={16} strokeWidth={1.7} />,  title: "Headline metrics", body: "Revenue, expenses, profit, and cash position for the selected period - plus the comparison to the period before, so you see what changed." },
+                { icon: <Sparkles size={16} strokeWidth={1.7} />,   title: "AI executive summary", body: "A plain-English read of what's happening, written by the AI from your actual numbers. Surfaces the one or two things that actually moved." },
+                { icon: <Activity size={16} strokeWidth={1.7} />,   title: "Health & sources",  body: "Coverage matrix shows which months are uploaded per source. Missing months show as alerts so reports stay accurate." },
+              ]}
+              outro="Want a longer view? Go to Reports for the yearly summary. Need to act on something? Open Signals for the top observations."
+            />
+          </>
         }
       />
 

@@ -1,5 +1,7 @@
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
 import DataTabs from "@/components/DataTabs";
+import { ListChecks, Tag, Filter } from "lucide-react";
 import ReviewBanner from "@/components/ReviewBanner";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
@@ -101,15 +103,27 @@ export default async function TransactionsPage({
         title={t("page.transactions.title")}
         subtitle={`Transactions - ${txns.length} shown. Categorize, mark one-time, exclude from P&L, override accounting month.`}
         right={
-          trashCount > 0 ? (
-            <a
-              href="/transactions/trash"
-              className="text-xs font-medium px-3 py-1.5 rounded-md border border-warn/40 text-warn hover:bg-warn/10 transition inline-flex items-center gap-1.5"
-              title="Restore or permanently delete recently-trashed transactions"
-            >
-              Trash ({trashCount})
-            </a>
-          ) : null
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            {trashCount > 0 ? (
+              <a
+                href="/transactions/trash"
+                className="text-xs font-medium px-3 py-1.5 rounded-md border border-warn/40 text-warn hover:bg-warn/10 transition inline-flex items-center gap-1.5"
+                title="Restore or permanently delete recently-trashed transactions"
+              >
+                Trash ({trashCount})
+              </a>
+            ) : null}
+            <HowItWorks
+              title="How transactions work"
+              intro="Every row Tweaxly has ingested across every upload. Filter, categorize, mark as one-time, exclude from profit-and-loss math, or move to trash. The same view powers reports, dashboards, and signals."
+              cards={[
+                { icon: <ListChecks size={16} strokeWidth={1.7} />, title: "Bulk actions",   body: "Select multiple rows to categorize, mark one-time, or move to trash in one step. The trash keeps everything restorable for 30 days." },
+                { icon: <Tag size={16} strokeWidth={1.7} />,        title: "Categorization", body: "Tweaxly's auto-categorization runs on upload. Rules you define on the Settings -> Categories tab survive every future import." },
+                { icon: <Filter size={16} strokeWidth={1.7} />,     title: "Filters",        body: "Search by description / vendor, scope by source, scope by accounting month, or filter to uncategorized / unvendorized rows for fast cleanup." },
+              ]}
+              outro="Override the accounting month per transaction if a charge actually belongs in a different period (e.g. a December purchase that posted in January)."
+            />
+          </div>
         }
       />
       <DataTabs />

@@ -9,8 +9,9 @@
 // clicks event cards in the Scenario Builder to add assumptions. The chart,
 // summary cards, and insights panel all redraw against both layers.
 
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, LineChart, Sliders, Gauge } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
 import ForecastTabs from "@/components/ForecastTabs";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
@@ -239,24 +240,36 @@ export default async function ForecastPage({
             : t("page.forecast.subtitle.overview")
         }
         right={
-          scenariosBare ? null : (
-            <div className="flex items-end gap-3 flex-wrap justify-end">
-              <ForecastSetup
-                historical={historical}
-                horizon={horizon.value}
-                histFrom={sp.hist_from}
-                histTo={sp.hist_to}
-                canLongForecast={canLongForecast}
-                currentPlan={currentPlan}
-              />
-              {/* Persistent Scenario Builder entry point - only appears
-                  on the Scenarios view AFTER the user has at least one
-                  assumption in play. */}
-              {view === "scenarios" && assumptions.length > 0 && canScenarios ? (
-                <ScenarioBuilderTrigger />
-              ) : null}
-            </div>
-          )
+          <div className="flex items-end gap-3 flex-wrap justify-end">
+            {scenariosBare ? null : (
+              <>
+                <ForecastSetup
+                  historical={historical}
+                  horizon={horizon.value}
+                  histFrom={sp.hist_from}
+                  histTo={sp.hist_to}
+                  canLongForecast={canLongForecast}
+                  currentPlan={currentPlan}
+                />
+                {/* Persistent Scenario Builder entry point - only appears
+                    on the Scenarios view AFTER the user has at least one
+                    assumption in play. */}
+                {view === "scenarios" && assumptions.length > 0 && canScenarios ? (
+                  <ScenarioBuilderTrigger />
+                ) : null}
+              </>
+            )}
+            <HowItWorks
+              title="How forecasting works"
+              intro="Tweaxly projects revenue, expenses, and cash forward based on your recent activity. The baseline assumes the trend continues. Scenarios let you model real changes - hires, raises, contracts, marketing shifts, one-off events - on top of the baseline so you see the impact before committing."
+              cards={[
+                { icon: <LineChart size={16} strokeWidth={1.7} />, title: "Overview",   body: "The baseline forecast: what your business looks like if recent trends continue. Confidence reflects how much consistent history we had to work with." },
+                { icon: <Sliders size={16} strokeWidth={1.7} />,   title: "Scenarios",  body: "Layer assumptions on top of the baseline. Stack multiple scenarios side by side to compare options. Pro feature." },
+                { icon: <Gauge size={16} strokeWidth={1.7} />,     title: "Confidence", body: "Every forecast shows a confidence level. Long horizons and limited history reduce it; consistent recent data lifts it." },
+              ]}
+              outro="The forecast horizon (3 / 6 / 12 / 24 / 36 / 60 months) caps at 3 months on Free and 60 months on Pro. Set it from the picker above."
+            />
+          </div>
         }
       />
       <ForecastTabs />

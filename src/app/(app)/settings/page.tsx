@@ -1,4 +1,6 @@
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { Building2, CreditCard, Users } from "lucide-react";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { syncVendorsFromTransactions } from "@/lib/vendorSync";
@@ -251,6 +253,18 @@ export default async function SettingsPage({
       <PageHeader
         title={isCategoriesTab ? "Data" : t("settings.title")}
         subtitle={t("settings.subtitle")}
+        right={
+          <HowItWorks
+            title="How settings work"
+            intro="Workspace-level configuration. Most of this is set once when you start a workspace and only revisited when something changes - team, plan, integration credentials, branding."
+            cards={[
+              { icon: <Building2 size={16} strokeWidth={1.7} />, title: "Business Profile",   body: "Industry, model, customers, KPIs - your business DNA. Drives every AI prompt so answers are grounded in YOUR business." },
+              { icon: <CreditCard size={16} strokeWidth={1.7} />, title: "Business Plan",     body: "Track your AI credit balance, switch between Free and Pro, manage billing. Each workspace has its own subscription." },
+              { icon: <Users size={16} strokeWidth={1.7} />,      title: "Members & Access",  body: "Invite teammates with role-based access (Owner / Admin / Viewer). Pro feature - Free workspaces have a single owner." },
+            ]}
+            outro="Categories, vendors, and the rule-based auto-categorization engine all live under the Data tab from here."
+          />
+        }
       />
       <SettingsClient
         business={{

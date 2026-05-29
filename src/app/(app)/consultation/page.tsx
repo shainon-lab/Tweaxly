@@ -9,6 +9,8 @@
 // Arrival with just ?q= prefills the draft for editing.
 
 import PageHeader from "@/components/PageHeader";
+import HowItWorks from "@/components/HowItWorks";
+import { MessageSquareText, Sparkles, History } from "lucide-react";
 import { getServerT } from "@/lib/i18n/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -52,6 +54,18 @@ export default async function ConsultationPage({
       <PageHeader
         title={t("page.advisory.title")}
         subtitle={t("page.advisory.subtitle")}
+        right={
+          <HowItWorks
+            title="How the AI advisor works"
+            intro="Free-form Q&A about your business. The advisor sees your full financial picture, business profile, and recent activity. Ask anything in plain business English; the advisor speaks the same back."
+            cards={[
+              { icon: <MessageSquareText size={16} strokeWidth={1.7} />, title: "Asking questions", body: "Type a question, hit Analyze. Answers are grounded in YOUR numbers and YOUR business context, not generic templates." },
+              { icon: <Sparkles size={16} strokeWidth={1.7} />,          title: "AI credits",       body: "A simple question costs 1 credit. A deep analysis on a signal costs 3. Generating a fresh forecast or running a scenario costs 5." },
+              { icon: <History size={16} strokeWidth={1.7} />,           title: "History",          body: "Past consultations are kept. Open the History tab to scroll back through previous Q&As - useful when you want to compare what changed." },
+            ]}
+            outro="The advisor can talk about strategy, growth ideas, hiring decisions, vendor choices, pricing - not just numbers. If a topic isn't useful, ignore the response and ask differently."
+          />
+        }
       />
       <ConsultationTabs historyCount={totalQuestions} />
       {isEmpty ? (
