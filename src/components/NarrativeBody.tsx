@@ -69,9 +69,12 @@ function renderWithEmphasis(text: string): ReactNode[] {
 
 export default function NarrativeBody({
   text,
-  // Size variant. "base" matches the dashboard executive summary
-  // (text-sm md:text-base). "sm" is for tighter contexts like the
-  // signal detail panel sections.
+  // Size variant. Aligned to the platform typography standard:
+  // analytical text never goes below 16px (t-body). "md" / "base"
+  // sit at the standard body size; "lg" lifts to 18px on wide
+  // viewports for hero-narrative surfaces (executive summary).
+  // Legacy "sm" is kept as an alias of body for backwards
+  // compatibility - it no longer means 14px.
   size = "base",
   // When true, the lead-paragraph split is suppressed and the text
   // renders as a single block. Useful for snippets that are already
@@ -81,21 +84,21 @@ export default function NarrativeBody({
   className,
 }: {
   text: string;
-  size?: "base" | "sm";
+  size?: "base" | "sm" | "md" | "lg";
   noSplit?: boolean;
   className?: string;
 }) {
   if (!text) return null;
   const [lead, rest] = noSplit ? [text.trim(), ""] : splitNarrative(text);
 
-  // Typography: positive letter-spacing + roomy line-height. Same
-  // values for both size variants so the platform reads consistently.
-  // Color is intentionally NOT set here so callers can pick the right
-  // slate tone for their surface (slate-100 for accent, slate-200
-  // for primary body, slate-300 for secondary). Callers append
-  // `text-slate-XXX` via className.
+  // Typography: positive letter-spacing + roomy line-height. Body
+  // text floors at 16px per the platform standard; lg lifts to
+  // 18px on wide viewports for hero-narrative surfaces. Color is
+  // intentionally not set here so callers can pick the right slate
+  // tone for their surface; callers append `text-slate-XXX` via
+  // className.
   const baseCls = "leading-[1.7] tracking-[0.01em] space-y-4";
-  const sizeCls = size === "sm" ? "text-sm" : "text-sm md:text-base";
+  const sizeCls = size === "lg" ? "text-[16px] md:text-[18px]" : "text-[16px]";
   // Default to text-slate-200 only when the caller hasn't passed a
   // text-color override - keeps existing callers working.
   const hasColorOverride = !!className && /\btext-(slate|white|good|warn|bad|accent)/.test(className);

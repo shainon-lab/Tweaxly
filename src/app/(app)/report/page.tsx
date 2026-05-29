@@ -540,7 +540,7 @@ export default async function ReportPage({
             </tr>
           </tbody>
         </table>
-        <div className="text-xs text-slate-500 mt-3">
+        <div className="t-body text-slate-400 mt-4">
           Pick a primary period above. Add comparison columns to see up to {MAX_COMPARE} prior {granularity}s alongside it. Every category that has appeared in your data is listed; categories with no activity in a given period show <span className="text-slate-300">-</span>.
         </div>
       </div>

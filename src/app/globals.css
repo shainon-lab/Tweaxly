@@ -380,6 +380,35 @@ html[data-theme="light"] .auth-shell .card {
 
 /* ── Component utilities ─────────────────────────────────────────────────── */
 @layer components {
+  /* ── Typography hierarchy ────────────────────────────────────────────
+     Single source of truth for text sizing across the product. Five
+     levels; nothing in between. Apply via the `t-*` class instead of
+     hand-picking text-sm/text-base/etc. per surface.
+
+     Why a fixed set: long sessions on data-heavy screens are visibly
+     more tiring when sizes drift across components. Consolidating to
+     5 levels means the eye learns the hierarchy once.
+
+     Levels:
+       .t-page      28px / 700      Page titles - one per page.
+       .t-section   20px / 600      Major sections inside a page.
+       .t-card      18px / 600      Card / panel / widget titles.
+       .t-body      16px / 400      Default reading size. Insights,
+                                    explanations, recommendations,
+                                    AI responses, warning bodies.
+       .t-meta      13px / 500      Short UI labels only: table
+                                    headers, badges, status pills,
+                                    date labels. NEVER for analytical
+                                    or explanatory text.
+
+     Color is layered on top via slate-* utilities. Don't mix sizes
+     to imply hierarchy when one of these classes already does it. */
+  .t-page    { @apply text-[28px] leading-tight    font-bold; }
+  .t-section { @apply text-[20px] leading-snug     font-semibold; }
+  .t-card    { @apply text-[18px] leading-snug     font-semibold; }
+  .t-body    { @apply text-[16px] leading-relaxed  font-normal; }
+  .t-meta    { @apply text-[13px] leading-normal   font-medium; }
+
   .card {
     @apply rounded-xl border border-line bg-ink-900/80 backdrop-blur p-5;
   }
@@ -409,22 +438,30 @@ html[data-theme="light"] .auth-shell .card {
   .input {
     @apply w-full rounded-md border border-line bg-ink-950 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent;
   }
-  .label { @apply block text-xs font-medium uppercase tracking-wide text-slate-400 mb-1; }
+  /* Form labels: align to t-meta (13px / medium / uppercase tracking). */
+  .label {
+    @apply block text-[13px] font-medium uppercase tracking-wide text-slate-400 mb-1;
+  }
+  /* Pills are short UI badges - sit at the meta floor (13px). The
+     extra tightness comes from padding, not from shrinking the type
+     below the readable floor. */
   .pill {
-    @apply inline-flex items-center rounded-full border border-line bg-ink-700 px-2 py-0.5 text-[11px] font-medium text-slate-200;
+    @apply inline-flex items-center rounded-full border border-line bg-ink-700 px-2.5 py-0.5 text-[13px] font-medium text-slate-200;
   }
   .pill-good { @apply pill border-good/40 bg-good/10 text-good; }
   .pill-bad { @apply pill border-bad/40 bg-bad/10 text-bad; }
   .pill-warn { @apply pill border-warn/40 bg-warn/10 text-warn; }
   .pill-accent { @apply pill border-accent/40 bg-accent-soft text-accent; }
+  /* Tables: headers at meta (13px), cells at body (16px). Important
+     numeric cells should layer `font-semibold` on top in JSX. */
   .table-base {
-    @apply w-full text-sm;
+    @apply w-full text-[16px];
   }
   .table-base thead th {
-    @apply text-left text-xs font-semibold uppercase tracking-wide text-slate-400 px-3 py-2 border-b border-line;
+    @apply text-left text-[13px] font-semibold uppercase tracking-wide text-slate-400 px-3 py-2 border-b border-line;
   }
   .table-base tbody td {
-    @apply px-3 py-2 border-b border-line/60;
+    @apply px-3 py-2 border-b border-line/60 text-[16px];
   }
   .table-base tbody tr:hover { @apply bg-ink-700/40; }
 

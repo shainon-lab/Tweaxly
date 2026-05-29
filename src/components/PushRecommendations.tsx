@@ -580,8 +580,8 @@ export default function PushRecommendations({
 
       {visibleRecs.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center py-8 px-4">
-          <div className="text-sm font-medium text-slate-200 mb-1">No signals to show</div>
-          <div className="text-xs text-slate-400 max-w-xs">
+          <div className="t-card text-slate-200 mb-2">No signals to show</div>
+          <div className="t-body text-slate-400 max-w-md">
             {resolved.size > 0
               ? "Everything's marked resolved. Use the Restore link above to bring them back."
               : "Once there's a few months of data, the advisor surfaces revenue, expense, vendor, and cash-flow signals here automatically."}
@@ -743,7 +743,7 @@ function SignalCard({
       className={`min-h-48 rounded-2xl border ${borderColor} ${isCritical ? criticalWash : "bg-ink-900/50"} ${selectedRing} p-5 text-left flex flex-col gap-2.5 transition-all duration-200 hover:bg-ink-900/70 hover:shadow-lg hover:shadow-black/30 hover:-translate-y-0.5 group`}
     >
       {/* Meta line - severity dot + badge + category + lifecycle */}
-      <div className="flex items-center gap-2 text-[11px] text-slate-400">
+      <div className="flex items-center gap-2 t-meta text-slate-400">
         <span
           className={`w-1.5 h-1.5 rounded-full ${dotColor} ${isCritical ? "animate-pulse" : ""}`}
           aria-hidden="true"
@@ -759,22 +759,24 @@ function SignalCard({
         ) : null}
       </div>
 
-      {/* Title */}
-      <div className="text-lg font-semibold text-slate-50 leading-tight tracking-tight">
+      {/* Title - t-card (18px / semibold) per the typography standard. */}
+      <div className="t-card text-slate-50 leading-tight tracking-tight">
         {display.title}
       </div>
 
-      {/* Hero metric */}
+      {/* Hero metric - t-page sized (28px) for the headline number. */}
       {display.metric ? (
-        <div className="text-3xl font-bold text-slate-50 leading-none tabular-nums tracking-tight">
+        <div className="t-page text-slate-50 leading-none tabular-nums tracking-tight">
           {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
           {display.metric}
         </div>
       ) : null}
 
-      {/* Optional framing sentence */}
+      {/* Optional framing sentence - t-body so the explanatory text
+          stays readable. Was text-sm (14px); analytical descriptions
+          never go below 16px. */}
       {display.subtitle ? (
-        <div className="text-sm text-slate-400 leading-snug line-clamp-2">
+        <div className="t-body text-slate-400 line-clamp-2">
           {display.subtitle}
         </div>
       ) : null}
@@ -786,11 +788,11 @@ function SignalCard({
           target - but it gives the eye a clear 'open this' signal. */}
       <div className="mt-auto flex items-center justify-end">
         <span
-          className="inline-flex items-center gap-1.5 text-[11px] font-medium px-2.5 py-1 rounded-full border border-accent/40 bg-accent-soft/30 text-accent group-hover:bg-accent-soft group-hover:border-accent group-hover:text-white group-hover:translate-x-0.5 transition duration-200"
+          className="inline-flex items-center gap-1.5 t-meta px-3 py-1 rounded-full border border-accent/40 bg-accent-soft/30 text-accent group-hover:bg-accent-soft group-hover:border-accent group-hover:text-white group-hover:translate-x-0.5 transition duration-200"
           aria-hidden="true"
         >
           <span>View details</span>
-          <ChevronRight size={12} strokeWidth={2} />
+          <ChevronRight size={14} strokeWidth={2} />
         </span>
       </div>
     </button>
@@ -861,7 +863,7 @@ function SignalDetailPanel({
       {/* Header */}
       <div className="flex items-start justify-between gap-3 p-5 border-b border-line">
         <div className="min-w-0 flex-1 flex flex-col gap-2">
-          <div className="flex items-center gap-2 text-[11px] text-slate-400">
+          <div className="flex items-center gap-2 t-meta text-slate-400">
             <span className={`w-1.5 h-1.5 rounded-full ${dotColor}`} aria-hidden="true" />
             <span className="font-medium tracking-wide text-slate-300">{badge}</span>
             <span className="text-slate-600">·</span>
@@ -873,11 +875,11 @@ function SignalDetailPanel({
               </>
             ) : null}
           </div>
-          <div className="text-xl font-semibold text-slate-50 leading-tight tracking-tight">
+          <div className="t-section text-slate-50 leading-tight tracking-tight">
             {display.title}
           </div>
           {display.metric ? (
-            <div className="text-4xl font-bold text-slate-50 leading-none tabular-nums tracking-tight">
+            <div className="t-page text-slate-50 leading-none tabular-nums tracking-tight">
               {arrowChar ? <span className={`${arrowTone} mr-1`}>{arrowChar}</span> : null}
               {display.metric}
             </div>
@@ -904,10 +906,10 @@ function SignalDetailPanel({
 
         {r.impact > 0 ? (
           <div className="rounded-xl border border-line bg-ink-900/40 px-4 py-3 flex items-center justify-between">
-            <span className="text-[10px] uppercase tracking-wider text-slate-500 font-medium">
+            <span className="t-meta uppercase tracking-wider text-slate-500">
               Estimated impact
             </span>
-            <span className="text-base font-semibold text-slate-100 tabular-nums">
+            <span className="t-card text-slate-100 tabular-nums">
               ≈ {fmtMoney(r.impact, currency)} / month
             </span>
           </div>
@@ -923,14 +925,14 @@ function SignalDetailPanel({
             type="button"
             onClick={onMarkRead}
             disabled={rec.status === "acknowledged"}
-            className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-300 hover:text-slate-100 hover:border-slate-500 transition disabled:opacity-50"
+            className="t-meta px-3 py-1.5 rounded-md border border-line text-slate-300 hover:text-slate-100 hover:border-slate-500 transition disabled:opacity-50"
           >
             {rec.status === "acknowledged" ? "Read" : "Mark as read"}
           </button>
           <button
             type="button"
             onClick={onResolve}
-            className="text-xs px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-good hover:border-good/60 transition"
+            className="t-meta px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-good hover:border-good/60 transition"
           >
             Mark as resolved
           </button>
@@ -944,7 +946,7 @@ function SignalDetailPanel({
             onClose();
             router.push(`/consultation?q=${encodeURIComponent(consultQuestion)}`);
           }}
-          className="text-sm px-4 py-2 rounded-full inline-flex items-center gap-2 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
+          className="t-body px-4 py-2 rounded-full inline-flex items-center gap-2 border border-accent/40 bg-accent-soft/40 text-accent font-medium shadow-sm hover:bg-accent-soft hover:border-accent hover:text-white hover:shadow-md transition"
           title="Send this question to the advisor"
         >
           <MessageSquareText size={14} strokeWidth={1.75} aria-hidden="true" />
@@ -966,16 +968,16 @@ function PanelSection({
 }) {
   return (
     <div>
-      <div className={`text-[10px] uppercase tracking-wider mb-1.5 font-medium ${accent ? "text-accent" : "text-slate-500"}`}>
+      <div className={`t-meta uppercase tracking-wider mb-2 ${accent ? "text-accent" : "text-slate-500"}`}>
         {label}
       </div>
       {/* Shared NarrativeBody: same paragraph-split + tracking + leading
-          as the dashboard summary. Three sections in the panel already
-          give the user vertical rhythm, so we leave the per-section
-          splitting on - long observations still get a break. */}
+          as the dashboard summary. Body floors at 16px per the
+          typography standard - signal explanations are analytical text
+          and should never render smaller. */}
       <NarrativeBody
         text={body}
-        size="sm"
+        size="base"
         className={accent ? "text-slate-100" : "text-slate-300"}
       />
     </div>

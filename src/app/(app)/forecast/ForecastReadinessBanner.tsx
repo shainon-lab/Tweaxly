@@ -17,10 +17,10 @@ export default function ForecastReadinessBanner({
                                      "border-bad/40 bg-bad/5 text-bad";
   return (
     <div className={`rounded-lg border ${toneClass} px-4 py-3 mb-4 flex items-baseline gap-3 flex-wrap`}>
-      <div className="text-sm font-semibold uppercase tracking-wide">{readiness.label}</div>
-      <div className="text-xs text-slate-300 flex-1 min-w-0">{readiness.description}</div>
+      <div className="t-meta font-semibold uppercase tracking-wide">{readiness.label}</div>
+      <div className="t-body text-slate-300 flex-1 min-w-0">{readiness.description}</div>
       {readiness.state !== "disabled" ? (
-        <div className="text-[11px] text-slate-400">
+        <div className="t-meta text-slate-400">
           {readiness.daysOfData} day{readiness.daysOfData === 1 ? "" : "s"} · {readiness.monthsOfData} mo of data
         </div>
       ) : null}

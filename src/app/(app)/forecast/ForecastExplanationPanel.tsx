@@ -87,15 +87,15 @@ export default function ForecastExplanationPanel({
           old layout left between the title block and the (then-tall)
           confidence chip on wide screens. */}
       <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
-        <div className="font-medium text-slate-100 shrink-0">Why this forecast?</div>
+        <div className="t-section text-slate-100 shrink-0">Why this forecast?</div>
         <div className="flex items-center gap-3 shrink-0 rounded-md border border-line bg-ink-900/50 px-3 py-1.5">
           <div className="text-right">
-            <div className="text-[10px] uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
-            <div className={`text-lg font-semibold leading-tight ${TONE_TEXT[confTone]}`}>
+            <div className="t-meta uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
+            <div className={`t-section font-bold leading-tight ${TONE_TEXT[confTone]}`}>
               {confidencePct}%
             </div>
           </div>
-          <div className="text-[11px] text-slate-400 leading-snug max-w-[220px]">
+          <div className="t-meta text-slate-400 leading-snug max-w-[220px]">
             {basedOn}
           </div>
         </div>
@@ -104,18 +104,21 @@ export default function ForecastExplanationPanel({
       {/* ─── Driver cards (sorted by impact: warning → positive →
             neutral). The tone dot already encodes the WATCH /
             POSITIVE / NEUTRAL signal so the explicit label pill is
-            redundant - dropped to reduce visual weight per card. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            redundant - dropped to reduce visual weight per card.
+            Title sits at t-card (18px / semibold) so readers can
+            scan; detail is t-body (16px) per the typography
+            standard - analytical text never goes below 16px. */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
         {drivers.map((d, i) => (
           <div
             key={i}
-            className="rounded-lg border border-line bg-ink-900/40 px-3 py-2"
+            className="rounded-lg border border-line bg-ink-900/40 px-4 py-3"
           >
-            <div className="flex items-center gap-2 min-w-0 mb-1">
-              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
-              <div className={`text-xs font-medium truncate ${TONE_TEXT[d.impact]}`}>{d.title}</div>
+            <div className="flex items-center gap-2 min-w-0 mb-2">
+              <span className={`w-2 h-2 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
+              <div className={`t-card truncate ${TONE_TEXT[d.impact]}`}>{d.title}</div>
             </div>
-            <div className="text-[11px] text-slate-400 leading-snug">{d.detail}</div>
+            <div className="t-body text-slate-300">{d.detail}</div>
           </div>
         ))}
       </div>
@@ -125,14 +128,14 @@ export default function ForecastExplanationPanel({
         <button
           type="button"
           onClick={() => setDetailsOpen((v) => !v)}
-          className="text-xs text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-1.5"
+          className="t-meta text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-1.5"
         >
           <span className="inline-block w-3 text-center">{detailsOpen ? "▾" : "▸"}</span>
           {detailsOpen ? "Hide detailed analysis" : "View detailed analysis"}
         </button>
 
         {detailsOpen ? (
-          <div className="mt-4 space-y-4">
+          <div className="mt-4 space-y-5">
             {/* Baseline + horizon meta. */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <Row label="Baseline period"   value={result.baselinePeriod.label} />
@@ -148,13 +151,13 @@ export default function ForecastExplanationPanel({
                 the full chain of reasoning. Shared NarrativeBody so
                 the typography + paragraph-split matches the dashboard. */}
             {result.explanationText ? (
-              <NarrativeBody text={result.explanationText} size="sm" />
+              <NarrativeBody text={result.explanationText} size="md" />
             ) : null}
 
             {result.recurringDetected.length > 0 ? (
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Recurring items projected forward</div>
-                <ul className="text-sm text-slate-300 space-y-1">
+                <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Recurring items projected forward</div>
+                <ul className="t-body text-slate-300 space-y-1.5">
                   {result.recurringDetected.slice(0, 6).map((r, i) => (
                     <li key={i} className="flex items-baseline justify-between gap-3">
                       <span>{r.description}</span>
@@ -167,8 +170,8 @@ export default function ForecastExplanationPanel({
 
             {result.outliersDetected.length > 0 ? (
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Outliers excluded from trend</div>
-                <ul className="text-sm text-slate-300 space-y-1">
+                <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Outliers excluded from trend</div>
+                <ul className="t-body text-slate-300 space-y-1.5">
                   {result.outliersDetected.slice(0, 6).map((o, i) => (
                     <li key={i}>{o.reason}</li>
                   ))}
@@ -178,8 +181,8 @@ export default function ForecastExplanationPanel({
 
             {result.excludedRecords.length > 0 ? (
               <div>
-                <div className="text-xs uppercase tracking-wide text-slate-400 mb-1">Excluded records</div>
-                <ul className="text-sm text-slate-300 space-y-1">
+                <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Excluded records</div>
+                <ul className="t-body text-slate-300 space-y-1.5">
                   {result.excludedRecords.map((e, i) => (
                     <li key={i}>{e.count} {e.reason.toLowerCase()}</li>
                   ))}
@@ -188,18 +191,20 @@ export default function ForecastExplanationPanel({
             ) : null}
 
             {result.seasonalityNote ? (
-              <div className="text-xs text-slate-400">{result.seasonalityNote}</div>
+              <div className="t-body text-slate-400">{result.seasonalityNote}</div>
             ) : null}
           </div>
         ) : null}
       </div>
 
       {/* Warnings always rendered (outside Layer 3) because they're
-          risks the user should see without an extra click. */}
+          risks the user should see without an extra click. Bumped
+          from meta (13px) to body (16px) per the typography standard
+          - warnings are analytical text, not labels. */}
       {result.warnings.length > 0 ? (
-        <div className="mt-4 rounded-md border border-warn/30 bg-warn/10 p-3">
-          <div className="text-xs uppercase tracking-wide text-warn mb-1">Warnings</div>
-          <ul className="text-xs text-slate-200 space-y-1">
+        <div className="mt-4 rounded-md border border-warn/30 bg-warn/10 p-4">
+          <div className="t-meta uppercase tracking-wide text-warn mb-2">Warnings</div>
+          <ul className="t-body text-slate-200 space-y-1.5">
             {result.warnings.map((w, i) => <li key={i}>• {w}</li>)}
           </ul>
         </div>
@@ -211,8 +216,8 @@ export default function ForecastExplanationPanel({
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div>
-      <div className="text-[11px] uppercase tracking-wide text-slate-400">{label}</div>
-      <div className="text-sm text-slate-100 mt-0.5 font-medium">{value}</div>
+      <div className="t-meta uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="t-body text-slate-100 mt-1 font-semibold">{value}</div>
     </div>
   );
 }

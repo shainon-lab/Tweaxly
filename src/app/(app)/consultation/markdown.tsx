@@ -202,7 +202,9 @@ export function renderMarkdown(text: string) {
     // a single-element array, so the loop is safe either way.
     for (const chunk of splitLongParagraph(joined)) {
       blocks.push(
-        <p key={blocks.length} className="text-sm leading-[1.7] tracking-[0.01em] text-slate-200">
+        // Advisory responses are analytical text - typography
+        // standard floors at 16px (t-body). Was text-sm (14px).
+        <p key={blocks.length} className="t-body leading-[1.7] tracking-[0.01em] text-slate-200">
           {inline(chunk)}
         </p>,
       );
@@ -214,7 +216,9 @@ export function renderMarkdown(text: string) {
     if (line.startsWith("### ")) {
       flushPara();
       blocks.push(
-        <h3 key={blocks.length} className="text-base font-semibold mt-2 mb-1">
+        // Section-level heading inside an advisory response. t-card
+        // (18px / semibold) per the typography standard.
+        <h3 key={blocks.length} className="t-card mt-3 mb-1.5">
           {inline(line.slice(4))}
         </h3>,
       );
@@ -223,7 +227,8 @@ export function renderMarkdown(text: string) {
       blocks.push(
         <blockquote
           key={blocks.length}
-          className="border-l-2 border-accent/60 pl-3 py-1 text-sm text-slate-300 bg-accent-soft/30 rounded-r"
+          // Blockquote content is body prose, not metadata.
+          className="border-l-2 border-accent/60 pl-3 py-1 t-body text-slate-300 bg-accent-soft/30 rounded-r"
         >
           {inline(line.slice(2))}
         </blockquote>,
