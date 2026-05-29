@@ -15,8 +15,12 @@ import { useT } from "@/lib/i18n/client";
 
 export default function BusinessSignalsTabs({
   firingAlerts,
+  rightSlot,
 }: {
   firingAlerts: number;
+  // Optional right-aligned content rendered on the same row as the
+  // tabs (e.g. the "?" help-modal trigger on the Signals page).
+  rightSlot?: React.ReactNode;
 }) {
   const t = useT();
   const path = usePathname();
@@ -28,6 +32,7 @@ export default function BusinessSignalsTabs({
     // Sticky just under the PageHeader (~85px). Same pattern as the
     // other primary-level tab strips across the app.
     <div className="sticky top-[85px] z-20 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-ink-950 pt-2 pb-3 border-b border-line/40 mb-6">
+    <div className="flex items-center justify-between gap-3">
     <div className="inline-flex items-center rounded-md border border-line bg-ink-900/60 p-1 text-sm">
       {TABS.map((t) => {
         const active =
@@ -56,6 +61,8 @@ export default function BusinessSignalsTabs({
           </Link>
         );
       })}
+    </div>
+    {rightSlot ? <div className="shrink-0">{rightSlot}</div> : null}
     </div>
     </div>
   );

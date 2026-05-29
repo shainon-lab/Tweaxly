@@ -125,11 +125,13 @@ export default async function BusinessSignalsPage({
       />
       <BusinessSignalsTabs
         firingAlerts={triggeredAlerts.filter((a) => a.acknowledgedAt == null).length}
-      />
-      <SignalsExplanation
-        plan={plan}
-        cap={cap}
-        activeCount={activeSignals.length}
+        rightSlot={
+          <SignalsExplanation
+            plan={plan}
+            cap={cap}
+            activeCount={activeSignals.length}
+          />
+        }
       />
       <PushRecommendations initial={pushRecs} currency={ccy} initialSelectedId={deeplinkedSignalId} />
     </>
