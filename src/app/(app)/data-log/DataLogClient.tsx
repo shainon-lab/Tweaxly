@@ -102,7 +102,7 @@ export default function DataLogClient({
     <>
       <div className="card">
         {rows.length === 0 ? (
-          <div className="text-sm text-slate-400 py-6 text-center">
+          <div className="t-body text-slate-400 py-8 text-center">
             No data yet. Use the Import tab to upload a file or add a manual entry.
           </div>
         ) : (
@@ -134,13 +134,13 @@ export default function DataLogClient({
                     {r.financialSourceName || r.status === "replaced" || r.replacesCount > 0 ? (
                       <div className="flex items-center gap-1.5 flex-wrap mt-1">
                         {r.financialSourceName ? (
-                          <span className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-line text-slate-400">
+                          <span className="t-meta uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-line text-slate-400">
                             {r.financialSourceName}
                           </span>
                         ) : null}
                         {r.status === "replaced" ? (
                           <span
-                            className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-warn/40 bg-warn/10 text-warn"
+                            className="t-meta uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-warn/40 bg-warn/10 text-warn"
                             title={r.replacedByFilename
                               ? `Replaced ${r.replacedAt ? new Date(r.replacedAt).toLocaleString() : ""} by ${r.replacedByFilename}`
                               : "This batch was replaced by a later import"}
@@ -150,7 +150,7 @@ export default function DataLogClient({
                         ) : null}
                         {r.replacesCount > 0 ? (
                           <span
-                            className="text-[10px] uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-accent/40 bg-accent-soft/30 text-accent"
+                            className="t-meta uppercase tracking-wider font-semibold px-1.5 py-0.5 rounded border border-accent/40 bg-accent-soft/30 text-accent"
                             title={`This import replaced ${r.replacesCount} earlier batch${r.replacesCount === 1 ? "" : "es"} for the same source + period.`}
                           >
                             Replaces {r.replacesCount}
@@ -187,13 +187,13 @@ export default function DataLogClient({
             className="card max-w-md w-full"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="text-base font-semibold mb-2">
+            <div className="t-section mb-2">
               This action will delete data - are you sure you want to proceed?
             </div>
-            <div className="text-sm text-slate-400 mb-4">
+            <div className="t-body text-slate-400 mb-4">
               Removing this {confirming.kind === "manual" ? "manual entry" : "upload"} will permanently delete:
             </div>
-            <ul className="text-sm text-slate-300 space-y-1 mb-4 border-l-2 border-bad/40 pl-3">
+            <ul className="t-body text-slate-300 space-y-1.5 mb-4 border-l-2 border-bad/40 pl-4">
               <li>
                 <span className="text-slate-400">
                   {confirming.kind === "manual" ? "Entry:" : "File:"}
@@ -220,7 +220,7 @@ export default function DataLogClient({
                 </span>
               </li>
             </ul>
-            <div className="text-xs text-slate-400 mb-4">
+            <div className="t-body text-slate-400 mb-4">
               This cannot be undone. The data will no longer feed into your
               dashboard, forecast, insights, or consultation.
             </div>

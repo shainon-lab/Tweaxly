@@ -238,42 +238,42 @@ export default async function WorkforcePage() {
           {/* Summary cards */}
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 mb-6">
             <div className="card-tight" title="Real employee cost includes salary, employer taxes, pension, benefits, and additional expenses.">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Total monthly payroll</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">Total monthly payroll</div>
               <div className="mt-2 text-xl font-semibold">{fmtMoney(summary.totalMonthly, ccy)}</div>
-              <div className="text-xs text-slate-400 mt-1">salary + taxes + pension + benefits + other</div>
+              <div className="t-meta text-slate-400 mt-1">salary + taxes + pension + benefits + other</div>
             </div>
             <div className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Payroll % of revenue</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">Payroll % of revenue</div>
               <div className={`mt-2 text-xl font-semibold ${payrollPctTone}`}>
                 {payrollPctRevenue == null ? "-" : fmtPct(payrollPctRevenue)}
               </div>
-              <div className="text-xs text-slate-400 mt-1">
+              <div className="t-meta text-slate-400 mt-1">
                 healthy &lt; 35% · warning 35–50% · risky &gt; 50%
               </div>
             </div>
             <div className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Avg cost / employee</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">Avg cost / employee</div>
               <div className="mt-2 text-xl font-semibold">{fmtMoney(summary.avgCostPerEmployee, ccy)}</div>
-              <div className="text-xs text-slate-400 mt-1">across active roster</div>
+              <div className="t-meta text-slate-400 mt-1">across active roster</div>
             </div>
             <div className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Active employees</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">Active employees</div>
               <div className="mt-2 text-xl font-semibold">{summary.activeCount}</div>
-              <div className="text-xs text-slate-400 mt-1">
+              <div className="t-meta text-slate-400 mt-1">
                 {summary.plannedCount > 0 ? `+${summary.plannedCount} planned · ` : ""}{summary.contractorCount} contractor{summary.contractorCount === 1 ? "" : "s"}
               </div>
             </div>
             <div className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Payroll change vs. last month</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">Payroll change vs. last month</div>
               <div className={`mt-2 text-xl font-semibold ${momTone}`}>
                 {payrollMoM == null ? "-" : (payrollMoM >= 0 ? "+" : "") + fmtPct(payrollMoM)}
               </div>
-              <div className="text-xs text-slate-400 mt-1">vs prior month booked</div>
+              <div className="t-meta text-slate-400 mt-1">vs prior month booked</div>
             </div>
             <div className="card-tight">
-              <div className="text-xs uppercase tracking-wide text-slate-400">Forecasted (next 12 mo)</div>
+              <div className="t-meta uppercase tracking-wide text-slate-400">Forecasted (next 12 mo)</div>
               <div className="mt-2 text-xl font-semibold">{fmtMoney(forecast12, ccy)}</div>
-              <div className="text-xs text-slate-400 mt-1">roster-derived</div>
+              <div className="t-meta text-slate-400 mt-1">roster-derived</div>
             </div>
           </div>
 
@@ -339,9 +339,9 @@ export default async function WorkforcePage() {
 function Metric({ label, value, hint }: { label: string; value: string; hint?: string }) {
   return (
     <div className="card-tight">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="t-meta uppercase tracking-wide text-slate-400">{label}</div>
       <div className="mt-2 text-lg font-semibold">{value}</div>
-      {hint ? <div className="text-xs text-slate-400 mt-1">{hint}</div> : null}
+      {hint ? <div className="t-meta text-slate-400 mt-1">{hint}</div> : null}
     </div>
   );
 }

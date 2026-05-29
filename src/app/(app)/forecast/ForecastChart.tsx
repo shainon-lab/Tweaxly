@@ -86,7 +86,7 @@ export default function ForecastChart({
             <button
               key={m}
               type="button"
-              className={`text-xs px-3 py-1 rounded-md border transition ${
+              className={`t-meta px-3 py-1.5 rounded-md border transition ${
                 m === metric
                   ? "bg-accent-soft border-accent text-accent"
                   : "border-line text-slate-300 hover:bg-ink-700"
@@ -120,7 +120,7 @@ export default function ForecastChart({
           </LineChart>
         </ResponsiveContainer>
       </div>
-      <div className="text-xs text-slate-500 mt-2">
+      <div className="t-body text-slate-500 mt-3">
         {showScenario
           ? "Baseline = trend-extrapolated from history. Scenario = baseline + the active assumptions."
           : "Projection = trend-extrapolated from your historical activity, with no scenario assumptions applied."}

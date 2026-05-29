@@ -91,14 +91,14 @@ function ResponseBriefing({
       {/* 1. Executive Takeaway */}
       {briefing.takeaway ? (
         <div className="rounded-xl border border-accent/40 bg-accent-soft/15 p-4 md:p-5">
-          <div className="text-[10px] uppercase tracking-wide text-accent font-semibold mb-1">
+          <div className="t-meta uppercase tracking-wide text-accent font-semibold mb-1.5">
             Executive Takeaway
           </div>
-          <div className="text-base md:text-lg font-semibold text-slate-100 leading-snug">
+          <div className="t-card text-slate-100">
             {briefing.takeaway.headline}
           </div>
           {briefing.takeaway.subhead ? (
-            <div className="text-sm text-slate-300 mt-1.5 leading-[1.7] tracking-[0.01em]">
+            <div className="t-body text-slate-300 mt-2 leading-[1.7] tracking-[0.01em]">
               {briefing.takeaway.subhead}
             </div>
           ) : null}
@@ -110,10 +110,10 @@ function ResponseBriefing({
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 lg:gap-8">
           {hasReasoning ? (
             <div className={hasAnchors ? "lg:col-span-8" : "lg:col-span-12"}>
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+              <div className="t-meta uppercase tracking-wide text-slate-500 mb-2">
                 AI Reasoning
               </div>
-              <div className="space-y-1.5 text-sm text-slate-200">
+              <div className="space-y-1.5 t-body text-slate-200">
                 {renderMarkdown(briefing.reasoning)}
               </div>
             </div>
@@ -121,15 +121,15 @@ function ResponseBriefing({
 
           {hasAnchors ? (
             <aside className={`lg:col-span-4 ${hasReasoning ? "lg:border-l lg:border-line/60 lg:pl-6" : ""}`}>
-              <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+              <div className="t-meta uppercase tracking-wide text-slate-500 mb-2">
                 Decision Anchors
               </div>
               <ul className="divide-y divide-line/40">
                 {briefing.anchors.map((a, i) => (
                   <li key={i} className="py-2.5 flex items-start justify-between gap-3">
-                    <span className="text-xs text-slate-400 shrink-0">{a.label}</span>
+                    <span className="t-meta text-slate-400 shrink-0">{a.label}</span>
                     <span
-                      className={`text-sm font-medium text-right ${
+                      className={`t-body font-semibold text-right ${
                         a.tone === "good" ? "text-good" :
                         a.tone === "warn" ? "text-warn" :
                         a.tone === "bad"  ? "text-bad"  :
@@ -149,7 +149,7 @@ function ResponseBriefing({
       {/* 4. Strategic Paths */}
       {hasPaths ? (
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-3">
+          <div className="t-meta uppercase tracking-wide text-slate-500 mb-3">
             Strategic Paths
           </div>
           <StrategicPathsList paths={briefing.paths} currency={currency} />
@@ -159,7 +159,7 @@ function ResponseBriefing({
       {/* 5. Risks & Tradeoffs */}
       {hasRisks ? (
         <div>
-          <div className="text-[10px] uppercase tracking-wide text-slate-500 mb-2">
+          <div className="t-meta uppercase tracking-wide text-slate-500 mb-2">
             Risks &amp; Tradeoffs
           </div>
           <ul className="space-y-2">
@@ -172,14 +172,14 @@ function ResponseBriefing({
                                       "border-line bg-ink-900/30"
                 }`}
               >
-                <div className={`text-xs font-medium ${
+                <div className={`t-card ${
                   r.tone === "bad"  ? "text-bad"  :
                   r.tone === "warn" ? "text-warn" :
                                       "text-slate-200"
                 }`}>
                   {r.label}
                 </div>
-                <div className="text-xs text-slate-300 leading-relaxed mt-0.5">
+                <div className="t-body text-slate-300 mt-1.5">
                   {r.text}
                 </div>
               </li>
@@ -245,15 +245,15 @@ function PathCard({
   return (
     <div className={`rounded-lg border ${border} p-4 flex flex-col gap-2`}>
       <div className="flex items-center justify-between gap-2 flex-wrap">
-        <span className={`${tierPill} text-[10px]`}>{tierLabel}</span>
+        <span className={tierPill}>{tierLabel}</span>
         <div className="pill-good">{fmtMoney(o.monthlySavings, currency)}/mo</div>
       </div>
-      <div className="font-medium text-sm text-slate-100">{o.title}</div>
-      <div className="text-xs text-slate-400">
+      <div className="t-card text-slate-100">{o.title}</div>
+      <div className="t-meta text-slate-400">
         {fmtMoney(o.annualSavings, currency)} per year · covers {coverage}% over {p.horizonMonths}mo
       </div>
       {o.items.length > 0 ? (
-        <ul className="text-xs text-slate-300 list-disc pl-4 space-y-0.5 mt-1">
+        <ul className="t-body text-slate-300 list-disc pl-5 space-y-1 mt-2">
           {o.items.map((it, ii) => (
             <li key={ii}>
               <span className="font-medium">{it.label}</span>

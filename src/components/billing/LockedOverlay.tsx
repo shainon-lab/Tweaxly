@@ -89,10 +89,10 @@ export default function LockedOverlay({
               <Lock size={20} strokeWidth={1.5} />
             </span>
             <div className="flex-1 min-w-0">
-              <h2 className="text-xl md:text-2xl font-semibold leading-tight tracking-tight">
+              <h2 className="t-section leading-tight tracking-tight">
                 {feature} is a Pro feature
               </h2>
-              <p className="mt-2 text-sm md:text-base text-slate-300 leading-relaxed">
+              <p className="mt-3 t-body text-slate-300">
                 {blurb ?? "Available on Pro and Business plans. Free workspaces see this layout as a preview - upgrade to unlock it for everyone on the workspace."}
               </p>
               <div className="mt-5 flex items-center gap-3 flex-wrap">
@@ -104,7 +104,7 @@ export default function LockedOverlay({
                   <Lock size={14} strokeWidth={2} />
                   Upgrade to unlock
                 </button>
-                <span className="text-[11px] text-slate-500">
+                <span className="t-meta text-slate-500">
                   Unlocks for the whole workspace.
                 </span>
               </div>

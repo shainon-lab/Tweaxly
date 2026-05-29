@@ -186,7 +186,7 @@ function WorkspacesPane({ workspaces }: { workspaces: WorkspaceCardData[] }) {
         </div>
       )}
 
-      <div className="mt-8 text-xs text-slate-500">
+      <div className="mt-8 t-body text-slate-500">
         Each workspace is billed and metered independently - upgrading one never affects another.
       </div>
 
@@ -269,9 +269,9 @@ function Stat({ label, value, sub, tone }: { label: string; value: string; sub?:
   const valueCls = tone === "warn" ? "text-warn" : tone === "bad" ? "text-bad" : "text-slate-100";
   return (
     <div className="card-tight">
-      <div className="text-xs uppercase tracking-wide text-slate-400">{label}</div>
-      <div className={`mt-1 text-xl font-semibold tabular-nums ${valueCls}`}>{value}</div>
-      {sub ? <div className="text-[11px] text-slate-500 mt-0.5">{sub}</div> : null}
+      <div className="t-meta uppercase tracking-wide text-slate-400">{label}</div>
+      <div className={`mt-1.5 text-xl font-semibold tabular-nums ${valueCls}`}>{value}</div>
+      {sub ? <div className="t-meta text-slate-500 mt-1">{sub}</div> : null}
     </div>
   );
 }
@@ -322,12 +322,12 @@ function PaymentMethodsPane() {
   return (
     <div className="card">
       <div className="font-medium mb-1">Payment Methods</div>
-      <div className="text-sm text-slate-400 mb-4 leading-relaxed">
+      <div className="t-body text-slate-400 mb-4">
         Cards and bank accounts used for any paid Tweaxly products.
       </div>
       <div className="rounded-xl border border-dashed border-line bg-ink-900/30 p-6 text-center">
-        <div className="text-sm font-medium text-slate-200 mb-1">No payment methods on file</div>
-        <div className="text-xs text-slate-400 max-w-md mx-auto">
+        <div className="t-card text-slate-200 mb-2">No payment methods on file</div>
+        <div className="t-body text-slate-400 max-w-md mx-auto">
           You don&apos;t need one yet - Tweaxly is free during preview. Once paid plans go live, you&apos;ll be able to add a card here.
         </div>
       </div>
@@ -389,14 +389,14 @@ function PasswordPane({ user }: { user: { email: string; createdAt: string } }) 
           readOnly
           aria-readonly="true"
         />
-        <div className="text-xs text-slate-500 mt-2">
+        <div className="t-body text-slate-500 mt-3">
           Need to change this? Reach out at support@tweaxly.com - email changes go through a confirmation step.
         </div>
       </div>
 
       <div className="card mb-4">
-        <div className="font-medium mb-1">Password</div>
-        <div className="text-sm text-slate-400 mb-3">
+        <div className="t-card mb-2">Password</div>
+        <div className="t-body text-slate-400 mb-4">
           Enter your current password, then choose a new one. Minimum 6 characters.
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
@@ -450,11 +450,11 @@ function PasswordPane({ user }: { user: { email: string; createdAt: string } }) 
       </div>
 
       <div className="card">
-        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-          <div className="font-medium">Two-factor authentication</div>
-          <span className="pill text-[10px]">Preview</span>
+        <div className="flex items-baseline justify-between gap-3 flex-wrap mb-2">
+          <div className="t-card">Two-factor authentication</div>
+          <span className="pill">Preview</span>
         </div>
-        <div className="text-sm text-slate-400 mb-4 leading-relaxed">
+        <div className="t-body text-slate-400 mb-4">
           Add a second verification step at sign-in using an authenticator app like 1Password, Authy, or Google Authenticator.
         </div>
         <div className="flex items-center gap-3 flex-wrap">
@@ -465,7 +465,7 @@ function PasswordPane({ user }: { user: { email: string; createdAt: string } }) 
           >
             {twoFAEnabled ? "Disable 2FA" : "Enable 2FA"}
           </button>
-          <span className="text-xs text-slate-500">
+          <span className="t-meta text-slate-500">
             {twoFAEnabled
               ? "Preview only - enforcement at sign-in lands with the production billing release."
               : "Not enabled."}
@@ -587,15 +587,15 @@ function AccessLogsPane() {
               const detail = describeEntry(e);
               return (
                 <tr key={e.id}>
-                  <td className="text-slate-400 text-xs whitespace-nowrap">
+                  <td className="text-slate-400 t-meta whitespace-nowrap">
                     {new Date(e.createdAt).toLocaleString()}
                   </td>
-                  <td className={`text-xs font-medium ${TONE_CLASS[def.tone]}`}>{def.label}</td>
-                  <td className="text-slate-300 text-xs max-w-[280px]">
+                  <td className={`t-meta font-semibold ${TONE_CLASS[def.tone]}`}>{def.label}</td>
+                  <td className="text-slate-300 t-body max-w-[280px]">
                     <span className="line-clamp-2">{detail ?? " - "}</span>
                   </td>
-                  <td className="text-slate-400 text-xs whitespace-nowrap">{e.businessName ?? " - "}</td>
-                  <td className="text-slate-500 text-xs font-mono">{e.ipAddress ?? " - "}</td>
+                  <td className="text-slate-400 t-meta whitespace-nowrap">{e.businessName ?? " - "}</td>
+                  <td className="text-slate-500 t-meta font-mono">{e.ipAddress ?? " - "}</td>
                 </tr>
               );
             })}
@@ -603,8 +603,8 @@ function AccessLogsPane() {
         </table>
       ) : (
         <div className="rounded-xl border border-dashed border-line bg-ink-900/30 p-6 text-center">
-          <div className="text-sm font-medium text-slate-200 mb-1">No activity recorded yet</div>
-          <div className="text-xs text-slate-400 max-w-md mx-auto">
+          <div className="t-card text-slate-200 mb-2">No activity recorded yet</div>
+          <div className="t-body text-slate-400 max-w-md mx-auto">
             Sign-ins, uploads, source changes, and billing events will appear here as you use the platform.
           </div>
         </div>
@@ -747,7 +747,7 @@ function CloseAccountPane() {
         >
           Permanently close my account
         </button>
-        <span className="text-xs text-slate-500">
+        <span className="t-meta text-slate-500">
           Confirmation routes through support during preview.
         </span>
       </div>

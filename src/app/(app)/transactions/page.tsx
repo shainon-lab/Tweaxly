@@ -104,7 +104,7 @@ export default async function TransactionsPage({
           trashCount > 0 ? (
             <a
               href="/transactions/trash"
-              className="text-xs font-medium px-3 py-1.5 rounded-md border border-warn/40 text-warn hover:bg-warn/10 transition inline-flex items-center gap-1.5"
+              className="t-meta px-3 py-1.5 rounded-md border border-warn/40 text-warn hover:bg-warn/10 transition inline-flex items-center gap-1.5"
               title="Restore or permanently delete recently-trashed transactions"
             >
               Trash ({trashCount})

@@ -40,7 +40,7 @@ export default function PageHeader({
       <div className="flex items-center justify-between flex-wrap gap-3 sm:gap-4">
         <div className="min-w-0">
           <div className="flex items-center gap-2 min-w-0">
-            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">
+            <h1 className="t-page tracking-tight truncate">
               {title}
             </h1>
             {help ? <div className="shrink-0">{help}</div> : null}
