@@ -16,7 +16,6 @@
 // doesn't leak a setInterval into the background.
 
 import { useEffect, useState } from "react";
-import LoadingBar from "@/components/LoadingBar";
 
 // Status phrases the rotator cycles through. The first one is shown
 // for a beat longer than the rest because most requests resolve
@@ -38,6 +37,13 @@ function fmtElapsed(secs: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
+// Asymptote constant: how fast the fake percentage approaches 99%.
+// pct(t) = 99 * (1 - exp(-t / TAU)). TAU=12 gives ~48% at 8s, ~81% at
+// 20s, ~95% at 36s - close to the real distribution of advisor
+// response times - and the curve never reaches 100% so the user
+// never sees a stalled "100%" while the request is still in flight.
+const TAU_SECONDS = 12;
+
 export default function ThinkingProgress() {
   const [phaseIdx, setPhaseIdx] = useState(0);
   const [elapsed,  setElapsed]  = useState(0);
@@ -55,6 +61,8 @@ export default function ThinkingProgress() {
     };
   }, []);
 
+  const pct = Math.min(99, Math.round(99 * (1 - Math.exp(-elapsed / TAU_SECONDS))));
+
   return (
     <div className="rounded-2xl border border-accent/30 bg-ink-900/40 p-6 overflow-hidden">
       <div className="flex items-center gap-3">
@@ -66,20 +74,34 @@ export default function ThinkingProgress() {
         </span>
         <div className="flex-1 min-w-0">
           {/* Rotating status text */}
-          <div className="text-sm text-slate-200 font-medium truncate">
+          <div className="t-body text-slate-200 font-medium truncate">
             {PHASES[phaseIdx]}
           </div>
-          <div className="text-[11px] text-slate-500 mt-0.5">
+          <div className="t-meta text-slate-500 mt-0.5">
             Working on your answer · <span className="tabular-nums">{fmtElapsed(elapsed)}</span>
           </div>
         </div>
+        {/* Big right-aligned percentage so the user has an unambiguous
+            "how far along" signal alongside the elapsed timer. The
+            asymptotic curve guarantees this never reaches 100% before
+            the answer actually arrives. */}
+        <div className="shrink-0 text-right tabular-nums">
+          <div className="text-2xl font-semibold text-accent leading-none">{pct}%</div>
+          <div className="t-meta text-slate-500 mt-1">complete</div>
+        </div>
       </div>
 
-      {/* Indeterminate sweeping bar. Reuses the platform-wide
-          LoadingBar animation so consultations, uploads, and route
-          transitions all speak the same visual language. */}
-      <div className="mt-5">
-        <LoadingBar />
+      {/* Determinate progress fill driven by the same percentage shown
+          above. Replaces the indeterminate platform-wide LoadingBar
+          here because the user explicitly asked for a percentage; the
+          shared sweep still lives in LoadingBar.tsx for uploads and
+          route transitions. */}
+      <div className="mt-5 h-1.5 rounded-full bg-ink-700/60 overflow-hidden">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-brand-purple via-accent to-brand-teal transition-[width] duration-700 ease-out"
+          style={{ width: `${pct}%` }}
+          aria-hidden="true"
+        />
       </div>
 
       {/* Three faint placeholder lines below the bar so the card

@@ -289,6 +289,11 @@ export default function ConsultationClient({
   const [, startTransition] = useTransition();
   const responseRef = useRef<HTMLDivElement | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  // When a response is on screen the textarea collapses so the user
+  // isn't staring at a giant empty composer while reading the answer.
+  // Clicking "Ask another question" flips this back on. Defaults to
+  // true so a fresh page (no response yet) shows the composer.
+  const [composerOpen, setComposerOpen] = useState(true);
 
   // Billing state - populated by /api/billing/credits on mount and
   // by /api/consultation on every successful send (the response
@@ -392,6 +397,10 @@ export default function ConsultationClient({
       const fresh = data.consultation as Active;
       setActive(fresh);
       setDraft("");
+      // Collapse the composer once the answer lands - the user
+      // re-opens it explicitly via "Ask another question" so the
+      // screen stays focused on reading the response.
+      setComposerOpen(false);
       // Update the credit widget from the response so we stay in
       // sync without a separate fetch.
       if (data.credits && credits) {
@@ -457,35 +466,63 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Custom-question surface. The previous "Recommended" hero +
-          "Strategic situations" list moved to /consultation/suggested
-          so this screen stays focused on the user's own questions. */}
-      <FreeformConsultation
-        textareaRef={textareaRef}
-        draft={draft}
-        setDraft={setDraft}
-        sending={sending}
-        onSend={() => void send()}
-        arrivalMode={!!initialDraft}
-      />
+      {/* Custom-question surface. Hidden while sending (the loader
+          takes its place) and after a response lands (the user
+          re-opens it via "Ask another question" - no point showing
+          an empty textarea while they read the answer). Hidden via
+          CSS rather than unmounted so the textareaRef stays alive
+          for the focus-on-reopen flow. */}
+      <div className={(!sending && composerOpen) ? "" : "hidden"}>
+        <FreeformConsultation
+          textareaRef={textareaRef}
+          draft={draft}
+          setDraft={setDraft}
+          sending={sending}
+          onSend={() => void send()}
+          arrivalMode={!!initialDraft}
+        />
+      </div>
 
       {/* Live "thinking" indicator while we wait for the advisor:
-          sweeping progress bar, rotating status, elapsed timer.
-          Replaces the previous static skeleton so the user can see
-          time is moving. */}
+          determinate progress bar with percentage, rotating status,
+          elapsed timer. Stands in for the composer while in flight. */}
       {sending ? <ThinkingProgress /> : null}
 
       {/* Response card - the most recent Q&A. Older Q&As live on the
           Consultation History tab; this view keeps focus on the latest. */}
       {hasResponse && lastUserMsg && lastAssistantMsg ? (
         <div ref={responseRef} className="space-y-4">
-          {/* Question header */}
-          <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3">
-            <div className="text-[10px] uppercase tracking-wide text-accent mb-1">Your question</div>
-            <div className="text-sm md:text-base text-slate-100 whitespace-pre-wrap">{lastUserMsg.content}</div>
-            <div className="text-[11px] text-slate-500 mt-1">
-              {new Date(lastUserMsg.createdAt).toLocaleString()}
+          {/* Question header. Right-side affordance re-opens the
+              composer so the user can ask a follow-up without
+              hunting for it - we deliberately collapse the textarea
+              after every answer to keep the screen focused on
+              reading, so this button is the one way back. */}
+          <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3 flex items-start justify-between gap-3">
+            <div className="min-w-0 flex-1">
+              <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
+              <div className="t-body text-slate-100 whitespace-pre-wrap">{lastUserMsg.content}</div>
+              <div className="t-meta text-slate-500 mt-1">
+                {new Date(lastUserMsg.createdAt).toLocaleString()}
+              </div>
             </div>
+            {!composerOpen ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setComposerOpen(true);
+                  setDraft("");
+                  // Defer focus until after the composer mounts.
+                  setTimeout(() => {
+                    textareaRef.current?.focus();
+                    textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                  }, 0);
+                }}
+                className="btn-ghost text-sm whitespace-nowrap shrink-0 inline-flex items-center gap-1.5"
+              >
+                <MessageSquareText size={14} strokeWidth={2} />
+                Ask another question
+              </button>
+            ) : null}
           </div>
 
           {/* When the Claude response includes a structured payload
