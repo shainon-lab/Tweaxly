@@ -135,6 +135,8 @@ export const he: Dictionary = {
   "page.signals.subtitle": "מבט פיקודי על מה שמשתנה בעסק שלך - לחץ על כרטיס לקריאת הסיפור המלא.",
   "page.advisory.title": "ייעוץ",
   "page.advisory.subtitle": "המלצות AI אסטרטגיות מבוססות על נתוני העסק שלך.",
+  "page.advisory.suggested.title": "מוצעות",
+  "page.advisory.suggested.subtitle": "שאלות שאוצרו ב-AI ושכדאי לשאול, מדורגות לפי מה שניתן לפעולה, חריג או חשוב במיוחד כעת בסביבת העבודה הזו.",
   "page.forecast.title": "תחזית",
   "page.forecast.subtitle.overview": "תחזית AI לחודשים הקרובים על בסיס מה שהנתונים שלך עושים היום.",
   "page.forecast.subtitle.scenarios": "הוסף שכירות, העלאות שכר, חוזים ואירועים חד־פעמיים על גבי קו הבסיס.",

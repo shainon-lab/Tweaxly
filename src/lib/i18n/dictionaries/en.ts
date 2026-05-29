@@ -157,6 +157,8 @@ export const en: Dictionary = {
   "page.signals.subtitle": "A command-center view of what’s changing in your business - click any card for the full story.",
   "page.advisory.title": "Advisory",
   "page.advisory.subtitle": "Strategic AI recommendations based on your business data.",
+  "page.advisory.suggested.title": "Suggested",
+  "page.advisory.suggested.subtitle": "AI-curated questions worth asking, ranked by what's actionable, abnormal, or otherwise important right now in this workspace.",
   "page.forecast.title": "Forecast",
   "page.forecast.subtitle.overview": "AI outlook for the next months based on what your data is doing today.",
   "page.forecast.subtitle.scenarios": "Layer hires, raises, contracts, and one-time events on top of the baseline.",
