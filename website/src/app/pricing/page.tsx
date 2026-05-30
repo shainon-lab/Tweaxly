@@ -130,7 +130,6 @@ const TIP = {
   export:        "Excel, CSV, PDF. Accountant-ready files; Executive adds white-label branding.",
   buyCredits:    "Run out mid-cycle? Buy 30 / 50 / 100 / custom packs on demand. Credits add instantly.",
   priorityAI:    "Faster responses and longer reasoning on the advanced AI tier.",
-  onboarding:    "1-on-1 setup session with the Tweaxly team to get your workspace and data sources wired right.",
   shareInsights: "Secure read-only links for any AI analysis. 24h / 7d / 30d expiry, optional password, view analytics. Recipients don't need a Tweaxly account.",
 };
 
@@ -147,7 +146,6 @@ const PAID_ONLY_BASE: PlanBullet[] = [
   { text: "Export (Excel / CSV / PDF)",        tooltip: TIP.export      },
   { text: "Buy add-on credit packs",           tooltip: TIP.buyCredits  },
   { text: "Priority AI processing",            tooltip: TIP.priorityAI  },
-  { text: "Dedicated onboarding",              tooltip: TIP.onboarding  },
 ];
 
 const PLANS: Plan[] = [
@@ -315,7 +313,6 @@ const MATRIX: MatrixGroup[] = [
       { dimension: "Basic integrations",    free: "✓",  pro: "✓",  business: "✓" },
       { dimension: "Advanced integrations", free: "—",  pro: "✓",  business: "✓" },
       { dimension: "Webhooks",              free: "—",  pro: "✓",  business: "✓" },
-      { dimension: "Dedicated onboarding",  free: "—",  pro: "✓",  business: "✓" },
     ],
   },
 ];
