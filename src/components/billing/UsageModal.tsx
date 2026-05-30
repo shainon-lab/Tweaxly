@@ -168,11 +168,11 @@ export default function UsageModal({
                 {safePlan === "free" ? (
                   <UpgradeTriggerButton
                     currentPlan={safePlan}
-                    feature="Pro plan"
+                    feature="paid plan"
                     onBeforeOpen={onClose}
                     className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
                   >
-                    Upgrade to Pro
+                    Upgrade
                   </UpgradeTriggerButton>
                 ) : (
                   <BuyCreditsTriggerButton

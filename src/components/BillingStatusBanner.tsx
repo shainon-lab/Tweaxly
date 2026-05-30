@@ -58,14 +58,14 @@ export default function BillingStatusBanner({ readOnly, plan, balance }: Billing
             Free
           </span>
           <span className="flex-1 min-w-0 text-slate-200">
-            You&apos;ve used all your starter AI Credits on this workspace. Upgrade to Pro to receive 100 AI Credits every month + the ability to buy more anytime.
+            You&apos;ve used all your starter AI Credits on this workspace. Upgrade to keep using AI - choose Pro (100 credits / cycle) or Executive (250 credits / cycle).
           </span>
           <UpgradeTriggerButton
             currentPlan={plan}
-            feature="Pro plan"
+            feature="paid plan"
             className="text-xs font-semibold px-3 py-1 rounded-md border border-accent/60 text-accent hover:bg-accent-soft hover:border-accent transition whitespace-nowrap"
           >
-            Upgrade to Pro →
+            Upgrade →
           </UpgradeTriggerButton>
         </div>
       </div>

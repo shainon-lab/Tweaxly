@@ -343,7 +343,7 @@ function SidebarCreditsPill({ billing }: { billing: SidebarBilling }) {
             onClick={() => setUsageOpen(true)}
             className="w-full text-[11px] font-semibold px-2 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
           >
-            {isPro ? "Buy Credits" : "Upgrade to Pro"}
+            {isPro ? "Buy Credits" : "Upgrade"}
           </button>
         </div>
       ) : null}

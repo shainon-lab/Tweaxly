@@ -560,7 +560,7 @@ function CreditsWidget({
                 feature="AI consultation"
                 className="btn-brand text-sm px-4 py-2 whitespace-nowrap"
               >
-                Upgrade to Pro
+                Upgrade
               </UpgradeTriggerButton>
             ) : (
               <BuyCreditsTriggerButton className="btn-brand text-sm px-4 py-2 whitespace-nowrap">
@@ -574,7 +574,7 @@ function CreditsWidget({
                 feature="AI consultation"
                 className="btn-ghost text-sm px-4 py-2 whitespace-nowrap"
               >
-                Upgrade to Pro →
+                Upgrade →
               </UpgradeTriggerButton>
             ) : (
               <BuyCreditsTriggerButton className="btn-ghost text-sm px-4 py-2 whitespace-nowrap">

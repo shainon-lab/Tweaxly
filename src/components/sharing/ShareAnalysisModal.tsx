@@ -333,7 +333,11 @@ function UpgradeCard({
   // Share Insights is a Business-tier entitlement. Free and Pro both
   // land on the same upgrade card; only the CTA wording differs so
   // the path from the user's current plan is explicit.
-  const ctaLabel = currentPlan === "pro" ? "Upgrade to Executive" : "See plans";
+  // Both Free and Pro land on the same UpgradeModal where they pick
+  // a tier. The CTA stays generic ("Upgrade") so it matches the
+  // platform-wide convention - the modal that opens shows the
+  // available targets based on the current plan.
+  const ctaLabel = "Upgrade";
   return (
     <>
       <div className="flex items-start gap-3 mb-4">

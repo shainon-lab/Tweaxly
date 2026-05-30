@@ -324,7 +324,7 @@ export function BillingClient(props: BillingClientProps) {
                   disabled={changingTo !== null}
                   className="text-sm px-4 py-2 rounded-md border border-brand-purple/40 bg-brand-purple/15 text-brand-purple font-medium hover:bg-brand-purple/25 hover:border-brand-purple hover:text-white transition disabled:opacity-60"
                 >
-                  {changingTo === "business" ? "Upgrading…" : "Upgrade to Executive"}
+                  {changingTo === "business" ? "Upgrading…" : "Upgrade"}
                 </button>
                 <button
                   type="button"
@@ -513,10 +513,10 @@ export function BillingClient(props: BillingClientProps) {
           {props.plan === "free" ? (
             <UpgradeTriggerButton
               currentPlan={props.plan}
-              feature="Pro plan"
+              feature="paid plan"
               className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition shrink-0"
             >
-              Upgrade to Pro
+              Upgrade
             </UpgradeTriggerButton>
           ) : (
             <button
@@ -550,10 +550,10 @@ export function BillingClient(props: BillingClientProps) {
                 {props.plan === "free" ? (
                   <UpgradeTriggerButton
                     currentPlan={props.plan}
-                    feature="Pro plan"
+                    feature="paid plan"
                     className="text-xs font-semibold px-3 py-1.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition"
                   >
-                    Upgrade to Pro
+                    Upgrade
                   </UpgradeTriggerButton>
                 ) : (
                   <button
@@ -568,10 +568,9 @@ export function BillingClient(props: BillingClientProps) {
             ) : null}
             {props.plan === "free" ? (
               <div className="mt-4 text-xs text-slate-300 leading-relaxed">
-                Upgrade to Pro to get 100 AI Credits delivered every month.
-                Pro also unlocks add-on credit packs whenever you want extra
-                power on top of your monthly allowance, so you&apos;ll always
-                have the credits you need on hand.
+                Upgrade to a paid plan to get monthly AI Credits (100 on Pro,
+                250 on Executive) plus the ability to buy add-on credit packs
+                whenever you want extra power on top of your monthly allowance.
               </div>
             ) : (
               <div className="mt-3 text-xs text-slate-500">
