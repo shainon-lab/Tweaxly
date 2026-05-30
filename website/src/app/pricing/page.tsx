@@ -431,7 +431,7 @@ function Hero() {
 function PlanCards() {
   return (
     <section className="container-wide pb-12 lg:pb-16">
-      <div className="grid sm:grid-cols-2 gap-5 lg:gap-6 max-w-4xl mx-auto">
+      <div className="grid md:grid-cols-3 gap-5 lg:gap-6 max-w-6xl mx-auto">
         {PLANS.map((p) => <PlanCard key={p.key} plan={p} />)}
       </div>
     </section>
