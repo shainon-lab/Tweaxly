@@ -13,6 +13,7 @@ import { prisma } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { getSession } from "@/lib/session";
 import { DEFAULT_CATEGORIES } from "@/lib/categories";
+import { getWorkspaceCapStatus } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -30,6 +31,24 @@ export async function POST(req: NextRequest) {
   }
   if (name.length > 120) {
     return NextResponse.json({ error: "name_too_long" }, { status: 400 });
+  }
+
+  // Workspace cap. Free=1, Pro=3, Business=unlimited. Existing
+  // owners over the cap are grandfathered (the check runs on create
+  // only) but cannot add NEW workspaces beyond their tier limit.
+  // 402 carries the same shape as other billing gates so the UI
+  // can route to the upgrade modal.
+  const capStatus = await getWorkspaceCapStatus(user.id);
+  if (!capStatus.canCreate) {
+    return NextResponse.json({
+      error:   "workspace_cap_reached",
+      message: capStatus.plan === "free"
+        ? "Free workspaces are limited to 1. Upgrade to Pro for 3 workspaces or Business for unlimited."
+        : "Pro workspaces are limited to 3. Upgrade to Business for unlimited workspaces.",
+      plan:    capStatus.plan,
+      cap:     capStatus.cap,
+      owned:   capStatus.owned,
+    }, { status: 402 });
   }
 
   const business = await prisma.business.create({

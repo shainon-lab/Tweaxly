@@ -308,6 +308,35 @@ export async function createCustomerPortalSession(args: {
 }
 
 // ────────────────────────────────────────────────────────────────────
+// Subscription state transitions
+// ────────────────────────────────────────────────────────────────────
+
+// Cancel a subscription at the end of its current billing period.
+// The subscription stays active (and the workspace keeps its
+// entitlements) until currentPeriodEnd, then automatically
+// transitions to canceled. Polar emits subscription.canceled at the
+// boundary which our webhook picks up and flips the local
+// Subscription.status to canceled - which the entitlements layer
+// then resolves as the "free" default plan.
+export async function cancelSubscriptionAtPeriodEnd(externalSubscriptionId: string): Promise<void> {
+  const polar = getPolar();
+  await polar.subscriptions.update({
+    id: externalSubscriptionId,
+    subscriptionUpdate: { cancelAtPeriodEnd: true },
+  });
+}
+
+// Undo a previously-scheduled cancellation. Restores normal renewal
+// behavior. No-op if the sub isn't currently scheduled to cancel.
+export async function uncancelSubscription(externalSubscriptionId: string): Promise<void> {
+  const polar = getPolar();
+  await polar.subscriptions.update({
+    id: externalSubscriptionId,
+    subscriptionUpdate: { cancelAtPeriodEnd: false },
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────
 // Invoices
 // ────────────────────────────────────────────────────────────────────
 

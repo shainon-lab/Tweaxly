@@ -150,3 +150,56 @@ export async function getQuota<K extends Exclude<keyof PlanLimits, "features">>(
 
 // Convenience: list every plan so admin UIs can render a tier picker.
 export function listPlans() { return PLANS }
+
+// ─────────────────────────────────────────────────────────────────────
+// Workspace cap (per-user)
+// ─────────────────────────────────────────────────────────────────────
+
+// Workspace count is a per-user cap derived from the highest-tier
+// plan among the workspaces the user OWNS. The new spec:
+//   Free      → 1 workspace
+//   Pro       → 3 workspaces
+//   Business  → unlimited
+// is enforced on the create path only - existing accounts with more
+// than the new cap are grandfathered (we never silently kick anyone
+// out of a workspace they already own).
+//
+// "Highest tier" = business > pro > free. A user with one Business
+// workspace and one Free workspace gets the Business cap (unlimited).
+// A user with only Free workspaces stays on the Free cap until they
+// upgrade one of them.
+
+const PLAN_RANK: Record<PlanKey, number> = {
+  free:     0,
+  pro:      1,
+  business: 2,
+};
+
+export async function getHighestOwnedPlan(userId: string): Promise<PlanKey> {
+  const owned = await prisma.business.findMany({
+    where:  { ownerId: userId },
+    select: { id: true },
+  });
+  if (owned.length === 0) return "free";
+  let best: PlanKey = "free";
+  for (const b of owned) {
+    const eff = await getEffectivePlan(b.id);
+    if (PLAN_RANK[eff.plan] > PLAN_RANK[best]) best = eff.plan;
+  }
+  return best;
+}
+
+export async function getWorkspaceCapStatus(userId: string): Promise<{
+  plan:      PlanKey;
+  cap:       number | "unlimited";
+  owned:     number;
+  canCreate: boolean;
+}> {
+  const [plan, ownedCount] = await Promise.all([
+    getHighestOwnedPlan(userId),
+    prisma.business.count({ where: { ownerId: userId } }),
+  ]);
+  const cap = getPlanLimits(plan).businesses;
+  const canCreate = cap === "unlimited" || ownedCount < cap;
+  return { plan, cap, owned: ownedCount, canCreate };
+}

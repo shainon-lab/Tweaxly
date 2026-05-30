@@ -110,6 +110,13 @@ export function BillingClient(props: BillingClientProps) {
   // "Upgrade to Pro" instead of "Buy Credits" - that flow goes
   // through UpgradeTriggerButton, not this modal.
   const [buyOpen, setBuyOpen] = useState(false);
+  // Local mirror of cancelAtPeriodEnd so the UI reflects a successful
+  // schedule / un-schedule instantly. The Polar webhook will round-
+  // trip the canonical state but we don't want to wait for it on
+  // the page the user just clicked.
+  const [cancelScheduled, setCancelScheduled] = useState(props.cancelAtPeriodEnd);
+  const [cancelBusy, setCancelBusy] = useState(false);
+  const [cancelError, setCancelError] = useState<string | null>(null);
 
   async function openCheckout(endpoint: string, body?: object, busyKey = "checkout") {
     setCheckoutBusy(busyKey);
@@ -130,6 +137,35 @@ export function BillingClient(props: BillingClientProps) {
       setCheckoutError("Network error - check your connection.");
     } finally {
       setCheckoutBusy(null);
+    }
+  }
+
+  // Self-service "schedule downgrade to Free". Polar cancels at
+  // period end; the user keeps their tier until renewal day, then
+  // the workspace returns to Free via the canceled-subscription
+  // webhook. `undo` flips the same Polar flag back to false.
+  async function toggleCancel(undo: boolean) {
+    setCancelBusy(true);
+    setCancelError(null);
+    try {
+      const res = await fetch("/api/billing/cancel-subscription", {
+        method:  "POST",
+        headers: { "content-type": "application/json" },
+        body:    JSON.stringify({ undo }),
+      });
+      const data = await res.json().catch(() => ({} as { message?: string }));
+      if (!res.ok) {
+        setCancelError(data.message ?? "Could not update subscription. Try again in a moment.");
+        return;
+      }
+      setCancelScheduled(!undo);
+      // Refresh server-rendered state so cards relying on plan /
+      // cancelAtPeriodEnd update without a hard reload.
+      startTransition(() => router.refresh());
+    } catch {
+      setCancelError("Network error - check your connection.");
+    } finally {
+      setCancelBusy(false);
     }
   }
 
@@ -189,7 +225,7 @@ export function BillingClient(props: BillingClientProps) {
             </div>
             <div className="mt-2 text-xs text-slate-500">
               {props.currentPeriodEnd ? (
-                <>Current period ends {fmtDate(props.currentPeriodEnd)}{props.cancelAtPeriodEnd ? " · cancels at period end" : ""}</>
+                <>Current period ends {fmtDate(props.currentPeriodEnd)}{cancelScheduled ? " · cancels at period end" : ""}</>
               ) : (
                 <>No active subscription. Free forever; upgrade when ready.</>
               )}
@@ -237,6 +273,53 @@ export function BillingClient(props: BillingClientProps) {
             )}
           </div>
         </div>
+
+        {/* Scheduled downgrade. Paid workspaces get a self-service
+            "downgrade to Free at the next renewal" toggle. The
+            subscription keeps working until period end, then auto-
+            cancels via Polar's cancelAtPeriodEnd. Business → Pro
+            (mid-tier downgrade) isn't supported here yet - direct
+            users to "Manage subscription" for that case. */}
+        {props.plan !== "free" && props.currentPeriodEnd ? (
+          <div className="mt-5 pt-5 border-t border-line/50">
+            {cancelScheduled ? (
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="t-body text-slate-300">
+                  This workspace will downgrade to <strong>Free</strong> on{" "}
+                  <span className="text-slate-100 font-medium">{fmtDate(props.currentPeriodEnd)}</span>.
+                  You&apos;ll keep {PLAN_LABEL[props.plan] ?? props.plan} access until then.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleCancel(true)}
+                  disabled={cancelBusy}
+                  className="text-sm px-3 py-1.5 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
+                >
+                  {cancelBusy ? "Updating…" : "Keep my subscription"}
+                </button>
+              </div>
+            ) : (
+              <div className="flex items-start justify-between gap-3 flex-wrap">
+                <div className="t-meta text-slate-500">
+                  Want to step back to Free? You&apos;ll keep your current
+                  plan until {fmtDate(props.currentPeriodEnd)} and then
+                  automatically move to Free. No mid-cycle refunds.
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleCancel(false)}
+                  disabled={cancelBusy}
+                  className="text-sm px-3 py-1.5 rounded-md border border-line text-slate-400 hover:text-bad hover:border-bad/40 transition disabled:opacity-60"
+                >
+                  {cancelBusy ? "Scheduling…" : "Schedule downgrade to Free"}
+                </button>
+              </div>
+            )}
+            {cancelError ? (
+              <div className="mt-2 t-meta text-bad">{cancelError}</div>
+            ) : null}
+          </div>
+        ) : null}
 
         {/* Inline promo redeem - no longer a separate section. Credit
             codes land instantly; discount codes apply at the next

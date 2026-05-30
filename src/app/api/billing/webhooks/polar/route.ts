@@ -131,8 +131,14 @@ export async function POST(req: Request) {
         const meta = readMeta(sub.metadata);
         if (!meta.businessId) break;
         const existingId = await findSubIdByExternal(sub.id);
+        // Plan key comes from the checkout metadata the API stamped
+        // when it created the Polar session. Falls back to "pro" so
+        // any legacy session that pre-dated the planId metadata flag
+        // still lands on a valid tier. normalizePlan then drops any
+        // unknown string to "free" rather than crashing.
+        const planKey = normalizePlan(meta.planId ?? "pro");
         const data = {
-          plan:                   normalizePlan("pro"),
+          plan:                   planKey,
           status:                 "active",
           currentPeriodStart:     sub.currentPeriodStart,
           currentPeriodEnd:       sub.currentPeriodEnd,

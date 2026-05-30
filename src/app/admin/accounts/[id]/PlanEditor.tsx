@@ -3,7 +3,12 @@
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-const PLANS = ["free", "starter", "pro", "enterprise", "custom"];
+// Mirrors src/lib/billing/plans.ts PLAN_KEYS. Legacy strings
+// ("starter", "enterprise", "custom") are kept selectable on purpose
+// so legacy rows still round-trip through the admin UI without
+// becoming uneditable - normalizePlan elsewhere drops them to "free"
+// at read time.
+const PLANS = ["free", "pro", "business", "starter", "enterprise", "custom"];
 
 export function PlanEditor({
   businessId,

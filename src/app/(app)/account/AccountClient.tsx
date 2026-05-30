@@ -224,7 +224,13 @@ function CreateWorkspaceDialog({ onClose }: { onClose: () => void }) {
       if (!res.ok) {
         const t = await res.text();
         let msg = `Create failed (${res.status})`;
-        try { msg = JSON.parse(t).error ?? msg; } catch { /* keep */ }
+        try {
+          const data = JSON.parse(t);
+          // 402 = workspace cap reached. The API ships a friendly
+          // `message` explaining which tier to upgrade to; prefer
+          // that over the raw `error` code.
+          msg = data.message ?? data.error ?? msg;
+        } catch { /* keep */ }
         setError(msg);
         return;
       }
