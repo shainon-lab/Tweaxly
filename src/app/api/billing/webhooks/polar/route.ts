@@ -30,7 +30,7 @@ import {
   CUSTOM_PACK_MIN_CREDITS,
   normalizePlan,
 } from "@/lib/billing";
-import { POLAR_PROVIDER, polarEnv, type CheckoutMetadata } from "@/lib/billing/polar";
+import { POLAR_PROVIDER, polarEnv, getPlanFromProductId, type CheckoutMetadata } from "@/lib/billing/polar";
 import { upsertPolarOrderFromPayload } from "@/lib/billing/polar-orders";
 import { recordAudit, type AuditAction } from "@/lib/audit";
 
@@ -169,21 +169,56 @@ export async function POST(req: Request) {
 
       case "subscription.updated": {
         const sub = event.data;
-        const subId = await findSubIdByExternal(sub.id);
-        if (!subId) break;
+        const existing = await prisma.subscription.findFirst({
+          where:  { externalSubscriptionId: sub.id },
+          select: { id: true, plan: true, externalPriceId: true, businessId: true, scheduledDowngradeTo: true },
+        });
+        if (!existing) break;
+
+        // Detect a product change. When the change-plan endpoint
+        // swaps the subscription's product (Pro → Business or
+        // Business → Pro), Polar fires subscription.updated with
+        // the new productId. Resolve which plan that product maps
+        // to and update the local plan key + clear any scheduled
+        // downgrade marker. If the productId hasn't changed or
+        // doesn't map to a known plan, leave the plan key alone.
+        const newPlan  = getPlanFromProductId(sub.productId);
+        const planChanged = newPlan !== null && newPlan !== existing.plan;
+
         await prisma.subscription.update({
-          where: { id: subId },
+          where: { id: existing.id },
           data:  {
             currentPeriodStart: sub.currentPeriodStart,
             currentPeriodEnd:   sub.currentPeriodEnd,
             cancelAtPeriodEnd:  sub.cancelAtPeriodEnd,
             status:             mapSubStatus(sub.status),
+            externalPriceId:    sub.productId,
+            ...(planChanged ? {
+              plan:                 newPlan,
+              // Clear the scheduled-downgrade marker once the actual
+              // product swap lands - the UI's "Downgrading to Pro on
+              // Jul 15" notice disappears the moment the change takes
+              // effect.
+              scheduledDowngradeTo: null,
+            } : {}),
           },
         });
+
+        // When a plan change lands, top up the wallet to the new
+        // tier's monthly allowance immediately so a Pro → Business
+        // upgrade grants the +150 credit difference inside the same
+        // cycle. applyMonthlyAllowance is idempotent for the current
+        // period - it grants the delta only.
+        if (planChanged) {
+          await applyMonthlyAllowance(existing.businessId);
+        }
+
         const meta = readMeta(sub.metadata);
         if (meta.businessId) {
           await recordSubscriptionAudit(meta.businessId, "billing.subscription_updated", {
-            externalSubscriptionId: sub.id, status: mapSubStatus(sub.status),
+            externalSubscriptionId: sub.id,
+            status:                 mapSubStatus(sub.status),
+            ...(planChanged ? { previousPlan: existing.plan, newPlan } : {}),
           });
         }
         break;

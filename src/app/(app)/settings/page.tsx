@@ -8,6 +8,7 @@ import { compareCategoriesIncomeFirst } from "@/lib/categories";
 import { getServerT } from "@/lib/i18n/server";
 import {
   ensureMonthlyAllowance, getEffectivePlan, getPlanLimits,
+  getWorkspaceCapStatus,
   PLANS, CREDIT_COSTS, CREDIT_PACKS,
 } from "@/lib/billing";
 import SettingsClient from "./SettingsClient";
@@ -18,7 +19,7 @@ export default async function SettingsPage({
 }: {
   searchParams?: { tab?: string };
 }) {
-  const { business } = await requireBusiness();
+  const { business, user } = await requireBusiness();
   // Categories & Vendors moved into the Data section, so when that tab
   // is active the page renders DataTabs and the H1 should say "Data".
   const isCategoriesTab = searchParams?.tab === "categories";
@@ -197,12 +198,48 @@ export default async function SettingsPage({
     }),
   ]);
   const planLimits = getPlanLimits(effective.plan);
+  // Pull the scheduledDowngradeTo flag off the underlying Subscription
+  // row so the UI can render "Switching to Pro on Jul 15" notices.
+  // Only meaningful when source = "subscription"; admin overrides and
+  // default-free fallbacks never carry a scheduled downgrade.
+  const sub = effective.subscriptionId
+    ? await prisma.subscription.findUnique({
+        where:  { id: effective.subscriptionId },
+        select: { scheduledDowngradeTo: true },
+      })
+    : null;
+
+  // Usage stats for the new Billing page Usage section. Workspaces:
+  // user-owned count + the per-user cap derived from their highest-
+  // tier owned plan. Members: this workspace's current head-count
+  // (active + pending invites) + the per-plan member cap.
+  const [workspaceCap, memberCount, pendingInviteCount] = await Promise.all([
+    getWorkspaceCapStatus(user.id),
+    prisma.businessMembership.count({ where: { businessId: business.id } }),
+    prisma.businessInvitation.count({
+      where: { businessId: business.id, status: "pending" },
+    }),
+  ]);
+  const membersCap = planLimits.members;
+  const membersUsed = memberCount + pendingInviteCount;
+
   const billing = {
     plan:              effective.plan,
     planSource:        effective.source,
     readOnly:          effective.readOnly,
     currentPeriodEnd:  effective.currentPeriodEnd?.toISOString() ?? null,
     cancelAtPeriodEnd: effective.cancelAtPeriodEnd ?? false,
+    // Pending Business → Pro downgrade, if any. Null when no
+    // scheduled change is active.
+    scheduledDowngradeTo: sub?.scheduledDowngradeTo ?? null,
+    // Workspace + member usage. workspacesCap is the per-user cap
+    // (Free=1, Pro=3, Business=unlimited); membersCap is per-workspace
+    // (Free=1, Pro=3, Business=6). "unlimited" is preserved verbatim
+    // so the client can render "3 / unlimited" naturally.
+    workspacesUsed: workspaceCap.owned,
+    workspacesCap:  workspaceCap.cap,
+    membersUsed,
+    membersCap,
     walletBalance:     wallet?.balance ?? 0,
     // Use the plan's CURRENT ceiling as the credit-bar denominator,
     // not the wallet's stored snapshot. The snapshot can lag the plan

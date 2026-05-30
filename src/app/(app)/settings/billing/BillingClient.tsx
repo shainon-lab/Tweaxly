@@ -41,6 +41,16 @@ interface BillingClientProps {
   readOnly:          boolean;
   currentPeriodEnd:  string | null;
   cancelAtPeriodEnd: boolean;
+  // Pending plan switch (e.g. Business → Pro at next renewal). Null
+  // when no scheduled change is active.
+  scheduledDowngradeTo: string | null;
+  // Workspace + member usage stats. workspacesCap is per-user
+  // (Free=1, Pro=3, Business=unlimited); membersCap is per-workspace
+  // (Free=1, Pro=3, Business=6). "unlimited" string preserved verbatim.
+  workspacesUsed:    number;
+  workspacesCap:     number | "unlimited";
+  membersUsed:       number;
+  membersCap:        number | "unlimited";
   walletBalance:     number;
   monthlyAllowance:  number;
   periodStart:       string | null;
@@ -117,6 +127,15 @@ export function BillingClient(props: BillingClientProps) {
   const [cancelScheduled, setCancelScheduled] = useState(props.cancelAtPeriodEnd);
   const [cancelBusy, setCancelBusy] = useState(false);
   const [cancelError, setCancelError] = useState<string | null>(null);
+  // Local mirror for in-place plan-change calls (Pro → Business
+  // and Business → Pro). Both use the same /api/billing/change-plan
+  // endpoint; this state holds whichever plan is being targeted so
+  // the right button shows its spinner.
+  const [changingTo, setChangingTo] = useState<"pro" | "business" | null>(null);
+  const [changeError, setChangeError] = useState<string | null>(null);
+  // Optimistic mirror of scheduledDowngradeTo so the UI updates
+  // immediately when the user schedules a Business → Pro switch.
+  const [scheduledDowngrade, setScheduledDowngrade] = useState(props.scheduledDowngradeTo);
 
   async function openCheckout(endpoint: string, body?: object, busyKey = "checkout") {
     setCheckoutBusy(busyKey);
@@ -166,6 +185,39 @@ export function BillingClient(props: BillingClientProps) {
       setCancelError("Network error - check your connection.");
     } finally {
       setCancelBusy(false);
+    }
+  }
+
+  // In-place plan switch via /api/billing/change-plan. Upgrades
+  // (Pro → Business) charge prorated immediately; downgrades
+  // (Business → Pro) schedule at period_end. The endpoint handles
+  // both via the same body shape.
+  async function changePlan(target: "pro" | "business") {
+    setChangingTo(target);
+    setChangeError(null);
+    try {
+      const res = await fetch("/api/billing/change-plan", {
+        method:  "POST",
+        headers: { "content-type": "application/json" },
+        body:    JSON.stringify({ target }),
+      });
+      const data = await res.json().catch(() => ({} as { message?: string; appliedAt?: string }));
+      if (!res.ok) {
+        setChangeError(data.message ?? "Could not change plan. Try again in a moment.");
+        return;
+      }
+      if (data.appliedAt === "period_end") {
+        setScheduledDowngrade(target);
+      } else {
+        // Immediate switch: clear any pending downgrade and let
+        // router.refresh pull the canonical plan from the server.
+        setScheduledDowngrade(null);
+      }
+      startTransition(() => router.refresh());
+    } catch {
+      setChangeError("Network error - check your connection.");
+    } finally {
+      setChangingTo(null);
     }
   }
 
@@ -242,16 +294,40 @@ export function BillingClient(props: BillingClientProps) {
               </UpgradeTriggerButton>
             ) : props.plan === "pro" ? (
               <>
-                {/* Pro can upgrade to Business inline. The UpgradeModal
-                    detects the current plan and shows only Business
-                    when the workspace is already on Pro. */}
-                <UpgradeTriggerButton
-                  currentPlan={props.plan}
-                  feature="Business plan"
-                  className="text-sm px-4 py-2 rounded-md border border-brand-purple/40 bg-brand-purple/15 text-brand-purple font-medium hover:bg-brand-purple/25 hover:border-brand-purple hover:text-white transition"
+                {/* Pro → Business is an in-place plan switch with
+                    immediate proration via /api/billing/change-plan.
+                    Polar charges the prorated difference now and
+                    Business entitlements apply immediately. */}
+                <button
+                  type="button"
+                  onClick={() => changePlan("business")}
+                  disabled={changingTo !== null}
+                  className="text-sm px-4 py-2 rounded-md border border-brand-purple/40 bg-brand-purple/15 text-brand-purple font-medium hover:bg-brand-purple/25 hover:border-brand-purple hover:text-white transition disabled:opacity-60"
                 >
-                  Upgrade to Business
-                </UpgradeTriggerButton>
+                  {changingTo === "business" ? "Upgrading…" : "Upgrade to Business"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
+                  disabled={checkoutBusy === "portal"}
+                  className="text-sm px-4 py-2 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
+                >
+                  {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
+                </button>
+              </>
+            ) : props.plan === "business" ? (
+              <>
+                {/* Business → Pro is a scheduled product swap. Polar
+                    keeps the Business entitlements until period_end,
+                    then automatically swaps. No mid-cycle refund. */}
+                <button
+                  type="button"
+                  onClick={() => changePlan("pro")}
+                  disabled={changingTo !== null || scheduledDowngrade === "pro"}
+                  className="text-sm px-4 py-2 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
+                >
+                  {changingTo === "pro" ? "Scheduling…" : scheduledDowngrade === "pro" ? "Downgrade scheduled" : "Schedule downgrade to Pro"}
+                </button>
                 <button
                   type="button"
                   onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
@@ -274,12 +350,38 @@ export function BillingClient(props: BillingClientProps) {
           </div>
         </div>
 
-        {/* Scheduled downgrade. Paid workspaces get a self-service
-            "downgrade to Free at the next renewal" toggle. The
-            subscription keeps working until period end, then auto-
-            cancels via Polar's cancelAtPeriodEnd. Business → Pro
-            (mid-tier downgrade) isn't supported here yet - direct
-            users to "Manage subscription" for that case. */}
+        {changeError ? (
+          <div className="mt-3 t-meta text-bad">{changeError}</div>
+        ) : null}
+
+        {/* Pending Business → Pro switch. Shown on Business workspaces
+            after the user clicks "Schedule downgrade to Pro". Polar
+            swaps the product at the period boundary; the webhook
+            clears scheduledDowngrade once the change lands. */}
+        {scheduledDowngrade === "pro" && props.currentPeriodEnd ? (
+          <div className="mt-5 pt-5 border-t border-line/50">
+            <div className="flex items-start justify-between gap-3 flex-wrap">
+              <div className="t-body text-slate-300">
+                This workspace will switch to <strong>Pro</strong> on{" "}
+                <span className="text-slate-100 font-medium">{fmtDate(props.currentPeriodEnd)}</span>.
+                You&apos;ll keep Business access until then.
+              </div>
+              <button
+                type="button"
+                onClick={() => changePlan("business")}
+                disabled={changingTo !== null}
+                className="text-sm px-3 py-1.5 rounded-md border border-brand-purple/40 text-brand-purple hover:text-white hover:border-brand-purple transition disabled:opacity-60"
+              >
+                {changingTo === "business" ? "Updating…" : "Keep Business"}
+              </button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Scheduled downgrade to Free. Paid workspaces get a
+            self-service "downgrade to Free at the next renewal"
+            toggle. The subscription keeps working until period end,
+            then auto-cancels via Polar's cancelAtPeriodEnd. */}
         {props.plan !== "free" && props.currentPeriodEnd ? (
           <div className="mt-5 pt-5 border-t border-line/50">
             {cancelScheduled ? (
@@ -349,6 +451,33 @@ export function BillingClient(props: BillingClientProps) {
               <span className={`text-xs ${redeemMsg.ok ? "text-good" : "text-bad"}`}>{redeemMsg.text}</span>
             ) : null}
           </div>
+        </div>
+      </section>
+
+      {/* Usage - workspaces + members on the current plan. Reads
+          counts from the server props (computed via
+          getWorkspaceCapStatus + a per-workspace member query) so
+          numbers are accurate at page load. Grandfathered accounts
+          with more workspaces than the new cap allow show "5 of 3"
+          - the create path is still gated on the API side, so this
+          surface is read-only. */}
+      <section className="card">
+        <div className="font-medium mb-1">Usage</div>
+        <div className="text-xs text-slate-400 mb-4">
+          Workspace count and member seat usage on the current plan.
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <UsageStat
+            label="Workspaces you own"
+            used={props.workspacesUsed}
+            cap={props.workspacesCap}
+          />
+          <UsageStat
+            label="Members in this workspace"
+            used={props.membersUsed}
+            cap={props.membersCap}
+            hint="Owner + active members + pending invitations."
+          />
         </div>
       </section>
 
@@ -516,6 +645,51 @@ function Stat({ label, value }: { label: string; value: string }) {
     <div className="rounded-lg border border-line/60 bg-ink-950/40 px-3 py-2 min-w-[7rem]">
       <div className="text-[10px] uppercase tracking-wider text-slate-500">{label}</div>
       <div className="mt-0.5 text-sm font-semibold text-slate-100 tabular-nums">{value}</div>
+    </div>
+  );
+}
+
+// Small workspaces/members usage tile. "unlimited" caps render with
+// just the count + the word; numeric caps render "N / cap" with a
+// thin progress bar. Going OVER the cap (grandfathered users) tints
+// the bar warn-color so it's visually obvious without yelling.
+function UsageStat({
+  label,
+  used,
+  cap,
+  hint,
+}: {
+  label: string;
+  used:  number;
+  cap:   number | "unlimited";
+  hint?: string;
+}) {
+  const unlimited = cap === "unlimited";
+  const pct = unlimited ? 0 : Math.min(100, Math.round((used / Math.max(1, cap as number)) * 100));
+  const overCap = !unlimited && used > (cap as number);
+  return (
+    <div className="rounded-lg border border-line bg-ink-900/40 px-4 py-3">
+      <div className="t-meta uppercase tracking-wide text-slate-400">{label}</div>
+      <div className="mt-1 flex items-baseline gap-2">
+        <span className="t-section font-semibold text-slate-100 tabular-nums">
+          {used.toLocaleString()}
+        </span>
+        <span className="t-meta text-slate-500">
+          {unlimited ? "of unlimited" : `of ${cap}`}
+        </span>
+      </div>
+      {!unlimited ? (
+        <div className="mt-2 h-1 rounded-full bg-ink-700/80 overflow-hidden max-w-md">
+          <div
+            className={`h-full rounded-full ${overCap ? "bg-warn" : "bg-gradient-to-r from-brand-purple to-brand-teal"}`}
+            style={{ width: `${Math.max(pct, overCap ? 100 : 0)}%` }}
+            aria-hidden="true"
+          />
+        </div>
+      ) : null}
+      {hint ? (
+        <div className="mt-2 t-meta text-slate-500">{hint}</div>
+      ) : null}
     </div>
   );
 }

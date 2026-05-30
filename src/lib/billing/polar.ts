@@ -130,6 +130,19 @@ export function getSubscriptionProductId(plan: "pro" | "business"): string | nul
   return getProProductId();
 }
 
+// Reverse lookup: given a Polar product id (e.g. on a webhook event
+// when we've just observed a product change on an active sub), return
+// the corresponding plan key. Returns null for pack products so the
+// caller knows to ignore them. Used by the subscription.updated
+// webhook handler to keep Subscription.plan in sync with whatever
+// Polar swapped under us.
+export function getPlanFromProductId(productId: string | null | undefined): "pro" | "business" | null {
+  if (!productId) return null;
+  if (productId === getProProductId()) return "pro";
+  if (productId === getBusinessProductId()) return "business";
+  return null;
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Checkout
 // ────────────────────────────────────────────────────────────────────
@@ -310,6 +323,36 @@ export async function createCustomerPortalSession(args: {
 // ────────────────────────────────────────────────────────────────────
 // Subscription state transitions
 // ────────────────────────────────────────────────────────────────────
+
+// In-place plan switch via Polar's subscription update API.
+//
+// Upgrade  (e.g. Pro → Business): prorationBehavior "invoice" charges
+// the customer the prorated difference immediately and grants the new
+// tier's entitlements immediately. The webhook fires
+// subscription.updated which we use to flip Subscription.plan locally.
+//
+// Downgrade (e.g. Business → Pro): prorationBehavior "next_period"
+// keeps the customer on the current tier until period_end, then
+// swaps the product. No mid-cycle refund. The webhook fires
+// subscription.updated at the period boundary.
+//
+// Returns the productId Polar settled on so callers can sanity-check
+// the switch landed where we intended.
+export async function changeSubscriptionPlan(args: {
+  externalSubscriptionId: string;
+  targetProductId:        string;
+  prorationBehavior:      "invoice" | "next_period";
+}): Promise<{ productId: string }> {
+  const polar = getPolar();
+  const updated = await polar.subscriptions.update({
+    id: args.externalSubscriptionId,
+    subscriptionUpdate: {
+      productId:         args.targetProductId,
+      prorationBehavior: args.prorationBehavior,
+    },
+  });
+  return { productId: updated.productId };
+}
 
 // Cancel a subscription at the end of its current billing period.
 // The subscription stays active (and the workspace keeps its

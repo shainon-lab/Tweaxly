@@ -1174,6 +1174,13 @@ model Subscription {
   // flip-day. New Pro subs default to false. Checked inside
   // hasFeature("shareAnalyses") - see src/lib/billing/entitlements.ts.
   shareInsightsGrandfathered Boolean @default(false)
+  // Pending plan switch at the end of the current period. Set by the
+  // self-service downgrade endpoint when a user requests Business →
+  // Pro (Polar swaps the product at period_end via prorationBehavior
+  // "next_period"). The webhook clears this on the actual product
+  // change. Null = no scheduled change. Value is a PlanKey string
+  // matching plans.ts.
+  scheduledDowngradeTo   String?
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 
