@@ -128,28 +128,41 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
   }
 
   const isOwner    = data.viewerRole === "owner";
+  // Both Pro and Business can invite. Pro caps at 3 total members
+  // (Owner + 2 Viewers); Business caps at 6 (Owner + 5 Admin /
+  // Viewer). isPaid keeps the existing button-render logic
+  // (always-show-the-CTA-on-paid-tiers) intact across tiers.
+  const isPaid     = data.plan === "pro" || data.plan === "business";
   const isPro      = data.plan === "pro";
   const capReached = data.cap != null && data.used >= data.cap;
   const capLabel   = data.cap != null ? `${data.used}/${data.cap}` : `${data.used}`;
 
-  // The Invite button ALWAYS renders for owners on Pro - even when
-  // capped - and shows a styled notice explaining the cap if they
-  // click it while disabled. Free owners see an "upgrade" notice
-  // instead. NoticeModal renders in the app theme; no browser-native
-  // notify.alert() that would look out of place.
+  // The Invite button ALWAYS renders for owners on a paid tier - even
+  // when capped - and shows a styled notice explaining the cap if they
+  // click it while disabled. Free owners see an upgrade notice. Pro
+  // owners at their 3-seat cap see a "Upgrade to Business for more
+  // seats" notice (the cap on Business is 6). Business owners at
+  // the 6-seat cap have no further tier to upgrade to.
   function handleInviteClick() {
-    if (!isPro) {
+    if (!isPaid) {
       setNotice({
-        title: "Upgrade to Pro to invite team members",
-        body:  "Free workspaces have a single owner. Upgrade this workspace to Pro to invite up to 3 team members with role-based access.",
+        title: "Upgrade to invite team members",
+        body:  "Free workspaces have a single owner. Upgrade this workspace to Pro for up to 3 team members (Viewer role), or to Business for up to 6 (Admin + Viewer).",
       });
       return;
     }
     if (capReached) {
-      setNotice({
-        title: "All seats are used",
-        body:  `You have already filled all the available seats in your package (${capLabel}). Remove a member or cancel a pending invitation to free a seat.`,
-      });
+      if (isPro) {
+        setNotice({
+          title: "All Pro seats are used",
+          body:  `You've filled all ${capLabel} seats on the Pro plan. Upgrade to Business for up to 6 team members with Admin + Viewer roles, or remove a member / cancel a pending invitation to free a seat.`,
+        });
+      } else {
+        setNotice({
+          title: "All seats are used",
+          body:  `You have already filled all the available seats in your package (${capLabel}). Remove a member or cancel a pending invitation to free a seat.`,
+        });
+      }
       return;
     }
     setInviteOpen(true);
@@ -195,9 +208,9 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
             </span>
           </div>
           <div className="text-xs text-slate-400 leading-relaxed">
-            {isPro
-              ? <>Pro workspaces support up to <strong className="text-slate-100">{data.cap}</strong> members total - owner + invitations + active members all count toward the cap.</>
-              : <>Free workspaces have a single owner. Upgrade to Pro to invite up to <strong className="text-slate-100">3</strong> team members.</>}
+            {isPaid
+              ? <>This workspace supports up to <strong className="text-slate-100">{data.cap}</strong> members total - owner + invitations + active members all count toward the cap.</>
+              : <>Free workspaces have a single owner. Upgrade to Pro for up to <strong className="text-slate-100">3</strong> team members, or to Business for up to <strong className="text-slate-100">6</strong>.</>}
           </div>
         </div>
         {isOwner ? (
@@ -208,14 +221,14 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
             // the NoticeModal explanation - never silently dead. No
             // native title attribute (would render a browser tooltip
             // that looks out of place against the dark theme).
-            aria-disabled={!isPro || capReached}
+            aria-disabled={!isPaid || capReached}
             aria-label={
-              !isPro     ? "Invite Member (Pro plan required)" :
+              !isPaid    ? "Invite Member (paid plan required)" :
               capReached ? "Invite Member (all seats used)" :
                            "Invite Member"
             }
             className={`text-sm px-4 py-2 rounded-md border font-medium transition shrink-0 ${
-              !isPro || capReached
+              !isPaid || capReached
                 ? "border-line bg-ink-900/40 text-slate-500 cursor-not-allowed"
                 : "border-accent/40 bg-accent-soft/40 text-accent hover:bg-accent-soft hover:border-accent hover:text-white"
             }`}

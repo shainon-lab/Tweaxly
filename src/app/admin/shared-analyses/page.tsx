@@ -74,7 +74,7 @@ export default async function AdminSharedAnalysesPage() {
     <div className="space-y-6">
       <div className="flex items-end justify-between gap-3 flex-wrap">
         <div>
-          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Shared analyses</h1>
+          <h1 className="text-xl font-semibold tracking-tight text-slate-100">Shared insights</h1>
           <p className="text-xs text-slate-400 mt-1">
             Every secure read-only share link generated across all workspaces.
             Snapshots are frozen at share-time and never re-derived. 200 most recent shown.
@@ -93,7 +93,7 @@ export default async function AdminSharedAnalysesPage() {
 
       {rows.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="text-sm text-slate-300">No shared analyses created yet.</div>
+          <div className="text-sm text-slate-300">No shared insights created yet.</div>
         </div>
       ) : (
         <div className="card overflow-x-auto p-0">

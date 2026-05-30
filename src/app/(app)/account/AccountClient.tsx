@@ -76,7 +76,7 @@ export default function AccountClient({
     // your purchase history, shares are your outbound links.
     // Workspace-scoped: the list reflects the currently active
     // workspace, same as the create API.
-    { value: "shared_analyses",    label: "Shared Analyses" },
+    { value: "shared_analyses",    label: "Shared Insights" },
     { value: "password",           label: t("account.tab.password") },
     { value: "preferences",        label: t("account.tab.preferences") },
     // Merged from the previous separate "Notifications" and

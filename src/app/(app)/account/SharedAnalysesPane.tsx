@@ -76,7 +76,7 @@ export default function SharedAnalysesPane() {
   if (error) {
     return (
       <div className="card">
-        <div className="t-body text-bad">Could not load shared analyses: {error}</div>
+        <div className="t-body text-bad">Could not load shared insights: {error}</div>
         <button type="button" className="btn-ghost mt-3" onClick={refresh}>
           Try again
         </button>
@@ -86,7 +86,7 @@ export default function SharedAnalysesPane() {
   if (shares == null) {
     return (
       <div className="card">
-        <div className="t-body text-slate-400">Loading shared analyses…</div>
+        <div className="t-body text-slate-400">Loading shared insights…</div>
       </div>
     );
   }
@@ -100,7 +100,7 @@ export default function SharedAnalysesPane() {
 
       {shares.length === 0 ? (
         <div className="card text-center py-12">
-          <div className="t-card text-slate-200">No shared analyses yet</div>
+          <div className="t-card text-slate-200">No shared insights yet</div>
           <div className="t-body text-slate-400 mt-2">
             Click <span className="font-medium">Share</span> on any AI answer,
             signal, forecast explanation or insight to create your first link.

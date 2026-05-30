@@ -53,9 +53,9 @@ interface BillingClientProps {
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro",
-  // Legacy "business" rows roll up to Pro in the entitlements layer.
-  business: "Pro",
+  free:     "Free",
+  pro:      "Pro",
+  business: "Business",
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -195,24 +195,47 @@ export function BillingClient(props: BillingClientProps) {
               )}
             </div>
           </div>
-          {props.plan === "free" ? (
-            <UpgradeTriggerButton
-              currentPlan={props.plan}
-              feature="Pro plan"
-              className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
-            >
-              Upgrade to Pro
-            </UpgradeTriggerButton>
-          ) : (
-            <button
-              type="button"
-              onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
-              disabled={checkoutBusy === "portal"}
-              className="text-sm px-4 py-2 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
-            >
-              {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
-            </button>
-          )}
+          <div className="flex items-center gap-2 flex-wrap">
+            {props.plan === "free" ? (
+              <UpgradeTriggerButton
+                currentPlan={props.plan}
+                feature="paid plan"
+                className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
+              >
+                Upgrade your workspace
+              </UpgradeTriggerButton>
+            ) : props.plan === "pro" ? (
+              <>
+                {/* Pro can upgrade to Business inline. The UpgradeModal
+                    detects the current plan and shows only Business
+                    when the workspace is already on Pro. */}
+                <UpgradeTriggerButton
+                  currentPlan={props.plan}
+                  feature="Business plan"
+                  className="text-sm px-4 py-2 rounded-md border border-brand-purple/40 bg-brand-purple/15 text-brand-purple font-medium hover:bg-brand-purple/25 hover:border-brand-purple hover:text-white transition"
+                >
+                  Upgrade to Business
+                </UpgradeTriggerButton>
+                <button
+                  type="button"
+                  onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
+                  disabled={checkoutBusy === "portal"}
+                  className="text-sm px-4 py-2 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
+                >
+                  {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
+                disabled={checkoutBusy === "portal"}
+                className="text-sm px-4 py-2 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
+              >
+                {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
+              </button>
+            )}
+          </div>
         </div>
 
         {/* Inline promo redeem - no longer a separate section. Credit

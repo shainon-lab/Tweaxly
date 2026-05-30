@@ -38,18 +38,28 @@ interface UpgradeModalProps {
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro",
-  // Legacy "business" rows roll up to Pro in the entitlements layer.
-  business: "Pro",
+  free:     "Free",
+  pro:      "Pro",
+  business: "Business",
 };
 
-const DEFAULT_BENEFITS = [
-  "Unlimited business signals + smart alerts",
-  "Full forecasting + Scenario Builder",
+// Bullets specific to each paid tier. Free upgrade modal shows both
+// tiers side by side; Pro upgrade modal shows only Business (since
+// Pro IS the current tier). Bullets focus on the headline value -
+// detailed feature lists live on /pricing.
+const PRO_BULLETS = [
+  "Up to 3 workspaces",
+  "Owner + 2 team members (Viewer)",
+  "100 AI Credits / cycle + buy more anytime",
+  "Advanced AI, full forecasting + Scenario Builder",
   "Export to Excel, CSV, PDF",
-  "Secure share links for AI analyses (expiry + optional password)",
-  "Multi-business, multi-user, team roles",
-  "100 AI Credits / month - buy more anytime",
+];
+const BUSINESS_BULLETS = [
+  "Unlimited workspaces",
+  "Owner + 5 team members (Admin + Viewer)",
+  "250 AI Credits / cycle + buy more anytime",
+  "Share Insights - secure read-only links for consultations, signals, forecasts, reports",
+  "Everything in Pro + priority AI processing",
 ];
 
 export default function UpgradeModal({
@@ -65,17 +75,26 @@ export default function UpgradeModal({
   // server state.
   const [successKind, setSuccessKind] = useState<CheckoutSuccessKind | null>(null);
 
+  // Tracks which tier the spinner belongs to so the disabled state
+  // sits on the right button. null = idle.
+  const [busyPlan, setBusyPlan] = useState<"pro" | "business" | null>(null);
+
   // Embedded checkout flow: hit our server to create the Polar
   // Checkout Session (which now includes embed_origin), then open
   // the SDK's iframe overlay inside Tweaxly. The webhook is still
   // the source of truth for unlocking premium features — frontend
   // success just refreshes server-rendered state so the new plan
   // lands in the UI without the user having to reload.
-  async function startCheckout() {
+  async function startCheckout(planId: "pro" | "business") {
     setError(null);
     setBusy(true);
+    setBusyPlan(planId);
     try {
-      const res  = await fetch("/api/billing/checkout/subscription", { method: "POST" });
+      const res  = await fetch("/api/billing/checkout/subscription", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ planId }),
+      });
       const data = await res.json().catch(() => ({} as { url?: string; message?: string; error?: string }));
       // 403 from the server's email-verification gate. Surface a
       // pointed message rather than the generic "could not open" so
@@ -83,17 +102,20 @@ export default function UpgradeModal({
       if (res.status === 403 && data.error === "email_unverified") {
         setError("Please verify your email to upgrade. Use the Resend button in the banner at the top of the page.");
         setBusy(false);
+        setBusyPlan(null);
         return;
       }
       if (!res.ok || !data.url) {
         setError(data.message ?? "Could not open checkout. Try again in a moment.");
         setBusy(false);
+        setBusyPlan(null);
         return;
       }
       // Close the upgrade modal so the iframe overlay is the only
       // thing on top of the page. The SDK manages its own backdrop.
       onClose();
       setBusy(false);
+      setBusyPlan(null);
       await openEmbeddedCheckout(data.url, {
         onSuccess: () => {
           setSuccessKind("subscription");
@@ -111,6 +133,7 @@ export default function UpgradeModal({
     } catch {
       setError("Network error - check your connection.");
       setBusy(false);
+      setBusyPlan(null);
     }
   }
 
@@ -138,8 +161,15 @@ export default function UpgradeModal({
 
   if (!open) return successToast;
 
-  const planLabel = PLAN_LABEL[currentPlan ?? "free"] ?? currentPlan ?? "Free";
-  const bullets   = benefits && benefits.length > 0 ? benefits : DEFAULT_BENEFITS;
+  const current   = currentPlan ?? "free";
+  const planLabel = PLAN_LABEL[current] ?? current;
+  // Pro users see only the Business upsell; Free users see both.
+  // Caller-provided `benefits` overrides the Business tile's bullets
+  // when set - lets a specific locked feature lead with its own
+  // selling story.
+  const showPro   = current === "free";
+  const proBullets      = PRO_BULLETS;
+  const businessBullets = benefits && benefits.length > 0 ? benefits : BUSINESS_BULLETS;
 
   // Portal the modal to document.body so any ancestor with a
   // `transform` / `filter` / `contain` style can't capture our
@@ -161,7 +191,7 @@ export default function UpgradeModal({
         ref={dialogRef}
         tabIndex={-1}
         onClick={(e) => e.stopPropagation()}
-        className="relative w-full max-w-lg rounded-2xl border border-line bg-ink-900 shadow-2xl outline-none"
+        className={`relative w-full ${showPro ? "max-w-3xl" : "max-w-lg"} rounded-2xl border border-line bg-ink-900 shadow-2xl outline-none`}
       >
         {/* Soft gradient backdrop on the modal itself - mirrors the
             marketing-site banner so the upgrade prompt feels on-brand
@@ -199,38 +229,35 @@ export default function UpgradeModal({
             won&apos;t change any other workspace.
           </p>
 
-          <ul className="mt-6 space-y-2.5">
-            {bullets.map((b) => (
-              <li key={b} className="flex items-start gap-2.5 text-sm text-slate-200">
-                <span
-                  aria-hidden="true"
-                  className="mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-good/15 text-good shrink-0"
-                >
-                  <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
-                    <path d="M3 8.5l3 3 7-8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
-                  </svg>
-                </span>
-                <span>{b}</span>
-              </li>
-            ))}
-          </ul>
-
-          <div className="mt-7 flex items-center gap-3 flex-wrap">
-            <button
-              type="button"
-              onClick={startCheckout}
+          <div className={`mt-6 grid gap-4 ${showPro ? "sm:grid-cols-2" : "sm:grid-cols-1"}`}>
+            {showPro ? (
+              <PlanTile
+                name="Pro"
+                price="$49"
+                period="per month"
+                tagline="For the working business"
+                bullets={proBullets}
+                ctaLabel={busyPlan === "pro" ? "Opening checkout…" : "Upgrade to Pro"}
+                disabled={busy}
+                onClick={() => startCheckout("pro")}
+              />
+            ) : null}
+            <PlanTile
+              name="Business"
+              price="$89"
+              period="per month"
+              tagline="Teams, partnerships, multi-business operators"
+              bullets={businessBullets}
+              ctaLabel={busyPlan === "business" ? "Opening checkout…" : "Upgrade to Business"}
               disabled={busy}
-              className="btn-primary text-sm px-4 py-2 rounded-md inline-flex items-center gap-1 disabled:opacity-60"
-            >
-              {busy ? "Opening checkout…" : (
-                <>Upgrade this workspace · $49/mo <span aria-hidden="true">→</span></>
-              )}
-            </button>
+              onClick={() => startCheckout("business")}
+              highlight
+            />
           </div>
           {error ? (
             <div className="mt-3 text-[11px] text-bad">{error}</div>
           ) : null}
-          <div className="mt-3 text-[11px] text-slate-500">
+          <div className="mt-4 text-[11px] text-slate-500">
             Need more AI power? Buy credit packs anytime from Billing &amp; Credits - they add instantly.
           </div>
         </div>
@@ -243,5 +270,73 @@ export default function UpgradeModal({
       {createPortal(modal, document.body)}
       {successToast}
     </>
+  );
+}
+
+// Side-by-side plan tile used inside the upgrade modal. Same shape
+// as the marketing pricing cards but compact - the modal is a
+// conversion surface, not a feature comparison.
+function PlanTile({
+  name, price, period, tagline, bullets, ctaLabel, disabled, onClick, highlight,
+}: {
+  name:      string;
+  price:     string;
+  period:    string;
+  tagline:   string;
+  bullets:   string[];
+  ctaLabel:  string;
+  disabled:  boolean;
+  onClick:   () => void;
+  highlight?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-xl border bg-ink-900/70 p-5 flex flex-col gap-4 ${
+        highlight ? "border-brand-purple/60 ring-1 ring-brand-purple/30" : "border-line"
+      }`}
+    >
+      <div>
+        <div className="flex items-center justify-between gap-2">
+          <div className="text-base font-semibold text-white">{name}</div>
+          {highlight ? (
+            <span className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold">
+              Most popular
+            </span>
+          ) : null}
+        </div>
+        <div className="mt-1 flex items-baseline gap-1.5">
+          <span className="text-2xl font-bold text-white tabular-nums">{price}</span>
+          <span className="text-xs text-slate-400">{period}</span>
+        </div>
+        <div className="t-meta text-slate-400 mt-2">{tagline}</div>
+      </div>
+      <ul className="space-y-2 flex-1">
+        {bullets.map((b) => (
+          <li key={b} className="flex items-start gap-2 text-[13px] text-slate-200 leading-snug">
+            <span
+              aria-hidden="true"
+              className="mt-0.5 inline-flex items-center justify-center w-4 h-4 rounded-full bg-good/15 text-good shrink-0"
+            >
+              <svg width="9" height="9" viewBox="0 0 16 16" fill="none">
+                <path d="M3 8.5l3 3 7-8" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+            <span>{b}</span>
+          </li>
+        ))}
+      </ul>
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        className={`text-sm px-4 py-2 rounded-md transition disabled:opacity-60 inline-flex items-center justify-center gap-1 ${
+          highlight
+            ? "btn-primary"
+            : "border border-line text-slate-200 hover:text-white hover:border-slate-500 bg-ink-900/50"
+        }`}
+      >
+        {ctaLabel}
+      </button>
+    </div>
   );
 }

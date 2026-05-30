@@ -1,5 +1,10 @@
-// /pricing - simplified 2-tier model (Free / Pro) with AI Credits
-// as the scaling layer. The previous 3-tier model (Free / Pro /
+// /pricing - 3-tier model (Free / Pro / Business). Free has a
+// one-time starter grant of AI Credits and a single workspace; Pro
+// is the working-business tier with renewing credits and a small
+// team; Business is the collaboration / multi-workspace tier with
+// Share Insights as the headline entitlement.
+//
+// Earlier history: simplified 2-tier model (Free / Pro) with AI Credits
 // Business) was collapsed into a single premium tier; everything
 // that used to be Business-only is now in Pro, and the only thing
 // above Pro is purchasing additional AI Credit packs.
@@ -53,7 +58,7 @@ export const metadata: Metadata = {
 // Plans
 // ─────────────────────────────────────────────────────────────────────
 
-type PlanKey = "free" | "pro";
+type PlanKey = "free" | "pro" | "business";
 
 interface Plan {
   key:        PlanKey;
@@ -78,8 +83,9 @@ const PLANS: Plan[] = [
     tagline:  "Connect your business and experience AI-powered insights. Starter credits included.",
     credits:  "30 starter AI Credits (one-time grant)",
     bullets: [
-      "1 workspace owner (no team invites on Free)",
-      "90 days of visible history",
+      "1 workspace (owner only)",
+      "Unlimited historical uploads + data sources",
+      "Standard AI engine",
       "Up to 3 active business signals (ranked by impact)",
       "Forecast up to 3 months ahead",
       "On-screen reports (no export)",
@@ -93,23 +99,48 @@ const PLANS: Plan[] = [
     name:      "Pro",
     price:     "$49",
     period:    "per month",
-    tagline:   "Unlock the full platform - everything Tweaxly can do, in one premium plan.",
-    credits:   "100 AI Credits / month",
-    highlight: true,
+    tagline:   "Unlock advanced AI, faster responses and team access for the working business.",
+    credits:   "100 AI Credits per billing cycle",
     bullets: [
-      "Owner + up to 2 team members with role-based access",
-      "Buy add-on AI Credit packs anytime as you scale",
-      "Advanced AI analysis & faster responses",
+      "Up to 3 workspaces",
+      "Owner + up to 2 team members (Viewer access)",
+      "Buy add-on AI Credit packs anytime",
+      "Advanced AI engine & faster responses",
       "Real-Time Business Alerts (desktop push + custom monitors)",
       "Unlimited historical data + custom date ranges",
-      "Up to 6 active business signals (ranked by impact) + smart alerts",
+      "Up to 6 active business signals + smart alerts",
       "Long-horizon forecasting (6, 12, 24, 36, 60 months)",
       "Scenario Builder + multi-scenario compare",
       "Workforce Planning + hire/cost modelling",
       "Export to Excel, CSV, PDF (+ white-label)",
-      "Secure share links for AI consultations, signals, forecasts and insights",
     ],
-    ctaLabel: "Start Pro Free",
+    ctaLabel: "Upgrade to Pro",
+    ctaHref:  SIGNUP_URL,
+    ctaSub:   "Start free, upgrade when ready",
+  },
+  {
+    key:       "business",
+    name:      "Business",
+    price:     "$89",
+    period:    "per month",
+    // Business positioning leads with collaboration + sharing, not
+    // credit numbers. The spec is explicit: "Business should be
+    // positioned around: Collaboration, Team access, Multi-workspace
+    // management, Sharing, Scale. Not around credits alone."
+    tagline:   "Built for teams, partnerships, accountants and multi-business operators.",
+    credits:   "250 AI Credits per billing cycle",
+    highlight: true,
+    bullets: [
+      "Unlimited workspaces",
+      "Up to 6 team members (Owner + Admin + Viewer roles)",
+      "Share Insights - secure read-only links for consultations, signals, forecasts and reports",
+      "Buy add-on AI Credit packs anytime",
+      "Everything in Pro",
+      "Advanced AI engine & faster responses",
+      "Priority AI processing",
+      "Dedicated onboarding",
+    ],
+    ctaLabel: "Upgrade to Business",
     ctaHref:  SIGNUP_URL,
     ctaSub:   "Start free, upgrade when ready",
   },
@@ -119,69 +150,72 @@ const PLANS: Plan[] = [
 // Feature matrix
 // ─────────────────────────────────────────────────────────────────────
 
-interface MatrixRow { dimension: string; free: string; pro: string }
+interface MatrixRow { dimension: string; free: string; pro: string; business: string }
 interface MatrixGroup { label: string; rows: MatrixRow[] }
 
 const MATRIX: MatrixGroup[] = [
   {
     label: "Workspace",
     rows: [
-      // Workspaces are unlimited on both plans (each workspace has
-      // its own subscription), so we don't surface a count.
-      { dimension: "Team members",     free: "1 owner only", pro: "Owner + 2 team members" },
-      { dimension: "Data sources",     free: "1",        pro: "Unlimited + integrations" },
-      { dimension: "Historical data",  free: "90 days",  pro: "Unlimited" },
-      { dimension: "Custom historical range", free: "—", pro: "✓" },
+      { dimension: "Workspaces",             free: "1",            pro: "Up to 3",                 business: "Unlimited" },
+      { dimension: "Team members",           free: "1 (Owner)",    pro: "Owner + 2 (Viewer)",      business: "Owner + 5 (Admin + Viewer)" },
+      { dimension: "Data sources",           free: "Unlimited",    pro: "Unlimited + integrations", business: "Unlimited + integrations" },
+      { dimension: "Historical data",        free: "Unlimited",    pro: "Unlimited",               business: "Unlimited" },
+      { dimension: "Custom historical range", free: "—",           pro: "✓",                       business: "✓" },
     ],
   },
   {
     label: "AI & intelligence",
     rows: [
-      { dimension: "Included AI Credits",             free: "30 (starter, one-time)", pro: "100 / month (+ packs)" },
-      { dimension: "Active business signals",          free: "Up to 3",   pro: "Up to 6" },
-      { dimension: "Smart alerts",                    free: "—",         pro: "✓" },
-      { dimension: "Real-Time Business Alerts (desktop push)", free: "—", pro: "✓" },
-      { dimension: "Custom monitors",                 free: "1 threshold", pro: "Unlimited + severity routing" },
-      { dimension: "Quiet hours + daily limit",       free: "—",         pro: "✓" },
-      { dimension: "AI consultation",                 free: "Basic",     pro: "Full + priority processing" },
-      { dimension: "Action-oriented recommendations", free: "—",         pro: "✓" },
+      { dimension: "AI engine",                                free: "Standard",              pro: "Advanced",                 business: "Advanced" },
+      { dimension: "Included AI Credits",                       free: "30 (starter, one-time)", pro: "100 / cycle (+ packs)",   business: "250 / cycle (+ packs)" },
+      { dimension: "Active business signals",                   free: "Up to 3",               pro: "Up to 6",                 business: "Up to 6" },
+      { dimension: "Smart alerts",                              free: "—",                     pro: "✓",                       business: "✓" },
+      { dimension: "Real-Time Business Alerts (desktop push)",  free: "—",                     pro: "✓",                       business: "✓" },
+      { dimension: "Custom monitors",                           free: "1 threshold",           pro: "Unlimited + severity routing", business: "Unlimited + severity routing" },
+      { dimension: "AI consultation",                           free: "Basic",                 pro: "Full + priority processing", business: "Full + priority processing" },
+      { dimension: "Action-oriented recommendations",           free: "—",                     pro: "✓",                       business: "✓" },
     ],
   },
   {
     label: "Forecasting",
     rows: [
-      { dimension: "Forecast horizon",       free: "3 months",  pro: "Up to 60 months" },
-      { dimension: "Scenario Builder",       free: "—",         pro: "✓" },
-      { dimension: "Multi-scenario compare", free: "—",         pro: "✓" },
-      { dimension: "Workforce Planning",     free: "—",         pro: "✓" },
-      { dimension: "Yearly reports + insights", free: "—",      pro: "✓" },
+      { dimension: "Forecast horizon",          free: "3 months", pro: "Up to 60 months", business: "Up to 60 months" },
+      { dimension: "Scenario Builder",          free: "—",        pro: "✓",               business: "✓" },
+      { dimension: "Multi-scenario compare",    free: "—",        pro: "✓",               business: "✓" },
+      { dimension: "Workforce Planning",        free: "—",        pro: "✓",               business: "✓" },
+      { dimension: "Yearly reports + insights", free: "—",        pro: "✓",               business: "✓" },
     ],
   },
   {
     label: "Reports",
     rows: [
-      { dimension: "On-screen reports",    free: "✓",  pro: "✓" },
-      { dimension: "Excel / CSV export",   free: "—",  pro: "✓" },
-      { dimension: "PDF export",           free: "—",  pro: "✓" },
-      { dimension: "White-label reports",  free: "—",  pro: "✓" },
+      { dimension: "On-screen reports",    free: "✓",  pro: "✓",  business: "✓" },
+      { dimension: "Excel / CSV export",   free: "—",  pro: "✓",  business: "✓" },
+      { dimension: "PDF export",           free: "—",  pro: "✓",  business: "✓" },
+      { dimension: "White-label reports",  free: "—",  pro: "✓",  business: "✓" },
     ],
   },
   {
-    label: "Sharing",
+    label: "Share Insights",
     rows: [
-      { dimension: "Secure share links (consultations, signals, forecasts, insights)", free: "—", pro: "✓" },
-      { dimension: "Expiry control (24h / 7d / 30d)",                                   free: "—", pro: "✓" },
-      { dimension: "Optional password protection",                                      free: "—", pro: "✓" },
-      { dimension: "Per-link view analytics",                                           free: "—", pro: "✓" },
+      // Sharing is Business-only at launch. Grandfathered Pro
+      // subscribers (those who had Pro at the moment Business
+      // shipped) retain their existing sharing entitlement - but
+      // the public pricing page reflects the going-forward policy.
+      { dimension: "Secure share links (consultations, signals, forecasts, insights)", free: "—", pro: "—", business: "✓" },
+      { dimension: "Expiry control (24h / 7d / 30d)",                                   free: "—", pro: "—", business: "✓" },
+      { dimension: "Optional password protection",                                      free: "—", pro: "—", business: "✓" },
+      { dimension: "Per-link view analytics",                                           free: "—", pro: "—", business: "✓" },
     ],
   },
   {
     label: "Integrations & access",
     rows: [
-      { dimension: "Basic integrations",    free: "✓",  pro: "✓" },
-      { dimension: "Advanced integrations", free: "—",  pro: "✓" },
-      { dimension: "Webhooks",              free: "—",  pro: "✓" },
-      { dimension: "Dedicated onboarding",  free: "—",  pro: "✓" },
+      { dimension: "Basic integrations",    free: "✓",  pro: "✓",  business: "✓" },
+      { dimension: "Advanced integrations", free: "—",  pro: "✓",  business: "✓" },
+      { dimension: "Webhooks",              free: "—",  pro: "✓",  business: "✓" },
+      { dimension: "Dedicated onboarding",  free: "—",  pro: "✓",  business: "✓" },
     ],
   },
 ];
@@ -483,9 +517,10 @@ function FeatureMatrix() {
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-ink-900/80 text-left text-[11px] uppercase tracking-[0.16em] text-slate-400">
-              <th scope="col" className="px-5 py-4 font-semibold border-b border-line w-1/2">Capability</th>
+              <th scope="col" className="px-5 py-4 font-semibold border-b border-line w-2/5">Capability</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Free</th>
-              <th scope="col" className="px-5 py-4 font-semibold border-b border-line text-brand-purple">Pro</th>
+              <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Pro</th>
+              <th scope="col" className="px-5 py-4 font-semibold border-b border-line text-brand-purple">Business</th>
             </tr>
           </thead>
           <tbody>
@@ -494,7 +529,7 @@ function FeatureMatrix() {
                 <tr className="bg-ink-950/40">
                   <th
                     scope="rowgroup"
-                    colSpan={3}
+                    colSpan={4}
                     className="px-5 pt-5 pb-2 text-left text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold"
                   >
                     {group.label}
@@ -508,8 +543,11 @@ function FeatureMatrix() {
                     <td className="px-5 py-3 align-top text-slate-300 border-b border-line/40">
                       {row.free === "✓" ? <CheckGlyph /> : row.free === "—" ? <span className="text-slate-600">—</span> : row.free}
                     </td>
-                    <td className="px-5 py-3 align-top text-slate-100 border-b border-line/40">
+                    <td className="px-5 py-3 align-top text-slate-300 border-b border-line/40">
                       {row.pro === "✓" ? <CheckGlyph /> : row.pro === "—" ? <span className="text-slate-600">—</span> : row.pro}
+                    </td>
+                    <td className="px-5 py-3 align-top text-slate-100 border-b border-line/40">
+                      {row.business === "✓" ? <CheckGlyph /> : row.business === "—" ? <span className="text-slate-600">—</span> : row.business}
                     </td>
                   </tr>
                 ))}

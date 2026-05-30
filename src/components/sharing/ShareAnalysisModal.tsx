@@ -170,7 +170,7 @@ export default function ShareAnalysisModal({
                 <Share2 size={18} strokeWidth={1.5} />
               </span>
               <div className="min-w-0 flex-1">
-                <div className="t-section text-slate-100">Share Analysis</div>
+                <div className="t-section text-slate-100">Share Insight</div>
                 <div className="t-body text-slate-400 mt-1">
                   Create a secure read-only link that can be viewed without
                   a Tweaxly account.
@@ -330,6 +330,10 @@ function UpgradeCard({
   currentPlan: string;
   onDismiss:   () => void;
 }) {
+  // Share Insights is a Business-tier entitlement. Free and Pro both
+  // land on the same upgrade card; only the CTA wording differs so
+  // the path from the user's current plan is explicit.
+  const ctaLabel = currentPlan === "pro" ? "Upgrade to Business" : "See plans";
   return (
     <>
       <div className="flex items-start gap-3 mb-4">
@@ -337,11 +341,12 @@ function UpgradeCard({
           <Lock size={18} strokeWidth={1.5} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="t-section text-slate-100">Sharing is a Pro feature</div>
+          <div className="t-section text-slate-100">Share Insights is a Business feature</div>
           <div className="t-body text-slate-400 mt-1">
-            Upgrade to share AI analyses with anyone, even if they don&apos;t
-            have a Tweaxly account. Secure links, expiry windows, and
-            optional passwords are all included.
+            Upgrade to share AI consultations, signals, forecasts and
+            insights with anyone - no Tweaxly account required.
+            Secure links, expiry windows, optional passwords and view
+            analytics are all included.
           </div>
         </div>
       </div>
@@ -351,10 +356,10 @@ function UpgradeCard({
         </button>
         <UpgradeTriggerButton
           currentPlan={currentPlan}
-          feature="Secure analysis sharing"
+          feature="Share Insights"
           className="btn-primary"
         >
-          Upgrade to Pro
+          {ctaLabel}
         </UpgradeTriggerButton>
       </div>
     </>

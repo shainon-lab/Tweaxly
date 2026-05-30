@@ -117,6 +117,19 @@ export function getProProductId(): string | null {
   return polarEnv("POLAR_PRODUCT_PRO_ID") ?? null;
 }
 
+export function getBusinessProductId(): string | null {
+  return polarEnv("POLAR_PRODUCT_BUSINESS_ID") ?? null;
+}
+
+// Map a plan key to the Polar product id configured in env. Used by
+// the subscription checkout helper so a single createSubscriptionCheckout
+// call can route to either Pro ($49) or Business ($89). Pack products
+// are looked up separately via getPackProductId.
+export function getSubscriptionProductId(plan: "pro" | "business"): string | null {
+  if (plan === "business") return getBusinessProductId();
+  return getProProductId();
+}
+
 // ────────────────────────────────────────────────────────────────────
 // Checkout
 // ────────────────────────────────────────────────────────────────────
@@ -171,10 +184,20 @@ export async function createSubscriptionCheckout(args: {
   // "new_subscription" defaults; pass "upgrade" / "downgrade" when the
   // caller knows the workspace is moving between paid tiers.
   purchaseType?: "new_subscription" | "upgrade" | "downgrade";
-  planId?:       string;
+  // Target plan key. Defaults to "pro" for back-compat with call
+  // sites that haven't been migrated yet (everything pre-Business
+  // assumed Pro was the only paid tier).
+  planId?:       "pro" | "business";
 }): Promise<{ url: string; checkoutId: string }> {
-  const productId = getProProductId();
-  if (!productId) throw new Error("POLAR_PRODUCT_PRO_ID is not set");
+  const target  = args.planId ?? "pro";
+  const productId = getSubscriptionProductId(target);
+  if (!productId) {
+    throw new Error(
+      target === "business"
+        ? "POLAR_PRODUCT_BUSINESS_ID is not set"
+        : "POLAR_PRODUCT_PRO_ID is not set",
+    );
+  }
   const { appUrl } = getEnv();
   const polar = getPolar();
 
@@ -184,10 +207,10 @@ export async function createSubscriptionCheckout(args: {
     userId:       args.userId,
     businessName: args.businessName,
     productId,
-    productName:  "Pro subscription",
+    productName:  target === "business" ? "Business subscription" : "Pro subscription",
     productType:  "subscription",
     purchaseType: args.purchaseType ?? "new_subscription",
-    planId:       args.planId ?? "pro",
+    planId:       target,
   };
 
   const checkout = await polar.checkouts.create({
