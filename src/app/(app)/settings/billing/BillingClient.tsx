@@ -284,14 +284,34 @@ export function BillingClient(props: BillingClientProps) {
             </div>
           </div>
           <div className="flex items-center gap-2 flex-wrap">
-            {props.plan === "free" ? (
-              <UpgradeTriggerButton
-                currentPlan={props.plan}
-                feature="paid plan"
-                className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
-              >
-                Upgrade your workspace
-              </UpgradeTriggerButton>
+            {/* Subscription management buttons (Manage subscription,
+                change-plan, schedule downgrade) only make sense when
+                the workspace's effective plan came from a real Polar
+                subscription. Admin overrides and default-free
+                fallbacks have no Polar customer/sub to act on - the
+                /api/billing/portal + change-plan + cancel endpoints
+                all return 400 in that case. Show the upgrade modal
+                instead so an override'd Pro can still START a real
+                subscription if they want one. */}
+            {props.planSource !== "subscription" ? (
+              props.plan === "free" ? (
+                <UpgradeTriggerButton
+                  currentPlan={props.plan}
+                  feature="paid plan"
+                  className="text-sm px-4 py-2 rounded-md border border-accent/40 bg-accent-soft/40 text-accent font-medium hover:bg-accent-soft hover:border-accent hover:text-white transition"
+                >
+                  Upgrade your workspace
+                </UpgradeTriggerButton>
+              ) : (
+                // Admin-override Pro / Business workspaces. No active
+                // billing relationship - the entitlement is gifted.
+                // Surface a small explanatory line so the user knows
+                // why there's nothing to click.
+                <div className="t-meta text-slate-500 max-w-xs text-right">
+                  Plan granted by admin override.{" "}
+                  {props.planSource === "override" ? "Contact support to change." : null}
+                </div>
+              )
             ) : props.plan === "pro" ? (
               <>
                 {/* Pro → Business is an in-place plan switch with
@@ -337,16 +357,7 @@ export function BillingClient(props: BillingClientProps) {
                   {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
                 </button>
               </>
-            ) : (
-              <button
-                type="button"
-                onClick={() => openCheckout("/api/billing/portal", undefined, "portal")}
-                disabled={checkoutBusy === "portal"}
-                className="text-sm px-4 py-2 rounded-md border border-line text-slate-200 hover:text-white hover:border-slate-500 transition disabled:opacity-60"
-              >
-                {checkoutBusy === "portal" ? "Opening portal…" : "Manage subscription"}
-              </button>
-            )}
+            ) : null}
           </div>
         </div>
 
@@ -357,8 +368,10 @@ export function BillingClient(props: BillingClientProps) {
         {/* Pending Business → Pro switch. Shown on Business workspaces
             after the user clicks "Schedule downgrade to Pro". Polar
             swaps the product at the period boundary; the webhook
-            clears scheduledDowngrade once the change lands. */}
-        {scheduledDowngrade === "pro" && props.currentPeriodEnd ? (
+            clears scheduledDowngrade once the change lands.
+            Only meaningful when planSource is a real subscription -
+            admin overrides never carry scheduled changes. */}
+        {scheduledDowngrade === "pro" && props.currentPeriodEnd && props.planSource === "subscription" ? (
           <div className="mt-5 pt-5 border-t border-line/50">
             <div className="flex items-start justify-between gap-3 flex-wrap">
               <div className="t-body text-slate-300">
@@ -378,11 +391,13 @@ export function BillingClient(props: BillingClientProps) {
           </div>
         ) : null}
 
-        {/* Scheduled downgrade to Free. Paid workspaces get a
-            self-service "downgrade to Free at the next renewal"
-            toggle. The subscription keeps working until period end,
-            then auto-cancels via Polar's cancelAtPeriodEnd. */}
-        {props.plan !== "free" && props.currentPeriodEnd ? (
+        {/* Scheduled downgrade to Free. Paid workspaces with a real
+            Polar subscription get a self-service "downgrade to Free
+            at the next renewal" toggle. The subscription keeps
+            working until period end, then auto-cancels via Polar's
+            cancelAtPeriodEnd. Admin-override workspaces hide this
+            row - there's no Polar sub to cancel. */}
+        {props.plan !== "free" && props.currentPeriodEnd && props.planSource === "subscription" ? (
           <div className="mt-5 pt-5 border-t border-line/50">
             {cancelScheduled ? (
               <div className="flex items-start justify-between gap-3 flex-wrap">
