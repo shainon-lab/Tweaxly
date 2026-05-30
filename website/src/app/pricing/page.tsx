@@ -61,14 +61,21 @@ export const metadata: Metadata = {
 
 type PlanKey = "free" | "pro" | "business";
 
-// One bullet line in a plan card. `value` is the part visually
-// emphasised so a user scanning across the three columns can see
-// how the tier scales (e.g. "1" / "Up to 3" / "Unlimited" for
-// workspaces). When omitted, the line renders as a plain check
-// bullet (used for binary features like "On-screen reports").
+// One bullet line in a plan card.
+//
+// `text` is the line as-rendered. Wrap any segment that should be
+// colour-highlighted (the part that DIFFERS from the other plans)
+// inside <em>…</em>. The renderer parses those markers and styles
+// the marked segments in brand purple. Lines whose value is the
+// same across all three plans should have NO <em> markers so the
+// highlight stays scoped to actual differences.
+//
+// `tooltip` shows on hover. Used to flesh out short bullet labels
+// without lengthening the card itself - the headline reads in two
+// seconds, the tooltip gives the operator-level detail.
 interface PlanBullet {
-  value?: string;
-  text:   string;
+  text:    string;
+  tooltip?: string;
 }
 
 // Bullets are split into three tiers so each card renders the same
@@ -103,20 +110,44 @@ interface Plan {
   highlight?: boolean;
 }
 
-// Shared paid-only bullets (Section 2). Pro and Executive both
-// include these. Members value differs per plan, so we override
-// that single line below; everything else is identical across the
-// two paid tiers and is defined once here to prevent drift.
+// Tooltip strings reused across plans. Defined once so Pro and
+// Executive show the SAME hover text for the same feature - keeps
+// the cards in sync as we evolve the copy.
+const TIP = {
+  workspace:     "A workspace is a single business. Each has its own data, signals, AI Credits and (on paid plans) team.",
+  credits:       "AI Credits meter every AI-powered action: 1 per consultation question, 3 per deep analysis, 5 per fresh forecast or scenario run.",
+  aiEngine:      "Standard is a lightweight tier so starter credits go further. Advanced is deeper analysis, longer reasoning and priority processing.",
+  dataSources:   "Upload as many files and as much historical data as you need. No caps on data ingestion, on any plan.",
+  signals:       "Tweaxly automatically surfaces the most important business observations from your data, ranked by impact.",
+  forecast:      "How far ahead Tweaxly projects revenue, expenses and cash position.",
+  reports:       "View every report inside the app. Paid plans add Excel / CSV / PDF export.",
+  teamPro:       "Pro adds the Viewer role. Viewers see everything but can't write. Only the Owner can upload data, manage sources, and use the advisor.",
+  teamExec:      "Executive adds the Admin role so an operations lead can manage day-to-day. Up to 5 invited members across Admin and Viewer.",
+  smartAlerts:   "Desktop push notifications + custom monitors for unusual changes detected in your data.",
+  customRange:   "Drill into any historical window, not just the preset ones.",
+  scenarios:     "Build multiple what-if scenarios (hires, cuts, price changes, marketing shifts) and compare them side by side.",
+  workforce:     "Model hires, cuts and contract changes; see the impact on cash and runway.",
+  export:        "Excel, CSV, PDF. Accountant-ready files; Executive adds white-label branding.",
+  buyCredits:    "Run out mid-cycle? Buy 30 / 50 / 100 / custom packs on demand. Credits add instantly.",
+  priorityAI:    "Faster responses and longer reasoning on the advanced AI tier.",
+  onboarding:    "1-on-1 setup session with the Tweaxly team to get your workspace and data sources wired right.",
+  shareInsights: "Secure read-only links for any AI analysis. 24h / 7d / 30d expiry, optional password, view analytics. Recipients don't need a Tweaxly account.",
+};
+
+// Section 2 (paid-only) features that are IDENTICAL on Pro and
+// Executive. No <em> markers because there's nothing differential
+// to highlight between the two paid tiers on these lines. The
+// team-members line lives on each plan separately because that's
+// the one paid-only entry that genuinely differs by tier.
 const PAID_ONLY_BASE: PlanBullet[] = [
-  { value: "Advanced",       text: "AI engine & faster responses"               },
-  { value: "Priority",       text: "AI processing"                              },
-  { value: "Real-Time",      text: "Business Alerts (desktop push + monitors)"   },
-  { value: "Custom",         text: "date ranges + historical windows"            },
-  { value: "Scenario Builder", text: "+ multi-scenario compare"                  },
-  { value: "Workforce Planning", text: "+ hire / cost modelling"                 },
-  { value: "Excel / CSV / PDF", text: "export (+ white-label)"                   },
-  { value: "Add-on credit packs", text: "available anytime"                      },
-  { value: "Dedicated",      text: "onboarding"                                  },
+  { text: "Smart alerts + Real-Time alerts",   tooltip: TIP.smartAlerts },
+  { text: "Custom date ranges",                tooltip: TIP.customRange },
+  { text: "Scenario Builder",                  tooltip: TIP.scenarios   },
+  { text: "Workforce Planning",                tooltip: TIP.workforce   },
+  { text: "Export (Excel / CSV / PDF)",        tooltip: TIP.export      },
+  { text: "Buy add-on credit packs",           tooltip: TIP.buyCredits  },
+  { text: "Priority AI processing",            tooltip: TIP.priorityAI  },
+  { text: "Dedicated onboarding",              tooltip: TIP.onboarding  },
 ];
 
 const PLANS: Plan[] = [
@@ -125,19 +156,24 @@ const PLANS: Plan[] = [
     name:     "Free",
     price:    "$0",
     period:   "forever",
-    tagline:  "Connect your business and experience AI-powered insights. Starter credits included.",
-    credits:  "30 starter AI Credits (one-time grant)",
-    // Free has only the universal (section 1) bullets - no paid-only,
-    // no Executive-only. Values are written for Free's tier so the
-    // user can scan across columns and see how the limits scale.
+    tagline:  "Connect your business and experience AI-powered insights.",
+    // <em>30</em> is highlighted because the number differs from
+    // Pro (100) and Executive (250). The cadence "(one-time)" also
+    // differs from "per cycle" but we keep the highlight scoped
+    // to the number so the eye lands on the comparable digit.
+    credits:  "<em>30</em> starter AI Credits (one-time)",
     bullets: {
       universal: [
-        { value: "1",          text: "workspace (owner only)"                       },
-        { value: "Unlimited",  text: "historical uploads + data sources"            },
-        { value: "Standard",   text: "AI engine"                                    },
-        { value: "Up to 3",    text: "active business signals (ranked by impact)"   },
-        { value: "3 months",   text: "forecast horizon"                             },
-        { text: "On-screen reports (no export)" },
+        { text: "<em>1</em> workspace",                 tooltip: TIP.workspace   },
+        { text: "<em>Standard</em> AI engine",          tooltip: TIP.aiEngine    },
+        // Data sources + history are Unlimited on every plan, so
+        // no <em> highlight - the line is informational, not
+        // differential.
+        { text: "Unlimited data sources + history",    tooltip: TIP.dataSources },
+        { text: "Up to <em>3</em> business signals",   tooltip: TIP.signals     },
+        { text: "<em>3 months</em> forecast horizon",  tooltip: TIP.forecast    },
+        // On-screen reports exist on every plan - no highlight.
+        { text: "On-screen reports",                    tooltip: TIP.reports     },
       ],
     },
     ctaLabel: "Start Free",
@@ -149,19 +185,21 @@ const PLANS: Plan[] = [
     name:      "Pro",
     price:     "$49",
     period:    "per month",
-    tagline:   "Unlock advanced AI, faster responses and team access for the working business.",
-    credits:   "100 AI Credits per billing cycle",
+    tagline:   "Advanced AI, real-time alerts and team access for the working business.",
+    credits:   "<em>100</em> AI Credits per cycle",
     bullets: {
       universal: [
-        { value: "Up to 3",    text: "workspaces"                                   },
-        { value: "Unlimited",  text: "historical uploads + data sources"            },
-        { value: "Advanced",   text: "AI engine"                                    },
-        { value: "Up to 6",    text: "active business signals + smart alerts"       },
-        { value: "Up to 60 months", text: "forecast horizon"                        },
-        { text: "On-screen reports + export" },
+        { text: "Up to <em>3</em> workspaces",          tooltip: TIP.workspace   },
+        { text: "<em>Advanced</em> AI engine",          tooltip: TIP.aiEngine    },
+        { text: "Unlimited data sources + history",    tooltip: TIP.dataSources },
+        { text: "Up to <em>6</em> business signals",   tooltip: TIP.signals     },
+        { text: "Up to <em>60 months</em> forecast",   tooltip: TIP.forecast    },
+        { text: "On-screen reports",                    tooltip: TIP.reports     },
       ],
       paidOnly: [
-        { value: "Owner + 2 Viewers", text: "team members" },
+        // Owner + 2 highlighted because both the count and role
+        // tier differ from Executive (5 + Admin).
+        { text: "Owner + <em>2 Viewers</em>",          tooltip: TIP.teamPro     },
         ...PAID_ONLY_BASE,
       ],
     },
@@ -177,30 +215,29 @@ const PLANS: Plan[] = [
     name:      "Executive",
     price:     "$89",
     period:    "per month",
-    // Positioned around collaboration + sharing, not credit numbers.
-    // The spec is explicit: "Should be positioned around:
-    // Collaboration, Team access, Multi-workspace management,
-    // Sharing, Scale. Not around credits alone."
     tagline:   "Built for teams, partnerships, accountants and multi-business operators.",
-    credits:   "250 AI Credits per billing cycle",
+    credits:   "<em>250</em> AI Credits per cycle",
     highlight: true,
     bullets: {
       universal: [
-        { value: "Unlimited",  text: "workspaces"                                   },
-        { value: "Unlimited",  text: "historical uploads + data sources"            },
-        { value: "Advanced",   text: "AI engine"                                    },
-        { value: "Up to 6",    text: "active business signals + smart alerts"       },
-        { value: "Up to 60 months", text: "forecast horizon"                        },
-        { text: "On-screen reports + export" },
+        { text: "<em>Unlimited</em> workspaces",       tooltip: TIP.workspace   },
+        { text: "<em>Advanced</em> AI engine",          tooltip: TIP.aiEngine    },
+        { text: "Unlimited data sources + history",    tooltip: TIP.dataSources },
+        { text: "Up to <em>6</em> business signals",   tooltip: TIP.signals     },
+        { text: "Up to <em>60 months</em> forecast",   tooltip: TIP.forecast    },
+        { text: "On-screen reports",                    tooltip: TIP.reports     },
       ],
       paidOnly: [
-        // Member count + role tier differ from Pro - override the
-        // first line, then reuse PAID_ONLY_BASE for everything else.
-        { value: "Owner + 5 (Admin + Viewer)", text: "team members" },
+        // Owner + 5 + Admin highlighted because both differ from
+        // Pro's "2 + Viewers" line.
+        { text: "Owner + <em>5</em> (<em>Admin + Viewer</em>)", tooltip: TIP.teamExec },
         ...PAID_ONLY_BASE,
       ],
       executiveOnly: [
-        { value: "Share Insights", text: "- secure read-only links for consultations, signals, forecasts and reports" },
+        // No <em> markers - this entire section is Executive-only
+        // already, so highlighting inside it would be noise. The
+        // tooltip carries the detail.
+        { text: "Share Insights", tooltip: TIP.shareInsights },
       ],
     },
     ctaLabel: "Upgrade to Executive",
@@ -523,16 +560,17 @@ function PlanCard({ plan }: { plan: Plan }) {
 
       <div className="mb-6 flex-1">
         {/* Credits line - kept above the bullet list because it's
-            the single most-asked-about number on every plan. */}
-        <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
-          <li className="flex gap-2">
-            <CheckGlyph />
-            <span>{plan.credits}</span>
-          </li>
-        </ul>
+            the single most-asked-about number on every plan. The
+            same renderer is used so the <em>NNN</em> highlight on
+            the credit number is consistent with the universal
+            bullets below. */}
+        <BulletSection
+          bullets={[{ text: plan.credits, tooltip: TIP.credits }]}
+        />
 
-        {/* Section 1 - universal features (every plan has these,
-            colour-coded so cross-column scanning shows tier scaling). */}
+        {/* Section 1 - universal features (every plan has them).
+            Values that differ across plans are wrapped in <em>…</em>
+            inside the bullet text and rendered in brand purple. */}
         <BulletSection bullets={plan.bullets.universal} />
 
         {/* Section 2 - paid-only (Pro + Executive). Skipped on Free. */}
@@ -571,12 +609,10 @@ function PlanCard({ plan }: { plan: Plan }) {
   );
 }
 
-// One section of bullets inside a PlanCard. Renders an optional
-// section header (used for the paid-only / Executive-only groups)
-// followed by the bullet list. Bullets with a `value` field get
-// that prefix coloured in the brand purple so a user scanning
-// across three columns can read the tier progression at a glance
-// (e.g. "1" / "Up to 3" / "Unlimited" for workspaces).
+// One section of bullets inside a PlanCard. Optional header
+// (used for the paid-only / Executive-only groups). Each bullet
+// can carry highlighted segments (wrapped in <em>…</em> in the
+// source string) and an optional tooltip shown on hover.
 function BulletSection({
   label,
   bullets,
@@ -594,20 +630,72 @@ function BulletSection({
       ) : null}
       <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
         {bullets.map((b, i) => (
-          <li key={i} className="flex gap-2">
-            <CheckGlyph />
-            <span>
-              {b.value ? (
-                <span className="text-brand-purple font-semibold">{b.value}</span>
-              ) : null}
-              {b.value && b.text ? " " : ""}
-              {b.text}
-            </span>
-          </li>
+          <BulletLine key={i} bullet={b} />
         ))}
       </ul>
     </div>
   );
+}
+
+// Renders a single bullet line. Parses <em>…</em> segments and
+// wraps them in the brand-purple highlight; renders the tooltip
+// (if any) in a CSS-only floating box that appears on hover via
+// the `group` / `group-hover` pattern. The dotted underline + help
+// cursor on lines that carry a tooltip cues the user to hover.
+function BulletLine({ bullet }: { bullet: PlanBullet }) {
+  const segments = parseHighlightedSegments(bullet.text);
+  const hasTooltip = !!bullet.tooltip;
+  return (
+    <li className="flex gap-2 group relative">
+      <CheckGlyph />
+      <span
+        className={
+          hasTooltip
+            ? "cursor-help decoration-dotted underline underline-offset-4 decoration-slate-600"
+            : undefined
+        }
+      >
+        {segments.map((seg, i) =>
+          seg.highlight ? (
+            <span key={i} className="text-brand-purple font-semibold">{seg.text}</span>
+          ) : (
+            <span key={i}>{seg.text}</span>
+          ),
+        )}
+      </span>
+      {hasTooltip ? (
+        <span
+          role="tooltip"
+          className={
+            "pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 " +
+            "transition duration-150 absolute z-20 left-0 top-full mt-1.5 " +
+            "max-w-xs w-max rounded-md border border-line bg-ink-900 px-3 py-2 " +
+            "text-[11px] leading-snug text-slate-300 shadow-lg shadow-black/40"
+          }
+        >
+          {bullet.tooltip}
+        </span>
+      ) : null}
+    </li>
+  );
+}
+
+// Splits a bullet's source string on <em>…</em> markers. Returns
+// alternating segments tagged with `highlight: false` for plain text
+// and `highlight: true` for the matched em content. Used so the
+// renderer can wrap highlighted segments in the brand-purple span
+// without using dangerouslySetInnerHTML.
+function parseHighlightedSegments(text: string): { text: string; highlight: boolean }[] {
+  const out: { text: string; highlight: boolean }[] = [];
+  // Capturing group inside split returns the matched groups
+  // interleaved with the surrounding text - even indices are plain,
+  // odd indices are the captured (highlighted) content.
+  const parts = text.split(/<em>(.*?)<\/em>/);
+  for (let i = 0; i < parts.length; i++) {
+    if (parts[i] === "") continue;
+    out.push({ text: parts[i], highlight: i % 2 === 1 });
+  }
+  return out;
 }
 
 function CheckGlyph() {
