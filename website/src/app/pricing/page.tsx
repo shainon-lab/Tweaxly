@@ -573,20 +573,18 @@ function PlanCard({ plan }: { plan: Plan }) {
             inside the bullet text and rendered in brand purple. */}
         <BulletSection bullets={plan.bullets.universal} />
 
-        {/* Section 2 - paid-only (Pro + Executive). Skipped on Free. */}
+        {/* Section 2 - paid-only (Pro + Executive). Skipped on Free.
+            No section label - the bullets flow continuously from the
+            universal section. */}
         {plan.bullets.paidOnly ? (
-          <BulletSection
-            label="Plus everything on paid plans"
-            bullets={plan.bullets.paidOnly}
-          />
+          <BulletSection bullets={plan.bullets.paidOnly} />
         ) : null}
 
-        {/* Section 3 - Executive-only. Skipped on Free and Pro. */}
+        {/* Section 3 - Executive-only. Skipped on Free and Pro.
+            No section label here either - the bullets flow
+            continuously. */}
         {plan.bullets.executiveOnly ? (
-          <BulletSection
-            label="Plus Executive only"
-            bullets={plan.bullets.executiveOnly}
-          />
+          <BulletSection bullets={plan.bullets.executiveOnly} />
         ) : null}
       </div>
 
@@ -649,11 +647,7 @@ function BulletLine({ bullet }: { bullet: PlanBullet }) {
     <li className="flex gap-2 group relative">
       <CheckGlyph />
       <span
-        className={
-          hasTooltip
-            ? "cursor-help decoration-dotted underline underline-offset-4 decoration-slate-600"
-            : undefined
-        }
+        className={hasTooltip ? "cursor-help" : undefined}
       >
         {segments.map((seg, i) =>
           seg.highlight ? (
