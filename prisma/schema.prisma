@@ -1167,6 +1167,13 @@ model Subscription {
   // - kept here so a redemption history persists even if the coupon row
   // is later disabled or deleted.
   appliedCouponCode      String?
+  // Grandfather flag for "Share Insights" (originally "shareAnalyses").
+  // The entitlement moved from Pro to Business when the Business tier
+  // launched; rather than yank the feature from existing paying Pro
+  // customers we stamp true on every Pro subscription that existed at
+  // flip-day. New Pro subs default to false. Checked inside
+  // hasFeature("shareAnalyses") - see src/lib/billing/entitlements.ts.
+  shareInsightsGrandfathered Boolean @default(false)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
 

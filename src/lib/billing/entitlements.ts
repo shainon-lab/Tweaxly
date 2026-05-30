@@ -105,13 +105,37 @@ export async function getPlanFor(businessId: string): Promise<PlanKey> {
 
 // Feature gate. Returns true when the effective plan grants the
 // feature AND the subscription isn't in read-only mode.
+//
+// Grandfather exception: `shareAnalyses` moved from Pro to Business
+// when the Business tier launched. Pro subscriptions that existed
+// at that moment are marked with Subscription.shareInsightsGrandfathered
+// and retain access. The check is feature-specific - we only honor
+// the flag for shareAnalyses, never for other features.
 export async function hasFeature(
   businessId: string,
   feature: keyof PlanFeatures,
 ): Promise<boolean> {
   const eff = await getEffectivePlan(businessId);
   if (eff.readOnly) return false;
-  return getPlanLimits(eff.plan).features[feature];
+  const baseGranted = getPlanLimits(eff.plan).features[feature];
+  if (baseGranted) return true;
+
+  // Grandfather check is a single targeted lookup, only when the
+  // feature is shareAnalyses AND the effective source is a Pro
+  // subscription (not an admin override, not a default-free fallback).
+  if (
+    feature === "shareAnalyses"
+    && eff.plan === "pro"
+    && eff.source === "subscription"
+    && eff.subscriptionId
+  ) {
+    const sub = await prisma.subscription.findUnique({
+      where:  { id: eff.subscriptionId },
+      select: { shareInsightsGrandfathered: true },
+    });
+    if (sub?.shareInsightsGrandfathered) return true;
+  }
+  return false;
 }
 
 // Quota lookup. Returns the static cap for the effective plan -

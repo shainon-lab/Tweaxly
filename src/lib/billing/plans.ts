@@ -4,20 +4,20 @@
 // and the admin UI all read from here - so changing a limit is a
 // one-line edit, not a sweep.
 
-export type PlanKey = "free" | "pro";
+export type PlanKey = "free" | "pro" | "business";
 
-export const PLAN_KEYS: readonly PlanKey[] = ["free", "pro"] as const;
+export const PLAN_KEYS: readonly PlanKey[] = ["free", "pro", "business"] as const;
 export function isPlanKey(v: unknown): v is PlanKey {
   return typeof v === "string" && (PLAN_KEYS as readonly string[]).includes(v);
 }
 
-// Legacy normalisation. The previous architecture had a third tier
-// ("business") that we collapsed into Pro - this helper maps any
-// stored "business" string on legacy Subscription / AdminPlanOverride
-// rows up to "pro" so the entitlements layer never sees a stale value.
-// Anything else unknown falls back to "free".
+// Plan-key normalisation. "business" is now a real tier - any legacy
+// "business" rows that pre-dated this change were migrated to "pro"
+// at flip-day (the production DB had zero such rows at the time),
+// so the only remaining job is to defend against unknown strings by
+// falling back to "free". Do NOT re-collapse "business" to "pro"
+// here - new paid Business subs need to round-trip cleanly.
 export function normalizePlan(raw: unknown): PlanKey {
-  if (raw === "business") return "pro";
   if (isPlanKey(raw)) return raw;
   return "free";
 }
@@ -109,13 +109,20 @@ export const PLANS: Plan[] = [
     label:      "Free",
     priceCents: 0,
     limits: {
-      // Workspaces are unlimited on every plan - the unit of
-      // subscription IS the workspace, so capping how many a user
-      // can have makes no sense. Premium gating is per workspace.
-      businesses:       "unlimited",
+      // Free is capped at 1 workspace. Existing accounts with more
+      // than one workspace at the time this cap was introduced are
+      // grandfathered - the cap is enforced on the create path only
+      // (src/app/api/businesses), so a Free user with 3 legacy
+      // workspaces keeps all 3 but cannot make a 4th. Premium
+      // gating is per workspace.
+      businesses:       1,
       members:          1,
-      dataSources:      1,
-      historyDays:      90,
+      // Free unbounds data sources + historical uploads per spec -
+      // the onboarding "upload 90 days" line is guidance, not a
+      // cap. Premium gating happens around AI features and
+      // collaboration, not around raw ingestion.
+      dataSources:      "unlimited",
+      historyDays:      "unlimited",
       signalsPerMonth:  3,
       forecastMonths:   3,
       maxNotificationRules: 1,
@@ -153,28 +160,25 @@ export const PLANS: Plan[] = [
     key:        "pro",
     label:      "Pro",
     priceCents: 4900,
-    // Pro is now the single premium tier. It absorbs every feature
-    // the previous Business plan had (team roles, audit logs, API
-    // access, advanced integrations) - the only scaling dimension
-    // above Pro is the AI Credit allowance, sold as packs from
-    // /settings/billing.
     limits: {
-      businesses:       "unlimited",
+      // Pro caps at 3 workspaces. Existing customers with more
+      // than 3 at the time this cap shipped are grandfathered -
+      // the cap is enforced on the create path only, so legacy
+      // accounts keep their workspaces but can't add new ones
+      // beyond 3.
+      businesses:       3,
       // Pro = workspace owner + up to 2 additional members = 3 total
       // active+pending records per workspace. Pending invitations
-      // count toward this cap so users can't pre-stage 50 invites to
-      // dodge the limit (the cap-check counts both BusinessMembership
-      // rows and pending BusinessInvitation rows). Future tier can
-      // raise this number without touching the entitlements wiring.
+      // count toward this cap so users can't pre-stage invites to
+      // dodge the limit. Member role on Pro is "viewer" only;
+      // "admin" is Business-tier.
       members:          3,
       dataSources:      "unlimited",
       historyDays:      "unlimited",
       signalsPerMonth:  "unlimited",
       // Forecast horizon caps at 60 months on Pro - matches the
       // promise on /pricing ("Long-horizon forecasting (6, 12, 24,
-      // 36, 60 months)"). Used to be "unlimited" but no UI surfaces
-      // a horizon beyond 60 anyway, so we made the entitlement layer
-      // and the pricing page agree.
+      // 36, 60 months)").
       forecastMonths:   60,
       maxNotificationRules: "unlimited",
       monthlyAICredits: 100,
@@ -193,18 +197,72 @@ export const PLANS: Plan[] = [
         yearlyReports:          true,
         multiBusiness:          true,
         multiUser:              true,
+        // Role model on Pro is Owner + Viewer (no Admin tier).
+        // teamRoles stays true because a two-role model is still
+        // role-based access, just a smaller set than Business.
         teamRoles:              true,
         advancedIntegrations:   true,
-        // apiAccess + auditLogs are intentionally OFF on Pro - the
-        // /pricing page doesn't list them, so the entitlements layer
-        // shouldn't either. They're declared on the PlanFeatures shape
-        // for forward compatibility (future tier or org plan) but no
-        // tier surfaces them today.
         apiAccess:              false,
         webhooks:               true,
         priorityAI:             true,
         auditLogs:              false,
         dedicatedOnboarding:    true,
+        // shareAnalyses moved from Pro to Business at flip-day.
+        // Pro subscriptions that existed at flip-day are
+        // grandfathered via Subscription.shareInsightsGrandfathered
+        // - the entitlements layer (hasFeature) OR's the flag in
+        // for shareAnalyses specifically.
+        shareAnalyses:          false,
+      },
+    },
+  },
+  {
+    key:        "business",
+    label:      "Business",
+    // $89/month. Positioned as the collaboration / multi-workspace
+    // / Share Insights tier - not "Pro with more credits". Pricing
+    // page copy leads with team + sharing, not credit numbers.
+    priceCents: 8900,
+    limits: {
+      businesses:       "unlimited",
+      // Owner + 5 invitees = 6 total. Pending invitations count
+      // toward the cap. Both Admin and Viewer roles are available
+      // (Pro only has Viewer).
+      members:          6,
+      dataSources:      "unlimited",
+      historyDays:      "unlimited",
+      signalsPerMonth:  "unlimited",
+      forecastMonths:   60,
+      maxNotificationRules: "unlimited",
+      // Business gets 250 credits per cycle (vs 100 on Pro). On
+      // mid-cycle upgrade from Pro we grant the +150 difference
+      // immediately - see the upgrade-credit logic in Phase B3.
+      monthlyAICredits: 250,
+      starterAICredits: 0,
+      features: {
+        smartAlerts:            true,
+        advancedInsights:       true,
+        contextualConsultation: true,
+        scenarioBuilder:        true,
+        multiScenarioCompare:   true,
+        workforcePlanning:      true,
+        exportExcel:            true,
+        exportCsv:              true,
+        exportPdf:              true,
+        whitelabelReports:      true,
+        yearlyReports:          true,
+        multiBusiness:          true,
+        multiUser:              true,
+        teamRoles:              true,
+        advancedIntegrations:   true,
+        apiAccess:              false,
+        webhooks:               true,
+        priorityAI:             true,
+        auditLogs:              false,
+        dedicatedOnboarding:    true,
+        // Share Insights (shareAnalyses) is the headline Business
+        // entitlement. Free + Pro see the upgrade card; Business
+        // unlocks the full sharing modal across every AI surface.
         shareAnalyses:          true,
       },
     },
