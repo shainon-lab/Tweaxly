@@ -12,16 +12,17 @@ import AdminSearch from "@/components/admin/AdminSearch";
 export const dynamic = "force-dynamic";
 
 const NAV: { href: string; label: string }[] = [
-  { href: "/admin",             label: "Overview" },
-  { href: "/admin/users",       label: "Users" },
-  { href: "/admin/accounts",    label: "Accounts" },
-  { href: "/admin/activity",    label: "Activity" },
-  { href: "/admin/billing",     label: "Billing" },
-  { href: "/admin/coupons",     label: "Coupons" },
-  { href: "/admin/support",     label: "Support" },
-  { href: "/admin/data-health", label: "Data health" },
-  { href: "/admin/system-logs", label: "System logs" },
-  { href: "/admin/settings",    label: "Settings" },
+  { href: "/admin",                  label: "Overview" },
+  { href: "/admin/users",            label: "Users" },
+  { href: "/admin/accounts",         label: "Accounts" },
+  { href: "/admin/activity",         label: "Activity" },
+  { href: "/admin/billing",          label: "Billing" },
+  { href: "/admin/coupons",          label: "Coupons" },
+  { href: "/admin/shared-analyses",  label: "Shared analyses" },
+  { href: "/admin/support",          label: "Support" },
+  { href: "/admin/data-health",      label: "Data health" },
+  { href: "/admin/system-logs",      label: "System logs" },
+  { href: "/admin/settings",         label: "Settings" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

@@ -161,6 +161,10 @@ export const FAQ_CATEGORIES: FaqCategory[] = [
         q: "What happens to my data if I leave Tweaxly?",
         a: "You can export everything - transactions, categories, reports, signal history, consultation history - as CSV or PDF at any time. There's no lock-in. If you delete your account, your data is removed from the active system and purged from backups within 30 days.",
       },
+      {
+        q: "Can I share an AI analysis with someone outside my workspace?",
+        a: "Yes. Pro users can generate secure read-only links for AI consultation answers, business signals, forecast explanations, and yearly insights. Recipients do not need a Tweaxly account - they open the link and see a snapshot of the analysis exactly as it was at share-time. Each link supports a 24-hour / 7-day / 30-day expiry, an optional password, and a real-time view counter. The snapshot is frozen at creation, so the recipient never sees workspace data that's changed since you shared - and you can revoke or delete any link at any time from Account → Shared Analyses.",
+      },
     ],
   },
 ];

@@ -107,6 +107,7 @@ const PLANS: Plan[] = [
       "Scenario Builder + multi-scenario compare",
       "Workforce Planning + hire/cost modelling",
       "Export to Excel, CSV, PDF (+ white-label)",
+      "Secure share links for AI consultations, signals, forecasts and insights",
     ],
     ctaLabel: "Start Pro Free",
     ctaHref:  SIGNUP_URL,
@@ -163,6 +164,15 @@ const MATRIX: MatrixGroup[] = [
       { dimension: "Excel / CSV export",   free: "—",  pro: "✓" },
       { dimension: "PDF export",           free: "—",  pro: "✓" },
       { dimension: "White-label reports",  free: "—",  pro: "✓" },
+    ],
+  },
+  {
+    label: "Sharing",
+    rows: [
+      { dimension: "Secure share links (consultations, signals, forecasts, insights)", free: "—", pro: "✓" },
+      { dimension: "Expiry control (24h / 7d / 30d)",                                   free: "—", pro: "✓" },
+      { dimension: "Optional password protection",                                      free: "—", pro: "✓" },
+      { dimension: "Per-link view analytics",                                           free: "—", pro: "✓" },
     ],
   },
   {

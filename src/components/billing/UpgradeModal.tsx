@@ -47,6 +47,7 @@ const DEFAULT_BENEFITS = [
   "Unlimited business signals + smart alerts",
   "Full forecasting + Scenario Builder",
   "Export to Excel, CSV, PDF",
+  "Secure share links for AI analyses (expiry + optional password)",
   "Multi-business, multi-user, team roles",
   "100 AI Credits / month - buy more anytime",
 ];
