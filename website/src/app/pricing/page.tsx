@@ -134,15 +134,27 @@ const PLANS: Plan[] = [
     tagline:   "Built for teams, partnerships, accountants and multi-business operators.",
     credits:   "250 AI Credits per billing cycle",
     highlight: true,
+    // Executive must visually read as the highest tier - so it lists
+    // every Pro entitlement explicitly PLUS its own four
+    // differentiators at the top of the list. Higher tier should
+    // never have fewer bullets than the tier below it.
     bullets: [
+      // Executive-only differentiators (lead with these).
       "Unlimited workspaces",
       "Up to 6 team members (Owner + Admin + Viewer roles)",
       "Share Insights - secure read-only links for consultations, signals, forecasts and reports",
+      "Dedicated onboarding",
+      // Everything in Pro, listed explicitly.
       "Buy add-on AI Credit packs anytime",
-      "Everything in Pro",
       "Advanced AI engine & faster responses",
       "Priority AI processing",
-      "Dedicated onboarding",
+      "Real-Time Business Alerts (desktop push + custom monitors)",
+      "Unlimited historical data + custom date ranges",
+      "Up to 6 active business signals + smart alerts",
+      "Long-horizon forecasting (6, 12, 24, 36, 60 months)",
+      "Scenario Builder + multi-scenario compare",
+      "Workforce Planning + hire/cost modelling",
+      "Export to Excel, CSV, PDF (+ white-label)",
     ],
     ctaLabel: "Upgrade to Executive",
     ctaHref:  SIGNUP_URL,

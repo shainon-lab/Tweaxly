@@ -199,7 +199,7 @@ export const CATEGORIES: FeatureCategory[] = [
     eyebrow:     "Business Profile & DNA",
     h2:          "Your Business DNA, Permanent Context for the AI",
     intro:
-      "A short profile of your business — industry, specific category, model, customers, stage, goals, KPIs — that Tweaxly captures once and reuses across every AI surface so the advisor, signals and forecasts reason about you, not a generic SMB.",
+      "A short profile of your business - industry, specific category, model, customers, stage, goals, KPIs - that Tweaxly captures once and reuses across every AI surface so the advisor, signals and forecasts reason about you, not a generic SMB.",
     visual: null,
     features: [
       {
@@ -501,7 +501,7 @@ export const CATEGORIES: FeatureCategory[] = [
         whyItMatters:
           "Email is too slow, dashboards are too passive. A native desktop notification on the moment a cash-flow risk or vendor anomaly is detected is the difference between catching it the same day and finding out next week.",
         useCase:
-          "On a Friday afternoon a forecast model flips negative for the following month. The owner gets a desktop notification within seconds: \"Cash flow warning — projected balance falls below your threshold in 38 days. Open Forecast.\" One click lands them on the relevant view.",
+          "On a Friday afternoon a forecast model flips negative for the following month. The owner gets a desktop notification within seconds: \"Cash flow warning - projected balance falls below your threshold in 38 days. Open Forecast.\" One click lands them on the relevant view.",
         faqs: [
           {
             q: "Are push notifications free?",
@@ -585,11 +585,11 @@ export const CATEGORIES: FeatureCategory[] = [
     eyebrow:     "Executive Plan",
     h2:          "Share Insights, Multi-Workspace and Team Roles",
     intro:
-      "The Executive plan ($89/mo) is the team-collaboration tier. Unlimited workspaces for multi-business operators, accountants and partners; up to six members per workspace with Admin + Viewer roles; and Share Insights — secure read-only links that put any AI analysis in front of someone outside the workspace, no Tweaxly account required.",
+      "The Executive plan ($89/mo) is the team-collaboration tier. Unlimited workspaces for multi-business operators, accountants and partners; up to six members per workspace with Admin + Viewer roles; and Share Insights - secure read-only links that put any AI analysis in front of someone outside the workspace, no Tweaxly account required.",
     visual: null,
     features: [
       {
-        name: "Share Insights — Secure Read-Only Links",
+        name: "Share Insights - Secure Read-Only Links",
         whatItDoes:
           "Generates a secure /share/<token> URL for any AI consultation answer, business signal, forecast explanation or yearly insight. The link snapshots the analysis at share-time, with 24h / 7d / 30d expiry, an optional password, and per-link view analytics.",
         whyItMatters:
@@ -614,14 +614,14 @@ export const CATEGORIES: FeatureCategory[] = [
       {
         name: "Unlimited Workspaces",
         whatItDoes:
-          "Owners on the Executive plan can create as many workspaces as they need — one per business, one per client, one per partnership. Each workspace has its own data, its own AI Credits and its own team.",
+          "Owners on the Executive plan can create as many workspaces as they need - one per business, one per client, one per partnership. Each workspace has its own data, its own AI Credits and its own team.",
         whyItMatters:
           "Multi-business operators, accountants serving multiple SMBs, and partnership owners can't fit their life into one workspace. Unlimited workspaces removes the cap and lets the structure match the reality.",
         useCase:
           "A fractional CFO running point on four SMB clients keeps each engagement in its own workspace - separate dashboards, separate signals, separate forecasts, separate team access - while paying for a single Executive subscription rather than four Pro accounts.",
       },
       {
-        name: "Team Roles — Owner + Admin + Viewer",
+        name: "Team Roles - Owner + Admin + Viewer",
         whatItDoes:
           "Up to six members per workspace, with three role tiers. Owner controls billing and ownership. Admin operates the workspace (uploads data, manages sources, uses the AI advisor, runs forecasts). Viewer reads everything but can't write anything.",
         whyItMatters:
