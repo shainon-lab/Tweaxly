@@ -27,6 +27,7 @@ import OrdersInvoicesSection from "@/components/billing/OrdersInvoicesSection";
 import LoadingBar from "@/components/LoadingBar";
 import PageHeader from "@/components/PageHeader";
 import AccountHelp from "@/components/AccountHelp";
+import SharedAnalysesPane from "./SharedAnalysesPane";
 import { Plus } from "lucide-react";
 import {
   readA11yWidgetEnabled,
@@ -38,6 +39,7 @@ import { notify } from "@/lib/notify";
 type AccountSubTab =
   | "workspaces"
   | "orders"
+  | "shared_analyses"
   | "password"
   | "preferences"
   | "comm_notifications"
@@ -69,6 +71,12 @@ export default function AccountClient({
     // now renders as a section inside the Orders & Invoices view -
     // the two are conceptually one "how you pay / what you paid" tab.
     { value: "orders",             label: "Orders & Invoices" },
+    // Shared Analyses sits right after Orders because both surfaces
+    // are "things you've produced from this account" — orders are
+    // your purchase history, shares are your outbound links.
+    // Workspace-scoped: the list reflects the currently active
+    // workspace, same as the create API.
+    { value: "shared_analyses",    label: "Shared Analyses" },
     { value: "password",           label: t("account.tab.password") },
     { value: "preferences",        label: t("account.tab.preferences") },
     // Merged from the previous separate "Notifications" and
@@ -120,6 +128,7 @@ export default function AccountClient({
           <PaymentMethodsPane />
         </div>
       ) : null}
+      {tab === "shared_analyses"   ? <SharedAnalysesPane /> : null}
       {tab === "password"          ? <PasswordPane user={user} /> : null}
       {tab === "preferences"       ? (
         <LanguagePreference
