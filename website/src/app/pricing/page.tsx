@@ -61,19 +61,63 @@ export const metadata: Metadata = {
 
 type PlanKey = "free" | "pro" | "business";
 
+// One bullet line in a plan card. `value` is the part visually
+// emphasised so a user scanning across the three columns can see
+// how the tier scales (e.g. "1" / "Up to 3" / "Unlimited" for
+// workspaces). When omitted, the line renders as a plain check
+// bullet (used for binary features like "On-screen reports").
+interface PlanBullet {
+  value?: string;
+  text:   string;
+}
+
+// Bullets are split into three tiers so each card renders the same
+// reading order:
+//   1. universal  - features available on EVERY plan (with the
+//                   value for THIS plan, colour-coded so the
+//                   tier scaling is scannable across columns)
+//   2. paidOnly   - features available on Pro AND Executive (the
+//                   "you have to pay" tier). Free omits this
+//                   section.
+//   3. executiveOnly - features available only on Executive. Pro
+//                      and Free both omit this section.
+// Higher tier always has the strict superset of sections shown -
+// Free has section 1, Pro has 1 + 2, Executive has 1 + 2 + 3.
+interface PlanBullets {
+  universal:      PlanBullet[];
+  paidOnly?:      PlanBullet[];
+  executiveOnly?: PlanBullet[];
+}
+
 interface Plan {
   key:        PlanKey;
   name:       string;
   price:      string;
   period:     string;
   tagline:    string;
-  bullets:    string[];
+  bullets:    PlanBullets;
   credits:    string;
   ctaLabel:   string;
   ctaHref:    string;
   ctaSub:     string;
   highlight?: boolean;
 }
+
+// Shared paid-only bullets (Section 2). Pro and Executive both
+// include these. Members value differs per plan, so we override
+// that single line below; everything else is identical across the
+// two paid tiers and is defined once here to prevent drift.
+const PAID_ONLY_BASE: PlanBullet[] = [
+  { value: "Advanced",       text: "AI engine & faster responses"               },
+  { value: "Priority",       text: "AI processing"                              },
+  { value: "Real-Time",      text: "Business Alerts (desktop push + monitors)"   },
+  { value: "Custom",         text: "date ranges + historical windows"            },
+  { value: "Scenario Builder", text: "+ multi-scenario compare"                  },
+  { value: "Workforce Planning", text: "+ hire / cost modelling"                 },
+  { value: "Excel / CSV / PDF", text: "export (+ white-label)"                   },
+  { value: "Add-on credit packs", text: "available anytime"                      },
+  { value: "Dedicated",      text: "onboarding"                                  },
+];
 
 const PLANS: Plan[] = [
   {
@@ -83,14 +127,19 @@ const PLANS: Plan[] = [
     period:   "forever",
     tagline:  "Connect your business and experience AI-powered insights. Starter credits included.",
     credits:  "30 starter AI Credits (one-time grant)",
-    bullets: [
-      "1 workspace (owner only)",
-      "Unlimited historical uploads + data sources",
-      "Standard AI engine",
-      "Up to 3 active business signals (ranked by impact)",
-      "Forecast up to 3 months ahead",
-      "On-screen reports (no export)",
-    ],
+    // Free has only the universal (section 1) bullets - no paid-only,
+    // no Executive-only. Values are written for Free's tier so the
+    // user can scan across columns and see how the limits scale.
+    bullets: {
+      universal: [
+        { value: "1",          text: "workspace (owner only)"                       },
+        { value: "Unlimited",  text: "historical uploads + data sources"            },
+        { value: "Standard",   text: "AI engine"                                    },
+        { value: "Up to 3",    text: "active business signals (ranked by impact)"   },
+        { value: "3 months",   text: "forecast horizon"                             },
+        { text: "On-screen reports (no export)" },
+      ],
+    },
     ctaLabel: "Start Free",
     ctaHref:  SIGNUP_URL,
     ctaSub:   "No credit card required",
@@ -102,19 +151,20 @@ const PLANS: Plan[] = [
     period:    "per month",
     tagline:   "Unlock advanced AI, faster responses and team access for the working business.",
     credits:   "100 AI Credits per billing cycle",
-    bullets: [
-      "Up to 3 workspaces",
-      "Owner + up to 2 team members (Viewer access)",
-      "Buy add-on AI Credit packs anytime",
-      "Advanced AI engine & faster responses",
-      "Real-Time Business Alerts (desktop push + custom monitors)",
-      "Unlimited historical data + custom date ranges",
-      "Up to 6 active business signals + smart alerts",
-      "Long-horizon forecasting (6, 12, 24, 36, 60 months)",
-      "Scenario Builder + multi-scenario compare",
-      "Workforce Planning + hire/cost modelling",
-      "Export to Excel, CSV, PDF (+ white-label)",
-    ],
+    bullets: {
+      universal: [
+        { value: "Up to 3",    text: "workspaces"                                   },
+        { value: "Unlimited",  text: "historical uploads + data sources"            },
+        { value: "Advanced",   text: "AI engine"                                    },
+        { value: "Up to 6",    text: "active business signals + smart alerts"       },
+        { value: "Up to 60 months", text: "forecast horizon"                        },
+        { text: "On-screen reports + export" },
+      ],
+      paidOnly: [
+        { value: "Owner + 2 Viewers", text: "team members" },
+        ...PAID_ONLY_BASE,
+      ],
+    },
     ctaLabel: "Upgrade to Pro",
     ctaHref:  SIGNUP_URL,
     ctaSub:   "Start free, upgrade when ready",
@@ -127,35 +177,32 @@ const PLANS: Plan[] = [
     name:      "Executive",
     price:     "$89",
     period:    "per month",
-    // Executive positioning leads with collaboration + sharing, not
-    // credit numbers. The spec is explicit: "Should be positioned
-    // around: Collaboration, Team access, Multi-workspace
-    // management, Sharing, Scale. Not around credits alone."
+    // Positioned around collaboration + sharing, not credit numbers.
+    // The spec is explicit: "Should be positioned around:
+    // Collaboration, Team access, Multi-workspace management,
+    // Sharing, Scale. Not around credits alone."
     tagline:   "Built for teams, partnerships, accountants and multi-business operators.",
     credits:   "250 AI Credits per billing cycle",
     highlight: true,
-    // Executive must visually read as the highest tier - so it lists
-    // every Pro entitlement explicitly PLUS its own four
-    // differentiators at the top of the list. Higher tier should
-    // never have fewer bullets than the tier below it.
-    bullets: [
-      // Executive-only differentiators (lead with these).
-      "Unlimited workspaces",
-      "Up to 6 team members (Owner + Admin + Viewer roles)",
-      "Share Insights - secure read-only links for consultations, signals, forecasts and reports",
-      "Dedicated onboarding",
-      // Everything in Pro, listed explicitly.
-      "Buy add-on AI Credit packs anytime",
-      "Advanced AI engine & faster responses",
-      "Priority AI processing",
-      "Real-Time Business Alerts (desktop push + custom monitors)",
-      "Unlimited historical data + custom date ranges",
-      "Up to 6 active business signals + smart alerts",
-      "Long-horizon forecasting (6, 12, 24, 36, 60 months)",
-      "Scenario Builder + multi-scenario compare",
-      "Workforce Planning + hire/cost modelling",
-      "Export to Excel, CSV, PDF (+ white-label)",
-    ],
+    bullets: {
+      universal: [
+        { value: "Unlimited",  text: "workspaces"                                   },
+        { value: "Unlimited",  text: "historical uploads + data sources"            },
+        { value: "Advanced",   text: "AI engine"                                    },
+        { value: "Up to 6",    text: "active business signals + smart alerts"       },
+        { value: "Up to 60 months", text: "forecast horizon"                        },
+        { text: "On-screen reports + export" },
+      ],
+      paidOnly: [
+        // Member count + role tier differ from Pro - override the
+        // first line, then reuse PAID_ONLY_BASE for everything else.
+        { value: "Owner + 5 (Admin + Viewer)", text: "team members" },
+        ...PAID_ONLY_BASE,
+      ],
+      executiveOnly: [
+        { value: "Share Insights", text: "- secure read-only links for consultations, signals, forecasts and reports" },
+      ],
+    },
     ctaLabel: "Upgrade to Executive",
     ctaHref:  SIGNUP_URL,
     ctaSub:   "Start free, upgrade when ready",
@@ -474,18 +521,36 @@ function PlanCard({ plan }: { plan: Plan }) {
         <p className="mt-3 text-sm text-slate-400 leading-relaxed">{plan.tagline}</p>
       </header>
 
-      <ul className="space-y-2 text-sm text-slate-300 leading-relaxed mb-6 flex-1">
-        <li className="flex gap-2">
-          <CheckGlyph />
-          <span>{plan.credits}</span>
-        </li>
-        {plan.bullets.map((b) => (
-          <li key={b} className="flex gap-2">
+      <div className="mb-6 flex-1">
+        {/* Credits line - kept above the bullet list because it's
+            the single most-asked-about number on every plan. */}
+        <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
+          <li className="flex gap-2">
             <CheckGlyph />
-            <span>{b}</span>
+            <span>{plan.credits}</span>
           </li>
-        ))}
-      </ul>
+        </ul>
+
+        {/* Section 1 - universal features (every plan has these,
+            colour-coded so cross-column scanning shows tier scaling). */}
+        <BulletSection bullets={plan.bullets.universal} />
+
+        {/* Section 2 - paid-only (Pro + Executive). Skipped on Free. */}
+        {plan.bullets.paidOnly ? (
+          <BulletSection
+            label="Plus everything on paid plans"
+            bullets={plan.bullets.paidOnly}
+          />
+        ) : null}
+
+        {/* Section 3 - Executive-only. Skipped on Free and Pro. */}
+        {plan.bullets.executiveOnly ? (
+          <BulletSection
+            label="Plus Executive only"
+            bullets={plan.bullets.executiveOnly}
+          />
+        ) : null}
+      </div>
 
       <div className="mt-auto">
         <a
@@ -503,6 +568,45 @@ function PlanCard({ plan }: { plan: Plan }) {
         </div>
       </div>
     </article>
+  );
+}
+
+// One section of bullets inside a PlanCard. Renders an optional
+// section header (used for the paid-only / Executive-only groups)
+// followed by the bullet list. Bullets with a `value` field get
+// that prefix coloured in the brand purple so a user scanning
+// across three columns can read the tier progression at a glance
+// (e.g. "1" / "Up to 3" / "Unlimited" for workspaces).
+function BulletSection({
+  label,
+  bullets,
+}: {
+  label?:   string;
+  bullets:  PlanBullet[];
+}) {
+  if (bullets.length === 0) return null;
+  return (
+    <div className="mt-4">
+      {label ? (
+        <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold mb-2">
+          {label}
+        </div>
+      ) : null}
+      <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
+        {bullets.map((b, i) => (
+          <li key={i} className="flex gap-2">
+            <CheckGlyph />
+            <span>
+              {b.value ? (
+                <span className="text-brand-purple font-semibold">{b.value}</span>
+              ) : null}
+              {b.value && b.text ? " " : ""}
+              {b.text}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
