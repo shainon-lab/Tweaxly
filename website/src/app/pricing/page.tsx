@@ -1,8 +1,9 @@
-// /pricing - 3-tier model (Free / Pro / Business). Free has a
+// /pricing - 3-tier model (Free / Pro / Executive). Free has a
 // one-time starter grant of AI Credits and a single workspace; Pro
 // is the working-business tier with renewing credits and a small
-// team; Business is the collaboration / multi-workspace tier with
-// Share Insights as the headline entitlement.
+// team; Executive (internal key still "business") is the
+// collaboration / multi-workspace tier with Share Insights as the
+// headline entitlement.
 //
 // Earlier history: simplified 2-tier model (Free / Pro) with AI Credits
 // Business) was collapsed into a single premium tier; everything
@@ -119,13 +120,16 @@ const PLANS: Plan[] = [
     ctaSub:   "Start free, upgrade when ready",
   },
   {
+    // Internal key stays "business" - aligned with the product app
+    // (Subscription.plan / Polar metadata.planId). User-facing
+    // label is "Executive".
     key:       "business",
-    name:      "Business",
+    name:      "Executive",
     price:     "$89",
     period:    "per month",
-    // Business positioning leads with collaboration + sharing, not
-    // credit numbers. The spec is explicit: "Business should be
-    // positioned around: Collaboration, Team access, Multi-workspace
+    // Executive positioning leads with collaboration + sharing, not
+    // credit numbers. The spec is explicit: "Should be positioned
+    // around: Collaboration, Team access, Multi-workspace
     // management, Sharing, Scale. Not around credits alone."
     tagline:   "Built for teams, partnerships, accountants and multi-business operators.",
     credits:   "250 AI Credits per billing cycle",
@@ -140,7 +144,7 @@ const PLANS: Plan[] = [
       "Priority AI processing",
       "Dedicated onboarding",
     ],
-    ctaLabel: "Upgrade to Business",
+    ctaLabel: "Upgrade to Executive",
     ctaHref:  SIGNUP_URL,
     ctaSub:   "Start free, upgrade when ready",
   },
@@ -199,7 +203,7 @@ const MATRIX: MatrixGroup[] = [
   {
     label: "Share Insights",
     rows: [
-      // Sharing is Business-only at launch. Grandfathered Pro
+      // Sharing is Executive-only at launch. Grandfathered Pro
       // subscribers (those who had Pro at the moment Business
       // shipped) retain their existing sharing entitlement - but
       // the public pricing page reflects the going-forward policy.
@@ -520,7 +524,7 @@ function FeatureMatrix() {
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line w-2/5">Capability</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Free</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Pro</th>
-              <th scope="col" className="px-5 py-4 font-semibold border-b border-line text-brand-purple">Business</th>
+              <th scope="col" className="px-5 py-4 font-semibold border-b border-line text-brand-purple">Executive</th>
             </tr>
           </thead>
           <tbody>

@@ -51,7 +51,7 @@ interface SubscriptionPanelProps {
 const PLAN_OPTIONS: { value: string; label: string }[] = [
   { value: "free",     label: "Free" },
   { value: "pro",      label: "Pro" },
-  { value: "business", label: "Business" },
+  { value: "business", label: "Executive" },
 ];
 
 const KIND_OPTIONS: { value: string; label: string; hint: string }[] = [

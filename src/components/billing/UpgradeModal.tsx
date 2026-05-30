@@ -40,7 +40,7 @@ interface UpgradeModalProps {
 const PLAN_LABEL: Record<string, string> = {
   free:     "Free",
   pro:      "Pro",
-  business: "Business",
+  business: "Executive",
 };
 
 // Bullets specific to each paid tier. Free upgrade modal shows both
@@ -243,12 +243,12 @@ export default function UpgradeModal({
               />
             ) : null}
             <PlanTile
-              name="Business"
+              name="Executive"
               price="$89"
               period="per month"
               tagline="Teams, partnerships, multi-business operators"
               bullets={businessBullets}
-              ctaLabel={busyPlan === "business" ? "Opening checkout…" : "Upgrade to Business"}
+              ctaLabel={busyPlan === "business" ? "Opening checkout…" : "Upgrade to Executive"}
               disabled={busy}
               onClick={() => startCheckout("business")}
               highlight

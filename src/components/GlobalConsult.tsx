@@ -242,7 +242,7 @@ function deriveViewMeta(pathname: string): ViewMeta {
       title: "Account",
       subtitle: "Billing, password, security, and account closure",
       prompts: [
-        "What's the difference between the Free, Pro and Business plans?",
+        "What's the difference between the Free, Pro and Executive plans?",
         "How should I think about security best practices for my account?",
         "What's the right cadence for reviewing my account settings?",
         "When does it make sense to upgrade from Free to Pro?",

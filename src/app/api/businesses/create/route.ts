@@ -43,8 +43,8 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       error:   "workspace_cap_reached",
       message: capStatus.plan === "free"
-        ? "Free workspaces are limited to 1. Upgrade to Pro for 3 workspaces or Business for unlimited."
-        : "Pro workspaces are limited to 3. Upgrade to Business for unlimited workspaces.",
+        ? "Free workspaces are limited to 1. Upgrade to Pro for 3 workspaces or Executive for unlimited."
+        : "Pro workspaces are limited to 3. Upgrade to Executive for unlimited workspaces.",
       plan:    capStatus.plan,
       cap:     capStatus.cap,
       owned:   capStatus.owned,

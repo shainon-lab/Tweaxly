@@ -65,7 +65,7 @@ interface BillingClientProps {
 const PLAN_LABEL: Record<string, string> = {
   free:     "Free",
   pro:      "Pro",
-  business: "Business",
+  business: "Executive",
 };
 
 const KIND_LABEL: Record<string, string> = {
@@ -324,7 +324,7 @@ export function BillingClient(props: BillingClientProps) {
                   disabled={changingTo !== null}
                   className="text-sm px-4 py-2 rounded-md border border-brand-purple/40 bg-brand-purple/15 text-brand-purple font-medium hover:bg-brand-purple/25 hover:border-brand-purple hover:text-white transition disabled:opacity-60"
                 >
-                  {changingTo === "business" ? "Upgrading…" : "Upgrade to Business"}
+                  {changingTo === "business" ? "Upgrading…" : "Upgrade to Executive"}
                 </button>
                 <button
                   type="button"
@@ -377,7 +377,7 @@ export function BillingClient(props: BillingClientProps) {
               <div className="t-body text-slate-300">
                 This workspace will switch to <strong>Pro</strong> on{" "}
                 <span className="text-slate-100 font-medium">{fmtDate(props.currentPeriodEnd)}</span>.
-                You&apos;ll keep Business access until then.
+                You&apos;ll keep Executive access until then.
               </div>
               <button
                 type="button"
@@ -385,7 +385,7 @@ export function BillingClient(props: BillingClientProps) {
                 disabled={changingTo !== null}
                 className="text-sm px-3 py-1.5 rounded-md border border-brand-purple/40 text-brand-purple hover:text-white hover:border-brand-purple transition disabled:opacity-60"
               >
-                {changingTo === "business" ? "Updating…" : "Keep Business"}
+                {changingTo === "business" ? "Updating…" : "Keep Executive"}
               </button>
             </div>
           </div>

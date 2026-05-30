@@ -217,8 +217,14 @@ export const PLANS: Plan[] = [
     },
   },
   {
+    // Internal key stays "business" - it's stored on existing
+    // Subscription / AdminPlanOverride rows and is the value the
+    // Polar metadata.planId carries. Renaming the key would force a
+    // DB migration and is unnecessary - only the user-facing label
+    // changed. See the comment on PlanKey in this file for the
+    // legacy-key naming policy.
     key:        "business",
-    label:      "Business",
+    label:      "Executive",
     // $89/month. Positioned as the collaboration / multi-workspace
     // / Share Insights tier - not "Pro with more credits". Pricing
     // page copy leads with team + sharing, not credit numbers.

@@ -55,7 +55,7 @@ export default function DownloadButton({
           type="button"
           onClick={() => setUpgradeOpen(true)}
           className="btn-primary text-sm inline-flex items-center gap-2"
-          title="Excel / CSV / PDF export is available on Pro and Business plans"
+          title="Excel / CSV / PDF export is available on Pro and Executive plans"
         >
           <LockGlyph />
           {lockedLabel}
@@ -67,7 +67,7 @@ export default function DownloadButton({
           benefits={[
             "Export every report to Excel, CSV, PDF",
             "Send accountant-ready files with one click",
-            "White-label exports (Business plan)",
+            "White-label exports (Executive plan)",
             "Plus everything else on Pro: full forecasting + Scenario Builder + unlimited signals",
           ]}
         />

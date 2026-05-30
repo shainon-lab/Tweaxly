@@ -54,7 +54,7 @@ export interface FeatureCategory {
 }
 
 // ─────────────────────────────────────────────────────────────────────
-// Six feature categories
+// Feature categories - rendered in order on the /features hub page
 // ─────────────────────────────────────────────────────────────────────
 
 export const CATEGORIES: FeatureCategory[] = [
@@ -575,6 +575,78 @@ export const CATEGORIES: FeatureCategory[] = [
           "Owners live on different surfaces. The architecture doesn't force a re-design every time a new channel becomes interesting.",
         useCase:
           "Today: desktop push + in-app. On the roadmap: same alerts arriving in your team's Slack channel or as a webhook into your own system.",
+      },
+    ],
+  },
+  {
+    id:          "collaboration-sharing",
+    subpageSlug: "business-signals",
+    navLabel:    "Collaboration & Sharing",
+    eyebrow:     "Executive Plan",
+    h2:          "Share Insights, Multi-Workspace and Team Roles",
+    intro:
+      "The Executive plan ($89/mo) is the team-collaboration tier. Unlimited workspaces for multi-business operators, accountants and partners; up to six members per workspace with Admin + Viewer roles; and Share Insights — secure read-only links that put any AI analysis in front of someone outside the workspace, no Tweaxly account required.",
+    visual: null,
+    features: [
+      {
+        name: "Share Insights — Secure Read-Only Links",
+        whatItDoes:
+          "Generates a secure /share/<token> URL for any AI consultation answer, business signal, forecast explanation or yearly insight. The link snapshots the analysis at share-time, with 24h / 7d / 30d expiry, an optional password, and per-link view analytics.",
+        whyItMatters:
+          "Screenshots lose formatting and copy-paste loses the chart context. A secure link puts the recipient in the exact view the owner saw, without giving them workspace data they shouldn't see.",
+        useCase:
+          "A growing services business shares the AI advisor's answer to \"can we hire safely now?\" with their accountant via a 7-day password-protected link. The accountant opens the link in a browser, reads the same anchored decision the owner saw, and replies with their own perspective - never needing a Tweaxly login.",
+        faqs: [
+          {
+            q: "Can the recipient edit anything?",
+            a: "No. The share page is strictly read-only. There's no login, no workspace access, no transaction visibility - just the snapshot of the specific analysis the sender chose to share.",
+          },
+          {
+            q: "Does the snapshot update if my data changes?",
+            a: "No. The snapshot is frozen at share-time. If your underlying numbers change next week, the share link still shows what was true the moment you generated it. That's intentional - it makes the link reference-able without surprise mutations.",
+          },
+          {
+            q: "Can I revoke a link?",
+            a: "Yes. Account → Shared Insights lists every link you've created. One click disables a link instantly (the page returns \"This shared analysis has expired\"), or you can delete it outright and remove the analytics.",
+          },
+        ],
+      },
+      {
+        name: "Unlimited Workspaces",
+        whatItDoes:
+          "Owners on the Executive plan can create as many workspaces as they need — one per business, one per client, one per partnership. Each workspace has its own data, its own AI Credits and its own team.",
+        whyItMatters:
+          "Multi-business operators, accountants serving multiple SMBs, and partnership owners can't fit their life into one workspace. Unlimited workspaces removes the cap and lets the structure match the reality.",
+        useCase:
+          "A fractional CFO running point on four SMB clients keeps each engagement in its own workspace - separate dashboards, separate signals, separate forecasts, separate team access - while paying for a single Executive subscription rather than four Pro accounts.",
+      },
+      {
+        name: "Team Roles — Owner + Admin + Viewer",
+        whatItDoes:
+          "Up to six members per workspace, with three role tiers. Owner controls billing and ownership. Admin operates the workspace (uploads data, manages sources, uses the AI advisor, runs forecasts). Viewer reads everything but can't write anything.",
+        whyItMatters:
+          "Real teams have different responsibilities. Pro is Owner + Viewer only - one person uploads, the rest read. Executive adds Admin so an operations lead or accountant can do the day-to-day work without the Owner having to share the billing seat.",
+        useCase:
+          "An SMB owner promotes their operations manager to Admin so they can manage the data pipeline + handle the weekly review with the AI advisor. The bookkeeper stays as Viewer. The Owner keeps billing, can't be removed by Admin, and decides who joins.",
+        faqs: [
+          {
+            q: "Can Admin remove the Owner?",
+            a: "Never. The Owner is protected by design - Admin can't remove, demote, replace, or delete the Owner. Only the Owner manages ownership transitions.",
+          },
+          {
+            q: "Can Admin manage billing?",
+            a: "No. Billing, payment methods, plan changes and subscription cancellation are Owner-only. Admin manages the operational workspace; the Owner manages the commercial relationship.",
+          },
+        ],
+      },
+      {
+        name: "250 AI Credits per Cycle + Buy More",
+        whatItDoes:
+          "Executive workspaces get 250 AI Credits at the start of every billing cycle. Run out mid-cycle? Add credit packs (30 / 50 / 100 / custom) on demand from Billing & Credits.",
+        whyItMatters:
+          "Teams use AI features more than solo owners. The Executive allowance is sized for collaborative use - multiple users running consultations, generating forecasts and analysing signals through the same workspace.",
+        useCase:
+          "On a multi-workspace Executive account, the team uses ~180 credits in the first three weeks of the cycle, then tops up with a 50-credit pack to comfortably finish month-end planning - no scrambling to upgrade tiers mid-flow.",
       },
     ],
   },

@@ -16,7 +16,7 @@ import { hasFeature } from "@/lib/billing";
 class ScenarioBuilderLockedError extends Error {
   code = "scenario_builder_locked";
   constructor() {
-    super("Scenario Builder is available on Pro and Business plans. Upgrade to keep customising forecasts.");
+    super("Scenario Builder is available on Pro and Executive plans. Upgrade to keep customising forecasts.");
     this.name = "ScenarioBuilderLockedError";
   }
 }

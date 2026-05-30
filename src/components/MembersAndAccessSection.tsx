@@ -147,7 +147,7 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
     if (!isPaid) {
       setNotice({
         title: "Upgrade to invite team members",
-        body:  "Free workspaces have a single owner. Upgrade this workspace to Pro for up to 3 team members (Viewer role), or to Business for up to 6 (Admin + Viewer).",
+        body:  "Free workspaces have a single owner. Upgrade this workspace to Pro for up to 3 team members (Viewer role), or to Executive for up to 6 (Admin + Viewer).",
       });
       return;
     }
@@ -155,7 +155,7 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
       if (isPro) {
         setNotice({
           title: "All Pro seats are used",
-          body:  `You've filled all ${capLabel} seats on the Pro plan. Upgrade to Business for up to 6 team members with Admin + Viewer roles, or remove a member / cancel a pending invitation to free a seat.`,
+          body:  `You've filled all ${capLabel} seats on the Pro plan. Upgrade to Executive for up to 6 team members with Admin + Viewer roles, or remove a member / cancel a pending invitation to free a seat.`,
         });
       } else {
         setNotice({
@@ -210,7 +210,7 @@ export default function MembersAndAccessSection({ businessId }: { businessId: st
           <div className="text-xs text-slate-400 leading-relaxed">
             {isPaid
               ? <>This workspace supports up to <strong className="text-slate-100">{data.cap}</strong> members total - owner + invitations + active members all count toward the cap.</>
-              : <>Free workspaces have a single owner. Upgrade to Pro for up to <strong className="text-slate-100">3</strong> team members, or to Business for up to <strong className="text-slate-100">6</strong>.</>}
+              : <>Free workspaces have a single owner. Upgrade to Pro for up to <strong className="text-slate-100">3</strong> team members, or to Executive for up to <strong className="text-slate-100">6</strong>.</>}
           </div>
         </div>
         {isOwner ? (

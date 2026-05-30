@@ -93,7 +93,7 @@ export default function LockedOverlay({
                 {feature} is a Pro feature
               </h2>
               <p className="mt-3 t-body text-slate-300">
-                {blurb ?? "Available on Pro and Business plans. Free workspaces see this layout as a preview - upgrade to unlock it for everyone on the workspace."}
+                {blurb ?? "Available on Pro and Executive plans. Free workspaces see this layout as a preview - upgrade to unlock it for everyone on the workspace."}
               </p>
               <div className="mt-5 flex items-center gap-3 flex-wrap">
                 <button

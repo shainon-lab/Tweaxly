@@ -333,7 +333,7 @@ function UpgradeCard({
   // Share Insights is a Business-tier entitlement. Free and Pro both
   // land on the same upgrade card; only the CTA wording differs so
   // the path from the user's current plan is explicit.
-  const ctaLabel = currentPlan === "pro" ? "Upgrade to Business" : "See plans";
+  const ctaLabel = currentPlan === "pro" ? "Upgrade to Executive" : "See plans";
   return (
     <>
       <div className="flex items-start gap-3 mb-4">
@@ -341,7 +341,7 @@ function UpgradeCard({
           <Lock size={18} strokeWidth={1.5} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="t-section text-slate-100">Share Insights is a Business feature</div>
+          <div className="t-section text-slate-100">Share Insights is an Executive feature</div>
           <div className="t-body text-slate-400 mt-1">
             Upgrade to share AI consultations, signals, forecasts and
             insights with anyone - no Tweaxly account required.

@@ -466,7 +466,7 @@ function FreeformConsultation({
 const PLAN_LABEL: Record<string, string> = {
   free:     "Free",
   pro:      "Pro",
-  business: "Business",
+  business: "Executive",
 };
 
 function CreditsWidget({

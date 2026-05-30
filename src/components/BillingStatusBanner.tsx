@@ -20,7 +20,7 @@ interface BillingStatusBannerProps {
 }
 
 const PLAN_LABEL: Record<string, string> = {
-  free: "Free", pro: "Pro", business: "Business",
+  free: "Free", pro: "Pro", business: "Executive",
 };
 
 export default function BillingStatusBanner({ readOnly, plan, balance }: BillingStatusBannerProps) {
