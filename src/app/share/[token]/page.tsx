@@ -44,17 +44,26 @@ export default async function SharePage({
       isActive:        true,
       createdAt:       true,
       firstViewedAt:   true,
+      // Workspace name shown prominently in the header so the
+      // recipient always knows which business this analysis came
+      // from before scanning the content. Read live from the FK -
+      // if the workspace was renamed after share-time we surface
+      // the current name, which matches how recipients usually
+      // expect "where did this come from" to behave (post the
+      // most recent identity, not a frozen one).
+      business:        { select: { name: true } },
     },
   });
 
   if (!row) {
     return <ShareShell><NotFoundScreen /></ShareShell>;
   }
+  const workspaceName = row.business?.name ?? null;
   const expired  = row.expiresAt.getTime() < Date.now();
   const disabled = !row.isActive;
   if (expired || disabled) {
     return (
-      <ShareShell>
+      <ShareShell workspaceName={workspaceName}>
         <ExpiredScreen expiresAt={row.expiresAt.toISOString()} />
       </ShareShell>
     );
@@ -62,7 +71,7 @@ export default async function SharePage({
 
   if (row.passwordHash) {
     return (
-      <ShareShell>
+      <ShareShell workspaceName={workspaceName}>
         <PasswordGate
           token={token}
           sourceType={row.sourceType}
@@ -87,7 +96,7 @@ export default async function SharePage({
   });
 
   return (
-    <ShareShell>
+    <ShareShell workspaceName={workspaceName}>
       <SharedAnalysisRenderer
         sourceType={row.sourceType}
         snapshotContent={row.snapshotContent as Record<string, unknown>}
@@ -102,8 +111,16 @@ export default async function SharePage({
 // Page-level chrome reused across every state (not-found, expired,
 // locked, rendered). Keeps the header / footer identical so the
 // recipient always sees the same brand bar regardless of which
-// state they hit.
-function ShareShell({ children }: { children: React.ReactNode }) {
+// state they hit. `workspaceName` renders prominently on the right
+// of the top bar so the recipient always knows which business the
+// analysis is from before they scan the content.
+function ShareShell({
+  workspaceName,
+  children,
+}: {
+  workspaceName?: string | null;
+  children: React.ReactNode;
+}) {
   return (
     <div className="min-h-screen flex flex-col bg-brand-navy">
       <header className="border-b border-line bg-ink-900/40">
@@ -111,8 +128,15 @@ function ShareShell({ children }: { children: React.ReactNode }) {
           <Link href="/" aria-label="Tweaxly home" className="inline-block">
             <Logo size="sm" />
           </Link>
-          <div className="t-meta uppercase tracking-[0.22em] text-slate-400 font-semibold">
-            Shared Business Analysis
+          <div className="text-right min-w-0">
+            {workspaceName ? (
+              <div className="t-section text-slate-100 leading-tight tracking-tight truncate max-w-[60vw]">
+                {workspaceName}
+              </div>
+            ) : null}
+            <div className="t-meta uppercase tracking-[0.22em] text-slate-400 font-semibold mt-1">
+              Shared Business Analysis
+            </div>
           </div>
         </div>
       </header>
