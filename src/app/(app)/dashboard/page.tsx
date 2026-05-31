@@ -528,8 +528,11 @@ export default async function DashboardPage({
               }}
             />
             )}
-          </div>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {/* Rows 2 and 3 of the breakdown KPIs share one grid so
+                hidden tiles (zero-value / no-data ones) auto-pack -
+                a remaining tile flows into the next free slot instead
+                of leaving a gap. Without this merge each hidden tile
+                would leave dead space on its own row of 4. */}
             {(current.fees !== 0 || (comparing && prev.fees !== 0)) && (
             <Stat
               label="Processing fees"
