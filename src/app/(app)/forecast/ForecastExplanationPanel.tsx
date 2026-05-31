@@ -53,6 +53,7 @@ export default function ForecastExplanationPanel({
   canShareAnalyses = false,
   currentPlan = "free",
   sourceId,
+  kpiSlot,
 }: {
   result: ForecastResult;
   currency: string;
@@ -65,6 +66,12 @@ export default function ForecastExplanationPanel({
   // SharedAnalysis.sourceId for back-tracing; defaults to a synthesised
   // string when the caller doesn't have one handy.
   sourceId?: string;
+  // Optional KPI block (Projected Revenue / Expenses / Net Profit /
+  // Avg Monthly Net) rendered at the bottom of the panel - the
+  // numerical complement to the qualitative "why" drivers above.
+  // Receives a ReactNode so the parent owns the layout grid and the
+  // data wiring.
+  kpiSlot?: React.ReactNode;
 }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
 
@@ -76,81 +83,55 @@ export default function ForecastExplanationPanel({
   const drivers = [...buildDrivers(result)]
     .sort((a, b) => TONE_RANK[a.impact] - TONE_RANK[b.impact]);
 
-  const confidencePct = result.confidenceScore;
-  const confTone: Tone = result.confidence === "high"   ? "positive"
-                       : result.confidence === "medium" ? "neutral"
-                       :                                  "warning";
-
-  const volatility = volatilityLabel(result);
-  const recurringCount = result.recurringDetected.length;
-
-  // Compact "based on" line - same four data points the old verbose
-  // confidence chip listed, now joined into one wrapping inline.
-  const basedOn = [
-    `${result.baselinePeriod.monthsWithData}/${result.baselinePeriod.monthsResolved} months`,
-    `${volatility.toLowerCase()} volatility`,
-    result.seasonalityApplied ? "seasonal pattern applied" : "no seasonal pattern",
-    recurringCount > 0
-      ? `${recurringCount} recurring item${recurringCount === 1 ? "" : "s"}`
-      : "no recurring items",
-  ].join(" · ");
+  // basedOn is still needed for the share snapshot payload (the
+  // public renderer reads it from the snapshot to redraw the
+  // confidence chip on the shared page).
+  const { basedOn } = buildConfidenceMeta(result);
 
   return (
     <div className="card mb-6">
-      {/* ─── Single-line header: title + inline confidence chip ───
-          Title, score and based-on facts share ONE row. No subtitle,
-          no stacked elements - removes the vertical dead space the
-          old layout left between the title block and the (then-tall)
-          confidence chip on wide screens. */}
+      {/* ─── Header row: title on the left, Share button alone on the
+          right. The confidence chip used to sit here too but now
+          lives in the readiness banner above (both are "how
+          trustworthy is this forecast" signals - belong together).
+          The Share button is the only top-right control left, so it
+          naturally anchors that corner. */}
       <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
         <div className="t-section text-slate-100 shrink-0">Why this forecast?</div>
-        <div className="flex items-center gap-3 shrink-0">
-          {/* Share the structured explanation as a secure read-only
-              link. Snapshot mirrors the ForecastResult fields the
-              public renderer needs to redraw this panel - the engine
-              narrative, drivers, baseline range, confidence, recurring
-              items, outliers, seasonality note and warnings. */}
-          <ShareAnalysisButton
-            sourceType="forecast_explanation"
-            sourceId={sourceId ?? `forecast:${result.baselinePeriod.fromYM}:${result.baselinePeriod.toYM}:h${result.forecastHorizon.months}`}
-            snapshotContent={{
-              title:              `Forecast - next ${result.forecastHorizon.months} months`,
-              confidence:         result.confidence,
-              confidenceScore:    result.confidenceScore,
-              baselinePeriod:     result.baselinePeriod,
-              forecastHorizon:    result.forecastHorizon,
-              actualsUsed:        result.actualsUsed,
-              scenariosApplied:   result.scenariosApplied,
-              explanationText:    result.explanationText,
-              drivers,
-              recurringDetected:  result.recurringDetected,
-              outliersDetected:   result.outliersDetected,
-              excludedRecords:    result.excludedRecords,
-              seasonalityApplied: result.seasonalityApplied,
-              seasonalityNote:    result.seasonalityNote,
-              warnings:           result.warnings,
-              basedOn,
-            }}
-            snapshotMeta={{
-              title: `Forecast explanation - next ${result.forecastHorizon.months} months`,
-              currency,
-              generatedAt: new Date().toISOString(),
-            }}
-            canShare={canShareAnalyses}
-            currentPlan={currentPlan}
-          />
-          <div className="flex items-center gap-3 rounded-md border border-line bg-ink-900/50 px-3 py-1.5">
-            <div className="text-right">
-              <div className="t-meta uppercase tracking-wide text-slate-500 leading-tight">Confidence</div>
-              <div className={`t-section font-bold leading-tight ${TONE_TEXT[confTone]}`}>
-                {confidencePct}%
-              </div>
-            </div>
-            <div className="t-meta text-slate-400 leading-snug max-w-[220px]">
-              {basedOn}
-            </div>
-          </div>
-        </div>
+        {/* Share the structured explanation as a secure read-only
+            link. Snapshot mirrors the ForecastResult fields the
+            public renderer needs to redraw this panel - the engine
+            narrative, drivers, baseline range, confidence, recurring
+            items, outliers, seasonality note and warnings. */}
+        <ShareAnalysisButton
+          sourceType="forecast_explanation"
+          sourceId={sourceId ?? `forecast:${result.baselinePeriod.fromYM}:${result.baselinePeriod.toYM}:h${result.forecastHorizon.months}`}
+          snapshotContent={{
+            title:              `Forecast - next ${result.forecastHorizon.months} months`,
+            confidence:         result.confidence,
+            confidenceScore:    result.confidenceScore,
+            baselinePeriod:     result.baselinePeriod,
+            forecastHorizon:    result.forecastHorizon,
+            actualsUsed:        result.actualsUsed,
+            scenariosApplied:   result.scenariosApplied,
+            explanationText:    result.explanationText,
+            drivers,
+            recurringDetected:  result.recurringDetected,
+            outliersDetected:   result.outliersDetected,
+            excludedRecords:    result.excludedRecords,
+            seasonalityApplied: result.seasonalityApplied,
+            seasonalityNote:    result.seasonalityNote,
+            warnings:           result.warnings,
+            basedOn,
+          }}
+          snapshotMeta={{
+            title: `Forecast explanation - next ${result.forecastHorizon.months} months`,
+            currency,
+            generatedAt: new Date().toISOString(),
+          }}
+          canShare={canShareAnalyses}
+          currentPlan={currentPlan}
+        />
       </div>
 
       {/* ─── Driver cards (sorted by impact: warning → positive →
@@ -249,20 +230,41 @@ export default function ForecastExplanationPanel({
         ) : null}
       </div>
 
-      {/* Warnings always rendered (outside Layer 3) because they're
-          risks the user should see without an extra click. Bumped
-          from meta (13px) to body (16px) per the typography standard
-          - warnings are analytical text, not labels. */}
-      {result.warnings.length > 0 ? (
-        <div className="mt-4 rounded-md border border-warn/30 bg-warn/10 p-4">
-          <div className="t-meta uppercase tracking-wide text-warn mb-2">Warnings</div>
-          <ul className="t-body text-slate-200 space-y-1.5">
-            {result.warnings.map((w, i) => <li key={i}>• {w}</li>)}
-          </ul>
-        </div>
-      ) : null}
+      {/* KPI slot - the projected revenue / expenses / net-profit /
+          monthly-net tiles. The numerical bottom-line that pairs
+          with the qualitative drivers and detailed analysis above.
+          Parent owns the JSX so it can wire in `summary` / `view` /
+          baseline-compare props without re-piping them through here.
+          Warnings used to sit in this spot but are now rendered
+          OUTSIDE the panel by the caller - they're risks, not part
+          of "why this forecast". */}
+      {kpiSlot ? <div className="mt-5">{kpiSlot}</div> : null}
     </div>
   );
+}
+
+// Exported so the readiness banner can render the confidence chip
+// (the chip was moved out of the panel header into the banner so
+// both forecast-quality signals live together).
+export function buildConfidenceMeta(result: ForecastResult): {
+  pct: number;
+  toneClass: string;
+  basedOn: string;
+} {
+  const confTone: Tone = result.confidence === "high"   ? "positive"
+                       : result.confidence === "medium" ? "neutral"
+                       :                                  "warning";
+  const volatility = volatilityLabel(result);
+  const recurringCount = result.recurringDetected.length;
+  const basedOn = [
+    `${result.baselinePeriod.monthsWithData}/${result.baselinePeriod.monthsResolved} months`,
+    `${volatility.toLowerCase()} volatility`,
+    result.seasonalityApplied ? "seasonal pattern applied" : "no seasonal pattern",
+    recurringCount > 0
+      ? `${recurringCount} recurring item${recurringCount === 1 ? "" : "s"}`
+      : "no recurring items",
+  ].join(" · ");
+  return { pct: result.confidenceScore, toneClass: TONE_TEXT[confTone], basedOn };
 }
 
 function Row({ label, value }: { label: string; value: string }) {

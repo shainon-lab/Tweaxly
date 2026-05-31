@@ -36,7 +36,7 @@ import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/wo
 import { hasFeature, getPlanFor, getQuota } from "@/lib/billing";
 import LockedOverlay from "@/components/billing/LockedOverlay";
 import ForecastReadinessBanner from "./ForecastReadinessBanner";
-import ForecastExplanationPanel from "./ForecastExplanationPanel";
+import ForecastExplanationPanel, { buildConfidenceMeta } from "./ForecastExplanationPanel";
 import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
 import { type RosterMember } from "./ScenarioBuilder";
@@ -297,13 +297,80 @@ export default async function ForecastPage({
         </div>
       ) : (
         <>
-          <ForecastReadinessBanner readiness={readiness} />
+          <ForecastReadinessBanner
+            readiness={readiness}
+            confidence={buildConfidenceMeta(engineResult)}
+          />
           <ForecastExplanationPanel
             result={engineResult}
             currency={ccy}
             canShareAnalyses={canShareAnalyses}
             currentPlan={currentPlan}
+            kpiSlot={
+              // KPI tiles live inside the panel now (used to be the
+              // 4-up grid below). On Overview `effectiveAssumptions`
+              // is empty, so `summary.scenarioRevenueTotal` etc.
+              // equal the baseline totals and the 'baseline:' /
+              // 'vs baseline' subtext folds back to the same number -
+              // Overview reads clean.
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="card-tight">
+                  <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
+                  <div className="mt-2 text-xl font-semibold text-good">
+                    +{fmtMoney(summary.scenarioRevenueTotal, ccy)}
+                  </div>
+                  {view === "scenarios" ? (
+                    <div className="text-xs text-slate-400 mt-1">
+                      baseline: +{fmtMoney(summary.baselineRevenueTotal, ccy)}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="card-tight">
+                  <div className="text-xs uppercase tracking-wide text-slate-400">Projected expenses</div>
+                  <div className="mt-2 text-xl font-semibold text-bad">
+                    −{fmtMoney(summary.scenarioExpensesTotal, ccy)}
+                  </div>
+                  {view === "scenarios" ? (
+                    <div className="text-xs text-slate-400 mt-1">
+                      baseline: −{fmtMoney(summary.baselineExpensesTotal, ccy)}
+                    </div>
+                  ) : null}
+                </div>
+                <div className="card-tight">
+                  <div className="text-xs uppercase tracking-wide text-slate-400">Projected net profit</div>
+                  <div className={`mt-2 text-xl font-semibold ${summary.scenarioNetTotal >= 0 ? "text-good" : "text-bad"}`}>
+                    {fmtMoney(summary.scenarioNetTotal, ccy)}
+                  </div>
+                  {view === "scenarios" ? (
+                    <div className={`text-xs mt-1 ${baselineNetDelta >= 0 ? "text-good" : "text-bad"}`}>
+                      {baselineNetDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(baselineNetDelta), ccy)} vs baseline
+                    </div>
+                  ) : null}
+                </div>
+                <div className="card-tight">
+                  <div className="text-xs uppercase tracking-wide text-slate-400">Avg monthly net</div>
+                  <div className={`mt-2 text-xl font-semibold ${summary.scenarioAvgMonthlyNet >= 0 ? "text-good" : "text-bad"}`}>
+                    {fmtMoney(summary.scenarioAvgMonthlyNet, ccy)}
+                  </div>
+                  <div className="text-xs text-slate-400 mt-1">
+                    {summary.scenarioAvgMonthlyNet >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
+                  </div>
+                </div>
+              </div>
+            }
           />
+          {/* Warnings rendered outside the explanation panel now -
+              they're risks that warrant their own visual weight,
+              not part of "why this forecast". Same styling as
+              before, just lifted up to the parent. */}
+          {engineResult.warnings.length > 0 ? (
+            <div className="mb-6 rounded-md border border-warn/30 bg-warn/10 p-4">
+              <div className="t-meta uppercase tracking-wide text-warn mb-2">Warnings</div>
+              <ul className="t-body text-slate-200 space-y-1.5">
+                {engineResult.warnings.map((w, i) => <li key={i}>• {w}</li>)}
+              </ul>
+            </div>
+          ) : null}
         </>
       )}
 
@@ -348,58 +415,12 @@ export default async function ForecastPage({
         </>
       ) : null}
 
-      {/* Forecast body - KPI cards, insights, chart, table. The
-          Scenarios empty + locked states are intercepted upstream
-          (scenariosBare short-circuit), so this section only runs
-          for Overview or for Scenarios with active assumptions. */}
-      {/* KPI tiles. On Overview `effectiveAssumptions` is empty, so
-          `summary.scenarioRevenueTotal` etc. equal the baseline
-          totals and the 'baseline:' / 'vs baseline' subtext folds
-          back to the same number - Overview reads clean. */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-        <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Projected revenue</div>
-          <div className="mt-2 text-xl font-semibold text-good">
-            +{fmtMoney(summary.scenarioRevenueTotal, ccy)}
-          </div>
-          {view === "scenarios" ? (
-            <div className="text-xs text-slate-400 mt-1">
-              baseline: +{fmtMoney(summary.baselineRevenueTotal, ccy)}
-            </div>
-          ) : null}
-        </div>
-        <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Projected expenses</div>
-          <div className="mt-2 text-xl font-semibold text-bad">
-            −{fmtMoney(summary.scenarioExpensesTotal, ccy)}
-          </div>
-          {view === "scenarios" ? (
-            <div className="text-xs text-slate-400 mt-1">
-              baseline: −{fmtMoney(summary.baselineExpensesTotal, ccy)}
-            </div>
-          ) : null}
-        </div>
-        <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Projected net profit</div>
-          <div className={`mt-2 text-xl font-semibold ${summary.scenarioNetTotal >= 0 ? "text-good" : "text-bad"}`}>
-            {fmtMoney(summary.scenarioNetTotal, ccy)}
-          </div>
-          {view === "scenarios" ? (
-            <div className={`text-xs mt-1 ${baselineNetDelta >= 0 ? "text-good" : "text-bad"}`}>
-              {baselineNetDelta >= 0 ? "+" : "−"}{fmtMoney(Math.abs(baselineNetDelta), ccy)} vs baseline
-            </div>
-          ) : null}
-        </div>
-        <div className="card-tight">
-          <div className="text-xs uppercase tracking-wide text-slate-400">Avg monthly net</div>
-          <div className={`mt-2 text-xl font-semibold ${summary.scenarioAvgMonthlyNet >= 0 ? "text-good" : "text-bad"}`}>
-            {fmtMoney(summary.scenarioAvgMonthlyNet, ccy)}
-          </div>
-          <div className="text-xs text-slate-400 mt-1">
-            {summary.scenarioAvgMonthlyNet >= 0 ? "monthly profit" : "monthly burn"} · {horizon.months} months
-          </div>
-        </div>
-      </div>
+      {/* Forecast body - insights, chart, table. KPI tiles used to
+          live here; they now render inside ForecastExplanationPanel
+          (passed as kpiSlot). The Scenarios empty + locked states
+          are intercepted upstream (scenariosBare short-circuit), so
+          this section only runs for Overview or for Scenarios with
+          active assumptions. */}
 
       {/* Insights card differentiates per view:
            Overview  → 'Forecast Insights' (baseline, passive,
