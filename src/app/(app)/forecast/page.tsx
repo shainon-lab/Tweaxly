@@ -36,7 +36,8 @@ import { computeEmployeeCost, effectiveStatus, type EmployeeRow } from "@/lib/wo
 import { hasFeature, getPlanFor, getQuota } from "@/lib/billing";
 import LockedOverlay from "@/components/billing/LockedOverlay";
 import ForecastReadinessBanner from "./ForecastReadinessBanner";
-import ForecastExplanationPanel, { buildConfidenceMeta } from "./ForecastExplanationPanel";
+import ForecastExplanationPanel from "./ForecastExplanationPanel";
+import { buildConfidenceMeta } from "./confidenceMeta";
 import ForecastSetup from "./ForecastSetup";
 import ForecastChart from "./ForecastChart";
 import { type RosterMember } from "./ScenarioBuilder";

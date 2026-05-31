@@ -18,6 +18,7 @@ import { fmtMoney } from "@/lib/format";
 import type { ForecastResult } from "@/lib/forecastEngine";
 import NarrativeBody from "@/components/NarrativeBody";
 import ShareAnalysisButton from "@/components/sharing/ShareAnalysisButton";
+import { buildConfidenceMeta } from "./confidenceMeta";
 
 type Tone = "positive" | "warning" | "neutral";
 
@@ -243,29 +244,6 @@ export default function ForecastExplanationPanel({
   );
 }
 
-// Exported so the readiness banner can render the confidence chip
-// (the chip was moved out of the panel header into the banner so
-// both forecast-quality signals live together).
-export function buildConfidenceMeta(result: ForecastResult): {
-  pct: number;
-  toneClass: string;
-  basedOn: string;
-} {
-  const confTone: Tone = result.confidence === "high"   ? "positive"
-                       : result.confidence === "medium" ? "neutral"
-                       :                                  "warning";
-  const volatility = volatilityLabel(result);
-  const recurringCount = result.recurringDetected.length;
-  const basedOn = [
-    `${result.baselinePeriod.monthsWithData}/${result.baselinePeriod.monthsResolved} months`,
-    `${volatility.toLowerCase()} volatility`,
-    result.seasonalityApplied ? "seasonal pattern applied" : "no seasonal pattern",
-    recurringCount > 0
-      ? `${recurringCount} recurring item${recurringCount === 1 ? "" : "s"}`
-      : "no recurring items",
-  ].join(" · ");
-  return { pct: result.confidenceScore, toneClass: TONE_TEXT[confTone], basedOn };
-}
 
 function Row({ label, value }: { label: string; value: string }) {
   return (
