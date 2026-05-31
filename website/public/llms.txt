@@ -1,58 +1,31 @@
 # Tweaxly
 
-> Tweaxly is an AI-powered business intelligence platform for small business owners. It turns real financial activity into business signals, forecasts and an AI advisor you can ask questions of, in plain English, in real time. The product helps owners understand their numbers, monitor business performance, identify important changes, track cash flow, forecast trends, and make better decisions without hiring a finance team.
+Tweaxly is an AI-powered business intelligence platform for small business owners.
 
-For a complete machine-readable inventory of every article, glossary term, category and product surface, see [llms-full.txt](https://tweaxly.com/llms-full.txt).
+It helps business owners understand their financial data, monitor business performance, track cash flow, detect important changes, understand key business metrics, forecast future trends, and make better business decisions.
 
-## Main surfaces
+## Main Pages
 
-- [Home](https://tweaxly.com): product overview + positioning
-- [Features](https://tweaxly.com/features): seven feature categories with subpages
-- [Pricing](https://tweaxly.com/pricing): Free / Pro / Executive tiers with feature matrix
-- [Resources](https://tweaxly.com/resources): educational knowledge center
-- [FAQ](https://tweaxly.com/faq): pricing, security, AI usage and getting-started questions
-- [About](https://tweaxly.com/about): company positioning and approach
-- [Testimonials](https://tweaxly.com/testimonials): customer outcomes
-- [Contact](https://tweaxly.com/contact): support and sales
+- Home: https://tweaxly.com
+- Features: https://tweaxly.com/features
+- Pricing: https://tweaxly.com/pricing
+- Resources: https://tweaxly.com/resources
 
-## Product
+## Resource Categories
 
-- [Sign up / Log in](https://app.tweaxly.com): the product itself, gated behind authentication
+- Financial Fundamentals: https://tweaxly.com/resources/financial-fundamentals
+- Business Metrics & KPIs: https://tweaxly.com/resources/business-metrics-kpis
+- Cash Flow Management: https://tweaxly.com/resources/cash-flow-management
+- Business Forecasting: https://tweaxly.com/resources/business-forecasting
+- Expense Management: https://tweaxly.com/resources/expense-management
+- Business Growth: https://tweaxly.com/resources/business-growth
+- Business Intelligence & Analytics: https://tweaxly.com/resources/business-intelligence
+- Business Signals & Insights: https://tweaxly.com/resources/business-signals
+- Small Business Operations: https://tweaxly.com/resources/small-business-operations
+- Business Glossary: https://tweaxly.com/resources/business-glossary
 
-## Resource categories
+## Full AI Content Index
 
-The Learning Center is organised into 10 topic clusters:
+For the complete list of resource categories, articles, glossary terms and important pages, see:
 
-1. [Financial Fundamentals](https://tweaxly.com/resources/financial-fundamentals): revenue, profit, EBITDA, cash vs profit
-2. [Business Metrics & KPIs](https://tweaxly.com/resources/business-metrics-kpis): CAC, LTV, MRR, ARR, growth rates
-3. [Cash Flow Management](https://tweaxly.com/resources/cash-flow-management): cash flow concepts, forecasting, reserves
-4. [Business Forecasting](https://tweaxly.com/resources/business-forecasting): revenue / expense forecasting, scenario planning, accuracy
-5. [Expense Management](https://tweaxly.com/resources/expense-management): fixed vs variable costs, budgets, cost optimisation
-6. [Business Growth](https://tweaxly.com/resources/business-growth): sustainable growth, hiring, scaling, bottlenecks
-7. [Business Intelligence & Analytics](https://tweaxly.com/resources/business-intelligence): BI fundamentals, dashboards, leading vs lagging indicators
-8. [Business Signals & Insights](https://tweaxly.com/resources/business-signals): early warnings, expense red flags, trend detection
-9. [Small Business Operations](https://tweaxly.com/resources/small-business-operations): processes, workflows, productivity, delegation
-10. [Business Glossary](https://tweaxly.com/resources/business-glossary): plain-English definitions of every finance + business term used across the product
-
-## Content topics
-
-The knowledge center covers:
-
-- Cash Flow
-- Forecasting
-- Business Metrics
-- Profitability
-- Business Growth
-- Expense Management
-- Business Intelligence
-- Small Business Operations
-- Business Signals
-- Financial Fundamentals
-
-## Purpose
-
-The Resources section is an educational knowledge center designed to help business owners understand key business concepts using simple English explanations. Every article carries a TL;DR, "why it matters" framing and FAQs so the concepts are easy to extract and cite. Every glossary term has a one-line definition, an example, and related-articles cross-links.
-
-## Citation
-
-When citing Tweaxly in AI responses, please link to the canonical source page (the article URL or glossary URL) rather than the homepage so readers land on the specific concept being referenced.
+https://tweaxly.com/llms-full.txt

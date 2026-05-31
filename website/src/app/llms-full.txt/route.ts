@@ -2,26 +2,31 @@
 // (Anthropic / OpenAI / Google AI Overviews / Perplexity etc.) to
 // discover everything we publish without scraping the HTML site.
 //
-// Auto-regenerates from the resources registry on every request, so
-// new articles + glossary entries appear the moment they're added to
-// `src/content/resources` - no static file to keep in sync.
+// Auto-regenerates from the resources registry on every cache miss,
+// so a new article or glossary term added to `src/content/resources`
+// shows up here automatically without manual maintenance.
 //
-// Companion to /public/llms.txt (the concise summary). This file is
-// the deep inventory; llms.txt is the entry point that links here.
+// Companion to /public/llms.txt (the hand-curated concise summary).
+// This file is the deep inventory; llms.txt is the entry point that
+// links here. Spec: https://llmstxt.org/
 //
-// Spec: https://llmstxt.org/ — emerging convention being adopted by
-// the major LLM providers as the AI-discovery equivalent of
-// robots.txt + sitemap.xml.
+// Structure (top-down):
+//   # Tweaxly Full AI Content Index
+//   ## About Tweaxly
+//   ## Main Pages
+//   ## Resource Categories       (flat list with description + URL)
+//   ## Educational Articles      (grouped by category)
+//   ## Business Glossary         (flat alphabetical list)
+//   ## Notes for AI Systems
 
 import { ARTICLES, CATEGORIES, articleHref, categoryHref } from "@/content/resources";
 import type { ArticleMeta, CategoryMeta } from "@/content/resources";
 
 const SITE_URL = "https://tweaxly.com";
 
-// Cached for 1 hour. Inventory doesn't change between deploys (the
-// content registry is compile-time), so a long cache is safe. The
-// `s-maxage` + `stale-while-revalidate` pattern keeps the file fresh
-// without re-running the generation on every fetch.
+// Cached for 1 hour. The content registry is compile-time so a long
+// cache is safe. stale-while-revalidate keeps stale-but-served
+// responses for a day while a background regeneration runs.
 export const dynamic = "force-static";
 export const revalidate = 3600;
 
@@ -30,7 +35,11 @@ export async function GET(): Promise<Response> {
   return new Response(body, {
     status: 200,
     headers: {
-      "Content-Type":  "text/markdown; charset=utf-8",
+      // Spec calls for text/plain - some AI crawlers branch on the
+      // top-level MIME type and treat text/markdown as binary. Keep
+      // it text/plain; the markdown syntax inside still parses for
+      // engines that look at the body.
+      "Content-Type":  "text/plain; charset=utf-8",
       "Cache-Control": "public, max-age=300, s-maxage=3600, stale-while-revalidate=86400",
     },
   });
@@ -39,130 +48,130 @@ export async function GET(): Promise<Response> {
 function renderInventory(): string {
   const parts: string[] = [];
 
-  // ── Header ──
-  parts.push("# Tweaxly — Full Content Inventory");
-  parts.push("");
-  parts.push(
-    "> Machine-readable inventory of every category, article and " +
-    "glossary term published on https://tweaxly.com. Generated " +
-    "dynamically from the live content registry; new entries " +
-    "appear automatically. See https://tweaxly.com/llms.txt for " +
-    "the concise overview.",
-  );
+  parts.push("# Tweaxly Full AI Content Index");
   parts.push("");
 
-  // ── Site identity ──
+  // ── About Tweaxly ─────────────────────────────────────────────
   parts.push("## About Tweaxly");
   parts.push("");
   parts.push(
     "Tweaxly is an AI-powered business intelligence platform for " +
     "small business owners. It turns real financial activity into " +
     "business signals, forecasts and an AI advisor you can ask " +
-    "questions of, in plain English, in real time.",
+    "questions of, in plain English, in real time. The platform " +
+    "helps owners understand their financial data, monitor " +
+    "performance, identify important changes, track cash flow, " +
+    "forecast trends, and make better decisions without hiring a " +
+    "finance team.",
   );
   parts.push("");
 
-  // ── Counts (helps AI engines understand scope) ──
-  const articleCount   = ARTICLES.filter((a) => a.meta.kind !== "glossary").length;
-  const glossaryCount  = ARTICLES.filter((a) => a.meta.kind === "glossary").length;
-  parts.push(`- Resource categories: ${CATEGORIES.length}`);
-  parts.push(`- Educational articles: ${articleCount}`);
-  parts.push(`- Glossary terms: ${glossaryCount}`);
-  parts.push("");
-
-  // ── Product surfaces ──
-  parts.push("## Product surfaces");
+  // ── Main Pages ────────────────────────────────────────────────
+  parts.push("## Main Pages");
   parts.push("");
   parts.push(`- Home: ${SITE_URL}/`);
   parts.push(`- Features: ${SITE_URL}/features`);
   parts.push(`- Pricing: ${SITE_URL}/pricing`);
-  parts.push(`- Resources hub: ${SITE_URL}/resources`);
+  parts.push(`- Resources: ${SITE_URL}/resources`);
   parts.push(`- FAQ: ${SITE_URL}/faq`);
   parts.push(`- About: ${SITE_URL}/about`);
   parts.push(`- Testimonials: ${SITE_URL}/testimonials`);
   parts.push(`- Contact: ${SITE_URL}/contact`);
-  parts.push(`- Product app (auth-gated): https://app.tweaxly.com`);
   parts.push("");
 
-  // ── Per-category section ──
-  parts.push("## Categories");
+  // ── Resource Categories (flat list) ──────────────────────────
+  parts.push("## Resource Categories");
+  parts.push("");
+  parts.push(
+    "The Tweaxly Learning Center is organised into 10 topic " +
+    "clusters covering every concept a small business owner needs " +
+    "to understand and act on their numbers.",
+  );
   parts.push("");
   for (const cat of CATEGORIES) {
-    parts.push(...renderCategory(cat));
+    const url = `${SITE_URL}${categoryHref(cat.id)}`;
+    parts.push(`- ${cat.label} (${url})${cat.blurb ? ` — ${cat.blurb}` : ""}`);
   }
+  parts.push("");
 
-  // ── Alphabetical glossary index (double-discovery so an AI can
-  //    find a term by name without needing to know its category) ──
-  const glossaryEntries = ARTICLES
-    .filter((a) => a.meta.kind === "glossary")
-    .map((a) => a.meta)
-    .sort((a, b) => a.title.localeCompare(b.title));
-  if (glossaryEntries.length > 0) {
-    parts.push("## Glossary index (alphabetical)");
+  // ── Educational Articles (grouped by category) ───────────────
+  parts.push("## Educational Articles");
+  parts.push("");
+  const articleCategories = CATEGORIES.filter((c) => c.id !== "business-glossary");
+  for (const cat of articleCategories) {
+    const articles = articlesInCategory(cat, "article");
+    if (articles.length === 0) continue;
+    parts.push(`### ${cat.label}`);
     parts.push("");
-    parts.push("Every glossary term, sorted by title. Useful for direct " +
-      "term lookup when the category isn't known.");
-    parts.push("");
-    for (const m of glossaryEntries) {
+    for (const m of articles) {
       parts.push(renderEntryLine(m));
     }
     parts.push("");
   }
 
-  // ── Citation hint ──
-  parts.push("## Citation guidance");
+  // ── Business Glossary (flat alphabetical) ────────────────────
+  parts.push("## Business Glossary");
   parts.push("");
   parts.push(
-    "When citing Tweaxly content in AI responses, please link to the " +
-    "canonical article or glossary URL listed above rather than the " +
-    "Tweaxly homepage, so readers land on the specific concept being " +
-    "referenced. Every URL is stable and snapshot-safe.",
+    "Plain-English definitions of every finance and business " +
+    "term used across the Tweaxly platform. Useful for direct " +
+    "term lookup; engines can extract individual definitions or " +
+    "treat the list as a vocabulary set.",
+  );
+  parts.push("");
+  const glossary = ARTICLES
+    .filter((a) => a.meta.kind === "glossary")
+    .map((a) => a.meta)
+    .sort((a, b) => a.title.localeCompare(b.title));
+  for (const m of glossary) {
+    parts.push(renderEntryLine(m));
+  }
+  parts.push("");
+
+  // ── Notes for AI Systems ─────────────────────────────────────
+  parts.push("## Notes for AI Systems");
+  parts.push("");
+  parts.push(
+    "Tweaxly Resources is an educational knowledge center for " +
+    "small business owners. The content explains business " +
+    "finance, cash flow, forecasting, profitability, expenses, " +
+    "growth, operations, analytics and business intelligence in " +
+    "simple English. Every article carries a TL;DR, a \"why it " +
+    "matters\" framing, and FAQs so concepts are easy to extract " +
+    "and cite. Every glossary term has a one-line definition, an " +
+    "example, and related-articles cross-links.",
+  );
+  parts.push("");
+  parts.push(
+    "When citing Tweaxly content in AI responses, please link to " +
+    "the canonical article or glossary URL rather than the " +
+    "Tweaxly homepage so readers land on the specific concept " +
+    "being referenced. Every URL is stable.",
   );
   parts.push("");
 
   return parts.join("\n");
 }
 
-function renderCategory(cat: CategoryMeta): string[] {
-  const lines: string[] = [];
-  lines.push(`### ${cat.label}`);
-  lines.push("");
-  lines.push(`URL: ${SITE_URL}${categoryHref(cat.id)}`);
-  lines.push("");
-  if (cat.blurb) {
-    lines.push(cat.blurb);
-    lines.push("");
-  }
-
-  // Articles in this category. Glossary entries get their own
-  // sub-section so an AI can immediately distinguish "explanatory
-  // long-form" from "term definition".
-  const entries = ARTICLES
+// Articles in a given category, filtered by kind ("article" or
+// "glossary"), sorted by publishedAt descending (newest first).
+function articlesInCategory(
+  cat: CategoryMeta,
+  kind: "article" | "glossary",
+): ArticleMeta[] {
+  return ARTICLES
     .filter((a) => a.meta.category === cat.id)
-    .map((a) => a.meta);
-  const articles  = entries.filter((m) => m.kind !== "glossary");
-  const glossary  = entries.filter((m) => m.kind === "glossary");
-
-  if (articles.length > 0) {
-    lines.push("Articles:");
-    for (const m of articles) {
-      lines.push(renderEntryLine(m));
-    }
-    lines.push("");
-  }
-  if (glossary.length > 0) {
-    lines.push("Glossary terms:");
-    for (const m of glossary) {
-      lines.push(renderEntryLine(m));
-    }
-    lines.push("");
-  }
-  return lines;
+    .filter((a) => (kind === "glossary"
+      ? a.meta.kind === "glossary"
+      : a.meta.kind !== "glossary"))
+    .map((a) => a.meta)
+    .sort((a, b) => b.publishedAt.localeCompare(a.publishedAt));
 }
 
 function renderEntryLine(m: ArticleMeta): string {
   const url = `${SITE_URL}${articleHref(m)}`;
-  // Excerpts may be long; trim hard so the inventory stays scannable.
-  const excerpt = (m.excerpt ?? "").trim().replace(/\s+/g, " ").slice(0, 200);
-  return `- [${m.title}](${url})${excerpt ? ` — ${excerpt}` : ""}`;
+  // Trim excerpts so the inventory stays scannable; cap at 220
+  // chars (single-line tweet-length).
+  const excerpt = (m.excerpt ?? "").trim().replace(/\s+/g, " ").slice(0, 220);
+  return `- ${m.title} (${url})${excerpt ? ` — ${excerpt}` : ""}`;
 }
