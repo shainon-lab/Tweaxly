@@ -74,7 +74,12 @@ export default function ForecastExplanationPanel({
   // data wiring.
   kpiSlot?: React.ReactNode;
 }) {
-  const [detailsOpen, setDetailsOpen] = useState(false);
+  // The driver cards (Anomalies / Data Coverage / etc.) are now the
+  // collapsible "Why this forecast?" section - closed by default so
+  // the always-visible detailed analysis above gets the immediate
+  // attention. Click to reveal the qualitative drivers behind the
+  // numerical analysis.
+  const [whyOpen, setWhyOpen] = useState(false);
 
   // Sort drivers by impact (warnings first, then positives, then
   // neutral) so the most-important cards lead. Previously this was
@@ -98,7 +103,7 @@ export default function ForecastExplanationPanel({
           The Share button is the only top-right control left, so it
           naturally anchors that corner. */}
       <div className="flex items-center justify-between gap-4 flex-wrap mb-3">
-        <div className="t-section text-slate-100 shrink-0">Why this forecast?</div>
+        <div className="t-section text-slate-100 shrink-0">Forecast Analysis</div>
         {/* Share the structured explanation as a secure read-only
             link. Snapshot mirrors the ForecastResult fields the
             public renderer needs to redraw this panel - the engine
@@ -135,98 +140,108 @@ export default function ForecastExplanationPanel({
         />
       </div>
 
-      {/* ─── Driver cards (sorted by impact: warning → positive →
-            neutral). The tone dot already encodes the WATCH /
-            POSITIVE / NEUTRAL signal so the explicit label pill is
-            redundant - dropped to reduce visual weight per card.
-            Title sits at t-card (18px / semibold) so readers can
-            scan; detail is t-body (16px) per the typography
-            standard - analytical text never goes below 16px. */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-        {drivers.map((d, i) => (
-          <div
-            key={i}
-            className="rounded-lg border border-line bg-ink-900/40 px-4 py-3"
-          >
-            <div className="flex items-center gap-2 min-w-0 mb-2">
-              <span className={`w-2 h-2 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
-              <div className={`t-card truncate ${TONE_TEXT[d.impact]}`}>{d.title}</div>
-            </div>
-            <div className="t-body text-slate-300">{d.detail}</div>
+      {/* ─── Detailed analysis - always visible. This is the body
+            of "Forecast Analysis": baseline window + horizon meta,
+            the engine narrative, recurring items, outliers,
+            excluded records and any seasonality note. Used to be
+            collapsed behind a "View detailed analysis" toggle; user
+            wants this open by default since it IS the analysis. */}
+      <div className="space-y-5">
+        {/* Baseline + horizon meta. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <Row label="Baseline period"   value={result.baselinePeriod.label} />
+          <Row label="Range"             value={`${result.baselinePeriod.fromYM} → ${result.baselinePeriod.toYM}`} />
+          <Row label="Months resolved"   value={String(result.baselinePeriod.monthsResolved)} />
+          <Row label="Months with data"  value={String(result.baselinePeriod.monthsWithData)} />
+          <Row label="Forecast horizon"  value={`Next ${result.forecastHorizon.months} months`} />
+          <Row label="Actuals used"      value={`${result.actualsUsed.toLocaleString("en-US")} transactions`} />
+          <Row label="Scenarios applied" value={String(result.scenariosApplied)} />
+        </div>
+
+        {/* Engine narrative - kept here for accountants who want
+            the full chain of reasoning. Shared NarrativeBody so
+            the typography + paragraph-split matches the dashboard. */}
+        {result.explanationText ? (
+          <NarrativeBody text={result.explanationText} size="md" />
+        ) : null}
+
+        {result.recurringDetected.length > 0 ? (
+          <div>
+            <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Recurring items projected forward</div>
+            <ul className="t-body text-slate-300 space-y-1.5">
+              {result.recurringDetected.slice(0, 6).map((r, i) => (
+                <li key={i} className="flex items-baseline justify-between gap-3">
+                  <span>{r.description}</span>
+                  <span className="text-slate-500 tabular-nums">≈{fmtMoney(r.monthlyAmount, currency)} / mo</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        ))}
+        ) : null}
+
+        {result.outliersDetected.length > 0 ? (
+          <div>
+            <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Outliers excluded from trend</div>
+            <ul className="t-body text-slate-300 space-y-1.5">
+              {result.outliersDetected.slice(0, 6).map((o, i) => (
+                <li key={i}>{o.reason}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {result.excludedRecords.length > 0 ? (
+          <div>
+            <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Excluded records</div>
+            <ul className="t-body text-slate-300 space-y-1.5">
+              {result.excludedRecords.map((e, i) => (
+                <li key={i}>{e.count} {e.reason.toLowerCase()}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {result.seasonalityNote ? (
+          <div className="t-body text-slate-400">{result.seasonalityNote}</div>
+        ) : null}
       </div>
 
-      {/* ─── Layer 2: detailed analysis (collapsed) ────────────── */}
+      {/* ─── "Why this forecast?" - collapsible, closed by default.
+            Holds the driver cards (Anomalies / Data Coverage /
+            Recurring Items / Seasonality / Volatility / Scenarios)
+            which are the qualitative explanation for the numerical
+            analysis above. Used to sit always-visible at the top of
+            the panel; now hidden behind a click so the page leads
+            with the analysis and reveals the "why" on demand.
+            Tone dot already encodes the WATCH / POSITIVE / NEUTRAL
+            signal so the explicit label pill is redundant - dropped
+            to reduce visual weight per card. Title sits at t-card
+            (18px / semibold); detail is t-body (16px). */}
       <div className="mt-4 pt-4 border-t border-line">
         <button
           type="button"
-          onClick={() => setDetailsOpen((v) => !v)}
+          onClick={() => setWhyOpen((v) => !v)}
           className="t-meta text-slate-400 hover:text-slate-200 transition inline-flex items-center gap-1.5"
+          aria-expanded={whyOpen}
         >
-          <span className="inline-block w-3 text-center">{detailsOpen ? "▾" : "▸"}</span>
-          {detailsOpen ? "Hide detailed analysis" : "View detailed analysis"}
+          <span className="inline-block w-3 text-center">{whyOpen ? "▾" : "▸"}</span>
+          {whyOpen ? "Hide why this forecast" : "Why this forecast?"}
         </button>
 
-        {detailsOpen ? (
-          <div className="mt-4 space-y-5">
-            {/* Baseline + horizon meta. */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-              <Row label="Baseline period"   value={result.baselinePeriod.label} />
-              <Row label="Range"             value={`${result.baselinePeriod.fromYM} → ${result.baselinePeriod.toYM}`} />
-              <Row label="Months resolved"   value={String(result.baselinePeriod.monthsResolved)} />
-              <Row label="Months with data"  value={String(result.baselinePeriod.monthsWithData)} />
-              <Row label="Forecast horizon"  value={`Next ${result.forecastHorizon.months} months`} />
-              <Row label="Actuals used"      value={`${result.actualsUsed.toLocaleString("en-US")} transactions`} />
-              <Row label="Scenarios applied" value={String(result.scenariosApplied)} />
-            </div>
-
-            {/* Engine narrative - kept here for accountants who want
-                the full chain of reasoning. Shared NarrativeBody so
-                the typography + paragraph-split matches the dashboard. */}
-            {result.explanationText ? (
-              <NarrativeBody text={result.explanationText} size="md" />
-            ) : null}
-
-            {result.recurringDetected.length > 0 ? (
-              <div>
-                <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Recurring items projected forward</div>
-                <ul className="t-body text-slate-300 space-y-1.5">
-                  {result.recurringDetected.slice(0, 6).map((r, i) => (
-                    <li key={i} className="flex items-baseline justify-between gap-3">
-                      <span>{r.description}</span>
-                      <span className="text-slate-500 tabular-nums">≈{fmtMoney(r.monthlyAmount, currency)} / mo</span>
-                    </li>
-                  ))}
-                </ul>
+        {whyOpen ? (
+          <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {drivers.map((d, i) => (
+              <div
+                key={i}
+                className="rounded-lg border border-line bg-ink-900/40 px-4 py-3"
+              >
+                <div className="flex items-center gap-2 min-w-0 mb-2">
+                  <span className={`w-2 h-2 rounded-full shrink-0 ${TONE_DOT[d.impact]}`} />
+                  <div className={`t-card truncate ${TONE_TEXT[d.impact]}`}>{d.title}</div>
+                </div>
+                <div className="t-body text-slate-300">{d.detail}</div>
               </div>
-            ) : null}
-
-            {result.outliersDetected.length > 0 ? (
-              <div>
-                <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Outliers excluded from trend</div>
-                <ul className="t-body text-slate-300 space-y-1.5">
-                  {result.outliersDetected.slice(0, 6).map((o, i) => (
-                    <li key={i}>{o.reason}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {result.excludedRecords.length > 0 ? (
-              <div>
-                <div className="t-meta uppercase tracking-wide text-slate-400 mb-2">Excluded records</div>
-                <ul className="t-body text-slate-300 space-y-1.5">
-                  {result.excludedRecords.map((e, i) => (
-                    <li key={i}>{e.count} {e.reason.toLowerCase()}</li>
-                  ))}
-                </ul>
-              </div>
-            ) : null}
-
-            {result.seasonalityNote ? (
-              <div className="t-body text-slate-400">{result.seasonalityNote}</div>
-            ) : null}
+            ))}
           </div>
         ) : null}
       </div>
