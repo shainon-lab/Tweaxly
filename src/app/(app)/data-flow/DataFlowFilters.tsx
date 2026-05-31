@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 // Same horizontal layout as ReportPeriodPicker: each label sits above its
 // select, all controls flow left-to-right in a wrapping flex row.
@@ -25,6 +25,16 @@ export default function DataFlowFilters({
   const [draftStart, setDraftStart] = useState(start);
   const [draftEnd, setDraftEnd] = useState(end);
 
+  // Optimistic mirrors of the URL-driven selects. Selects reflect
+  // clicks instantly while the server fetch + render runs underneath;
+  // we re-sync on prop change to keep browser back/forward correct.
+  const [draftView, setDraftView]         = useState<string>(view);
+  const [draftRange, setDraftRange]       = useState<string>(range);
+  const [draftCategory, setDraftCategory] = useState<string>(category);
+  useEffect(() => { setDraftView(view); },         [view]);
+  useEffect(() => { setDraftRange(range); },       [range]);
+  useEffect(() => { setDraftCategory(category); }, [category]);
+
   function update(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(sp.toString());
     for (const [k, v] of Object.entries(next)) {
@@ -42,12 +52,13 @@ export default function DataFlowFilters({
   return (
     <div className="flex items-end gap-2 flex-wrap justify-end">
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">View</label>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+          View{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
+        </label>
         <select
           className="input"
-          value={view}
-          onChange={(e) => update({ view: e.target.value })}
-          disabled={pending}
+          value={draftView}
+          onChange={(e) => { setDraftView(e.target.value); update({ view: e.target.value }); }}
         >
           <option value="summary">P&amp;L summary</option>
           <option value="detail">Per-month detail</option>
@@ -57,16 +68,16 @@ export default function DataFlowFilters({
         <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Period</label>
         <select
           className="input"
-          value={range}
+          value={draftRange}
           onChange={(e) => {
             const v = e.target.value;
+            setDraftRange(v);
             if (v === "custom") {
               update({ range: v, start: draftStart, end: draftEnd });
             } else {
               update({ range: v, start: undefined, end: undefined });
             }
           }}
-          disabled={pending}
         >
           <option value="all">All time</option>
           <option value="this_month">This month</option>
@@ -78,7 +89,7 @@ export default function DataFlowFilters({
           <option value="custom">Custom</option>
         </select>
       </div>
-      {range === "custom" ? (
+      {draftRange === "custom" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
@@ -116,9 +127,8 @@ export default function DataFlowFilters({
         <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Category</label>
         <select
           className="input"
-          value={category}
-          onChange={(e) => update({ category: e.target.value })}
-          disabled={pending}
+          value={draftCategory}
+          onChange={(e) => { setDraftCategory(e.target.value); update({ category: e.target.value }); }}
         >
           <option value="__all__">All categories</option>
           {allCategories.map((c) => (

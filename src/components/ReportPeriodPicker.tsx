@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 type Granularity = "month" | "quarter" | "year";
@@ -41,6 +41,23 @@ export default function ReportPeriodPicker({
   const sp = useSearchParams();
   const [pending, startTransition] = useTransition();
 
+  // Optimistic local mirrors of the three URL-driven inputs. The
+  // page is a Server Component, so changing a select fires a
+  // navigation + DB query that can take a couple of seconds. Driving
+  // the selects from URL props alone makes them look frozen on the
+  // previous value during that window. Mirroring the choice locally
+  // lets each select reflect the click instantly; we re-sync from
+  // the prop after the navigation lands (also handles browser
+  // back/forward). All downstream derivations (month / quarter /
+  // year breakdowns) read the local draft, not the raw props, so
+  // the cascade selects also update without waiting on the server.
+  const [draftGran, setDraftGran]       = useState<Granularity>(granularity);
+  const [draftAnchor, setDraftAnchor]   = useState<string>(anchor);
+  const [draftCompare, setDraftCompare] = useState<number>(compare);
+  useEffect(() => { setDraftGran(granularity); }, [granularity]);
+  useEffect(() => { setDraftAnchor(anchor); },    [anchor]);
+  useEffect(() => { setDraftCompare(compare); },  [compare]);
+
   const today = useMemo(() => {
     const d = new Date();
     return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1 };
@@ -58,7 +75,15 @@ export default function ReportPeriodPicker({
   function changeGranularity(g: Granularity) {
     // Pick a sensible default anchor for the new granularity so the form
     // doesn't jump to "no period selected".
-    update({ gran: g, period: defaultAnchor(g), compare: compare ? String(compare) : undefined });
+    const nextAnchor = defaultAnchor(g);
+    setDraftGran(g);
+    setDraftAnchor(nextAnchor);
+    update({ gran: g, period: nextAnchor, compare: draftCompare ? String(draftCompare) : undefined });
+  }
+
+  function setPeriod(nextAnchor: string) {
+    setDraftAnchor(nextAnchor);
+    update({ period: nextAnchor });
   }
 
   // The "Period" selector adapts to the chosen granularity. We never show a
@@ -69,20 +94,24 @@ export default function ReportPeriodPicker({
     return out;
   }, [today.y]);
 
-  // Parse current anchor into pieces relevant to the granularity.
+  // Parse the *draft* (optimistic) anchor into pieces relevant to
+  // the *draft* granularity. Using the drafts means the cascade
+  // selects (Month + Year, Quarter + Year, Year) reflect a fresh
+  // granularity switch instantly instead of waiting for the URL to
+  // settle.
   let monthYear = today.y;
   let monthNum = today.m;
   let quarterYear = today.y;
   let quarterNum = Math.ceil(today.m / 3);
   let yearOnly = today.y;
-  if (granularity === "month") {
-    const m = anchor.match(/^(\d{4})-(\d{2})$/);
+  if (draftGran === "month") {
+    const m = draftAnchor.match(/^(\d{4})-(\d{2})$/);
     if (m) { monthYear = Number(m[1]); monthNum = Number(m[2]); }
-  } else if (granularity === "quarter") {
-    const m = anchor.match(/^(\d{4})-Q([1-4])$/);
+  } else if (draftGran === "quarter") {
+    const m = draftAnchor.match(/^(\d{4})-Q([1-4])$/);
     if (m) { quarterYear = Number(m[1]); quarterNum = Number(m[2]); }
   } else {
-    if (/^\d{4}$/.test(anchor)) yearOnly = Number(anchor);
+    if (/^\d{4}$/.test(draftAnchor)) yearOnly = Number(draftAnchor);
   }
 
   // Allowed months / quarters when the year is the current year - can't pick
@@ -99,12 +128,13 @@ export default function ReportPeriodPicker({
   return (
     <div className="flex items-end gap-2 flex-wrap justify-end">
       <div>
-        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Granularity</label>
+        <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
+          Granularity{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
+        </label>
         <select
           className="input"
-          value={granularity}
+          value={draftGran}
           onChange={(e) => changeGranularity(e.target.value as Granularity)}
-          disabled={pending}
         >
           <option value="month">Month</option>
           <option value="quarter">Quarter</option>
@@ -112,15 +142,14 @@ export default function ReportPeriodPicker({
         </select>
       </div>
 
-      {granularity === "month" ? (
+      {draftGran === "month" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Month</label>
             <select
               className="input"
               value={monthNum}
-              onChange={(e) => update({ period: `${monthYear}-${pad2(Number(e.target.value))}` })}
-              disabled={pending}
+              onChange={(e) => setPeriod(`${monthYear}-${pad2(Number(e.target.value))}`)}
             >
               {monthsForYear.map((m) => <option key={m} value={m}>{MONTH_NAMES[m - 1]}</option>)}
             </select>
@@ -133,9 +162,8 @@ export default function ReportPeriodPicker({
               onChange={(e) => {
                 const newY = Number(e.target.value);
                 const newM = newY === today.y && monthNum > today.m ? today.m : monthNum;
-                update({ period: `${newY}-${pad2(newM)}` });
+                setPeriod(`${newY}-${pad2(newM)}`);
               }}
-              disabled={pending}
             >
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
@@ -143,15 +171,14 @@ export default function ReportPeriodPicker({
         </>
       ) : null}
 
-      {granularity === "quarter" ? (
+      {draftGran === "quarter" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Quarter</label>
             <select
               className="input"
               value={quarterNum}
-              onChange={(e) => update({ period: `${quarterYear}-${QUARTERS[Number(e.target.value) - 1]}` })}
-              disabled={pending}
+              onChange={(e) => setPeriod(`${quarterYear}-${QUARTERS[Number(e.target.value) - 1]}`)}
             >
               {quartersForYear.map((q) => <option key={q} value={q}>{QUARTERS[q - 1]}</option>)}
             </select>
@@ -165,9 +192,8 @@ export default function ReportPeriodPicker({
                 const newY = Number(e.target.value);
                 const maxQ = newY === today.y ? Math.ceil(today.m / 3) : 4;
                 const newQ = Math.min(quarterNum, maxQ);
-                update({ period: `${newY}-${QUARTERS[newQ - 1]}` });
+                setPeriod(`${newY}-${QUARTERS[newQ - 1]}`);
               }}
-              disabled={pending}
             >
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
@@ -175,14 +201,13 @@ export default function ReportPeriodPicker({
         </>
       ) : null}
 
-      {granularity === "year" ? (
+      {draftGran === "year" ? (
         <div>
           <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Year</label>
           <select
             className="input"
             value={yearOnly}
-            onChange={(e) => update({ period: e.target.value })}
-            disabled={pending}
+            onChange={(e) => setPeriod(e.target.value)}
           >
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
@@ -193,14 +218,17 @@ export default function ReportPeriodPicker({
         <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Compare</label>
         <select
           className="input"
-          value={compare}
-          onChange={(e) => update({ compare: e.target.value === "0" ? undefined : e.target.value })}
-          disabled={pending}
+          value={draftCompare}
+          onChange={(e) => {
+            const v = Number(e.target.value);
+            setDraftCompare(v);
+            update({ compare: v === 0 ? undefined : String(v) });
+          }}
         >
           <option value="0">No comparison</option>
-          <option value="1">vs prior 1 {granularity}</option>
-          <option value="2">vs prior 2 {granularity}s</option>
-          <option value="3">vs prior 3 {granularity}s</option>
+          <option value="1">vs prior 1 {draftGran}</option>
+          <option value="2">vs prior 2 {draftGran}s</option>
+          <option value="3">vs prior 3 {draftGran}s</option>
         </select>
       </div>
     </div>

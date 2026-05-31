@@ -10,7 +10,7 @@
 // selecting one short-circuits to the shared UpgradeModal and never
 // pushes the URL change. The server also clamps mismatched URLs.
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import UpgradeModal from "@/components/billing/UpgradeModal";
 
@@ -122,6 +122,16 @@ export default function ForecastSetup({
   const [draftFromISO, setDraftFromISO] = useState(hydrateISO(histFrom, "from"));
   const [draftToISO,   setDraftToISO]   = useState(hydrateISO(histTo,   "to"));
 
+  // Optimistic mirrors of the URL-driven selects. Page is a Server
+  // Component, so the navigation + forecast engine re-run can take a
+  // couple of seconds; binding the select's `value` to the URL prop
+  // alone makes it look frozen during that window. Mirroring locally
+  // lets the picked option reflect the click immediately.
+  const [draftHistorical, setDraftHistorical] = useState<string>(historical);
+  const [draftHorizon, setDraftHorizon]       = useState<string>(horizon);
+  useEffect(() => { setDraftHistorical(historical); }, [historical]);
+  useEffect(() => { setDraftHorizon(horizon); },       [horizon]);
+
   function update(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(sp.toString());
     for (const [k, v] of Object.entries(next)) {
@@ -151,11 +161,11 @@ export default function ForecastSetup({
     <div className="flex flex-wrap items-end justify-end gap-3">
       <div>
         <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">
-          Historical period
+          Historical period{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
         </label>
         <select
           className="input"
-          value={historical}
+          value={draftHistorical}
           onChange={(e) => {
             const v = e.target.value;
             if (v === "custom") {
@@ -165,6 +175,7 @@ export default function ForecastSetup({
                 setUpgradeOpen("custom");
                 return;
               }
+              setDraftHistorical("custom");
               // Seed the URL with the day-level defaults so the first
               // render of "Custom" produces a valid 12-month window
               // - no flicker through an invalid state.
@@ -174,10 +185,10 @@ export default function ForecastSetup({
                 hist_to:    draftToISO,
               });
             } else {
+              setDraftHistorical(v);
               update({ historical: v, hist_from: undefined, hist_to: undefined });
             }
           }}
-          disabled={pending}
         >
           {HISTORICAL_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{historicalLabel(o.value, o.label)}</option>
@@ -185,7 +196,7 @@ export default function ForecastSetup({
         </select>
       </div>
 
-      {historical === "custom" ? (
+      {draftHistorical === "custom" ? (
         <>
           <div>
             <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">From</label>
@@ -223,11 +234,11 @@ export default function ForecastSetup({
 
       <div>
         <label className="t-meta uppercase tracking-wide text-slate-400 block mb-1">
-          Forecast period
+          Forecast period{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
         </label>
         <select
           className="input"
-          value={horizon}
+          value={draftHorizon}
           onChange={(e) => {
             const v = e.target.value;
             const opt = HORIZON_OPTIONS.find((o) => o.value === v);
@@ -237,9 +248,9 @@ export default function ForecastSetup({
               setUpgradeOpen("horizon");
               return;
             }
+            setDraftHorizon(v);
             update({ horizon: v });
           }}
-          disabled={pending}
         >
           {HORIZON_OPTIONS.map((o) => (
             <option key={o.value} value={o.value}>{horizonLabel(o.label, months(o.value))}</option>

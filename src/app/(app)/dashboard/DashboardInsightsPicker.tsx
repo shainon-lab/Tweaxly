@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 // Insights period picker: Last 6 months / Monthly / Quarterly / Yearly /
@@ -43,6 +43,14 @@ export default function DashboardInsightsPicker({
   const [draftFrom, setDraftFrom] = useState(from || todayISODate());
   const [draftTo, setDraftTo] = useState(to || todayISODate());
 
+  // Optimistic mirrors of the URL-driven inputs. The select reflects
+  // the click immediately while the Server Component navigation +
+  // aggregation runs underneath; we re-sync from props on settle.
+  const [draftGran, setDraftGran]     = useState<Granularity>(granularity);
+  const [draftAnchor, setDraftAnchor] = useState<string>(anchor);
+  useEffect(() => { setDraftGran(granularity); }, [granularity]);
+  useEffect(() => { setDraftAnchor(anchor); },    [anchor]);
+
   const today = useMemo(() => {
     const d = new Date();
     return { y: d.getUTCFullYear(), m: d.getUTCMonth() + 1 };
@@ -63,17 +71,19 @@ export default function DashboardInsightsPicker({
     return out;
   }, [today.y]);
 
+  // Parse the *draft* (optimistic) anchor so the cascade selects
+  // (Month + Year etc.) reflect a granularity switch immediately.
   let monthYear = today.y, monthNum = today.m;
   let quarterYear = today.y, quarterNum = Math.ceil(today.m / 3);
   let yearOnly = today.y;
-  if (granularity === "month") {
-    const m = anchor.match(/^(\d{4})-(\d{2})$/);
+  if (draftGran === "month") {
+    const m = draftAnchor.match(/^(\d{4})-(\d{2})$/);
     if (m) { monthYear = Number(m[1]); monthNum = Number(m[2]); }
-  } else if (granularity === "quarter") {
-    const m = anchor.match(/^(\d{4})-Q([1-4])$/);
+  } else if (draftGran === "quarter") {
+    const m = draftAnchor.match(/^(\d{4})-Q([1-4])$/);
     if (m) { quarterYear = Number(m[1]); quarterNum = Number(m[2]); }
-  } else if (granularity === "year") {
-    if (/^\d{4}$/.test(anchor)) yearOnly = Number(anchor);
+  } else if (draftGran === "year") {
+    if (/^\d{4}$/.test(draftAnchor)) yearOnly = Number(draftAnchor);
   }
 
   const monthsForYear = useMemo(() => {
@@ -89,6 +99,7 @@ export default function DashboardInsightsPicker({
     const d = new Date();
     const y = d.getUTCFullYear();
     const m = d.getUTCMonth() + 1;
+    setDraftGran(g);
     if (g === "custom") {
       // Don't navigate yet - wait for the user to set both dates and click Apply.
       update({
@@ -100,6 +111,7 @@ export default function DashboardInsightsPicker({
       return;
     }
     if (g === "trailing6" || g === "all") {
+      setDraftAnchor("");
       update({
         insights_gran: g,
         insights_period: undefined,
@@ -112,12 +124,18 @@ export default function DashboardInsightsPicker({
       g === "month"   ? `${y}-${pad2(m)}` :
       g === "quarter" ? `${y}-Q${Math.ceil(m / 3)}` :
                         String(y);
+    setDraftAnchor(defAnchor);
     update({
       insights_gran: g,
       insights_period: defAnchor,
       insights_from: undefined,
       insights_to: undefined,
     });
+  }
+
+  function setPeriod(next: string) {
+    setDraftAnchor(next);
+    update({ insights_period: next });
   }
 
   function applyCustom() {
@@ -137,13 +155,12 @@ export default function DashboardInsightsPicker({
     <div className="flex items-end gap-2 flex-wrap">
       <div>
         <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-          Period
+          Period{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
         </label>
         <select
           className="input"
-          value={granularity}
+          value={draftGran}
           onChange={(e) => changeGranularity(e.target.value as Granularity)}
-          disabled={pending}
         >
           <option value="trailing6">Last 6 months</option>
           <option value="month">Monthly</option>
@@ -154,15 +171,14 @@ export default function DashboardInsightsPicker({
         </select>
       </div>
 
-      {granularity === "month" ? (
+      {draftGran === "month" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Month</label>
             <select
               className="input"
               value={monthNum}
-              onChange={(e) => update({ insights_period: `${monthYear}-${pad2(Number(e.target.value))}` })}
-              disabled={pending}
+              onChange={(e) => setPeriod(`${monthYear}-${pad2(Number(e.target.value))}`)}
             >
               {monthsForYear.map((m) => <option key={m} value={m}>{MONTH_NAMES[m - 1]}</option>)}
             </select>
@@ -175,9 +191,8 @@ export default function DashboardInsightsPicker({
               onChange={(e) => {
                 const newY = Number(e.target.value);
                 const newM = newY === today.y && monthNum > today.m ? today.m : monthNum;
-                update({ insights_period: `${newY}-${pad2(newM)}` });
+                setPeriod(`${newY}-${pad2(newM)}`);
               }}
-              disabled={pending}
             >
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
@@ -185,15 +200,14 @@ export default function DashboardInsightsPicker({
         </>
       ) : null}
 
-      {granularity === "quarter" ? (
+      {draftGran === "quarter" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Quarter</label>
             <select
               className="input"
               value={quarterNum}
-              onChange={(e) => update({ insights_period: `${quarterYear}-${QUARTERS[Number(e.target.value) - 1]}` })}
-              disabled={pending}
+              onChange={(e) => setPeriod(`${quarterYear}-${QUARTERS[Number(e.target.value) - 1]}`)}
             >
               {quartersForYear.map((q) => <option key={q} value={q}>{QUARTERS[q - 1]}</option>)}
             </select>
@@ -207,9 +221,8 @@ export default function DashboardInsightsPicker({
                 const newY = Number(e.target.value);
                 const maxQ = newY === today.y ? Math.ceil(today.m / 3) : 4;
                 const newQ = Math.min(quarterNum, maxQ);
-                update({ insights_period: `${newY}-${QUARTERS[newQ - 1]}` });
+                setPeriod(`${newY}-${QUARTERS[newQ - 1]}`);
               }}
-              disabled={pending}
             >
               {years.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
@@ -217,21 +230,20 @@ export default function DashboardInsightsPicker({
         </>
       ) : null}
 
-      {granularity === "year" ? (
+      {draftGran === "year" ? (
         <div>
           <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">Year</label>
           <select
             className="input"
             value={yearOnly}
-            onChange={(e) => update({ insights_period: e.target.value })}
-            disabled={pending}
+            onChange={(e) => setPeriod(e.target.value)}
           >
             {years.map((y) => <option key={y} value={y}>{y}</option>)}
           </select>
         </div>
       ) : null}
 
-      {granularity === "custom" ? (
+      {draftGran === "custom" ? (
         <>
           <div>
             <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">From</label>
