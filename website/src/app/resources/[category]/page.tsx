@@ -9,7 +9,7 @@ import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, FAQ } from "@/components/article";
 import { JsonLd, breadcrumbJsonLd, collectionJsonLd, itemListJsonLd, faqJsonLd } from "@/lib/schema";
 import GlossaryFilter from "./GlossaryFilter";
-import { keyTermsForCategory } from "@/content/resources/relations";
+import { keyTermsForCategory, relatedCategoriesForCategory } from "@/content/resources/relations";
 
 const SITE_ORIGIN = "https://tweaxly.com";
 
@@ -51,22 +51,6 @@ function fmtDate(iso: string): string {
     : d.toLocaleDateString(undefined, { year: "numeric", month: "long", day: "numeric" });
 }
 
-// Suggest a couple of related categories. Curated mapping based on
-// how the topics overlap - kept here rather than in types.ts because
-// it's presentation, not content data.
-const RELATED: Record<CategoryId, CategoryId[]> = {
-  "financial-fundamentals":   ["business-metrics-kpis", "cash-flow-management", "expense-management"],
-  "business-metrics-kpis":    ["business-intelligence", "business-forecasting", "financial-fundamentals"],
-  "cash-flow-management":     ["business-forecasting", "financial-fundamentals", "business-signals"],
-  "business-forecasting":     ["cash-flow-management", "business-intelligence", "expense-management"],
-  "expense-management":       ["cash-flow-management", "financial-fundamentals", "business-forecasting"],
-  "business-growth":          ["business-forecasting", "cash-flow-management", "small-business-operations"],
-  "business-intelligence":    ["business-metrics-kpis", "business-signals", "business-forecasting"],
-  "business-signals":         ["business-intelligence", "cash-flow-management", "business-forecasting"],
-  "small-business-operations":["business-growth", "business-intelligence", "expense-management"],
-  "business-glossary":        ["financial-fundamentals", "business-metrics-kpis", "business-intelligence"],
-};
-
 export default async function CategoryPage(
   { params }: { params: Promise<{ category: string }> },
 ) {
@@ -79,9 +63,12 @@ export default async function CategoryPage(
   );
   const featured = articles.filter((a) => a.meta.featured);
   const latest   = articles.filter((a) => !a.meta.featured);
-  const relatedCategories = (RELATED[cat.id] ?? [])
-    .map((id) => getCategory(id))
-    .filter((c): c is NonNullable<typeof c> => !!c);
+  // Computed cross-category cluster - aggregates tag overlap from
+  // each category's articles, no hardcoded map. Auto-evolves when
+  // new articles drop in to any category. The earlier RELATED
+  // record (Free / Pro / etc. style hand-curated mapping) was
+  // removed per the GEO spec's "no hardcoded links" rule.
+  const relatedCategories = relatedCategoriesForCategory(cat.id, 3);
 
   return (
     <main id="main-content" className="flex-1">

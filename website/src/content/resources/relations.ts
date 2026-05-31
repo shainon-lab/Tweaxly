@@ -336,6 +336,58 @@ export function parentCategoryFor(category: CategoryId): CategoryMeta | undefine
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Category → Related Categories
+//
+// Aggregates tag overlap across ALL articles in the source
+// category vs each other category's articles, returning the n
+// strongest matches. Lets the /resources/[category] hub render a
+// "Related categories" rail without a hand-curated cross-reference
+// map (Part 9: no hardcoded links - auto-evolves as new articles
+// land in any category).
+//
+// The earlier hand-curated RELATED map (was inline on the
+// category page) used the same shape but had to be maintained by
+// hand; this helper replaces it.
+// ─────────────────────────────────────────────────────────────────
+
+export function relatedCategoriesForCategory(
+  category: CategoryId,
+  n = 3,
+): CategoryMeta[] {
+  // Build the source category's aggregate tag profile.
+  const sourceTags = new Map<string, number>();
+  for (const a of ARTICLES) {
+    if (a.meta.category !== category) continue;
+    for (const t of a.meta.tags) {
+      const key = t.toLowerCase();
+      sourceTags.set(key, (sourceTags.get(key) ?? 0) + 1);
+    }
+  }
+  if (sourceTags.size === 0) return [];
+
+  // Score each OTHER category by weighted tag overlap.
+  const scored: { cat: CategoryMeta; score: number }[] = CATEGORIES
+    .filter((c) => c.id !== category)
+    .map((cat) => {
+      let score = 0;
+      for (const a of ARTICLES) {
+        if (a.meta.category !== cat.id) continue;
+        for (const t of a.meta.tags) {
+          const weight = sourceTags.get(t.toLowerCase());
+          if (weight) score += weight;
+        }
+      }
+      return { cat, score };
+    });
+
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((x, y) => y.score - x.score)
+    .slice(0, n)
+    .map((s) => s.cat);
+}
+
+// ─────────────────────────────────────────────────────────────────
 // Popular Glossary Terms (homepage rail)
 // ─────────────────────────────────────────────────────────────────
 

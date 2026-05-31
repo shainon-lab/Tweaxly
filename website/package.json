@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "lint:content": "node scripts/lint-content.mjs",
+    "prebuild": "node scripts/lint-content.mjs"
   },
   "dependencies": {
     "next": "16.2.6",
