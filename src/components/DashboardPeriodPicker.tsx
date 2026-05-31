@@ -1,6 +1,6 @@
 "use client";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 
 type Range =
   | "this_month"
@@ -97,6 +97,19 @@ export default function DashboardPeriodPicker({
   const [draftStart, setDraftStart] = useState(start);
   const [draftEnd, setDraftEnd] = useState(end);
 
+  // Optimistic local state for the two main selects. The page is a
+  // Server Component, so changing a select fires a navigation + DB
+  // aggregation that can take a couple of seconds. Driving the
+  // select's `value` from the URL prop alone makes the select look
+  // frozen during that window. Mirroring the choice locally lets the
+  // select reflect the click instantly while the server work runs
+  // underneath. We re-sync from the prop after the navigation lands
+  // (also covers browser back/forward).
+  const [draftRange, setDraftRange] = useState<Range>(range);
+  const [draftCompare, setDraftCompare] = useState<Compare>(compare);
+  useEffect(() => { setDraftRange(range); },     [range]);
+  useEffect(() => { setDraftCompare(compare); }, [compare]);
+
   function update(next: Record<string, string | undefined>) {
     const params = new URLSearchParams(sp.toString());
     for (const [k, v] of Object.entries(next)) {
@@ -122,20 +135,20 @@ export default function DashboardPeriodPicker({
       {showPeriod ? (
         <div>
           <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-            Period
+            Period{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
           </label>
           <select
             className="input"
-            value={range}
+            value={draftRange}
             onChange={(e) => {
               const v = e.target.value as Range;
+              setDraftRange(v);
               if (v === "custom") {
                 update({ range: v, start: draftStart, end: draftEnd });
               } else {
                 update({ range: v, start: undefined, end: undefined });
               }
             }}
-            disabled={pending}
           >
             {RANGE_OPTIONS.map((o) => (
               <option key={o.value} value={o.value}>
@@ -149,15 +162,18 @@ export default function DashboardPeriodPicker({
       {showCompare ? (
         <div>
           <label className="text-[10px] uppercase tracking-wide text-slate-400 block mb-1">
-            Compare to
+            Compare to{pending ? <span aria-hidden className="ml-1.5 inline-block w-1.5 h-1.5 rounded-full bg-accent animate-pulse align-middle" /> : null}
           </label>
           <select
             className="input"
-            value={compare}
-            onChange={(e) => update({ compare: e.target.value === "none" ? undefined : e.target.value })}
-            disabled={pending}
+            value={draftCompare}
+            onChange={(e) => {
+              const v = e.target.value as Compare;
+              setDraftCompare(v);
+              update({ compare: v === "none" ? undefined : v });
+            }}
           >
-            {compareOptionsFor(range).map((o) => (
+            {compareOptionsFor(draftRange).map((o) => (
               <option key={o.value} value={o.value}>
                 {o.label}
               </option>
