@@ -191,8 +191,12 @@ export const TERMS_SECTIONS: Section[] = [
       ] },
       { kind: "text", body: "Upon the effective downgrade date, the workspace will become subject to the limits, features, restrictions, and allocations of the downgraded plan." },
 
+      { kind: "subheading", text: "Automatic Renewal" },
+      { kind: "text", body: "Unless canceled before the renewal date, paid subscriptions automatically renew for successive billing periods equal to the original term." },
+      { kind: "text", body: "By subscribing to a paid plan, you authorize Tweaxly and its payment providers to automatically charge your payment method for renewal fees, applicable taxes, and related charges." },
+
       { kind: "subheading", text: "Subscription Cancellation" },
-      { kind: "text", body: "Users may cancel automatic renewal at any time." },
+      { kind: "text", body: "Users may cancel automatic renewal at any time through their account settings or by contacting support." },
       { kind: "text", body: "Cancellation prevents future renewal charges but does not immediately terminate the active subscription." },
       { kind: "text", body: "The workspace will continue to receive access to the subscribed plan and associated features until the end of the current billing period." },
       { kind: "text", body: "Upon expiration of the subscription term, the workspace may be moved to a free plan or limited-access plan, and certain premium features may become unavailable." },
@@ -224,16 +228,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "renewal", n: 9, title: "Automatic Renewal",
-    blocks: [
-      { kind: "text", body: "Unless canceled before the renewal date, subscriptions automatically renew for successive subscription periods equal to the original term." },
-      { kind: "text", body: "You authorize Tweaxly and its payment providers to automatically charge your payment method for renewal fees, applicable taxes, and related charges." },
-      { kind: "text", body: "You may cancel your subscription at any time through your account settings or by contacting support. Cancellation will take effect at the end of the current billing period." },
-      { kind: "text", body: "No refunds or credits shall be provided for partial subscription periods unless required by applicable law." },
-    ],
-  },
-  {
-    id: "payment", n: 10, title: "Payment Processing",
+    id: "payment", n: 9, title: "Payment Processing",
     blocks: [
       { kind: "text", body: "Payments may be processed by third-party payment providers." },
       { kind: "text", body: "Tweaxly does not store full payment card information and is not responsible for payment processor errors, outages, declined payments, or banking issues." },
@@ -241,7 +236,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "acceptable", n: 11, title: "Acceptable Use",
+    id: "acceptable", n: 10, title: "Acceptable Use",
     blocks: [
       { kind: "text", body: "You agree not to:" },
       { kind: "list", items: [
@@ -258,7 +253,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "ip", n: 12, title: "Intellectual Property",
+    id: "ip", n: 11, title: "Intellectual Property",
     blocks: [
       { kind: "text", body: "All rights, title, and interest in the Services, including software, algorithms, interfaces, designs, trademarks, content, reports, and technology, are owned by Tweaxly or its licensors." },
       { kind: "text", body: "No ownership rights are transferred to you." },
@@ -266,7 +261,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "user-data", n: 13, title: "User Data",
+    id: "user-data", n: 12, title: "User Data",
     blocks: [
       { kind: "text", body: "You retain ownership of your uploaded and connected business data." },
       { kind: "text", body: "You grant Tweaxly a worldwide, non-exclusive license to process, host, store, analyze, and use such data solely for:" },
@@ -282,7 +277,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "availability", n: 14, title: "Availability and Service Interruptions",
+    id: "availability", n: 13, title: "Availability and Service Interruptions",
     blocks: [
       { kind: "text", body: "Tweaxly does not guarantee uninterrupted or error-free operation." },
       { kind: "text", body: "The Services may occasionally become unavailable due to:" },
@@ -299,7 +294,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "disclaimer", n: 15, title: "Disclaimer of Warranties",
+    id: "disclaimer", n: 14, title: "Disclaimer of Warranties",
     blocks: [
       { kind: "pre", body: "THE SERVICES ARE PROVIDED “AS IS” AND “AS AVAILABLE”." },
       { kind: "pre", body: "TO THE MAXIMUM EXTENT PERMITTED BY LAW, TWEAXLY DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING:" },
@@ -324,7 +319,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "liability", n: 16, title: "Limitation of Liability",
+    id: "liability", n: 15, title: "Limitation of Liability",
     blocks: [
       { kind: "pre", body: "TO THE MAXIMUM EXTENT PERMITTED BY LAW, TWEAXLY AND ITS AFFILIATES, OFFICERS, DIRECTORS, EMPLOYEES, CONTRACTORS, LICENSORS, AND SERVICE PROVIDERS SHALL NOT BE LIABLE FOR:" },
       { kind: "list", items: [
@@ -348,7 +343,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "indemnification", n: 17, title: "Indemnification",
+    id: "indemnification", n: 16, title: "Indemnification",
     blocks: [
       { kind: "text", body: "You agree to indemnify and hold harmless Tweaxly and its affiliates, officers, employees, and partners from and against any claims, damages, liabilities, losses, costs, or expenses arising out of:" },
       { kind: "list", items: [
@@ -362,7 +357,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "termination", n: 18, title: "Termination",
+    id: "termination", n: 17, title: "Termination",
     blocks: [
       { kind: "text", body: "Tweaxly may suspend or terminate your access to the Services at any time, with or without notice, if:" },
       { kind: "list", items: [
@@ -376,7 +371,7 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "changes", n: 19, title: "Changes to the Services and Terms",
+    id: "changes", n: 18, title: "Changes to the Services and Terms",
     blocks: [
       { kind: "text", body: "Tweaxly may modify the Services or these Terms from time to time." },
       { kind: "text", body: "Updated Terms will become effective upon posting." },
@@ -384,20 +379,20 @@ export const TERMS_SECTIONS: Section[] = [
     ],
   },
   {
-    id: "privacy", n: 20, title: "Privacy",
+    id: "privacy", n: 19, title: "Privacy",
     blocks: [
       { kind: "text", body: "Your use of the Services is also governed by our Privacy Policy." },
     ],
   },
   {
-    id: "jurisdiction", n: 21, title: "Governing Law and Jurisdiction",
+    id: "jurisdiction", n: 20, title: "Governing Law and Jurisdiction",
     blocks: [
       { kind: "text", body: "These Terms shall be governed exclusively by the laws of the State of Israel, without regard to conflict of law principles." },
       { kind: "text", body: "Any dispute, claim, or controversy arising out of or relating to these Terms or the Services shall be subject to the exclusive jurisdiction of the competent courts located in Israel." },
     ],
   },
   {
-    id: "contact", n: 22, title: "Contact Information",
+    id: "contact", n: 21, title: "Contact Information",
     blocks: [
       { kind: "text", body: "For questions regarding these Terms, please contact:" },
       { kind: "text", body: "Tweaxly" },
