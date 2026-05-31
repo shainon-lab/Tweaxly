@@ -25,9 +25,9 @@ const SIGNUP_URL  = `${PRODUCT_URL}/register`;
 const SITE_URL    = "https://tweaxly.com";
 
 const DESCRIPTION =
-  "Tweaxly pricing for AI business intelligence. Start free with 30 AI Credits and 90 days of history. Upgrade to Pro ($49/mo) for unlimited everything + 100 AI Credits/month. Buy more AI Credit packs anytime.";
+  "Tweaxly pricing for AI business intelligence. Start free with 30 AI Credits and 90 days of history. Upgrade to Pro ($49/mo) or Executive ($89/mo) for unlimited everything plus monthly AI Credits. Buy more AI Credit packs anytime.";
 const OG_DESCRIPTION =
-  "Two plans. Start free with AI Credits included. Upgrade to Pro for unlimited platform access, then buy AI Credit packs as you scale.";
+  "Three plans. Start free with AI Credits included. Upgrade when you're ready for unlimited platform access, then buy AI Credit packs as you scale.";
 
 export const metadata: Metadata = {
   title: { absolute: "Tweaxly Pricing | AI Business Intelligence for SMBs" },
@@ -342,7 +342,7 @@ const CREDIT_PACKS: { pack: string; price: string }[] = [
 const PRICING_FAQS: { q: string; a: string }[] = [
   {
     q: "Is the Free plan really free?",
-    a: "Yes. The Free plan is free forever - no credit card required. You get 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Free workspaces have a single owner (no team invitations on Free). Create as many workspaces as you want (each is its own subscription). Upgrade any workspace to Pro when you're ready to use AI continuously or bring in teammates.",
+    a: "Yes. The Free plan is free forever - no credit card required. You get 90 days of visible history, the core signals + forecasts + AI advisor at the levels listed above, and a one-time grant of 30 starter AI Credits to experience the AI. Free workspaces have a single owner (no team invitations on Free). Create as many workspaces as you want (each is its own subscription). Upgrade any workspace when you're ready to use AI continuously or bring in teammates.",
   },
   {
     q: "What is an AI Credit?",
@@ -506,12 +506,13 @@ function Hero() {
       <div className="eyebrow mb-4">Pricing</div>
       <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
         Start free.{" "}
-        <span className="gradient-text">Upgrade to Pro when ready.</span>
+        <span className="gradient-text">Upgrade when you&apos;re ready.</span>
       </h1>
       <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl">
-        Two plans. AI Credits included on both - 30 one-time starter
-        credits on Free, 500 every month on Pro plus add-on packs you
-        can buy anytime as your AI usage grows.
+        Three plans. AI Credits included on every one - 30 one-time
+        starter credits on Free, 100 every month on Pro, 250 every
+        month on Executive, plus add-on packs you can buy anytime as
+        your AI usage grows.
       </p>
       <div className="mt-6 flex items-center gap-2 text-xs text-slate-500">
         <span className="w-1.5 h-1.5 rounded-full bg-good" />
