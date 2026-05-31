@@ -415,6 +415,37 @@ export function popularGlossaryTerms(n = 8): ArticleModule[] {
 }
 
 // ─────────────────────────────────────────────────────────────────
+// Featured / Popular Articles
+//
+// The "Popular Articles" rail on the homepage Knowledge Center
+// block. Editorial picks first (anything tagged meta.featured),
+// most-recent published next so the rail always fills regardless
+// of how many featured flags are set today.
+//
+// Glossary entries are excluded - the homepage already has its
+// own glossary chip rail. The two rails should not overlap.
+// ─────────────────────────────────────────────────────────────────
+
+export function featuredArticles(n = 4): ArticleModule[] {
+  const fullArticles = ARTICLES.filter((a) => a.meta.kind !== "glossary");
+
+  const featured = fullArticles
+    .filter((a) => a.meta.featured)
+    .sort((a, b) => b.meta.publishedAt.localeCompare(a.meta.publishedAt));
+
+  if (featured.length >= n) return featured.slice(0, n);
+
+  // Backfill with most-recent so the rail never looks empty when
+  // editorial hasn't curated yet. Dedupe against the featured set.
+  const seen = new Set(featured.map((a) => a.meta.slug));
+  const backfill = fullArticles
+    .filter((a) => !seen.has(a.meta.slug))
+    .sort((a, b) => b.meta.publishedAt.localeCompare(a.meta.publishedAt));
+
+  return [...featured, ...backfill].slice(0, n);
+}
+
+// ─────────────────────────────────────────────────────────────────
 // "Explore Tweaxly" navigation strip
 // Small, consistent footer rail at the end of every article.
 // ─────────────────────────────────────────────────────────────────

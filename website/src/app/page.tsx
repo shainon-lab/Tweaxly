@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import SiteHeader from "@/components/SiteHeader";
+import { featuredArticles } from "@/content/resources/relations";
+import { articleHref } from "@/content/resources/types";
 import BrandFlow from "@/components/BrandFlow";
 import BrandPhilosophy from "@/components/BrandPhilosophy";
 import { SignalDeckFull, SignalDeckHero } from "@/components/mocks/SignalDeck";
@@ -695,6 +697,12 @@ function LearningCenterSection() {
     { slug: "business-metrics-kpis",   label: "Business Metrics & KPIs", blurb: "CAC, LTV, MRR, ARR - what to track and how to read it." },
   ];
 
+  // Popular articles - computed via featuredArticles() so the rail
+  // auto-evolves as new pieces ship. Editorial featured: true entries
+  // surface first; the helper backfills with most-recent so the rail
+  // never looks empty. Limit to 4 to balance with the 3 category cards.
+  const POPULAR_ARTICLES = featuredArticles(4).map((a) => a.meta);
+
   // Highest-search-volume glossary terms. Curated to match the
   // popularGlossaryTerms() list in src/content/resources/relations.ts.
   const POPULAR_TERMS = [
@@ -744,6 +752,36 @@ function LearningCenterSection() {
           </Link>
         ))}
       </div>
+
+      {/* Popular articles - editorial-featured first, most-recent
+          as backfill. Computed via featuredArticles() so the rail
+          auto-evolves as articles are published / re-featured. */}
+      {POPULAR_ARTICLES.length > 0 ? (
+        <div className="mt-10">
+          <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3">
+            Popular articles
+          </div>
+          <div className="grid sm:grid-cols-2 gap-3">
+            {POPULAR_ARTICLES.map((m) => (
+              <Link
+                key={m.slug}
+                href={articleHref(m)}
+                className="block group card hover:border-brand-purple/40 transition"
+              >
+                <div className="text-sm font-semibold text-white leading-snug">
+                  {m.title}
+                </div>
+                <div className="mt-1.5 text-xs text-slate-400 leading-relaxed line-clamp-2">
+                  {m.excerpt}
+                </div>
+                <div className="mt-3 text-[11px] uppercase tracking-wider text-brand-purple">
+                  Read →
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
+      ) : null}
 
       {/* Popular business terms - direct entry into the glossary */}
       <div className="mt-10">
