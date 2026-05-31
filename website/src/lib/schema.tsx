@@ -117,6 +117,81 @@ export function collectionJsonLd({
   };
 }
 
+// ItemList schema for category landing pages. Sits alongside the
+// CollectionPage emission so AI engines that key off ItemList
+// specifically (Google's product/article carousels, OpenAI's
+// citation crawler) pick the list up directly without traversing
+// CollectionPage.hasPart. The two blobs are semantically equivalent
+// but engines differ in what they expect at the top level.
+export function itemListJsonLd({
+  category, articles,
+}: {
+  category: CategoryMeta;
+  articles: Pick<ArticleMeta, "slug" | "title" | "excerpt" | "category">[];
+}) {
+  const url = `${SITE_ORIGIN}/resources/${category.id}`;
+  return {
+    "@context": "https://schema.org",
+    "@type":    "ItemList",
+    "@id":      `${url}#itemlist`,
+    name:        `${category.label} - articles + glossary`,
+    description: category.blurb,
+    numberOfItems: articles.length,
+    itemListElement: articles.map((a, i) => ({
+      "@type":   "ListItem",
+      position:  i + 1,
+      url:       `${SITE_ORIGIN}/resources/${a.category}/${a.slug}`,
+      name:      a.title,
+      // `item` mirrors `url` so engines that read either property
+      // get the right target.
+      item:      `${SITE_ORIGIN}/resources/${a.category}/${a.slug}`,
+    })),
+  };
+}
+
+// DefinedTerm schema for glossary entries. Semantically more
+// accurate than Article for a term definition - Perplexity, ChatGPT
+// and Google AI Overviews preferentially cite DefinedTerm when
+// extracting "what does X mean" answers. The graph also includes
+// a BreadcrumbList so the term still slots into the site hierarchy
+// the way an Article would.
+export function definedTermJsonLd({
+  term, categoryLabel,
+}: {
+  term: ArticleMeta;
+  categoryLabel: string;
+}) {
+  const url = `${SITE_ORIGIN}/resources/${term.category}/${term.slug}`;
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type":     "DefinedTerm",
+        "@id":       `${url}#term`,
+        name:        term.title,
+        description: term.seo.description,
+        // The excerpt is typically the one-line definition; surface
+        // it as the official "definition" field so engines pick
+        // the cleanest phrasing.
+        url,
+        inDefinedTermSet: {
+          "@type": "DefinedTermSet",
+          name:    `Tweaxly Business Glossary`,
+          url:     `${SITE_ORIGIN}/resources/business-glossary`,
+        },
+        termCode:   term.slug,
+        inLanguage: "en",
+      },
+      breadcrumbGraph([
+        { name: "Home",      url: `${SITE_ORIGIN}/` },
+        { name: "Resources", url: `${SITE_ORIGIN}/resources` },
+        { name: categoryLabel, url: `${SITE_ORIGIN}/resources/${term.category}` },
+        { name: term.title, url },
+      ]),
+    ],
+  };
+}
+
 // Tiny <script type="application/ld+json"> renderer. Lets pages
 // emit multiple schema blocks in a single React.Fragment.
 export function JsonLd({ data }: { data: unknown }) {

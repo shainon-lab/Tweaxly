@@ -8,7 +8,7 @@ import {
 } from "@/content/resources";
 import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, TLDR, FAQ } from "@/components/article";
-import { JsonLd, articleJsonLd, faqJsonLd } from "@/lib/schema";
+import { JsonLd, articleJsonLd, definedTermJsonLd, faqJsonLd } from "@/lib/schema";
 import {
   featuresForCategory, EXPLORE_LINKS,
   glossaryTermsFor, articlesUsingTerm,
@@ -72,7 +72,16 @@ export default async function ArticlePage(
 
   return (
     <main id="main-content" className="flex-1">
-      <JsonLd data={articleJsonLd({ article: article.meta, categoryLabel: cat.label })} />
+      {/* Glossary entries emit DefinedTerm (more semantically
+          accurate; preferred by Perplexity / ChatGPT / Google AI
+          Overviews for definition extraction). Full articles emit
+          Article + BreadcrumbList via the same @graph. FAQ schema
+          rides on both when the meta.faq array is populated. */}
+      {article.meta.kind === "glossary" ? (
+        <JsonLd data={definedTermJsonLd({ term: article.meta, categoryLabel: cat.label })} />
+      ) : (
+        <JsonLd data={articleJsonLd({ article: article.meta, categoryLabel: cat.label })} />
+      )}
       <JsonLd data={faqJsonLd(article.meta.faq ?? [])} />
       <SiteHeader />
 

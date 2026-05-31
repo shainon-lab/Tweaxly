@@ -7,7 +7,7 @@ import {
 } from "@/content/resources";
 import type { CategoryId } from "@/content/resources/types";
 import { Breadcrumb, FAQ } from "@/components/article";
-import { JsonLd, breadcrumbJsonLd, collectionJsonLd, faqJsonLd } from "@/lib/schema";
+import { JsonLd, breadcrumbJsonLd, collectionJsonLd, itemListJsonLd, faqJsonLd } from "@/lib/schema";
 import GlossaryFilter from "./GlossaryFilter";
 import { keyTermsForCategory } from "@/content/resources/relations";
 
@@ -91,6 +91,14 @@ export default async function CategoryPage(
         { name: cat.label,   url: `${SITE_ORIGIN}${categoryHref(cat.id)}` },
       ])} />
       <JsonLd data={collectionJsonLd({
+        category: cat,
+        articles: articles.map((a) => a.meta),
+      })} />
+      {/* ItemList is functionally redundant with CollectionPage's
+          hasPart array, but Google product/article carousels and a
+          few citation crawlers key off ItemList specifically. Two
+          tiny blobs is cheap insurance for richer surfacing. */}
+      <JsonLd data={itemListJsonLd({
         category: cat,
         articles: articles.map((a) => a.meta),
       })} />

@@ -13,7 +13,7 @@
 // which is negligible at 100+ entries.
 
 import { ARTICLES, type ArticleModule } from "./index";
-import type { CategoryId } from "./types";
+import { CATEGORIES, getCategory, type CategoryId, type CategoryMeta } from "./types";
 
 // ─────────────────────────────────────────────────────────────────
 // Article ↔ Article relations
@@ -253,6 +253,86 @@ export function featuresForCategory(category: CategoryId): FeatureCta[] {
   return (CATEGORY_TO_FEATURES[category] ?? [])
     .map((slug) => FEATURE_BY_SLUG[slug])
     .filter((f): f is FeatureCta => !!f);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Article / Glossary → Related Categories
+//
+// Spec Part 3 wants every article + glossary entry to surface
+// "related categories" - other topic clusters whose content
+// overlaps with this one. We derive this from tag overlap rather
+// than a hand-curated map so new categories / articles
+// auto-participate (Part 9: no hardcoded links).
+//
+// Algorithm: for each OTHER category, sum the tag-overlap score
+// across its articles against this entry's tags. Categories with
+// non-zero overlap are returned, sorted by total overlap score.
+// ─────────────────────────────────────────────────────────────────
+
+export function relatedCategoriesFor(
+  category: CategoryId,
+  slug: string,
+  n = 3,
+): CategoryMeta[] {
+  const current = ARTICLES.find(
+    (a) => a.meta.slug === slug && a.meta.category === category,
+  );
+  if (!current) return [];
+  const currentTags = new Set(current.meta.tags.map((t) => t.toLowerCase()));
+
+  // Score each category by aggregate tag overlap across its
+  // articles. Skip the current category itself - "related" means
+  // OTHER topic clusters.
+  const scored: { cat: CategoryMeta; score: number }[] = CATEGORIES
+    .filter((c) => c.id !== category)
+    .map((cat) => {
+      let score = 0;
+      for (const a of ARTICLES) {
+        if (a.meta.category !== cat.id) continue;
+        for (const t of a.meta.tags) {
+          if (currentTags.has(t.toLowerCase())) score += 1;
+        }
+      }
+      return { cat, score };
+    });
+
+  return scored
+    .filter((s) => s.score > 0)
+    .sort((x, y) => y.score - x.score)
+    .slice(0, n)
+    .map((s) => s.cat);
+}
+
+// ─────────────────────────────────────────────────────────────────
+// Article / Glossary → Related Product Features
+//
+// Spec Part 3 also wants "related features" on every entry. The
+// existing featuresForCategory() handles category-level mapping;
+// this wrapper is the per-article/term lookup: given the entry,
+// return the product features curated for its parent category.
+//
+// Kept as a wrapper (not a duplicate computation) so the curated
+// CATEGORY_TO_FEATURES map stays the single source of truth for
+// the article ↔ feature relationship.
+// ─────────────────────────────────────────────────────────────────
+
+export function relatedFeaturesFor(
+  category: CategoryId,
+  _slug: string,
+): FeatureCta[] {
+  // _slug is accepted but not yet used - left in the signature so
+  // a future, slug-level override (e.g. a particular term that
+  // belongs to a feature other than its category default) can be
+  // added without rippling the call sites.
+  void _slug;
+  return featuresForCategory(category);
+}
+
+// Convenience: take the live ArticleMeta and resolve its parent
+// CategoryMeta. Used by GEO surfaces that need to render a
+// "Related categories" rail at the bottom of articles / glossary.
+export function parentCategoryFor(category: CategoryId): CategoryMeta | undefined {
+  return getCategory(category);
 }
 
 // ─────────────────────────────────────────────────────────────────
