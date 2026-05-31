@@ -388,6 +388,7 @@ export default async function DashboardPage({
           </div>
 
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {(current.fixed !== 0 || (comparing && prev.fixed !== 0)) && (
             <Stat
               label="Fixed expenses"
               value={
@@ -421,6 +422,8 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
+            {(current.variable !== 0 || (comparing && prev.variable !== 0)) && (
             <Stat
               label="Variable expenses"
               value={
@@ -454,6 +457,8 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
+            {(Math.max(current.payroll, employeeCost.recurring) !== 0 || (comparing && prev.payroll !== 0)) && (
             <Stat
               label="Payroll (txns + roster)"
               value={
@@ -487,6 +492,8 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
+            {(current.marketing !== 0 || (comparing && prev.marketing !== 0)) && (
             <Stat
               label="Marketing"
               value={
@@ -520,8 +527,10 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
           </div>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+            {(current.fees !== 0 || (comparing && prev.fees !== 0)) && (
             <Stat
               label="Processing fees"
               value={
@@ -555,6 +564,8 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
+            {(current.taxes !== 0 || (comparing && prev.taxes !== 0)) && (
             <Stat
               label="Taxes"
               value={
@@ -588,6 +599,8 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
+            {(current.oneTime !== 0 || (comparing && prev.oneTime !== 0)) && (
             <Stat
               label="One-time costs"
               value={
@@ -622,6 +635,7 @@ export default async function DashboardPage({
                 ],
               }}
             />
+            )}
             <Stat
               label="Gross margin"
               value={
