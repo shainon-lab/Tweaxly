@@ -3,15 +3,20 @@
 // needs to display the full text (no modal on the website today, but
 // the product app uses an identical mirror).
 
-export const TERMS_LAST_UPDATED = "May 19, 2026";
+export const TERMS_LAST_UPDATED = "May 31, 2026";
 
 // Each section is rendered as <h2> + structured paragraphs / lists.
 // Keeping the data structured (rather than one big markdown blob)
 // lets us style consistently and search-index sensibly.
-type ListBlock  = { kind: "list"; items: string[] };
-type TextBlock  = { kind: "text"; body: string };
-type PreBlock   = { kind: "pre"; body: string };  // all-caps legal blocks
-type Block = ListBlock | TextBlock | PreBlock;
+type ListBlock       = { kind: "list"; items: string[] };
+type TextBlock       = { kind: "text"; body: string };
+type PreBlock        = { kind: "pre"; body: string };  // all-caps legal blocks
+// Inline subheading inside a section - lets a long section split
+// into named sub-clauses (e.g. Section 8: Workspace-Based Billing,
+// Subscription Upgrades, Subscription Downgrades, etc.) without
+// fracturing the existing section numbering.
+type SubheadingBlock = { kind: "subheading"; text: string };
+type Block = ListBlock | TextBlock | PreBlock | SubheadingBlock;
 type Section = { id: string; n: number | null; title: string; blocks: Block[] };
 
 export const TERMS_SECTIONS: Section[] = [
@@ -150,14 +155,72 @@ export const TERMS_SECTIONS: Section[] = [
     blocks: [
       { kind: "text", body: "Certain Services require payment of subscription fees." },
       { kind: "text", body: "By subscribing to a paid plan, you agree to pay all applicable fees, taxes, and charges associated with your subscription." },
-      { kind: "text", body: "Pricing, plan features, and limitations may change from time to time." },
+      { kind: "text", body: "Pricing, plan features, usage limits, credit allocations, member limits, and subscription availability may change from time to time." },
       { kind: "text", body: "Unless otherwise stated:" },
       { kind: "list", items: [
         "subscriptions are billed in advance;",
-        "fees are non-refundable except where required by law;",
+        "fees are non-refundable except where required by applicable law;",
         "taxes may be added where applicable; and",
         "failure to pay may result in suspension or termination of access.",
       ] },
+
+      { kind: "subheading", text: "Workspace-Based Billing" },
+      { kind: "text", body: "Tweaxly subscriptions are managed on a per-workspace basis." },
+      { kind: "text", body: "Each workspace is treated as an independent subscription environment. Subscription plans, features, usage limits, credits, members, renewals, upgrades, downgrades, and billing events apply only to the specific workspace associated with the subscription." },
+      { kind: "text", body: "Changes made to one workspace do not affect any other workspace owned or managed by the same user or account." },
+
+      { kind: "subheading", text: "Subscription Upgrades" },
+      { kind: "text", body: "Users may upgrade a workspace subscription at any time." },
+      { kind: "text", body: "When a workspace is upgraded:" },
+      { kind: "list", items: [
+        "access to the upgraded features becomes available immediately;",
+        "only the prorated difference between the current plan and the upgraded plan may be charged;",
+        "the remaining value of the current subscription period may be applied toward the upgraded subscription; and",
+        "the existing subscription renewal date will generally remain unchanged unless required by the billing provider or subscription infrastructure.",
+      ] },
+      { kind: "text", body: "No refunds are provided in connection with subscription upgrades." },
+
+      { kind: "subheading", text: "Subscription Downgrades" },
+      { kind: "text", body: "Users may request a downgrade at any time." },
+      { kind: "text", body: "Downgrades do not become effective immediately." },
+      { kind: "text", body: "Instead:" },
+      { kind: "list", items: [
+        "the current subscription plan and associated features remain active until the end of the current billing period;",
+        "the downgrade becomes effective upon the next renewal date; and",
+        "no refund, credit, or partial reimbursement is provided for any unused portion of the current subscription period.",
+      ] },
+      { kind: "text", body: "Upon the effective downgrade date, the workspace will become subject to the limits, features, restrictions, and allocations of the downgraded plan." },
+
+      { kind: "subheading", text: "Subscription Cancellation" },
+      { kind: "text", body: "Users may cancel automatic renewal at any time." },
+      { kind: "text", body: "Cancellation prevents future renewal charges but does not immediately terminate the active subscription." },
+      { kind: "text", body: "The workspace will continue to receive access to the subscribed plan and associated features until the end of the current billing period." },
+      { kind: "text", body: "Upon expiration of the subscription term, the workspace may be moved to a free plan or limited-access plan, and certain premium features may become unavailable." },
+
+      { kind: "subheading", text: "Credits and Usage Allowances" },
+      { kind: "text", body: "Included credits, usage allowances, AI requests, reports, analyses, or other consumption-based features are governed by the applicable subscription plan." },
+      { kind: "text", body: "Unless expressly stated otherwise:" },
+      { kind: "list", items: [
+        "unused credits do not roll over to future billing periods;",
+        "promotional credits, bonus credits, trial credits, and free-plan credits have no cash value;",
+        "credits are non-refundable; and",
+        "Tweaxly reserves the right to modify credit allocations and usage limits as part of future plan updates.",
+      ] },
+
+      { kind: "subheading", text: "Failed Payments" },
+      { kind: "text", body: "If payment cannot be successfully processed, Tweaxly may:" },
+      { kind: "list", items: [
+        "retry payment collection;",
+        "notify the user;",
+        "suspend access to premium features;",
+        "restrict functionality;",
+        "downgrade the workspace; or",
+        "terminate the subscription after reasonable notice.",
+      ] },
+
+      { kind: "subheading", text: "Billing Providers" },
+      { kind: "text", body: "Subscription billing may be processed by third-party payment providers." },
+      { kind: "text", body: "Users agree to comply with the terms, conditions, and policies of the applicable payment processor used by Tweaxly." },
     ],
   },
   {
@@ -363,6 +426,16 @@ export default function TermsContent() {
                   <p key={i} className="text-slate-200 font-medium tracking-wide">
                     {b.body}
                   </p>
+                );
+              }
+              if (b.kind === "subheading") {
+                return (
+                  <h3
+                    key={i}
+                    className="text-sm font-semibold text-white tracking-wide pt-3 mt-2"
+                  >
+                    {b.text}
+                  </h3>
                 );
               }
               return (
