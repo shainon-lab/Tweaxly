@@ -1,14 +1,27 @@
 // GET /api/account/access-logs
 //
 // Returns a unified feed of access events for the currently signed-in
-// user, surfaced on Account → Access Logs. Merges two sources:
+// user, surfaced on Account → Access Logs. Two strict isolation
+// guarantees are enforced here:
 //
-//   1. LoginAttempt rows (every sign-in, success or failure)
-//   2. AuditLog rows where actorUserId = user OR
-//      targetBusinessId is one of the user's workspaces
+//   1. Actor scoping: every row returned must have `actorUserId =
+//      current user`. We never include rows where the actor is a
+//      different user (e.g. a super-admin impersonating). The prior
+//      version OR'd in `targetBusinessId IN (user's workspaces)`,
+//      which surfaced admin actions against the user's business as
+//      if the user had performed them. That was a real privacy
+//      leak (e.g. "Support session started" with the admin's IP).
 //
-// Sorted desc by createdAt, capped at 100 entries - the table is for
-// recent-activity scanning, not deep history exploration.
+//   2. Action allowlist: even after the actor filter, we only ever
+//      return action keys that are explicitly user-facing. Any new
+//      admin-classed action added to AuditAction in the future is
+//      excluded by default unless someone adds it to USER_VISIBLE.
+//      Defense in depth - a backend bug that mis-attributes an
+//      admin action to the user's actorUserId still won't leak.
+//
+// Admin-side audit visibility lives under /admin/accounts/[id] +
+// /admin/system-logs - separate routes, separate auth gate. The
+// customer-facing feed never touches them.
 
 import { NextResponse } from "next/server";
 import { requireUser } from "@/lib/auth";
@@ -18,6 +31,42 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const LIMIT = 100;
+
+// Allowlist of audit action keys that are legitimately the user's
+// own activity (login lifecycle, their own data uploads, their own
+// billing actions, their own workspace-membership changes). Anything
+// not on this list is dropped from the customer feed.
+//
+// NEVER add: any impersonation.*, account.viewed, account.status_change,
+// or other admin-tool actions. Those belong on the admin audit page.
+const USER_VISIBLE: ReadonlySet<string> = new Set([
+  // Auth lifecycle (the user's own sign-in / verification activity)
+  "auth.logout",
+  "auth.verification_email_sent",
+  "auth.email_verified",
+  "auth.verification_failed",
+  "auth.google_link",
+  "auth.access_blocked_unverified",
+  // Data the user uploaded / sources they created
+  "data.upload",
+  "source.created",
+  // Billing actions initiated by the user themselves
+  "billing.subscription_created",
+  "billing.subscription_updated",
+  "billing.subscription_canceled",
+  // Workspace membership changes the user performed
+  // (their own invitations, role changes, removals)
+  "membership.invitation_sent",
+  "membership.invitation_accepted",
+  "membership.invitation_cancelled",
+  "membership.invitation_declined",
+  "membership.invitation_resent",
+  "membership.removed",
+  "membership.role_changed",
+  // The user's own consent decisions (signup + ongoing marketing changes)
+  "consent.signup",
+  "consent.marketing_update",
+]);
 
 type Entry = {
   id:        string;
@@ -33,9 +82,10 @@ type Entry = {
 export async function GET() {
   const user = await requireUser();
 
-  // Workspaces the user has access to - their owned businesses + any
-  // active memberships. Used both for the auditLog scope and to attach
-  // a friendly business name to each entry.
+  // Only used to render a friendly business name on rows that the
+  // user themselves performed against one of their workspaces. We
+  // do NOT scope the audit query by these ids - actor scoping does
+  // all the privacy work; this map is purely display.
   const businesses = await prisma.business.findMany({
     where: {
       OR: [
@@ -46,7 +96,6 @@ export async function GET() {
     select: { id: true, name: true },
   });
   const businessNameById = new Map(businesses.map((b) => [b.id, b.name]));
-  const businessIds = businesses.map((b) => b.id);
 
   const [loginRows, auditRows] = await Promise.all([
     prisma.loginAttempt.findMany({
@@ -55,12 +104,9 @@ export async function GET() {
       take: LIMIT,
     }),
     prisma.auditLog.findMany({
-      where: {
-        OR: [
-          { actorUserId: user.id },
-          ...(businessIds.length > 0 ? [{ targetBusinessId: { in: businessIds } }] : []),
-        ],
-      },
+      // Strict actor scoping. No OR. No targetBusinessId clause.
+      // The user can only ever see rows they themselves wrote.
+      where: { actorUserId: user.id },
       orderBy: { createdAt: "desc" },
       take: LIMIT,
     }),
@@ -82,6 +128,9 @@ export async function GET() {
   }
 
   for (const r of auditRows) {
+    // Allowlist defense - drop any action key not explicitly marked
+    // as user-facing, even if it somehow had actorUserId = user.
+    if (!USER_VISIBLE.has(r.action)) continue;
     let meta: Record<string, unknown> | null = null;
     if (r.metadata) {
       try { meta = JSON.parse(r.metadata); } catch { meta = { raw: r.metadata }; }
