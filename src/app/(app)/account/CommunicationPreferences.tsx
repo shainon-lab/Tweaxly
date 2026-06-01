@@ -86,7 +86,7 @@ export default function CommunicationPreferences() {
   return (
     <>
       <div className="card mb-4">
-        <div className="font-medium mb-1">System &amp; transactional email</div>
+        <div className="font-medium mb-1">System & transactional email</div>
         <div className="text-sm text-slate-400 mb-3 leading-relaxed">
           Operational notices: billing, security alerts, password
           resets, invoices, and account-related updates. These keep your
@@ -94,7 +94,7 @@ export default function CommunicationPreferences() {
           the account is active.
         </div>
         <ChannelRow
-          label="Account &amp; system emails"
+          label="Account & system emails"
           description="Required for active accounts."
           checked={prefs.systemEmails}
           locked
@@ -104,7 +104,7 @@ export default function CommunicationPreferences() {
 
       <div className="card mb-4">
         <div className="flex items-baseline justify-between gap-3 flex-wrap mb-1">
-          <div className="font-medium">Marketing &amp; communications</div>
+          <div className="font-medium">Marketing & communications</div>
           <button
             type="button"
             className="text-xs text-slate-400 hover:text-bad transition disabled:opacity-50"
@@ -178,7 +178,11 @@ function ChannelRow({
   return (
     <div className="flex items-start justify-between gap-4 py-3 border-b border-line/60 last:border-b-0">
       <div className="min-w-0">
-        <div className="text-sm text-slate-100 font-medium" dangerouslySetInnerHTML={{ __html: label }} />
+        {/* Plain text node - React text-escapes safely; the previous
+            dangerouslySetInnerHTML existed only to un-escape &amp;
+            entities baked into the label strings, which is no longer
+            needed now that labels are plain "&" characters. */}
+        <div className="text-sm text-slate-100 font-medium">{label}</div>
         <div className="text-xs text-slate-400 mt-0.5 leading-snug">{description}</div>
       </div>
       <div className="flex items-center gap-2 shrink-0">
@@ -190,7 +194,7 @@ function ChannelRow({
           role="switch"
           aria-checked={checked}
           disabled={locked}
-          aria-label={label.replace(/&amp;/g, "&")}
+          aria-label={label}
           onClick={() => !locked && onChange?.(!checked)}
           className={`relative w-10 h-6 rounded-full transition ${
             checked ? "bg-brand-purple" : "bg-ink-700"

@@ -91,6 +91,13 @@ export async function POST(req: NextRequest) {
   // Bind iron-session to *this* response - Set-Cookie lands on the redirect
   // we're about to return, no streaming-state surprises.
   const session = await getIronSession<SessionData>(req, res, sessionOptions);
+  // Session-fixation defense: wipe any pre-existing session payload
+  // before stamping the authenticated identity. iron-session already
+  // rotates the ciphertext on every save (fresh IV), so the cookie
+  // value changes - but destroy() also clears any leftover fields
+  // (e.g. an impersonation flag from a previous super-admin session)
+  // that could otherwise leak across user identities.
+  session.destroy();
   session.userId = user.id;
   session.email = user.email;
   await session.save();

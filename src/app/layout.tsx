@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import "./globals.css";
 import "./a11y.css";
 import "./consent.css";
@@ -34,12 +35,16 @@ export default async function RootLayout({
   // Cookie record gets stamped with the visitor's CDN-detected country
   // so the audit trail captures *where* the consent was given.
   const region = detectIpCountry();
+  // CSP nonce set by middleware. Inline boot scripts that don't carry
+  // this nonce will be blocked by the script-src directive, which is
+  // exactly what we want for any unexpected injection.
+  const nonce = headers().get("x-nonce") ?? undefined;
   return (
     <html lang={locale} dir={dir}>
       <head>
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: CONSENT_INIT_SCRIPT }} />
-        <script dangerouslySetInnerHTML={{ __html: A11Y_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: CONSENT_INIT_SCRIPT }} />
+        <script nonce={nonce} dangerouslySetInnerHTML={{ __html: A11Y_INIT_SCRIPT }} />
       </head>
       <body className="min-h-screen font-sans antialiased">
         <a href="#main-content" className="skip-link">Skip to main content</a>

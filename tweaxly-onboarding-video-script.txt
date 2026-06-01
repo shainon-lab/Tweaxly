@@ -1,0 +1,129 @@
+TWEAXLY - FIRST-SIGN-UP ONBOARDING VIDEO
+2-MINUTE PLATFORM EXPLAINER (plays in modal on first login)
+
+================================================================
+FORMAT
+- Two tracks: VISUAL (what the viewer sees) + VOICEOVER (what they hear).
+- Pace: ~150 words/min conversational. Total VO ~280 words = ~1:55.
+- Tone: warm, confident, like a smart friend showing you a tool.
+- No finance jargon. Plain English throughout.
+- Music: soft, optimistic, low-mix under the VO. Subtle UI sound effects on clicks.
+================================================================
+
+
+----------------------------------------------------------------
+SCENE 1 - WELCOME (0:00 - 0:10)  ~22 words
+----------------------------------------------------------------
+VISUAL:
+- Tweaxly logo animates in on a clean light background.
+- Cuts to a soft, blurred glimpse of the dashboard behind it.
+- Lower-third title card: "Welcome to Tweaxly".
+
+VOICEOVER:
+"Welcome to Tweaxly. In the next two minutes, you'll see exactly
+how to turn your business numbers into answers you can actually use."
+
+
+----------------------------------------------------------------
+SCENE 2 - UPLOAD YOUR DATA (0:10 - 0:35)  ~55 words
+----------------------------------------------------------------
+VISUAL:
+- Cursor lands on the left-nav, clicks "Data".
+- Empty state shows: "Drop a file or click to upload".
+- A spreadsheet icon drags in. Subtle drop animation.
+- Progress bar fills smoothly (sped up).
+- Screen flips to a clean table view of categorized transactions.
+- Small green check chip: "Ready".
+
+VOICEOVER:
+"Start by adding your business data. Drop in a spreadsheet, or an
+export from your accounting tool. Tweaxly reads it, organizes it,
+and gets it ready for you in seconds. You don't need to clean it,
+format it, or learn anything new. If you can drag a file, you're in."
+
+
+----------------------------------------------------------------
+SCENE 3 - YOUR DASHBOARD (0:35 - 1:00)  ~50 words
+----------------------------------------------------------------
+VISUAL:
+- Cursor clicks "Dashboard".
+- Cards animate in one-by-one: Money In, Money Out, What's Left,
+  This Month vs. Last Month.
+- Numbers count up. A small comparison arrow turns green on one card.
+
+VOICEOVER:
+"Your dashboard is your home base. At a glance, you'll see what's
+coming in, what's going out, what's left, and how this month is
+shaping up compared to the last. All in plain English. No spreadsheets
+to dig through. No reports to wait for."
+
+
+----------------------------------------------------------------
+SCENE 4 - SIGNALS (1:00 - 1:25)  ~55 words
+----------------------------------------------------------------
+VISUAL:
+- Cursor clicks "Signals" in the nav.
+- Signal cards slide in:
+  * "Software spending is up 38% this month - 3 new subscriptions detected"
+  * "A regular customer hasn't paid this month's invoice yet"
+  * "Cash on hand will cover about 6 weeks at this pace"
+- Each card has a short "Why this matters" line underneath.
+
+VOICEOVER:
+"Tweaxly watches your business every day, so you don't have to. When
+something important changes - a category jumps, a customer slows down,
+cash starts running thin - you'll see it on your Signals page. With
+the reason, the impact, and what to do about it."
+
+
+----------------------------------------------------------------
+SCENE 5 - CONSULT YOUR AI ADVISOR (1:25 - 1:50)  ~60 words
+----------------------------------------------------------------
+VISUAL:
+- Cursor clicks "Consult AI".
+- A clean textarea, placeholder: "Ask anything about your business".
+- Types: "Can I afford to hire a part-time designer next month?"
+- Clicks "Consult AI". Textarea is replaced by a progress bar.
+- A structured answer slides in: short verdict at the top, reasoning
+  bullets, the numbers it used, and a clear recommendation.
+
+VOICEOVER:
+"Got a real question? Ask your AI advisor. Type it the way you'd ask
+a real CFO. 'Can I afford this hire.' 'Why was last month off.'
+'What do the next 90 days look like.' You get a real answer in
+seconds, built from your own numbers, not a generic template."
+
+
+----------------------------------------------------------------
+SCENE 6 - SHARE WHAT MATTERS (1:50 - 2:00)  ~30 words
+----------------------------------------------------------------
+VISUAL:
+- Cursor clicks "Share" on the AI answer.
+- A small modal: "Secure share link created".
+- Toast at the bottom: "Link copied".
+- Cuts back to the Tweaxly logo + a glowing "Let's get started" CTA.
+
+VOICEOVER:
+"Need a second pair of eyes? Send a secure link to your partner,
+your team, or your accountant - one click, no logins needed.
+That's Tweaxly. Let's add your first file and see what your
+business has been trying to tell you."
+
+
+================================================================
+ESTIMATED TOTAL: ~272 spoken words / ~1:55 at 150 wpm.
+ROOM TO BREATHE: leave ~5 seconds of music tail at the end before
+the modal CTA buttons become focusable.
+================================================================
+
+
+PRODUCTION NOTES
+- Record all screens at 1440p, crop to 16:9 for the modal.
+- Use the production app with seeded demo data (not screenshots).
+- Cursor: enlarged, smooth-pathed - no jittery mouse moves.
+- Captions: burn in English captions; modal auto-plays muted until
+  user clicks unmute, so captions must carry the meaning.
+- Skippable: include a "Skip intro" link in the modal corner from
+  second 1 - first-time onboarding should never feel like a wall.
+- Replayable: keep a "Watch the intro" link in the Help menu so
+  users can come back to it later.

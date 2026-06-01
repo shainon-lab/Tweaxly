@@ -18,15 +18,44 @@ export type SessionData = {
   impersonationAllowWrites?: boolean;
 };
 
+// Fail loudly if the secret isn't provided in production - we used to
+// silently fall back to a hardcoded string, which means anyone who
+// reads this file could forge sessions on a misconfigured deploy.
+// Local dev keeps a dev-only fallback so contributors aren't forced
+// to set an env var to run the app.
+const SESSION_SECRET = (() => {
+  const fromEnv = process.env.SESSION_PASSWORD;
+  if (fromEnv && fromEnv.length >= 32) return fromEnv;
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "SESSION_PASSWORD environment variable is required (>= 32 chars) in production",
+    );
+  }
+  // 32+ chars - iron-session requires this length minimum.
+  return "ai-cfo-mvp-development-only-fallback-not-for-production-use";
+})();
+
 export const sessionOptions: SessionOptions = {
-  password:
-    process.env.SESSION_PASSWORD ??
-    "ai-cfo-mvp-fallback-secret-change-this-please-in-prod",
+  password:   SESSION_SECRET,
   cookieName: "ai_cfo_session",
   cookieOptions: {
-    secure: process.env.NODE_ENV === "production",
+    // HttpOnly: cookie never readable from document.cookie - protects
+    // against XSS-based session theft.
     httpOnly: true,
+    // Secure: only sent over HTTPS in production.
+    secure: process.env.NODE_ENV === "production",
+    // SameSite=Lax: blocks the cookie on most cross-site requests
+    // (CSRF defense) while still allowing normal top-level navigation
+    // from external sites (e.g. links from email back into the app).
     sameSite: "lax",
+    // Restrict the cookie to root so subpaths don't accidentally
+    // exclude it.
+    path: "/",
+    // Bound session lifetime to 7 days. iron-session's default is also
+    // 14 days, but making it explicit means a future iron-session
+    // upgrade can't silently change our security posture. Reauth flow
+    // (login) issues a fresh cookie with a fresh expiry.
+    maxAge: 60 * 60 * 24 * 7,
   },
 };
 

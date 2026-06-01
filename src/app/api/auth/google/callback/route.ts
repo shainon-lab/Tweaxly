@@ -213,6 +213,11 @@ export async function GET(req: NextRequest) {
   res.cookies.set(STATE_COOKIE, "", { path: "/api/auth/google", maxAge: 0 });
 
   const session = await getIronSession<SessionData>(req, res, sessionOptions);
+  // Session-fixation defense: wipe any pre-existing session before
+  // stamping the authenticated identity. Same rationale as the
+  // password-login route - clears stale fields (e.g. impersonation
+  // flags) that could leak across identities.
+  session.destroy();
   session.userId = user.id;
   session.email  = user.email;
   if (firstBusinessId) session.currentBusinessId = firstBusinessId;
