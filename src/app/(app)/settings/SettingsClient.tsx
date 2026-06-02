@@ -598,15 +598,6 @@ export default function SettingsClient({
           <div><label className="label">Timezone</label>
             <input className="input" value={biz.timezone ?? ""} onChange={(e) => setBiz({ ...biz, timezone: e.target.value || null })} placeholder="e.g. America/New_York" />
           </div>
-          <div className="flex items-center gap-3 pt-6">
-            <input type="checkbox" id="biz-vat" checked={biz.vatEnabled} onChange={(e) => setBiz({ ...biz, vatEnabled: e.target.checked })} />
-            <label htmlFor="biz-vat" className="text-sm">Track VAT</label>
-          </div>
-          {biz.vatEnabled ? (
-            <div><label className="label">VAT rate %</label>
-              <input className="input" type="number" step="0.1" value={biz.vatRate} onChange={(e) => setBiz({ ...biz, vatRate: Number(e.target.value) })} />
-            </div>
-          ) : null}
           {biz.currency !== business.currency ? (
             <div className="md:col-span-3">
               <div className="rounded-md border border-warn/40 bg-warn/10 text-warn text-xs px-3 py-2">
