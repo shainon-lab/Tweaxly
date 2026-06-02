@@ -290,7 +290,11 @@ export default function GlobalConsult() {
   // Wide reading mode - expands the side panel to ~75% of the screen
   // (desktop only). Resets whenever the panel closes.
   const [expanded, setExpanded] = useState(false);
-  const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
+  // The ongoing conversation. Each send continues the same thread
+  // (consultationId) and shows the full back-and-forth; "Ask another
+  // question" starts a fresh thread (consultationId = null, messages = []).
+  const [messages, setMessages] = useState<{ role: "user" | "assistant"; content: string }[]>([]);
+  const [consultationId, setConsultationId] = useState<string | null>(null);
   const [showNudge, setShowNudge] = useState(false);
   const [dismissPicker, setDismissPicker] = useState(false);
   // Override values dispatched via the CONSULT_OPEN_EVENT - when set,
@@ -298,6 +302,7 @@ export default function GlobalConsult() {
   // exactly the way the triggering element intended.
   const [overrideMeta, setOverrideMeta] = useState<{ title?: string; subtitle?: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const threadEndRef = useRef<HTMLDivElement | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
 
   const baseMeta = useMemo(() => deriveViewMeta(pathname ?? ""), [pathname]);
@@ -314,7 +319,8 @@ export default function GlobalConsult() {
   // Reset state on path change so the panel doesn't carry stale
   // context if the user navigates while it's open.
   useEffect(() => {
-    setResponse(null);
+    setMessages([]);
+    setConsultationId(null);
     setDraft("");
     setShowNudge(false);
     setDismissPicker(false);
@@ -329,8 +335,9 @@ export default function GlobalConsult() {
   useEffect(() => {
     function onConsultOpen(e: Event) {
       const detail = (e as CustomEvent<ConsultOpenDetail>).detail ?? {};
-      // Reset any prior response so the panel starts clean.
-      setResponse(null);
+      // A contextual "Consult AI" trigger starts a fresh thread.
+      setMessages([]);
+      setConsultationId(null);
       setDraft(detail.prompt ?? "");
       if (detail.contextTitle || detail.contextSubtitle) {
         setOverrideMeta({
@@ -354,6 +361,13 @@ export default function GlobalConsult() {
     // Always return to the compact width when the panel closes.
     if (!open) setExpanded(false);
   }, [open]);
+
+  // Keep the latest turn in view as the conversation grows.
+  useEffect(() => {
+    if (messages.length > 0) {
+      threadEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    }
+  }, [messages, sending]);
 
   // ESC closes the panel.
   useEffect(() => {
@@ -461,30 +475,50 @@ export default function GlobalConsult() {
     return null;
   }
 
+  // Clear the thread and start a brand-new conversation.
+  function newChat() {
+    setMessages([]);
+    setConsultationId(null);
+    setDraft("");
+    textareaRef.current?.focus();
+  }
+
   async function send(text?: string) {
     const message = (text ?? draft).trim();
-    if (!message) return;
+    if (!message || sending) return;
     setSending(true);
-    setResponse(null);
+    setDraft("");
+    // Optimistically show the user's turn while the advisor thinks.
+    setMessages((prev) => [...prev, { role: "user", content: message }]);
     try {
-      // Bundle the current view context into the message so the
-      // advisor knows what the user is looking at without the user
-      // having to spell it out.
-      const contextualized = `[Current view: ${meta.title} - ${meta.subtitle}]\n\n${message}`;
+      // Bundle the current-view context only on the FIRST turn of a
+      // thread; later turns ride on the conversation history the API
+      // already has, so we don't repeat the prefix every message.
+      const contextualized = consultationId
+        ? message
+        : `[Current view: ${meta.title} - ${meta.subtitle}]\n\n${message}`;
       const res = await fetch("/api/consultation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: contextualized }),
+        body: JSON.stringify({ message: contextualized, consultationId: consultationId ?? undefined }),
       });
       if (!res.ok) {
         notify.alert(await res.text());
+        // Roll back the optimistic user turn on failure.
+        setMessages((prev) => prev.slice(0, -1));
         return;
       }
       const data = await res.json();
-      const msgs: { role: string; content: string }[] = data.consultation?.messages ?? [];
-      const lastAssistant = [...msgs].reverse().find((m) => m.role === "assistant");
-      setResponse({ q: message, a: lastAssistant?.content ?? "" });
-      setDraft("");
+      const conv = data.consultation;
+      if (conv?.id) setConsultationId(conv.id);
+      // Replace with the authoritative server thread (full history).
+      const msgs: { role: string; content: string }[] = conv?.messages ?? [];
+      setMessages(
+        msgs.map((m) => ({
+          role: m.role === "assistant" ? "assistant" : "user",
+          content: m.content,
+        })),
+      );
     } finally {
       setSending(false);
     }
@@ -657,31 +691,45 @@ export default function GlobalConsult() {
             </header>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {response ? (
+              {messages.length > 0 ? (
                 <div className="space-y-3">
-                  <div className="rounded-lg border border-accent/30 bg-accent-soft/20 px-3 py-2">
-                    <div className="text-[10px] uppercase tracking-wide text-accent mb-1">
-                      Your question
+                  {/* Ongoing conversation: every turn stays on screen and
+                      scrolls as it grows. The footer composer continues
+                      THIS thread; "Ask another question" starts a new one. */}
+                  <div className="flex items-center justify-between">
+                    <div className="text-[10px] uppercase tracking-wide text-slate-500">
+                      Conversation
                     </div>
-                    <div className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
-                      {response.q.replace(/^\[Current view:[^\]]+\]\s*/, "")}
-                    </div>
+                    <button
+                      type="button"
+                      className="text-xs text-accent hover:underline transition duration-200"
+                      onClick={newChat}
+                      disabled={sending}
+                    >
+                      Ask another question
+                    </button>
                   </div>
-                  <div className="rounded-lg border border-line bg-ink-900/40 px-3 py-2.5">
-                    <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1.5">
-                      Advisor
-                    </div>
-                    <div className="text-sm text-slate-200 leading-relaxed">
-                      {renderMarkdown(response.a)}
-                    </div>
-                  </div>
-                  <button
-                    type="button"
-                    className="text-xs text-accent hover:underline transition duration-200"
-                    onClick={() => setResponse(null)}
-                  >
-                    Ask another question
-                  </button>
+                  {messages.map((m, i) =>
+                    m.role === "user" ? (
+                      <div key={i} className="rounded-lg border border-accent/30 bg-accent-soft/20 px-3 py-2">
+                        <div className="text-[10px] uppercase tracking-wide text-accent mb-1">You</div>
+                        <div className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
+                          {m.content.replace(/^\[Current view:[^\]]+\]\s*/, "")}
+                        </div>
+                      </div>
+                    ) : (
+                      <div key={i} className="rounded-lg border border-line bg-ink-900/40 px-3 py-2.5">
+                        <div className="text-[10px] uppercase tracking-wide text-slate-400 mb-1.5">Advisor</div>
+                        <div className="text-sm text-slate-200 leading-relaxed">
+                          {renderMarkdown(m.content)}
+                        </div>
+                      </div>
+                    ),
+                  )}
+                  {sending ? (
+                    <div className="text-xs text-slate-400 px-1 animate-pulse">Analyzing…</div>
+                  ) : null}
+                  <div ref={threadEndRef} />
                 </div>
               ) : (
                 <div>
@@ -713,7 +761,7 @@ export default function GlobalConsult() {
                 ref={textareaRef}
                 rows={3}
                 className="w-full bg-ink-900/40 border border-line rounded-lg text-slate-100 placeholder:text-slate-500 text-sm leading-relaxed outline-none focus:border-accent/60 focus:bg-ink-900/60 transition duration-200 resize-none px-3 py-2"
-                placeholder="Ask about this view…"
+                placeholder={messages.length > 0 ? "Continue the conversation…" : "Ask about this view…"}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 onKeyDown={(e) => {
@@ -730,7 +778,7 @@ export default function GlobalConsult() {
                 disabled={sending || !draft.trim()}
                 className="w-full text-sm font-medium px-4 py-2.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {sending ? "Analyzing…" : "Start Consultation"}
+                {sending ? "Analyzing…" : messages.length > 0 ? "Send" : "Start Consultation"}
               </button>
             </footer>
           </aside>

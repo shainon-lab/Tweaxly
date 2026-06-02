@@ -154,7 +154,7 @@ export default function ConsultationClient({
   // Auto-scroll into view when a fresh response arrives.
   useEffect(() => {
     if (active && responseRef.current) {
-      responseRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+      responseRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
   }, [active?.messages.length]);
 
@@ -163,13 +163,13 @@ export default function ConsultationClient({
     if (!message || sending) return;
     setSending(true);
     try {
-      // Every Start Consultation creates a fresh thread - never re-uses
-      // a previous one. That way each question shows up as its own row
-      // in Consultation History.
+      // Continue the active thread when one exists so the conversation
+      // builds up turn by turn; a null active.id starts a fresh thread
+      // (the "Ask another question" / new-conversation path).
       const res = await fetch("/api/consultation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message }),
+        body: JSON.stringify({ message, consultationId: active?.id }),
       });
       // 402: out of credits OR workspace is read-only. Surface the
       // upgrade card instead of an notify.alert().
@@ -196,10 +196,10 @@ export default function ConsultationClient({
       const fresh = data.consultation as Active;
       setActive(fresh);
       setDraft("");
-      // Collapse the composer once the answer lands - the user
-      // re-opens it explicitly via "Ask another question" so the
-      // screen stays focused on reading the response.
-      setComposerOpen(false);
+      // Keep the composer available below the thread so the user can
+      // continue the conversation. "Ask another question" clears the
+      // thread to start a new one.
+      setComposerOpen(true);
       // Update the credit widget from the response so we stay in
       // sync without a separate fetch.
       if (data.credits && credits) {
@@ -225,10 +225,20 @@ export default function ConsultationClient({
     }
   }
 
-  // The most recent question + the most recent assistant reply for display.
+  // Start a brand-new conversation: clear the active thread so the next
+  // send creates a fresh one, and re-open the composer.
+  function newConversation() {
+    setActive(null);
+    setDraft("");
+    setComposerOpen(true);
+    setOutOfCredits(null);
+    setTimeout(() => textareaRef.current?.focus(), 0);
+  }
+
+  // The most recent question + the most recent assistant reply - used for
+  // the share snapshot (always the latest analysis in the thread).
   const lastUserMsg = active?.messages.slice().reverse().find((m) => m.role === "user") ?? null;
   const lastAssistantMsg = active?.messages.slice().reverse().find((m) => m.role === "assistant") ?? null;
-  const hasResponse = lastAssistantMsg != null;
 
   return (
     <div className="space-y-6">
@@ -265,53 +275,40 @@ export default function ConsultationClient({
         </div>
       ) : null}
 
-      {/* Custom-question surface. Hidden while sending (the loader
-          takes its place) and after a response lands (the user
-          re-opens it via "Ask another question" - no point showing
-          an empty textarea while they read the answer). Hidden via
-          CSS rather than unmounted so the textareaRef stays alive
-          for the focus-on-reopen flow. */}
-      <div className={(!sending && composerOpen) ? "" : "hidden"}>
-        <FreeformConsultation
-          textareaRef={textareaRef}
-          draft={draft}
-          setDraft={setDraft}
-          sending={sending}
-          onSend={() => void send()}
-          arrivalMode={!!initialDraft}
-        />
-      </div>
+      {/* Ongoing conversation - every turn stays on screen and grows
+          downward. The composer below continues THIS thread; "Ask
+          another question" starts a fresh one. */}
+      {active && active.messages.length > 0 ? (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between gap-3">
+            <div className="t-meta uppercase tracking-wide text-slate-500">Conversation</div>
+            <button
+              type="button"
+              onClick={newConversation}
+              className="btn-ghost text-sm whitespace-nowrap inline-flex items-center gap-1.5"
+            >
+              <MessageSquareText size={14} strokeWidth={2} />
+              Ask another question
+            </button>
+          </div>
 
-      {/* Live "thinking" indicator while we wait for the advisor:
-          determinate progress bar with percentage, rotating status,
-          elapsed timer. Stands in for the composer while in flight. */}
-      {sending ? <ThinkingProgress /> : null}
-
-      {/* Response card - the most recent Q&A. Older Q&As live on the
-          Consultation History tab; this view keeps focus on the latest. */}
-      {hasResponse && lastUserMsg && lastAssistantMsg ? (
-        <div ref={responseRef} className="space-y-4">
-          {/* Question header. Right-side affordances: re-open the
-              composer for a follow-up + share the analysis. We
-              deliberately collapse the textarea after every answer
-              to keep the screen focused on reading, so the
-              "Ask another question" button is the one way back. */}
-          <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3 flex items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
-              <div className="t-body text-slate-100 whitespace-pre-wrap">{lastUserMsg.content}</div>
-              <div className="t-meta text-slate-500 mt-1">
-                {new Date(lastUserMsg.createdAt).toLocaleString()}
+          {active.messages.map((m) =>
+            m.role === "user" ? (
+              <div key={m.id} className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3">
+                <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
+                <div className="t-body text-slate-100 whitespace-pre-wrap">{m.content}</div>
+                <div className="t-meta text-slate-500 mt-1">{new Date(m.createdAt).toLocaleString()}</div>
               </div>
-            </div>
-            <div className="flex items-center gap-2 flex-wrap shrink-0">
-              {/* Share button. Snapshot captures everything the public
-                  viewer needs: the assistant content + payload +
-                  structured payload (so StructuredAdvisoryView /
-                  ResponseBriefing render the share identically), plus
-                  meta (the question, askedAt, currency, derived
-                  title). canShare/currentPlan gate the upgrade card
-                  vs. the share form inside the modal. */}
+            ) : m.structured ? (
+              <StructuredAdvisoryView key={m.id} data={m.structured} />
+            ) : (
+              <ResponseBriefing key={m.id} content={m.content} payload={m.payload} currency={currency} />
+            ),
+          )}
+
+          {/* Share the latest analysis from this conversation. */}
+          {lastUserMsg && lastAssistantMsg ? (
+            <div className="flex items-center gap-2 flex-wrap">
               <ShareAnalysisButton
                 sourceType="consultation"
                 sourceId={lastAssistantMsg.id}
@@ -329,42 +326,30 @@ export default function ConsultationClient({
                 canShare={canShareAnalyses}
                 currentPlan={currentPlan}
               />
-              {!composerOpen ? (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setComposerOpen(true);
-                    setDraft("");
-                    // Defer focus until after the composer mounts.
-                    setTimeout(() => {
-                      textareaRef.current?.focus();
-                      textareaRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
-                    }, 0);
-                  }}
-                  className="btn-ghost text-sm whitespace-nowrap inline-flex items-center gap-1.5"
-                >
-                  <MessageSquareText size={14} strokeWidth={2} />
-                  Ask another question
-                </button>
-              ) : null}
             </div>
-          </div>
-
-          {/* When the Claude response includes a structured payload
-              (Phase 1 of the advisory UX overhaul), render the rich
-              card layout. Otherwise fall back to the legacy
-              ResponseBriefing built from markdown content. */}
-          {lastAssistantMsg.structured ? (
-            <StructuredAdvisoryView data={lastAssistantMsg.structured} />
-          ) : (
-            <ResponseBriefing
-              content={lastAssistantMsg.content}
-              payload={lastAssistantMsg.payload}
-              currency={currency}
-            />
-          )}
+          ) : null}
         </div>
       ) : null}
+
+      {/* Live "thinking" indicator while we wait for the advisor. */}
+      {sending ? <ThinkingProgress /> : null}
+
+      {/* Composer - continues the active thread, or starts a new one
+          when there's none. Sits below the conversation so the thread
+          reads top-to-bottom and the input stays at the bottom. */}
+      <div className={(!sending && composerOpen) ? "" : "hidden"}>
+        <FreeformConsultation
+          textareaRef={textareaRef}
+          draft={draft}
+          setDraft={setDraft}
+          sending={sending}
+          onSend={() => void send()}
+          arrivalMode={!!active || !!initialDraft}
+        />
+      </div>
+
+      {/* Scroll anchor so the latest turn + composer come into view. */}
+      <div ref={responseRef} />
     </div>
   );
 }
