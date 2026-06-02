@@ -184,6 +184,14 @@ html[data-theme="light"] [class*="hover\:bg-accent-soft"]:hover .hover\:text-whi
   color: rgb(17 24 39) !important;
 }
 
+/* The Consult side panel keeps a white surface in light mode, but its
+   eyebrows and links use the LIGHT brand purple (#A78BFA) which is too
+   faint to read on white. Darken accent text inside the panel only, so
+   the rest of the app's intentional accent styling is untouched. */
+html[data-theme="light"] .consult-panel .text-accent {
+  color: #6D28D9 !important;
+}
+
 /* ── Light-mode surface adjustments ───────────────────────────────────────
    The dark UI uses lots of partial-opacity surfaces (e.g. bg-ink-900/70)
    that almost vanish on a light page. Re-paint the high-impact surfaces

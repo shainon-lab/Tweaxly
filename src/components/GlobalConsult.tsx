@@ -617,7 +617,7 @@ export default function GlobalConsult() {
               on sm+. Smooth slide-in from the right via Tailwind's
               built-in transition utilities. */}
           <aside
-            className={`fixed ${panelPos} top-0 bottom-0 z-50 w-full ${expanded ? "sm:w-[75vw]" : "sm:w-[460px]"} bg-ink-900 ${panelBorder} border-line shadow-2xl flex flex-col ${panelAnim} transition-[width] duration-200 ease-out`}
+            className={`consult-panel fixed ${panelPos} top-0 bottom-0 z-50 w-full ${expanded ? "sm:w-[75vw]" : "sm:w-[460px]"} bg-ink-900 ${panelBorder} border-line shadow-2xl flex flex-col ${panelAnim} transition-[width] duration-200 ease-out`}
             role="dialog"
             aria-modal="true"
             aria-label="AI consultation panel"
@@ -728,7 +728,7 @@ export default function GlobalConsult() {
                 type="button"
                 onClick={() => void send()}
                 disabled={sending || !draft.trim()}
-                className="w-full text-sm px-4 py-2.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full text-sm font-medium px-4 py-2.5 rounded-md bg-accent text-white hover:bg-brand-purple-deep transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? "Analyzing…" : "Start Consultation"}
               </button>
