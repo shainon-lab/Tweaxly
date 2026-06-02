@@ -218,6 +218,27 @@ export function currencyName(code: string): string {
   return ALL_INCLUDING_UNSUPPORTED.find((c) => c.code === code)?.name ?? code;
 }
 
+// ISO code → display symbol. Reverse of SYMBOL_MAP below, but defined
+// explicitly so we emit the canonical glyph (e.g. ILS → ₪, not the raw
+// label a CSV happened to use). Returns null when we have no symbol.
+const CODE_TO_SYMBOL: Record<string, string> = {
+  USD: "$", EUR: "€", GBP: "£", ILS: "₪", JPY: "¥", INR: "₹",
+  KRW: "₩", TRY: "₺", BRL: "R$", SEK: "kr", PLN: "zł", CNY: "¥",
+};
+
+export function currencySymbol(code: string): string | null {
+  return CODE_TO_SYMBOL[code.toUpperCase()] ?? null;
+}
+
+// "Name (symbol)" label, e.g. "Euro (€)", "US Dollar ($)". Falls back to
+// "Name (CODE)" when no symbol is known. Used so name/symbol/code
+// variants of the same currency collapse to one readable label.
+export function currencyDisplayLabel(code: string): string {
+  const c = code.toUpperCase();
+  const sym = CODE_TO_SYMBOL[c];
+  return `${currencyName(c)} (${sym ?? c})`;
+}
+
 // ── Name / symbol → ISO code resolution ──────────────────────────────
 // Real-world CSVs often label the currency column with the local name
 // or the symbol instead of the ISO code (e.g. "שקל", "אירו", "$",

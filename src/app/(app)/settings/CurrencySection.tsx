@@ -30,7 +30,9 @@ export default function CurrencySection({ baseCurrency }: Props) {
     })();
   }, [baseCurrency]);
 
-  const nonBase = (detected ?? []).filter((d) => d.currency !== baseCurrency.toUpperCase());
+  // The API already normalizes name/symbol/code variants into one row
+  // per currency and drops the base currency, so render the list as-is.
+  const nonBase = detected ?? [];
 
   return (
     <div className="card mb-6">

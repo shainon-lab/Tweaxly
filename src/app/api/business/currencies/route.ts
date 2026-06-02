@@ -9,6 +9,7 @@
 import { NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { resolveCurrencyCode, currencyDisplayLabel } from "@/lib/currencies";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -29,10 +30,33 @@ export async function GET() {
     ORDER BY count DESC
   `;
 
-  const detected = rows.map((r) => ({
-    currency: (r.currency ?? "").toUpperCase(),
-    count: Number(r.count),
-  })).filter((r) => r.currency.length > 0);
+  // Normalize each raw label (code / name / symbol) to its ISO code and
+  // merge the counts, so "EURO", "€" and "EUR" collapse into one Euro (€)
+  // row. Unrecognized labels keep their raw uppercased form. The base
+  // currency is dropped (everything is already normalized to it).
+  const baseCode = resolveCurrencyCode(business.currency) ?? business.currency.toUpperCase();
+
+  const merged = new Map<string, { currency: string; code: string | null; count: number }>();
+  for (const r of rows) {
+    const raw = (r.currency ?? "").trim();
+    if (!raw) continue;
+    const code = resolveCurrencyCode(raw);
+    if (code && code === baseCode) continue; // already the base currency
+    const key = code ?? raw.toUpperCase();
+    const count = Number(r.count);
+    const existing = merged.get(key);
+    if (existing) {
+      existing.count += count;
+    } else {
+      merged.set(key, {
+        currency: code ? currencyDisplayLabel(code) : raw.toUpperCase(),
+        code,
+        count,
+      });
+    }
+  }
+
+  const detected = [...merged.values()].sort((a, b) => b.count - a.count);
 
   return NextResponse.json({
     baseCurrency: business.currency,
