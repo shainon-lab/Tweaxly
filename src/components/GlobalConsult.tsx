@@ -17,7 +17,7 @@
 
 import { useState, useEffect, useRef, useMemo } from "react";
 import { usePathname } from "next/navigation";
-import { MessageSquareText, Sparkles, X } from "lucide-react";
+import { MessageSquareText, Sparkles, X, Maximize2, Minimize2 } from "lucide-react";
 import { renderMarkdown } from "@/app/(app)/consultation/markdown";
 import { useT, useLocale } from "@/lib/i18n/client";
 import { dirFor } from "@/lib/i18n";
@@ -287,6 +287,9 @@ export default function GlobalConsult() {
   }, []);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  // Wide reading mode - expands the side panel to ~75% of the screen
+  // (desktop only). Resets whenever the panel closes.
+  const [expanded, setExpanded] = useState(false);
   const [response, setResponse] = useState<{ q: string; a: string } | null>(null);
   const [showNudge, setShowNudge] = useState(false);
   const [dismissPicker, setDismissPicker] = useState(false);
@@ -348,6 +351,8 @@ export default function GlobalConsult() {
     if (open && textareaRef.current) {
       textareaRef.current.focus();
     }
+    // Always return to the compact width when the panel closes.
+    if (!open) setExpanded(false);
   }, [open]);
 
   // ESC closes the panel.
@@ -545,7 +550,7 @@ export default function GlobalConsult() {
                   <button
                     type="button"
                     onClick={openFromNudge}
-                    className="text-xs px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200"
+                    className="text-xs px-2.5 py-1 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft transition duration-200"
                   >
                     Consult
                   </button>
@@ -589,7 +594,7 @@ export default function GlobalConsult() {
           type="button"
           onClick={() => setOpen(true)}
           style={{ bottom: "max(1.25rem, env(safe-area-inset-bottom))" }}
-          className={`fixed ${fbPos} z-40 inline-flex items-center justify-center gap-2 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:text-white hover:border-accent transition duration-200 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5`}
+          className={`fixed ${fbPos} z-40 inline-flex items-center justify-center gap-2 rounded-full border border-accent/40 bg-ink-900/90 backdrop-blur text-accent shadow-lg hover:bg-accent-soft hover:border-accent transition duration-200 w-11 h-11 sm:w-auto sm:h-auto sm:px-4 sm:py-2.5`}
           aria-label="Open AI business consultation"
           title="Consult with your AI advisor about this view"
         >
@@ -612,7 +617,7 @@ export default function GlobalConsult() {
               on sm+. Smooth slide-in from the right via Tailwind's
               built-in transition utilities. */}
           <aside
-            className={`fixed ${panelPos} top-0 bottom-0 z-50 w-full sm:w-[460px] bg-ink-900 ${panelBorder} border-line shadow-2xl flex flex-col ${panelAnim}`}
+            className={`fixed ${panelPos} top-0 bottom-0 z-50 w-full ${expanded ? "sm:w-[75vw]" : "sm:w-[460px]"} bg-ink-900 ${panelBorder} border-line shadow-2xl flex flex-col ${panelAnim} transition-[width] duration-200 ease-out`}
             role="dialog"
             aria-modal="true"
             aria-label="AI consultation panel"
@@ -627,14 +632,28 @@ export default function GlobalConsult() {
                 </div>
                 <div className="text-xs text-slate-400 truncate">{meta.subtitle}</div>
               </div>
-              <button
-                type="button"
-                onClick={() => setOpen(false)}
-                className="shrink-0 text-slate-400 hover:text-slate-200 transition duration-200"
-                aria-label="Close consultation panel"
-              >
-                <X size={18} strokeWidth={1.5} />
-              </button>
+              <div className="flex shrink-0 items-center gap-1.5">
+                {/* Expand to ~75% width for easier reading (desktop only),
+                    toggles back to the compact panel. */}
+                <button
+                  type="button"
+                  onClick={() => setExpanded((v) => !v)}
+                  className="hidden sm:inline-flex items-center gap-1.5 rounded-md border border-line px-2 py-1 text-xs text-slate-400 hover:text-slate-200 hover:border-accent/40 transition duration-200"
+                  aria-label={expanded ? "Collapse consultation panel" : "Expand consultation panel"}
+                  title={expanded ? "Collapse panel" : "Expand panel"}
+                >
+                  {expanded ? <Minimize2 size={13} strokeWidth={1.75} /> : <Maximize2 size={13} strokeWidth={1.75} />}
+                  {expanded ? "Collapse" : "Expand"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpen(false)}
+                  className="text-slate-400 hover:text-slate-200 transition duration-200"
+                  aria-label="Close consultation panel"
+                >
+                  <X size={18} strokeWidth={1.5} />
+                </button>
+              </div>
             </header>
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
@@ -709,7 +728,7 @@ export default function GlobalConsult() {
                 type="button"
                 onClick={() => void send()}
                 disabled={sending || !draft.trim()}
-                className="w-full text-sm px-4 py-2.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft hover:text-white transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full text-sm px-4 py-2.5 rounded-md border border-accent/40 bg-accent-soft/30 text-accent hover:bg-accent-soft transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {sending ? "Analyzing…" : "Start Consultation"}
               </button>
