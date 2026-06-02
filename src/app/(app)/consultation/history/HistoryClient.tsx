@@ -31,18 +31,25 @@ function truncateForTitle(text: string, max = 80): string {
 }
 
 export type HistoryListItem = {
+  id: string;                  // consultation (thread) id
+  firstQuestion: string;       // the first question asked in the thread
+  questionCount: number;       // how many questions in the thread
+  startedAt: string;           // when the thread started
+  lastAnswerAt: string | null; // when the last answer landed (null if none)
+};
+
+export type DetailMsg = {
   id: string;
-  title: string;
-  askedAt: string;
+  role: "user" | "assistant";
+  content: string;
+  payload: string | null;
+  structured: StructuredAdvice | null;
+  createdAt: string;
 };
 
 export type HistoryDetail = {
   id: string;
-  question: string;
-  askedAt: string;
-  answerMarkdown: string | null;
-  payload: string | null;
-  structured: StructuredAdvice | null;
+  messages: DetailMsg[];
 };
 
 function fmtDate(iso: string): { date: string; time: string } {
@@ -136,8 +143,18 @@ export default function HistoryClient({
             <ul className="p-2 space-y-1">
               {list.map((item) => {
                 const active = item.id === selectedId;
-                const { date, time } = fmtDate(item.askedAt);
                 const isDeleting = deletingId === item.id;
+                const start = fmtDate(item.startedAt);
+                const last = item.lastAnswerAt ? fmtDate(item.lastAnswerAt) : null;
+                const multi = item.questionCount > 1;
+                // Multi-question thread: show "started → last answer"
+                // (collapsed to just the times when same day). Single
+                // question: just the time it was asked.
+                const stamp = multi && last
+                  ? start.date === last.date
+                    ? `${start.date} • ${start.time} → ${last.time}`
+                    : `${start.date} ${start.time} → ${last.date} ${last.time}`
+                  : `${start.date} • ${start.time}`;
                 return (
                   <li key={item.id} className="relative group">
                     <Link
@@ -149,10 +166,11 @@ export default function HistoryClient({
                           : "border-transparent text-slate-300 hover:bg-ink-700/60 hover:border-line"
                       } ${isDeleting ? "opacity-50" : ""}`}
                     >
-                      <div className="line-clamp-2 leading-snug">{item.title}</div>
-                      <div className="text-[11px] text-slate-500 mt-1">
-                        {date} • {time}
+                      <div className="line-clamp-2 leading-snug">
+                        {item.firstQuestion}
+                        {multi ? <span className="text-slate-400"> ({item.questionCount})</span> : null}
                       </div>
+                      <div className="text-[11px] text-slate-500 mt-1">{stamp}</div>
                     </Link>
                     {/* Hover-revealed trash. Always rendered (positioned
                         absolute) so screen readers can still focus it;
@@ -190,64 +208,56 @@ export default function HistoryClient({
                 </div>
               </div>
             ) : (
-              <>
-                {/* Question header - mirrors the New Advisory question
-                    card (same accent border, "Your question" eyebrow,
-                    t-meta/t-body typography) so a re-opened session
-                    feels identical to the moment it was asked. Share
-                    button on the right lets the user re-share a past
-                    answer without going back to the live view. */}
-                <div className="px-5 md:px-6 py-4 border-b border-line bg-ink-900/60">
-                  <div className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3 flex items-start justify-between gap-3">
-                    <div className="min-w-0 flex-1">
-                      <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
-                      <div className="t-body text-slate-100 whitespace-pre-wrap">
-                        {detail.question}
-                      </div>
-                      <div className="t-meta text-slate-500 mt-1">
-                        {new Date(detail.askedAt).toLocaleString()}
-                      </div>
-                    </div>
-                    <ShareAnalysisButton
-                      sourceType="consultation"
-                      sourceId={detail.id}
-                      snapshotContent={{
-                        content:    detail.answerMarkdown ?? "",
-                        payload:    detail.payload,
-                        structured: detail.structured,
-                      }}
-                      snapshotMeta={{
-                        title:    truncateForTitle(detail.question),
-                        question: detail.question,
-                        askedAt:  detail.askedAt,
-                        currency,
-                      }}
-                      canShare={canShareAnalyses}
-                      currentPlan={currentPlan}
-                    />
-                  </div>
-                </div>
+              (() => {
+                // The whole thread, top-to-bottom: each question card +
+                // its answer (structured card or markdown briefing). The
+                // share button targets the latest analysis in the thread.
+                const lastUserMsg = [...detail.messages].reverse().find((m) => m.role === "user") ?? null;
+                const lastAssistantMsg = [...detail.messages].reverse().find((m) => m.role === "assistant") ?? null;
+                return (
+                  <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5 space-y-4">
+                    {detail.messages.map((m) =>
+                      m.role === "user" ? (
+                        <div key={m.id} className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3">
+                          <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
+                          <div className="t-body text-slate-100 whitespace-pre-wrap">{m.content}</div>
+                          <div className="t-meta text-slate-500 mt-1">{new Date(m.createdAt).toLocaleString()}</div>
+                        </div>
+                      ) : m.structured ? (
+                        <StructuredAdvisoryView key={m.id} data={m.structured} />
+                      ) : m.content ? (
+                        <ResponseBriefing key={m.id} content={m.content} payload={m.payload} currency={currency} />
+                      ) : (
+                        <div key={m.id} className="t-body text-slate-400 italic">
+                          No answer was recorded for this question.
+                        </div>
+                      ),
+                    )}
 
-                <div className="flex-1 overflow-y-auto px-5 md:px-6 py-5">
-                  {/* Same branching the New Advisory view uses: if a
-                      structured payload was stored we render the rich
-                      card layout; otherwise fall back to the shared
-                      ResponseBriefing built from markdown. */}
-                  {detail.structured ? (
-                    <StructuredAdvisoryView data={detail.structured} />
-                  ) : detail.answerMarkdown ? (
-                    <ResponseBriefing
-                      content={detail.answerMarkdown}
-                      payload={detail.payload}
-                      currency={currency}
-                    />
-                  ) : (
-                    <div className="t-body text-slate-400 italic">
-                      No answer was recorded for this consultation.
-                    </div>
-                  )}
-                </div>
-              </>
+                    {lastUserMsg && lastAssistantMsg ? (
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <ShareAnalysisButton
+                          sourceType="consultation"
+                          sourceId={lastAssistantMsg.id}
+                          snapshotContent={{
+                            content:    lastAssistantMsg.content,
+                            payload:    lastAssistantMsg.payload,
+                            structured: lastAssistantMsg.structured,
+                          }}
+                          snapshotMeta={{
+                            title:    truncateForTitle(lastUserMsg.content),
+                            question: lastUserMsg.content,
+                            askedAt:  lastUserMsg.createdAt,
+                            currency,
+                          }}
+                          canShare={canShareAnalyses}
+                          currentPlan={currentPlan}
+                        />
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })()
             )}
           </section>
         </div>

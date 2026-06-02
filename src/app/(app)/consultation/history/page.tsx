@@ -1,8 +1,8 @@
-// Consultation History - split-screen: list of past questions on the
-// left, the selected question's response on the right. Selection is
-// driven by ?id= (consultation-message id, not consultation id) so
-// every question shows up as its own row even when several were asked
-// inside the same thread.
+// Consultation History - split-screen: list of past consultation
+// THREADS on the left, the selected thread's full conversation on the
+// right. Selection is driven by ?id= (consultation id). An ongoing
+// chat with multiple questions is one entry: it shows the first
+// question, the question count, and started/last-answer timestamps.
 
 import PageHeader from "@/components/PageHeader";
 import AdvisoryHelp from "@/components/AdvisoryHelp";
@@ -29,58 +29,77 @@ export default async function ConsultationHistoryPage({
     orderBy: [{ consultationId: "asc" }, { createdAt: "asc" }],
   });
 
-  type Pair = {
+  type DetailMsg = {
     id: string;
-    question: string;
-    answer: string | null;
+    role: "user" | "assistant";
+    content: string;
     payload: string | null;
-    // The Phase-1 structured advisor payload, when the assistant
-    // turn produced one. History needs this so re-opened sessions
-    // render through StructuredAdvisoryView - the same component
-    // the New Advisory view uses - instead of falling back to the
-    // markdown-only briefing.
+    // The Phase-1 structured advisor payload, when the assistant turn
+    // produced one - so re-opened sessions render through
+    // StructuredAdvisoryView, the same component the New Advisory view
+    // uses, instead of the markdown-only briefing.
     structured: import("@/lib/advisorTypes").StructuredAdvice | null;
-    askedAt: Date;
+    createdAt: string;
   };
-  const pairs: Pair[] = [];
-  for (let i = 0; i < allMessages.length; i++) {
-    const m = allMessages[i];
-    if (m.role !== "user") continue;
-    const next = allMessages[i + 1];
-    const paired =
-      next && next.consultationId === m.consultationId && next.role === "assistant"
-        ? next
-        : null;
-    pairs.push({
+
+  // Group every message into its consultation thread. allMessages is
+  // already ordered by (consultationId, createdAt) so per-thread order
+  // is preserved. Each thread is ONE history entry.
+  const byThread = new Map<string, DetailMsg[]>();
+  for (const m of allMessages) {
+    const arr = byThread.get(m.consultationId) ?? [];
+    arr.push({
       id: m.id,
-      question: m.content,
-      answer: paired?.content ?? null,
-      payload: paired?.payload ?? null,
-      structured: (paired?.structured as import("@/lib/advisorTypes").StructuredAdvice | null) ?? null,
-      askedAt: m.createdAt,
+      role: m.role === "assistant" ? "assistant" : "user",
+      content: m.content,
+      payload: m.payload ?? null,
+      structured: (m.structured as import("@/lib/advisorTypes").StructuredAdvice | null) ?? null,
+      createdAt: m.createdAt.toISOString(),
+    });
+    byThread.set(m.consultationId, arr);
+  }
+
+  type Thread = {
+    id: string;
+    firstQuestion: string;
+    questionCount: number;
+    startedAt: string;
+    lastAnswerAt: string | null;
+    lastActivityAt: number;
+    messages: DetailMsg[];
+  };
+  const threads: Thread[] = [];
+  for (const [id, msgs] of byThread) {
+    if (msgs.length === 0) continue;
+    const userMsgs = msgs.filter((m) => m.role === "user");
+    const assistantMsgs = msgs.filter((m) => m.role === "assistant");
+    threads.push({
+      id,
+      firstQuestion: (userMsgs[0] ?? msgs[0]).content,
+      questionCount: userMsgs.length,
+      startedAt: msgs[0].createdAt,
+      lastAnswerAt: assistantMsgs.length ? assistantMsgs[assistantMsgs.length - 1].createdAt : null,
+      lastActivityAt: new Date(msgs[msgs.length - 1].createdAt).getTime(),
+      messages: msgs,
     });
   }
-  pairs.sort((a, b) => b.askedAt.getTime() - a.askedAt.getTime());
+  // Most-recently-active thread first.
+  threads.sort((a, b) => b.lastActivityAt - a.lastActivityAt);
 
-  const list: HistoryListItem[] = pairs.map((p) => ({
-    id: p.id,
-    title: p.question,
-    askedAt: p.askedAt.toISOString(),
+  const list: HistoryListItem[] = threads.map((t) => ({
+    id: t.id,
+    firstQuestion: t.firstQuestion,
+    questionCount: t.questionCount,
+    startedAt: t.startedAt,
+    lastAnswerAt: t.lastAnswerAt,
   }));
 
   let detail: HistoryDetail | null = null;
   const selectedId = sp.id ?? list[0]?.id ?? null;
   if (selectedId) {
-    const chosen = pairs.find((p) => p.id === selectedId);
+    const chosen = threads.find((t) => t.id === selectedId);
     if (chosen) {
-      detail = {
-        id: chosen.id,
-        question: chosen.question,
-        askedAt: chosen.askedAt.toISOString(),
-        answerMarkdown: chosen.answer,
-        payload: chosen.payload,
-        structured: chosen.structured,
-      };
+      detail = { id: chosen.id, messages: chosen.messages };
     }
   }
 
