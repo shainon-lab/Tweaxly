@@ -302,7 +302,7 @@ export default function GlobalConsult() {
   // exactly the way the triggering element intended.
   const [overrideMeta, setOverrideMeta] = useState<{ title?: string; subtitle?: string } | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
-  const threadEndRef = useRef<HTMLDivElement | null>(null);
+  const lastQuestionRef = useRef<HTMLDivElement | null>(null);
   const lastActivityRef = useRef<number>(Date.now());
 
   const baseMeta = useMemo(() => deriveViewMeta(pathname ?? ""), [pathname]);
@@ -362,10 +362,12 @@ export default function GlobalConsult() {
     if (!open) setExpanded(false);
   }, [open]);
 
-  // Keep the latest turn in view as the conversation grows.
+  // When a turn is added, scroll the latest QUESTION to the top so the
+  // user sees what they asked with the answer reading right below it -
+  // not jumped to the bottom of a long answer.
   useEffect(() => {
     if (messages.length > 0) {
-      threadEndRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+      lastQuestionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [messages, sending]);
 
@@ -711,7 +713,11 @@ export default function GlobalConsult() {
                   </div>
                   {messages.map((m, i) =>
                     m.role === "user" ? (
-                      <div key={i} className="rounded-lg border border-accent/30 bg-accent-soft/20 px-3 py-2">
+                      <div
+                        key={i}
+                        ref={i === messages.map((x) => x.role).lastIndexOf("user") ? lastQuestionRef : undefined}
+                        className="scroll-mt-2 rounded-lg border border-accent/30 bg-accent-soft/20 px-3 py-2"
+                      >
                         <div className="text-[10px] uppercase tracking-wide text-accent mb-1">You</div>
                         <div className="text-sm text-slate-100 whitespace-pre-wrap leading-relaxed">
                           {m.content.replace(/^\[Current view:[^\]]+\]\s*/, "")}
@@ -729,7 +735,6 @@ export default function GlobalConsult() {
                   {sending ? (
                     <div className="text-xs text-slate-400 px-1 animate-pulse">Analyzing…</div>
                   ) : null}
-                  <div ref={threadEndRef} />
                 </div>
               ) : (
                 <div>

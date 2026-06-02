@@ -153,8 +153,10 @@ export default function ConsultationClient({
 
   // Auto-scroll into view when a fresh response arrives.
   useEffect(() => {
+    // Land on the latest QUESTION (not the end of the answer) so the
+    // user sees what they asked with the answer reading right below it.
     if (active && responseRef.current) {
-      responseRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
+      responseRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
     }
   }, [active?.messages.length]);
 
@@ -294,7 +296,11 @@ export default function ConsultationClient({
 
           {active.messages.map((m) =>
             m.role === "user" ? (
-              <div key={m.id} className="rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3">
+              <div
+                key={m.id}
+                ref={m.id === lastUserMsg?.id ? responseRef : undefined}
+                className="scroll-mt-24 rounded-xl border border-accent/30 bg-accent-soft/30 px-4 py-3"
+              >
                 <div className="t-meta uppercase tracking-wide text-accent mb-1">Your question</div>
                 <div className="t-body text-slate-100 whitespace-pre-wrap">{m.content}</div>
                 <div className="t-meta text-slate-500 mt-1">{new Date(m.createdAt).toLocaleString()}</div>
@@ -348,8 +354,6 @@ export default function ConsultationClient({
         />
       </div>
 
-      {/* Scroll anchor so the latest turn + composer come into view. */}
-      <div ref={responseRef} />
     </div>
   );
 }
