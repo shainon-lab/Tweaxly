@@ -371,6 +371,7 @@ model Business {
   alertPreferences    AlertPreference[]
   alertNotifications  AlertNotification[]
   sharedAnalyses      SharedAnalysis[]
+  financialReviews    FinancialReview[]
 }
 
 // Real-Time Business Alerts (Premium) - per-user × per-business
@@ -1554,4 +1555,54 @@ model SharedAnalysis {
   // creator-scoped list for the per-user "my shares" view.
   @@index([businessId, createdAt(sort: Desc)])
   @@index([createdByUserId, createdAt(sort: Desc)])
+}
+
+// ── Financial Review ─────────────────────────────────────────────
+// A business owner uploads a financial report (PDF / XLSX / CSV) from
+// their accountant and receives an AI-generated, plain-English review:
+// a health score, executive summary, second-opinion review flags,
+// questions to ask their CPA, an action plan, and a 12-month outlook.
+//
+// One row per completed (or in-flight) review, scoped to the workspace
+// like every other tenant record. We persist the extracted source text
+// and the full structured result (`result` JSON) so a past review can
+// be reopened with no reprocessing. Raw uploaded files are NOT stored.
+//
+// This module is intentionally independent from Consultation, Forecast,
+// Signals, Transactions and Data Sources - a separate workflow.
+model FinancialReview {
+  id              String   @id @default(cuid())
+  businessId      String
+  business        Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  // User who ran the review (no FK constraint - mirrors SharedAnalysis
+  // createdBy convention; kept nullable for resilience).
+  createdByUserId String?
+
+  // Upload metadata. One or more files may be combined into a single
+  // review; `fileName` holds the primary / combined label and
+  // `fileCount` the number of files extracted.
+  fileName     String
+  fileType     String  // "pdf" | "xlsx" | "csv" | "mixed"
+  fileCount    Int     @default(1)
+  // AI-detected report type (e.g. "Profit & Loss Statement").
+  reportType   String?
+  // Extracted source text kept for the detail view + future AI chat.
+  extractedText String?
+
+  // Processing lifecycle.
+  status       String  @default("processing") // processing | complete | failed
+  errorMessage String?
+
+  // Denormalised headline results for the history list.
+  score        Int?    // 0-100 overall business health
+  statusLevel  String? // excellent | healthy | needs_attention | high_risk
+
+  // Full structured review (all four sections + forecast layer).
+  result       Json?
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@index([businessId, createdAt(sort: Desc)])
+  @@index([businessId, status])
 }

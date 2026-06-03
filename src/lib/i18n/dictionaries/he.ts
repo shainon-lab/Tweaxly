@@ -45,6 +45,7 @@ export const he: Dictionary = {
   "nav.overview": "סקירה",
   "nav.signals": "סיגנלים",
   "nav.advisory": "ייעוץ",
+  "nav.financialReview": "סקירה פיננסית",
   "nav.forecast": "תחזית",
   "nav.reports": "דוחות",
   "nav.data":     "נתונים",

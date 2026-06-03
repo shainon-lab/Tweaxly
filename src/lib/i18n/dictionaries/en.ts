@@ -64,6 +64,7 @@ export const en: Dictionary = {
   "nav.overview": "Overview",
   "nav.signals": "Signals",
   "nav.advisory": "Advisory",
+  "nav.financialReview": "Financial Review",
   "nav.forecast": "Forecast",
   "nav.reports": "Reports",
   "nav.data":     "Data",

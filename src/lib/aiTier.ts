@@ -30,7 +30,8 @@ export type AiSurface =
   | "executive_summary"     // dashboard narrative
   | "business_profile"      // settings / DNA summary
   | "derived_signals"       // signal-enrichment polish
-  | "consultation";         // free-form Q&A advisor
+  | "consultation"          // free-form Q&A advisor
+  | "financial_review";     // uploaded-report review (large structured output)
 
 // Tier-aware model / token / thinking config. Kept per-surface
 // because each call has its own natural ceiling - a tight 3-sentence
@@ -62,6 +63,9 @@ const SURFACE_BUDGETS: Record<AiSurface, { free: number; pro: number }> = {
   business_profile:  { free: 400,   pro: 600   },
   derived_signals:   { free: 300,   pro: 500   },
   consultation:      { free: 4000,  pro: 16000 },
+  // The review is one large structured JSON document (4 sections +
+  // forecast). It needs a generous ceiling on both tiers.
+  financial_review:  { free: 6000,  pro: 16000 },
 };
 
 export function tierConfigFor(tier: AiTier, surface: AiSurface): TierConfig {

@@ -8,6 +8,7 @@ import {
   MessageSquare,
   TrendingUp,
   FileText,
+  FileSearch,
   SlidersHorizontal,
   CircleUser,
   Database,
@@ -40,6 +41,7 @@ const NAV: { href: string; tKey: string; Icon: LucideIcon; alertKey?: AlertKey }
   { href: "/dashboard",        tKey: "nav.overview", Icon: LayoutDashboard },
   { href: "/business-signals", tKey: "nav.signals",  Icon: Activity,         alertKey: "businessSignals" },
   { href: "/consultation",     tKey: "nav.advisory", Icon: MessageSquare },
+  { href: "/financial-review", tKey: "nav.financialReview", Icon: FileSearch },
   { href: "/forecast",         tKey: "nav.forecast", Icon: TrendingUp },
   { href: "/report",           tKey: "nav.reports",  Icon: FileText,         alertKey: "insights" },
   // Workforce Planning lives inside Forecast as a sub-tab now - the
