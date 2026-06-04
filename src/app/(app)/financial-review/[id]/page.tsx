@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db";
 import { FinancialReviewResultSchema } from "@/lib/financialReview/types";
 import ReviewDetail from "../ReviewDetail";
 import ReviewActions from "./ReviewActions";
+import ShareButton from "./ShareButton";
 
 export const dynamic = "force-dynamic";
 
@@ -36,7 +37,14 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       <PageHeader
         title={title}
         subtitle={`${review.fileName} · ${fmtDate(review.createdAt)}`}
-        right={<ReviewActions id={review.id} />}
+        right={
+          <div className="flex items-center gap-2">
+            {review.status === "complete" ? (
+              <ShareButton id={review.id} initialToken={review.shareToken} />
+            ) : null}
+            <ReviewActions id={review.id} />
+          </div>
+        }
       />
 
       <div className="pt-2">

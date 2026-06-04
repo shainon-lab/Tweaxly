@@ -1604,6 +1604,12 @@ model FinancialReview {
   // Full structured review (all four sections + forecast layer).
   result       Json?
 
+  // Public sharing. When `shareToken` is set, anyone with the link can
+  // view a read-only copy at /share/financial-review/<token> (no auth).
+  // Ungated for now (available to free users). Null = not shared.
+  shareToken   String?   @unique
+  sharedAt     DateTime?
+
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
