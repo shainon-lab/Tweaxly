@@ -38,9 +38,10 @@ export default function ReviewDetail({
     <div className="space-y-8 pb-12">
       <ReviewDisclaimer />
 
-      {/* ── Section 1: Business Health Assessment ── */}
-      <section className="grid gap-5 md:grid-cols-[260px_1fr]">
-        <HealthScore score={Math.round(result.healthScore)} level={level} />
+      {/* ── Section 1: Business Health Assessment ──
+          Executive summary leads (full width); the compact health score
+          sits as the first box directly underneath it. */}
+      <section className="space-y-4">
         <div className="card">
           <h2 className="t-card mb-2">Executive summary</h2>
           <p className="t-body whitespace-pre-line text-slate-200">{result.executiveSummary}</p>
@@ -54,6 +55,9 @@ export default function ReviewDetail({
               ))}
             </div>
           ) : null}
+        </div>
+        <div>
+          <HealthScore score={Math.round(result.healthScore)} level={level} />
         </div>
       </section>
 

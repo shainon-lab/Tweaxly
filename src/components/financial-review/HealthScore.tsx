@@ -1,8 +1,9 @@
 import { statusLabel, type StatusLevel } from "@/lib/financialReview/types";
 
-// Large business-health score card (Section 1 headline). Colour follows
-// the status band: good (excellent/healthy), warn (needs attention),
-// bad (high risk). Pure presentation - takes a 0-100 score + band.
+// Compact business-health score box (Section 1). Colour follows the
+// status band: good (excellent/healthy), warn (needs attention), bad
+// (high risk). Sized to its content so it reads as a small summary chip
+// under the executive summary rather than a large hero card.
 function tone(level: StatusLevel | string | null | undefined): { text: string; ring: string; bg: string } {
   switch (level) {
     case "excellent":
@@ -26,14 +27,16 @@ export default function HealthScore({
 }) {
   const t = tone(level);
   return (
-    <div className={`flex flex-col items-center justify-center rounded-xl border ${t.ring} ${t.bg} p-6 text-center`}>
-      <div className="t-meta uppercase tracking-wide text-slate-400">Business Health</div>
-      <div className={`mt-1 text-6xl font-bold leading-none ${t.text}`}>
+    <div className={`inline-flex items-center gap-4 rounded-xl border ${t.ring} ${t.bg} px-5 py-3.5`}>
+      <div className={`text-4xl font-bold leading-none ${t.text}`}>
         {score}
-        <span className="text-2xl font-semibold text-slate-400"> / 100</span>
+        <span className="text-base font-semibold text-slate-400"> / 100</span>
       </div>
-      <div className={`mt-3 inline-flex items-center rounded-full border ${t.ring} px-3 py-1 text-sm font-semibold ${t.text}`}>
-        {statusLabel(level)}
+      <div>
+        <div className="t-meta uppercase tracking-wide text-slate-400">Business Health</div>
+        <div className={`mt-1 inline-flex items-center rounded-full border ${t.ring} px-2.5 py-0.5 text-sm font-semibold ${t.text}`}>
+          {statusLabel(level)}
+        </div>
       </div>
     </div>
   );

@@ -37,20 +37,22 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       <PageHeader
         title={title}
         subtitle={`${review.fileName} · ${fmtDate(review.createdAt)}`}
-        right={
-          <div className="flex items-center gap-2">
-            {review.status === "complete" ? (
-              <ShareButton id={review.id} initialToken={review.shareToken} />
-            ) : null}
-            <ReviewActions id={review.id} />
-          </div>
-        }
       />
 
       <div className="pt-2">
-        <Link href="/financial-review" className="t-meta mb-4 inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200">
+        <Link href="/financial-review" className="t-meta inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200">
           <ArrowLeft size={14} /> All reviews
         </Link>
+
+        {/* Action toolbar - left-aligned in the page body (not the sticky
+            header) so the Share popover opens into the content area and
+            above the sidebar, never behind it. */}
+        <div className="mb-5 mt-3 flex items-center gap-2">
+          {review.status === "complete" ? (
+            <ShareButton id={review.id} initialToken={review.shareToken} />
+          ) : null}
+          <ReviewActions id={review.id} />
+        </div>
 
         {review.scanned ? (
           <div className="mb-5 flex items-start gap-2.5 rounded-md border border-warn/30 bg-warn/10 p-3.5">

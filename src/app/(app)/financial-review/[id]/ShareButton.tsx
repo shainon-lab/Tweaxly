@@ -76,8 +76,10 @@ export default function ShareButton({
       {open ? (
         <>
           {/* click-outside backdrop */}
-          <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} aria-hidden />
-          <div className="absolute right-0 z-50 mt-2 w-[320px] rounded-lg border border-line bg-ink-900 p-4 shadow-xl">
+          <div className="fixed inset-0 z-[55]" onClick={() => setOpen(false)} aria-hidden />
+          {/* Opens rightward (left-0) into the content area and above the
+              sidebar (z-60 > sidebar z-50). */}
+          <div className="absolute left-0 z-[60] mt-2 w-[320px] max-w-[80vw] rounded-lg border border-line bg-ink-900 p-4 shadow-xl">
             <div className="mb-2 flex items-center justify-between">
               <div className="t-meta font-semibold uppercase tracking-wide text-slate-300">Share this review</div>
               <button type="button" onClick={() => setOpen(false)} className="rounded p-1 text-slate-400 hover:bg-ink-700 hover:text-slate-200" aria-label="Close">
