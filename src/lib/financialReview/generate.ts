@@ -100,32 +100,57 @@ export interface GeneratedReview {
   result:      FinancialReviewResult;
 }
 
-// Run the uploaded report text through Claude and return a validated,
-// structured review. Throws if the model output cannot be parsed or
-// validated - the caller marks the review "failed".
+export interface ReviewDocumentInput {
+  name:      string;
+  mediaType: "application/pdf";
+  base64:    string;
+}
+
+// Run the uploaded report through Claude and return a validated,
+// structured review. PDFs are passed as native document blocks (Claude
+// reads scanned/image PDFs with vision); spreadsheet text is passed
+// inline. Throws if the model output cannot be parsed or validated -
+// the caller marks the review "failed".
 export async function generateFinancialReview(opts: {
-  businessId:    string;
-  apiKey:        string;
-  currency:      string;
-  fileLabel:     string;
-  extractedText: string;
+  businessId: string;
+  apiKey:     string;
+  currency:   string;
+  fileLabel:  string;
+  documents:  ReviewDocumentInput[];
+  text:       string;
 }): Promise<GeneratedReview> {
   const client = new Anthropic({ apiKey: opts.apiKey });
   const tier = await tierConfigForBusiness(opts.businessId, "financial_review");
 
-  // Guard the context window. Financial reports are usually small, but
-  // multi-file uploads or dense workbooks can be large; cap the text.
+  // Guard the context window for very large spreadsheet text.
   const MAX_CHARS = 120_000;
   const text =
-    opts.extractedText.length > MAX_CHARS
-      ? opts.extractedText.slice(0, MAX_CHARS) +
+    opts.text.length > MAX_CHARS
+      ? opts.text.slice(0, MAX_CHARS) +
         "\n\n[Content truncated for length. Base the review on the content above.]"
-      : opts.extractedText;
+      : opts.text;
 
-  const userContent =
+  // Build the user message: attached PDF documents first, then a text
+  // block with framing + any spreadsheet data.
+  const content: Anthropic.ContentBlockParam[] = [];
+  for (const d of opts.documents) {
+    content.push({
+      type: "document",
+      source: { type: "base64", media_type: d.mediaType, data: d.base64 },
+      title: d.name,
+    });
+  }
+  const framing =
     `Reporting currency: ${opts.currency}\n` +
     `Uploaded report: ${opts.fileLabel}\n\n` +
-    `--- BEGIN UPLOADED FINANCIAL REPORT CONTENT ---\n${text}\n--- END UPLOADED FINANCIAL REPORT CONTENT ---`;
+    (opts.documents.length > 0
+      ? "Read the attached financial report file(s) above (they may be scanned images - read them carefully, including any tables) and analyze them.\n\n"
+      : "") +
+    (text
+      ? `Report data from spreadsheet upload(s):\n\n--- BEGIN REPORT DATA ---\n${text}\n--- END REPORT DATA ---\n\n`
+      : "") +
+    "Produce the review exactly as specified in the system instructions.";
+  content.push({ type: "text", text: framing });
 
   const response = await client.messages.create({
     model:      tier.model,
@@ -133,7 +158,7 @@ export async function generateFinancialReview(opts: {
     ...(tier.thinking ? { thinking: tier.thinking } : {}),
     ...(tier.effort ? { output_config: { effort: tier.effort } } : {}),
     system: [{ type: "text", text: SYSTEM_PROMPT }],
-    messages: [{ role: "user" as const, content: userContent }],
+    messages: [{ role: "user" as const, content }],
   });
 
   let raw = "";

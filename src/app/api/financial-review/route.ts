@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { detectFileType, extractAndCombine } from "@/lib/financialReview/extract";
+import { detectFileType, buildReviewInput } from "@/lib/financialReview/extract";
 import { generateFinancialReview } from "@/lib/financialReview/generate";
 
 // File parsing + a 30-90s Claude call need the Node runtime.
@@ -82,13 +82,25 @@ export async function POST(req: NextRequest) {
     files.push({ name: f.name, buf: Buffer.from(await f.arrayBuffer()) });
   }
 
-  // Extract text. A parse failure here means we never create a row.
-  let combined;
+  // Build the review input: PDFs become native document blocks (Claude
+  // reads scanned/image PDFs with vision), spreadsheets become text. A
+  // failure here means we never create a row.
+  let input;
   try {
-    combined = await extractAndCombine(files);
+    input = buildReviewInput(files);
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Could not read the uploaded files." },
+      { status: 400 },
+    );
+  }
+
+  // Keep the request to Claude under the API's PDF limit (~32 MB incl.
+  // base64 overhead). Cap total raw PDF bytes well below that.
+  const MAX_TOTAL_PDF = 20 * 1024 * 1024;
+  if (input.pdfBytes > MAX_TOTAL_PDF) {
+    return NextResponse.json(
+      { error: "The uploaded PDFs are too large in total. Upload fewer or smaller files (under 20 MB combined)." },
       { status: 400 },
     );
   }
@@ -99,10 +111,10 @@ export async function POST(req: NextRequest) {
     data: {
       businessId:      business.id,
       createdByUserId: user.id,
-      fileName:        combined.fileLabel,
-      fileType:        combined.fileType,
-      fileCount:       combined.fileCount,
-      extractedText:   combined.text,
+      fileName:        input.fileLabel,
+      fileType:        input.fileType,
+      fileCount:       input.fileCount,
+      extractedText:   input.text || null,
       status:          "processing",
     },
     select: { id: true },
@@ -110,11 +122,12 @@ export async function POST(req: NextRequest) {
 
   try {
     const generated = await generateFinancialReview({
-      businessId:    business.id,
+      businessId: business.id,
       apiKey,
-      currency:      business.currency,
-      fileLabel:     combined.fileLabel,
-      extractedText: combined.text,
+      currency:   business.currency,
+      fileLabel:  input.fileLabel,
+      documents:  input.documents,
+      text:       input.text,
     });
     await prisma.financialReview.update({
       where: { id: review.id },

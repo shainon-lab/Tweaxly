@@ -1,10 +1,13 @@
 import "server-only";
 import * as XLSX from "xlsx";
 
-// File-text extraction for the Financial Review module. We turn an
-// uploaded report (PDF / XLSX / CSV) into plain text that Claude can
-// read. We do NOT persist the raw bytes - only the extracted text is
-// stored on the review row.
+// Input preparation for the Financial Review module.
+//
+// PDFs are sent to Claude as native document blocks (base64) - Claude
+// reads them with vision, so this works for BOTH text PDFs and scanned
+// image PDFs (very common for accountant reports). Spreadsheets (XLSX /
+// CSV) have no vision path, so we flatten them to text. We do NOT
+// persist raw bytes - only the spreadsheet text is kept on the row.
 
 export type SupportedFileType = "pdf" | "xlsx" | "csv";
 
@@ -15,79 +18,71 @@ export function detectFileType(name: string): SupportedFileType | null {
   return null;
 }
 
-export interface ExtractedFile {
-  fileName: string;
-  fileType: SupportedFileType;
-  text:     string;
+export interface ReviewDocument {
+  name:      string;
+  mediaType: "application/pdf";
+  base64:    string;
 }
 
-// Extract text from a single uploaded buffer. Throws on unsupported
-// types or unreadable files.
-export async function extractTextFromFile(fileName: string, buf: Buffer): Promise<ExtractedFile> {
-  const type = detectFileType(fileName);
-  if (!type) {
-    throw new Error(`Unsupported file type: ${fileName}. Upload a PDF, XLSX or CSV.`);
-  }
-
-  if (type === "pdf") {
-    // Import the library's inner module directly - the package's
-    // index.js runs a debug block that reads a bundled test PDF, which
-    // breaks under the Next.js server bundler. The inner module is the
-    // actual parser with no side effects.
-    const mod = (await import("pdf-parse/lib/pdf-parse.js")) as unknown as {
-      default: (b: Buffer) => Promise<{ text: string }>;
-    };
-    const pdf = mod.default;
-    const data = await pdf(buf);
-    const text = (data.text ?? "").trim();
-    if (!text) throw new Error(`Could not read any text from ${fileName}. It may be a scanned image PDF.`);
-    return { fileName, fileType: "pdf", text };
-  }
-
-  // XLSX + CSV both go through SheetJS (already a project dep). Every
-  // sheet is flattened to CSV text with its name as a header so the
-  // model can see multi-tab workbooks (e.g. P&L + Balance Sheet).
-  const wb = XLSX.read(buf, { type: "buffer", cellDates: true, raw: false });
-  const parts: string[] = [];
-  for (const sheetName of wb.SheetNames) {
-    const sheet = wb.Sheets[sheetName];
-    if (!sheet) continue;
-    const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
-    if (csv.trim()) parts.push(`# Sheet: ${sheetName}\n${csv}`);
-  }
-  const text = parts.join("\n\n").trim();
-  if (!text) throw new Error(`Could not read any data from ${fileName}.`);
-  return { fileName, fileType: type, text };
-}
-
-// Combine multiple uploaded files into one labelled text document plus a
-// summary of what was uploaded (used as the review's headline label).
-export interface CombinedExtraction {
+export interface ReviewInput {
+  // PDFs passed to Claude natively (handles scanned/image PDFs).
+  documents: ReviewDocument[];
+  // Extracted text from spreadsheet uploads (empty for pure-PDF uploads).
   text:      string;
   fileLabel: string;
   fileType:  "pdf" | "xlsx" | "csv" | "mixed";
   fileCount: number;
+  // Total raw bytes of attached PDFs - used for the request-size guard.
+  pdfBytes:  number;
 }
 
-export async function extractAndCombine(
-  files: { name: string; buf: Buffer }[],
-): Promise<CombinedExtraction> {
+// Turn uploaded buffers into a review input: PDF document blocks +
+// flattened spreadsheet text. Throws on unsupported or unreadable files.
+export function buildReviewInput(files: { name: string; buf: Buffer }[]): ReviewInput {
   if (files.length === 0) throw new Error("No files provided.");
-  const extracted: ExtractedFile[] = [];
+
+  const documents: ReviewDocument[] = [];
+  const textParts: string[] = [];
+  const types = new Set<SupportedFileType>();
+  let pdfBytes = 0;
+
   for (const f of files) {
-    extracted.push(await extractTextFromFile(f.name, f.buf));
+    const type = detectFileType(f.name);
+    if (!type) {
+      throw new Error(`Unsupported file type: ${f.name}. Upload a PDF, XLSX or CSV.`);
+    }
+    types.add(type);
+
+    if (type === "pdf") {
+      documents.push({ name: f.name, mediaType: "application/pdf", base64: f.buf.toString("base64") });
+      pdfBytes += f.buf.length;
+      continue;
+    }
+
+    // XLSX / CSV -> flatten every sheet to CSV text.
+    const wb = XLSX.read(f.buf, { type: "buffer", cellDates: true, raw: false });
+    const parts: string[] = [];
+    for (const sheetName of wb.SheetNames) {
+      const sheet = wb.Sheets[sheetName];
+      if (!sheet) continue;
+      const csv = XLSX.utils.sheet_to_csv(sheet, { blankrows: false });
+      if (csv.trim()) parts.push(`# Sheet: ${sheetName}\n${csv}`);
+    }
+    const t = parts.join("\n\n").trim();
+    if (!t) throw new Error(`Could not read any data from ${f.name}.`);
+    textParts.push(`===== FILE: ${f.name} =====\n${t}`);
   }
 
-  const text = extracted
-    .map((e) => `===== FILE: ${e.fileName} =====\n${e.text}`)
-    .join("\n\n");
-
-  const types = new Set(extracted.map((e) => e.fileType));
   const fileType = types.size === 1 ? [...types][0] : "mixed";
   const fileLabel =
-    extracted.length === 1
-      ? extracted[0].fileName
-      : `${extracted[0].fileName} + ${extracted.length - 1} more`;
+    files.length === 1 ? files[0].name : `${files[0].name} + ${files.length - 1} more`;
 
-  return { text, fileLabel, fileType, fileCount: extracted.length };
+  return {
+    documents,
+    text: textParts.join("\n\n"),
+    fileLabel,
+    fileType,
+    fileCount: files.length,
+    pdfBytes,
+  };
 }

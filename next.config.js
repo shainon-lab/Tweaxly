@@ -2,7 +2,7 @@
 const nextConfig = {
   experimental: {
     serverActions: { bodySizeLimit: "20mb" },
-    serverComponentsExternalPackages: ["xlsx", "@prisma/client", "bcryptjs", "pdf-parse"],
+    serverComponentsExternalPackages: ["xlsx", "@prisma/client", "bcryptjs"],
   },
 };
 
