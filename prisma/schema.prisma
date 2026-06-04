@@ -1584,6 +1584,10 @@ model FinancialReview {
   fileName     String
   fileType     String  // "pdf" | "xlsx" | "csv" | "mixed"
   fileCount    Int     @default(1)
+  // True when at least one PDF had no text layer and was read with AI
+  // vision (the slower fallback). Surfaced to the user as a hint to
+  // upload original, text-based PDFs.
+  scanned      Boolean @default(false)
   // AI-detected report type (e.g. "Profit & Loss Statement").
   reportType   String?
   // Extracted source text kept for the detail view + future AI chat.

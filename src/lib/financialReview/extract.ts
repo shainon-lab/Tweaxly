@@ -3,13 +3,21 @@ import * as XLSX from "xlsx";
 
 // Input preparation for the Financial Review module.
 //
-// PDFs are sent to Claude as native document blocks (base64) - Claude
-// reads them with vision, so this works for BOTH text PDFs and scanned
-// image PDFs (very common for accountant reports). Spreadsheets (XLSX /
-// CSV) have no vision path, so we flatten them to text. We do NOT
-// persist raw bytes - only the spreadsheet text is kept on the row.
+// Strategy (text-first, vision-fallback):
+//   • PDF with a real text layer  -> extract text with pdf-parse (cheap,
+//     fast - the "original" method) and send it as text.
+//   • Scanned / image PDF (no text layer) -> send the file to Claude as a
+//     native document block; Claude reads it with vision. Slower + less
+//     precise, so we flag it and surface a recommendation to the user.
+//   • XLSX / CSV -> flatten every sheet to text.
+//
+// Raw bytes are never persisted - only the extracted text is kept.
 
 export type SupportedFileType = "pdf" | "xlsx" | "csv";
+
+// Below this many non-whitespace characters we treat a PDF's text layer
+// as empty (i.e. a scan) and fall back to vision.
+const MIN_PDF_TEXT_CHARS = 100;
 
 export function detectFileType(name: string): SupportedFileType | null {
   if (/\.pdf$/i.test(name)) return "pdf";
@@ -25,24 +33,44 @@ export interface ReviewDocument {
 }
 
 export interface ReviewInput {
-  // PDFs passed to Claude natively (handles scanned/image PDFs).
+  // Scanned PDFs passed to Claude natively (vision path).
   documents: ReviewDocument[];
-  // Extracted text from spreadsheet uploads (empty for pure-PDF uploads).
+  // Text from text-layer PDFs + spreadsheets (original method).
   text:      string;
   fileLabel: string;
   fileType:  "pdf" | "xlsx" | "csv" | "mixed";
   fileCount: number;
-  // Total raw bytes of attached PDFs - used for the request-size guard.
+  // Total raw bytes of the scanned PDFs sent to Claude (size guard).
   pdfBytes:  number;
+  // True when at least one file had to use the vision fallback.
+  scanned:     boolean;
+  scannedNames: string[];
 }
 
-// Turn uploaded buffers into a review input: PDF document blocks +
-// flattened spreadsheet text. Throws on unsupported or unreadable files.
-export function buildReviewInput(files: { name: string; buf: Buffer }[]): ReviewInput {
+// Read a PDF's embedded text layer. Returns "" for scanned/image PDFs
+// (or if the parser fails), which triggers the vision fallback.
+async function readPdfTextLayer(buf: Buffer): Promise<string> {
+  try {
+    // Import the inner module directly - the package index runs a debug
+    // block that reads a bundled test PDF and breaks under the bundler.
+    const mod = (await import("pdf-parse/lib/pdf-parse.js")) as unknown as {
+      default: (b: Buffer) => Promise<{ text: string }>;
+    };
+    const data = await mod.default(buf);
+    return (data.text ?? "").trim();
+  } catch {
+    return "";
+  }
+}
+
+// Turn uploaded buffers into a review input. Async because text-layer
+// extraction is async. Throws on unsupported or unreadable spreadsheets.
+export async function buildReviewInput(files: { name: string; buf: Buffer }[]): Promise<ReviewInput> {
   if (files.length === 0) throw new Error("No files provided.");
 
   const documents: ReviewDocument[] = [];
   const textParts: string[] = [];
+  const scannedNames: string[] = [];
   const types = new Set<SupportedFileType>();
   let pdfBytes = 0;
 
@@ -54,8 +82,17 @@ export function buildReviewInput(files: { name: string; buf: Buffer }[]): Review
     types.add(type);
 
     if (type === "pdf") {
-      documents.push({ name: f.name, mediaType: "application/pdf", base64: f.buf.toString("base64") });
-      pdfBytes += f.buf.length;
+      const textLayer = await readPdfTextLayer(f.buf);
+      const meaningful = textLayer.replace(/\s/g, "").length >= MIN_PDF_TEXT_CHARS;
+      if (meaningful) {
+        // Original method: use the embedded text.
+        textParts.push(`===== FILE: ${f.name} =====\n${textLayer}`);
+      } else {
+        // Scanned: fall back to Claude vision.
+        documents.push({ name: f.name, mediaType: "application/pdf", base64: f.buf.toString("base64") });
+        pdfBytes += f.buf.length;
+        scannedNames.push(f.name);
+      }
       continue;
     }
 
@@ -84,5 +121,7 @@ export function buildReviewInput(files: { name: string; buf: Buffer }[]): Review
     fileType,
     fileCount: files.length,
     pdfBytes,
+    scanned: scannedNames.length > 0,
+    scannedNames,
   };
 }

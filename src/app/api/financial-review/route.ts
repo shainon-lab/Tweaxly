@@ -87,7 +87,7 @@ export async function POST(req: NextRequest) {
   // failure here means we never create a row.
   let input;
   try {
-    input = buildReviewInput(files);
+    input = await buildReviewInput(files);
   } catch (e) {
     return NextResponse.json(
       { error: e instanceof Error ? e.message : "Could not read the uploaded files." },
@@ -114,6 +114,7 @@ export async function POST(req: NextRequest) {
       fileName:        input.fileLabel,
       fileType:        input.fileType,
       fileCount:       input.fileCount,
+      scanned:         input.scanned,
       extractedText:   input.text || null,
       status:          "processing",
     },

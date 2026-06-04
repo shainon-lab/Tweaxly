@@ -94,8 +94,8 @@ export default function UploadCard() {
       <div className="card flex flex-col items-center justify-center py-12 text-center">
         <Loader2 size={28} className="animate-spin text-accent" />
         <div className="t-card mt-4">{STAGES[stage]}…</div>
-        <div className="t-meta mt-2 text-slate-400">
-          Analyzing your report. This usually takes 30-90 seconds - please keep this tab open.
+        <div className="t-meta mt-2 max-w-md text-slate-400">
+          Analyzing your report. This usually takes 30-90 seconds - please keep this tab open. If a file is a scanned PDF, we read it with AI vision, which can take a little longer.
         </div>
         <div className="mt-5 flex gap-1.5">
           {STAGES.map((_, i) => (
@@ -137,6 +137,10 @@ export default function UploadCard() {
           onChange={(e) => addFiles(e.target.files)}
         />
       </div>
+
+      <p className="t-meta mt-2.5 text-slate-500">
+        Tip: upload the original, text-based PDF exported from your accounting software when you can. Scanned PDFs are supported, but they are read with AI vision - slower and a little less precise.
+      </p>
 
       {files.length > 0 ? (
         <ul className="mt-4 space-y-2">

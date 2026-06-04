@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ScanLine } from "lucide-react";
 import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -43,6 +43,16 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         <Link href="/financial-review" className="t-meta mb-4 inline-flex items-center gap-1.5 text-slate-400 hover:text-slate-200">
           <ArrowLeft size={14} /> All reviews
         </Link>
+
+        {review.scanned ? (
+          <div className="mb-5 flex items-start gap-2.5 rounded-md border border-warn/30 bg-warn/10 p-3.5">
+            <ScanLine size={16} className="mt-0.5 shrink-0 text-warn" />
+            <p className="t-meta leading-relaxed text-slate-300">
+              <span className="font-semibold text-warn">Scanned PDF detected. </span>
+              This report had no text layer, so it was read with AI vision - slower and a little less precise than a text-based file. For the fastest, most accurate reviews, upload the original PDF exported from your accounting software.
+            </p>
+          </div>
+        ) : null}
 
         {review.status === "complete" && parsed?.success ? (
           <ReviewDetail result={parsed.data} level={review.statusLevel} />
