@@ -2,14 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { upload } from "@vercel/blob/client";
 import { UploadCloud, FileText, X, Loader2 } from "lucide-react";
 
 // Upload surface for a new Financial Review. Drag & drop or browse,
-// multiple files (PDF / XLSX / CSV), then POST to the API which extracts
-// the text and generates the review synchronously. While we wait we
-// cycle plain-English status messages so the 30-90s feels alive.
+// multiple files (PDF / XLSX / CSV).
+//
+// Files are uploaded straight from the browser to Vercel Blob storage
+// (which bypasses the 4.5 MB serverless request-body limit, so large
+// scanned PDFs work), then we POST the blob references to the API, which
+// downloads them, extracts the text and generates the review
+// synchronously. While we wait we cycle plain-English status messages so
+// the 30-90s feels alive.
 
 const ACCEPT = ".pdf,.xlsx,.xls,.csv";
+// Per-file ceiling - matches the upload token + review route guards.
+const MAX_BYTES = 20 * 1024 * 1024;
+// Files above this use multipart upload (parallel parts + retries).
+const MULTIPART_THRESHOLD = 5 * 1024 * 1024;
 const STAGES = [
   "Reading report",
   "Extracting financial data",
@@ -51,6 +61,11 @@ export default function UploadCard() {
       setError(`"${bad.name}" is not supported. Upload a PDF, XLSX or CSV.`);
       return;
     }
+    const tooBig = incoming.find((f) => f.size > MAX_BYTES);
+    if (tooBig) {
+      setError(`"${tooBig.name}" is too large (max 20 MB).`);
+      return;
+    }
     setError(null);
     setFiles((prev) => {
       const seen = new Set(prev.map((f) => f.name + f.size));
@@ -71,11 +86,28 @@ export default function UploadCard() {
     setBusy(true);
     setError(null);
     try {
-      const fd = new FormData();
-      for (const f of files) fd.append("files", f);
-      if (/^\d{4}$/.test(year.trim())) fd.append("financialYear", year.trim());
-      if (notes.trim()) fd.append("notes", notes.trim());
-      const res = await fetch("/api/financial-review", { method: "POST", body: fd });
+      // 1) Upload each file straight to Blob storage (bypasses the 4.5 MB
+      //    function body limit). The route mints a constrained token.
+      const blobs: { url: string; pathname: string; name: string }[] = [];
+      for (const f of files) {
+        const result = await upload(f.name, f, {
+          access: "private",
+          handleUploadUrl: "/api/financial-review/blob-upload",
+          multipart: f.size > MULTIPART_THRESHOLD,
+        });
+        blobs.push({ url: result.url, pathname: result.pathname, name: f.name });
+      }
+
+      // 2) Hand the references to the review API for extraction + analysis.
+      const res = await fetch("/api/financial-review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blobs,
+          financialYear: /^\d{4}$/.test(year.trim()) ? year.trim() : undefined,
+          notes: notes.trim() || undefined,
+        }),
+      });
       const data = await res.json().catch(() => ({}));
       if (!res.ok && res.status !== 502) {
         throw new Error(data?.error || "Upload failed. Please try again.");
@@ -130,7 +162,7 @@ export default function UploadCard() {
         <UploadCloud size={28} className="text-accent" />
         <div className="t-card mt-3">Upload a financial report</div>
         <div className="t-meta mt-1.5 text-slate-400">
-          Drag &amp; drop, or click to browse. PDF, XLSX or CSV. You can add several related files.
+          Drag &amp; drop, or click to browse. PDF, XLSX or CSV, up to 20 MB each. You can add several related files.
         </div>
         <input
           ref={inputRef}

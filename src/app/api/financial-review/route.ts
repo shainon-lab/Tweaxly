@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { get, del } from "@vercel/blob";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { detectFileType, buildReviewInput } from "@/lib/financialReview/extract";
@@ -10,7 +11,32 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_FILES = 8;
-const MAX_BYTES = 15 * 1024 * 1024; // 15 MB per file
+const MAX_BYTES = 20 * 1024 * 1024; // 20 MB per file (matches the upload token)
+
+// A blob reference posted by the client after a direct-to-Blob upload.
+interface BlobRef {
+  url:      string;
+  pathname: string;
+  name:     string; // original filename (the stored pathname has a random suffix)
+}
+
+// Read a Vercel Blob's bytes into a Buffer. The store is private, so we
+// fetch with access "private" (the BLOB_READ_WRITE_TOKEN env var is used
+// automatically for authentication).
+async function downloadBlob(url: string): Promise<Buffer> {
+  const res = await get(url, { access: "private" });
+  if (!res || res.statusCode !== 200) {
+    throw new Error("Could not read the uploaded file from storage.");
+  }
+  const reader = res.stream.getReader();
+  const chunks: Uint8Array[] = [];
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    if (value) chunks.push(value);
+  }
+  return Buffer.concat(chunks);
+}
 
 function claudeConfigured(): string | null {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -49,25 +75,28 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  let form: FormData;
+  // The client uploads each file straight to Vercel Blob (bypassing the
+  // 4.5 MB serverless body limit) and then POSTs the blob references here
+  // as JSON, together with optional metadata.
+  let payload: { blobs?: BlobRef[]; financialYear?: string; notes?: string };
   try {
-    form = await req.formData();
+    payload = await req.json();
   } catch {
     return NextResponse.json({ error: "Could not read the upload." }, { status: 400 });
   }
 
-  const entries = form.getAll("files").filter((f): f is File => f instanceof File);
-  if (entries.length === 0) {
+  const blobs = Array.isArray(payload.blobs) ? payload.blobs : [];
+  if (blobs.length === 0) {
     return NextResponse.json({ error: "No files were uploaded." }, { status: 400 });
   }
-  if (entries.length > MAX_FILES) {
+  if (blobs.length > MAX_FILES) {
     return NextResponse.json({ error: `Please upload at most ${MAX_FILES} files.` }, { status: 400 });
   }
 
   // Optional upload metadata: financial year (override of auto-detect)
   // and free-text notes.
-  const yearRaw  = form.get("financialYear");
-  const notesRaw = form.get("notes");
+  const yearRaw  = payload.financialYear;
+  const notesRaw = payload.notes;
   const yearHint =
     typeof yearRaw === "string" && /^\d{4}$/.test(yearRaw.trim())
       ? parseInt(yearRaw.trim(), 10)
@@ -75,36 +104,49 @@ export async function POST(req: NextRequest) {
   const notes =
     typeof notesRaw === "string" && notesRaw.trim() ? notesRaw.trim().slice(0, 2000) : null;
 
-  // Validate types + sizes, then read into buffers.
+  // The transient blobs must be cleaned up on every exit path (raw bytes
+  // are never persisted), so route all early failures through this helper.
+  const uploadedUrls = blobs.map((b) => b.url).filter((u): u is string => typeof u === "string");
+  const cleanup = () => del(uploadedUrls).catch(() => {});
+  const fail = async (message: string, status: number) => {
+    await cleanup();
+    return NextResponse.json({ error: message }, { status });
+  };
+
+  // Validate references up-front (cheap, no download), then pull bytes.
+  for (const b of blobs) {
+    const name = typeof b?.name === "string" && b.name.trim() ? b.name : b?.pathname;
+    if (!name || typeof b?.url !== "string") return fail("Malformed upload reference.", 400);
+    if (!detectFileType(name)) {
+      return fail(`Unsupported file "${name}". Upload PDF, XLSX or CSV.`, 400);
+    }
+  }
+
+  // Download each blob into a buffer.
   const files: { name: string; buf: Buffer }[] = [];
-  for (const f of entries) {
-    if (!detectFileType(f.name)) {
-      return NextResponse.json(
-        { error: `Unsupported file "${f.name}". Upload PDF, XLSX or CSV.` },
-        { status: 400 },
-      );
+  try {
+    for (const b of blobs) {
+      const name = typeof b.name === "string" && b.name.trim() ? b.name : b.pathname;
+      const buf = await downloadBlob(b.url);
+      if (buf.length > MAX_BYTES) return fail(`"${name}" is too large (max 20 MB).`, 400);
+      files.push({ name, buf });
     }
-    if (f.size > MAX_BYTES) {
-      return NextResponse.json(
-        { error: `"${f.name}" is too large (max 15 MB).` },
-        { status: 400 },
-      );
-    }
-    files.push({ name: f.name, buf: Buffer.from(await f.arrayBuffer()) });
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : "Could not read the uploaded files.", 400);
   }
 
   // Build the review input: PDFs become native document blocks (Claude
   // reads scanned/image PDFs with vision), spreadsheets become text. A
-  // failure here means we never create a row.
+  // failure here means we never create a row. The blobs are no longer
+  // needed once the bytes are in memory.
   let input;
   try {
     input = await buildReviewInput(files);
   } catch (e) {
-    return NextResponse.json(
-      { error: e instanceof Error ? e.message : "Could not read the uploaded files." },
-      { status: 400 },
-    );
+    return fail(e instanceof Error ? e.message : "Could not read the uploaded files.", 400);
   }
+  // Bytes are in memory now; remove the transient blobs immediately.
+  await cleanup();
 
   // Keep the request to Claude under the API's PDF limit (~32 MB incl.
   // base64 overhead). Cap total raw PDF bytes well below that.
