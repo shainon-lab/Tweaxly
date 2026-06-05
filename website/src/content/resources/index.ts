@@ -125,6 +125,12 @@ import * as glDti              from "./glossary-debt-to-income-ratio";
 import * as glLiquidity        from "./glossary-liquidity";
 import * as glSolvency         from "./glossary-solvency";
 import * as glProfRatio        from "./glossary-profitability-ratio";
+// Glossary batch 3 - Financial Review feature terms
+import * as glBalanceSheet     from "./glossary-balance-sheet";
+import * as glPnl              from "./glossary-profit-and-loss-statement";
+import * as glCashFlowStmt     from "./glossary-cash-flow-statement";
+import * as glHealthScore      from "./glossary-business-health-score";
+import * as glSecondOpinion    from "./glossary-financial-second-opinion";
 
 import type { ArticleModule, CategoryId } from "./types";
 
@@ -230,6 +236,11 @@ export const ARTICLES: ArticleModule[] = [
   { meta: glLiquidity.meta,         Body: glLiquidity.Body         },
   { meta: glSolvency.meta,          Body: glSolvency.Body          },
   { meta: glProfRatio.meta,         Body: glProfRatio.Body         },
+  { meta: glBalanceSheet.meta,      Body: glBalanceSheet.Body      },
+  { meta: glPnl.meta,               Body: glPnl.Body               },
+  { meta: glCashFlowStmt.meta,      Body: glCashFlowStmt.Body      },
+  { meta: glHealthScore.meta,       Body: glHealthScore.Body       },
+  { meta: glSecondOpinion.meta,     Body: glSecondOpinion.Body     },
 ];
 
 export function getArticle(category: CategoryId, slug: string): ArticleModule | null {
