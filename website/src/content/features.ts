@@ -16,6 +16,7 @@ export type VisualKey =
 
 export type SubpageSlug =
   | "reports"
+  | "financial-review"
   | "business-signals"
   | "forecasting"
   | "ai-consultation"
@@ -122,6 +123,63 @@ export const CATEGORIES: FeatureCategory[] = [
           "A number on its own is meaningless. The same number against a comparable period is a decision.",
         useCase:
           "Q2 revenue is $148K - up 12% versus Q1 ($132K) but down 4% versus Q2 last year ($154K). Two different stories, one screen.",
+      },
+    ],
+  },
+  {
+    id:          "financial-review",
+    subpageSlug: "financial-review",
+    navLabel:    "Financial Review",
+    eyebrow:     "Financial Review",
+    h2:          "AI Financial Review of Your Accountant's Reports",
+    intro:
+      "Upload the financial statements your accountant prepares - balance sheet, profit & loss, cash flow - and get a plain-English review of your business: a health score, a second opinion, the questions to ask your CPA, and a clear plan for what to do next.",
+    visual:      null,
+    features: [
+      {
+        name: "Business Health Score",
+        whatItDoes:
+          "Reads your uploaded financial statements and produces an overall business health score from 0-100 with a clear status (Excellent, Healthy, Needs Attention, High Risk) and a plain-English executive summary of what happened, what improved, and what weakened.",
+        whyItMatters:
+          "Most owners can't tell from a balance sheet whether the business is actually healthy. A single score plus an explanation turns a 13-page report into an answer you can act on.",
+        useCase:
+          "A music-production company uploads its 2024 audited statements and gets an 82/100 'Healthy' score: profitable in its first full year, but with 71,232 of 132,184 in total assets parked in short-term securities and only 1,552 left in cash.",
+      },
+      {
+        name: "AI Second Opinion",
+        whatItDoes:
+          "Flags items that may deserve a closer look - unusual changes, new expense categories, large one-time items, classification questions - each with an observation, why it matters, and a discussion point for your accountant. It never claims your accountant is wrong and never gives tax advice.",
+        whyItMatters:
+          "An independent read surfaces the things worth a conversation before your next CPA meeting, without second-guessing your accountant's work.",
+        useCase:
+          "The review notes payroll rose 32% while revenue rose 8% and suggests asking the CPA whether that is one-off hiring or a structural change to monitor next year.",
+      },
+      {
+        name: "Questions to Ask Your CPA",
+        whatItDoes:
+          "Generates 5-15 personalized questions based entirely on your uploaded numbers, so you walk into your accountant meeting prepared.",
+        whyItMatters:
+          "Owners often don't know what to ask. Specific, data-grounded questions turn a status update into a strategy conversation.",
+        useCase:
+          "After an annual report upload, the review produces questions like 'Which expense category had the largest impact on profitability?' and 'Is our cash reserve level appropriate for our liabilities?'",
+      },
+      {
+        name: "Action Plan & 12-Month Outlook",
+        whatItDoes:
+          "Translates the analysis into 3-10 prioritized recommendations (with priority and time horizon), a 90-day action plan, and a plain-English 12-month outlook for revenue, profitability and cash flow with stated assumptions and confidence levels.",
+        whyItMatters:
+          "A review is only useful if it tells you what to do next. The action plan and outlook turn findings into a concrete plan.",
+        useCase:
+          "The review recommends moving idle cash out of low-yield instruments within 30 days and rebuilding an operating buffer, then projects steady revenue with medium confidence for the year ahead.",
+      },
+      {
+        name: "Business Evolution (Multi-Year)",
+        whatItDoes:
+          "Upload two or more years and Tweaxly analyzes how the business has changed over time - revenue CAGR, margin trends, cash and debt trends - then writes a plain-English business story, an executive timeline of phases, a Business DNA profile, and a multi-year forecast.",
+        whyItMatters:
+          "Single-year reports miss the trajectory. Multi-year analysis shows whether the business is improving or quietly deteriorating, and what is likely next.",
+        useCase:
+          "Across 2021-2025 the review shows revenue up 68% while net margin fell from 18% to 11%, labels 2025 a 'Margin Pressure' phase, and scores cash management 8/10 but operational efficiency 5/10.",
       },
     ],
   },
@@ -788,6 +846,58 @@ export const SUBPAGES: SubpageContent[] = [
       {
         q: "Do reports respect my fiscal calendar?",
         a: "Yes - set your fiscal calendar in Business Settings and every report respects it across period comparisons, quarter and year-to-date views.",
+      },
+    ],
+  },
+  {
+    slug:       "financial-review",
+    categoryId: "financial-review",
+    metaTitle:  "AI Financial Review of Accountant Reports | Tweaxly Features",
+    metaDescription:
+      "Upload the financial statements from your accountant and get a plain-English AI review: a business health score, a second opinion, questions for your CPA, an action plan and a 12-month outlook.",
+    keywords: [
+      "AI financial review",
+      "financial statement analysis software",
+      "understand financial statements",
+      "AI second opinion financial report",
+      "questions to ask your accountant",
+      "annual report analysis",
+    ],
+    h1: "AI Financial Review of Your Accountant's Reports",
+    subtitle:
+      "Upload a balance sheet, profit & loss or cash flow statement and get a clear, plain-English review of your business - health score, second opinion, CPA questions, action plan and a 12-month outlook.",
+    deepExplanation: [
+      "Accountants produce financial statements for compliance and tax: balance sheets, profit & loss statements, cash flow statements, audited annual reports. They are accurate and thorough, and almost none of them are written for the business owner who has to make decisions from them. Tweaxly's Financial Review reads those statements and explains them in plain English.",
+      "You upload the report you received from your accountant - PDF, Excel or CSV, including scanned PDFs, which Tweaxly reads with AI vision. Within 30-90 seconds the system extracts the key numbers (revenue, expenses, gross and net profit, assets, liabilities, equity and cash) and produces a structured review with a 0-100 business health score and a short executive summary of what happened, what improved, and what weakened.",
+      "The review goes beyond a summary. An AI second opinion flags items that may deserve a closer look - unusual changes, new categories, large one-time items - framed as discussion points for your accountant, never as corrections or tax advice. It generates 5-15 personalized questions to ask your CPA, a prioritized action plan with a 90-day breakdown, and a 12-month outlook for revenue, profitability and cash flow with stated assumptions and confidence levels.",
+      "Upload more than one year and Business Evolution turns the reports into a story: revenue CAGR, margin and cash trends, an executive timeline of business phases, a Business DNA profile scored across growth, financial discipline, cash management, efficiency, risk, stability and scalability, and a multi-year forecast that is more reliable than any single year. The result is that an owner with no accounting background can answer the questions that matter: Is my business healthy? What are my biggest risks? What should I ask my accountant? What should I do next?",
+    ],
+    useCases: [
+      "An owner uploads a 13-page audited annual report and, in under two minutes, gets an 82/100 'Healthy' score, a plain-English summary, and three things to raise with their accountant - without reading the report line by line.",
+      "Before a CPA meeting, the review generates questions grounded in the actual numbers: why payroll grew faster than revenue, which expense drove the margin change, and whether the cash reserve is appropriate for the liabilities.",
+      "After uploading 2023 and 2024 reports, Business Evolution shows revenue up 21% but net margin down from 16% to 12%, flags rising payroll as the largest change, and outlines what to protect and what to fix.",
+    ],
+    relatedArticleSlugs: ["how-to-read-financial-statements", "ai-second-opinion-financial-reports", "what-is-ai-financial-advisor"],
+    faqs: [
+      {
+        q: "What is an AI financial review?",
+        a: "It is an automated, plain-English analysis of the financial statements your accountant prepares. You upload a balance sheet, profit & loss or cash flow statement and Tweaxly returns a business health score, an executive summary, a second opinion, questions to ask your CPA, an action plan, and a 12-month outlook.",
+      },
+      {
+        q: "Does this replace my accountant?",
+        a: "No. Financial Review is decision-support for the business owner - not accounting, tax, audit or legal advice. It helps you understand your reports and prepare for better conversations with your accountant, and it never claims your accountant is wrong.",
+      },
+      {
+        q: "What file types can I upload?",
+        a: "PDF, Excel (XLSX) and CSV. Scanned or image PDFs are supported too - Tweaxly reads them with AI vision, though an original text-based PDF exported from your accounting software is faster and more precise.",
+      },
+      {
+        q: "How long does a review take?",
+        a: "Most reviews complete in 30-90 seconds. You can reopen any past review instantly without reprocessing, and share a read-only copy with a private link.",
+      },
+      {
+        q: "What happens when I upload more than one year?",
+        a: "A Business Evolution view unlocks automatically at two or more years: revenue CAGR, margin and cash trends, an executive timeline, a Business DNA profile and a multi-year forecast - a plain-English story of how your business has changed and what is likely next.",
       },
     ],
   },

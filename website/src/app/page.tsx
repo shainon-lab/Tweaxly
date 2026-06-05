@@ -71,6 +71,7 @@ export default function Home() {
       <ConsultationSection />
       <ForecastSection />
       <OverviewSection />
+      <FinancialReviewSection />
       <SeoUnifiedSection />
       <HowItWorks />
       <ConnectYourDataBanner />
@@ -433,6 +434,76 @@ function OverviewSection() {
         <ExecutiveOverviewMock />
       </div>
     </section>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────
+// Financial Review
+// ─────────────────────────────────────────────────────────────────────
+
+function FinancialReviewSection() {
+  return (
+    <section id="financial-review" className="container-wide relative overflow-hidden py-24 lg:py-32">
+      <span aria-hidden="true" className="brand-backdrop-word">Evaluate</span>
+      <div className="relative z-10 grid lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+        <div className="lg:col-span-5">
+          <SectionHeader
+            eyebrow="Financial Review"
+            title={<>Understand the report your <span className="gradient-text">accountant</span> sends you.</>}
+            body="Upload a balance sheet, profit & loss or cash flow statement and get a plain-English review of your business - a health score, an AI second opinion, the questions to ask your CPA, and a 12-month outlook. Upload more than one year and watch how the business has evolved."
+          />
+          <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-300">
+            <ListBullet icon="◷">From upload to review in 30-90 seconds</ListBullet>
+            <ListBullet icon="✓">Health score, second opinion, CPA questions, action plan</ListBullet>
+            <ListBullet icon="↗">Multi-year Business Evolution: trends, DNA profile, forecast</ListBullet>
+          </ul>
+          <div className="mt-8">
+            <Link href="/features/financial-review" className="btn-ghost text-sm">
+              Explore Financial Review →
+            </Link>
+          </div>
+        </div>
+        <div className="lg:col-span-7">
+          <FinancialReviewMock />
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function FinancialReviewMock() {
+  const SECTIONS = ["Executive summary", "AI second opinion", "Questions for your CPA", "Action plan"];
+  return (
+    <div className="card relative">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Audited annual statements</div>
+          <div className="mt-1 text-sm text-slate-300">FY 2024 · reviewed in 48s</div>
+        </div>
+        <div className="rounded-xl border border-good/40 bg-good/10 px-4 py-3 text-center shrink-0">
+          <div className="text-3xl font-bold leading-none text-good">
+            82<span className="text-base font-semibold text-slate-400"> /100</span>
+          </div>
+          <div className="mt-1 text-xs font-semibold text-good">Healthy</div>
+        </div>
+      </div>
+      <p className="mt-4 text-sm leading-relaxed text-slate-400">
+        Profitable in its first full year (net margin 3.6%). Most of the assets -
+        71,232 of 132,184 - sit in short-term securities, while only 1,552 is left
+        in cash.
+      </p>
+      <div className="mt-5 grid grid-cols-2 gap-2">
+        {SECTIONS.map((s) => (
+          <div key={s} className="rounded-lg border border-line bg-ink-950/40 px-3 py-2 text-xs text-slate-300">
+            {s}
+          </div>
+        ))}
+      </div>
+      <div className="mt-3 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/5 px-3 py-2 text-xs text-slate-300">
+        <span className="font-semibold text-warn shrink-0">Discuss with CPA:</span>
+        <span>Payroll rose 32% while revenue rose 8% - one-off hiring or structural?</span>
+      </div>
+    </div>
   );
 }
 

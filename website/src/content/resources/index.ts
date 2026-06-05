@@ -10,6 +10,8 @@ import * as cashFlow  from "./cash-flow-early-warning";
 import * as forecast  from "./financial-forecasting-small-business-guide";
 import * as signals   from "./business-signals-founders-monitor";
 import * as sheets    from "./spreadsheets-not-enough";
+import * as readStatements from "./how-to-read-financial-statements";
+import * as secondOpinion   from "./ai-second-opinion-financial-reports";
 
 // Financial Fundamentals
 import * as revenueProfit from "./revenue-vs-profit";
@@ -134,6 +136,8 @@ export const ARTICLES: ArticleModule[] = [
   { meta: forecast.meta, Body: forecast.Body },
   { meta: signals.meta,  Body: signals.Body  },
   { meta: sheets.meta,   Body: sheets.Body   },
+  { meta: readStatements.meta, Body: readStatements.Body },
+  { meta: secondOpinion.meta,  Body: secondOpinion.Body  },
   { meta: revenueProfit.meta, Body: revenueProfit.Body },
   { meta: grossProfit.meta,   Body: grossProfit.Body   },
   { meta: netProfit.meta,     Body: netProfit.Body     },
