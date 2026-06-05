@@ -372,6 +372,7 @@ model Business {
   alertNotifications  AlertNotification[]
   sharedAnalyses      SharedAnalysis[]
   financialReviews    FinancialReview[]
+  businessEvolution   BusinessEvolution?
 }
 
 // Real-Time Business Alerts (Premium) - per-user × per-business
@@ -1627,4 +1628,22 @@ model FinancialReview {
   @@index([businessId, createdAt(sort: Desc)])
   @@index([businessId, status])
   @@index([businessId, financialYear])
+}
+
+// ── Business Evolution (V2) ──────────────────────────────────────
+// Cached multi-year analysis for a workspace - the AI "business story",
+// timeline, trend analysis, multi-year forecast, DNA profile and
+// strategic recommendations. One row per business. `yearsKey` records
+// the exact set of financial years the analysis covers (e.g.
+// "2021,2022,2023,2024") so the UI can tell when it's stale and offer a
+// regenerate. Deterministic trend metrics are computed on the fly and
+// are NOT stored here - only the AI narrative result is cached.
+model BusinessEvolution {
+  id         String   @id @default(cuid())
+  businessId String   @unique
+  business   Business @relation(fields: [businessId], references: [id], onDelete: Cascade)
+  yearsKey   String
+  result     Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 }

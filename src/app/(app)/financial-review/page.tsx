@@ -11,6 +11,7 @@ import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import UploadCard from "./UploadCard";
+import FinancialReviewTabs from "./FinancialReviewTabs";
 import ReviewDisclaimer from "@/components/financial-review/Disclaimer";
 import { statusLabel, statusPillClass } from "@/lib/financialReview/types";
 
@@ -32,12 +33,18 @@ export default async function FinancialReviewPage() {
     },
   });
 
+  const distinctYears = new Set(
+    reviews.filter((r) => r.status === "complete" && r.financialYear != null).map((r) => r.financialYear),
+  );
+  const showEvolution = distinctYears.size >= 2;
+
   return (
     <>
       <PageHeader
         title="Financial Review"
         subtitle="Upload a report from your accountant and get a clear, plain-English review of your business."
       />
+      <FinancialReviewTabs showEvolution={showEvolution} />
 
       <div className="space-y-6 pb-12">
         <ReviewDisclaimer />
