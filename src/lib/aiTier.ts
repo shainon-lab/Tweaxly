@@ -65,10 +65,12 @@ const SURFACE_BUDGETS: Record<AiSurface, { free: number; pro: number }> = {
   derived_signals:   { free: 300,   pro: 500   },
   consultation:      { free: 4000,  pro: 16000 },
   // The review is one large structured JSON document (4 sections +
-  // forecast). It needs a generous ceiling on both tiers.
-  financial_review:  { free: 6000,  pro: 16000 },
+  // forecast). A big multi-page report can run long, and on Pro the
+  // adaptive-thinking tokens share this budget - so the ceiling must be
+  // generous or the JSON gets truncated before its closing fence.
+  financial_review:  { free: 16000, pro: 32000 },
   // Multi-year evolution narrative + DNA + strategy - also large.
-  business_evolution: { free: 6000, pro: 16000 },
+  business_evolution: { free: 16000, pro: 32000 },
 };
 
 export function tierConfigFor(tier: AiTier, surface: AiSurface): TierConfig {

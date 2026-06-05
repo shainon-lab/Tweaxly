@@ -97,8 +97,31 @@ REQUIREMENTS:
 - "financials": extract the headline numbers as plain numbers in the report's currency (no symbols, no thousands separators). Use null for any line the report does not contain. Do not invent values.
 - "cpaQuestions": minimum 5, maximum 15, all personalized to this report.
 - "recommendedActions": between 3 and 10.
+- "timeHorizon" MUST be exactly one of: "immediate", "30_days", "90_days", "6_months" (no other values). "priority" MUST be exactly one of: "high", "medium", "low". "confidence" MUST be exactly one of: "high", "medium", "low".
+- Output ONLY the single JSON object and make sure it is complete and valid (every brace and bracket closed). Do not pad with extra prose.
 - Forecasts are ESTIMATES, never facts - phrase them as estimates and surface the assumptions.
 - Keep the second-opinion items to genuine, report-grounded observations. It is fine for a category to be empty if nothing applies.`;
+
+// Pull the JSON object out of a model response. Order of attempts:
+//   1. A complete ```json ... ``` (or ``` ... ```) fenced block.
+//   2. The substring from the first "{" to the last "}" - this recovers
+//      complete JSON even when the closing fence is missing (the model
+//      stopped before writing it).
+//   3. Whatever remains after stripping a leading opening fence.
+// Genuinely truncated JSON still won't parse; the caller handles that.
+function extractJsonText(text: string): string {
+  const t = text.trim();
+
+  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fenced) return fenced[1].trim();
+
+  const stripped = t.replace(/^```(?:json)?\s*/i, "");
+  const start = stripped.indexOf("{");
+  if (start === -1) return stripped.trim();
+  const end = stripped.lastIndexOf("}");
+  if (end > start) return stripped.slice(start, end + 1).trim();
+  return stripped.slice(start).trim();
+}
 
 export interface GeneratedReview {
   reportType:  string;
@@ -178,15 +201,31 @@ export async function generateFinancialReview(opts: {
   }
   if (!raw.trim()) throw new Error("The review engine returned an empty response.");
 
-  // Strip em-dashes (voice rule) and pull the JSON out of the fence.
+  // Strip em-dashes (voice rule) and pull the JSON object out of the
+  // response. This tolerates a complete ```json ... ``` fence, an opening
+  // fence with no close (the model was cut off before the closing fence),
+  // and bare JSON with no fence at all.
   const sanitized = raw.replace(/—/g, " - ");
-  const fence = sanitized.match(/```json\s*([\s\S]*?)```/i);
-  const jsonText = (fence ? fence[1] : sanitized).trim();
+  const jsonText = extractJsonText(sanitized);
 
-  const parsed = JSON.parse(jsonText);
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(jsonText);
+  } catch {
+    // If we got here the JSON itself is incomplete - almost always
+    // because the model hit its output ceiling mid-document. Surface a
+    // clear, actionable message instead of a raw parser error.
+    if (response.stop_reason === "max_tokens") {
+      throw new Error(
+        "This report was too large to analyze in a single pass. Try uploading one statement at a time (for example the profit & loss and the balance sheet separately).",
+      );
+    }
+    throw new Error("The review engine returned a response that could not be read. Please try again.");
+  }
   const result = FinancialReviewResultSchema.parse(parsed);
 
-  const score = Math.max(0, Math.min(100, Math.round(result.healthScore)));
+  const rawScore = Math.round(Number(result.healthScore));
+  const score = Number.isFinite(rawScore) ? Math.max(0, Math.min(100, rawScore)) : 0;
   return {
     reportType:  result.reportType,
     score,

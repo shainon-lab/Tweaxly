@@ -15,6 +15,44 @@ export const PRIORITIES = ["high", "medium", "low"] as const;
 export const TIME_HORIZONS = ["immediate", "30_days", "90_days", "6_months"] as const;
 export const CONFIDENCE = ["high", "medium", "low"] as const;
 
+// The model occasionally emits a sensible-but-off-list enum value (e.g.
+// timeHorizon "60_days", priority "critical"). A single stray value used
+// to throw and discard an entire 30-90s review. These tolerant schemas
+// snap such values to the nearest canonical bucket instead of failing.
+
+// Snap any time horizon to one of the four canonical buckets. Understands
+// "60_days", "2_months", "12 months", "now", etc.
+const timeHorizonSchema = z.preprocess((v) => {
+  if (typeof v !== "string") return v;
+  const s = v.trim().toLowerCase().replace(/\s+/g, "_");
+  if ((TIME_HORIZONS as readonly string[]).includes(s)) return s;
+  if (["now", "asap", "urgent", "immediately"].includes(s)) return "immediate";
+  const m = s.match(/(\d+)_?(day|days|week|weeks|month|months|year|years)/);
+  if (m) {
+    const n = parseInt(m[1], 10);
+    const unit = m[2];
+    const days = unit.startsWith("week") ? n * 7
+      : unit.startsWith("month") ? n * 30
+      : unit.startsWith("year") ? n * 365
+      : n;
+    if (days <= 1) return "immediate";
+    if (days <= 30) return "30_days";
+    if (days <= 90) return "90_days";
+    return "6_months";
+  }
+  return s; // fall through to enum().catch() below
+}, z.enum(TIME_HORIZONS).catch("90_days"));
+
+// Priority / confidence: snap unknowns to "medium".
+const prioritySchema = z.preprocess(
+  (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
+  z.enum(PRIORITIES).catch("medium"),
+);
+const confidenceSchema = z.preprocess(
+  (v) => (typeof v === "string" ? v.trim().toLowerCase() : v),
+  z.enum(CONFIDENCE).catch("medium"),
+);
+
 const ReviewFlag = z.object({
   observation:     z.string(),
   whyItMatters:    z.string(),
@@ -24,7 +62,7 @@ export type ReviewFlag = z.infer<typeof ReviewFlag>;
 
 const ForecastLine = z.object({
   outlook:    z.string(),
-  confidence: z.enum(CONFIDENCE),
+  confidence: confidenceSchema,
 });
 export type ForecastLine = z.infer<typeof ForecastLine>;
 
@@ -32,8 +70,8 @@ const RecommendedAction = z.object({
   action:         z.string(),
   whyItMatters:   z.string(),
   potentialImpact: z.string(),
-  priority:       z.enum(PRIORITIES),
-  timeHorizon:    z.enum(TIME_HORIZONS),
+  priority:       prioritySchema,
+  timeHorizon:    timeHorizonSchema,
 });
 export type RecommendedAction = z.infer<typeof RecommendedAction>;
 
@@ -76,8 +114,9 @@ export const FinancialReviewResultSchema = z.object({
     revenue: null, expenses: null, grossProfit: null, operatingProfit: null,
     netProfit: null, cashPosition: null, totalAssets: null, totalLiabilities: null, equity: null,
   }),
-  // 0-100 overall business health.
-  healthScore: z.number().min(0).max(100),
+  // 0-100 overall business health. Tolerant of a numeric string or an
+  // out-of-range value from the model; the caller clamps to 0-100.
+  healthScore: z.coerce.number().catch(0),
 
   // ── Section 1: Business Health Assessment ──
   executiveSummary: z.string(),
