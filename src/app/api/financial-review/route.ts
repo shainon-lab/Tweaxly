@@ -29,7 +29,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true, fileName: true, fileType: true, reportType: true,
-      status: true, score: true, statusLevel: true, createdAt: true,
+      financialYear: true, status: true, score: true, statusLevel: true, createdAt: true,
     },
   });
   return NextResponse.json({ reviews });
@@ -63,6 +63,17 @@ export async function POST(req: NextRequest) {
   if (entries.length > MAX_FILES) {
     return NextResponse.json({ error: `Please upload at most ${MAX_FILES} files.` }, { status: 400 });
   }
+
+  // Optional upload metadata: financial year (override of auto-detect)
+  // and free-text notes.
+  const yearRaw  = form.get("financialYear");
+  const notesRaw = form.get("notes");
+  const yearHint =
+    typeof yearRaw === "string" && /^\d{4}$/.test(yearRaw.trim())
+      ? parseInt(yearRaw.trim(), 10)
+      : null;
+  const notes =
+    typeof notesRaw === "string" && notesRaw.trim() ? notesRaw.trim().slice(0, 2000) : null;
 
   // Validate types + sizes, then read into buffers.
   const files: { name: string; buf: Buffer }[] = [];
@@ -115,6 +126,8 @@ export async function POST(req: NextRequest) {
       fileType:        input.fileType,
       fileCount:       input.fileCount,
       scanned:         input.scanned,
+      financialYear:   yearHint,
+      notes,
       extractedText:   input.text || null,
       status:          "processing",
     },
@@ -129,15 +142,18 @@ export async function POST(req: NextRequest) {
       fileLabel:  input.fileLabel,
       documents:  input.documents,
       text:       input.text,
+      yearHint,
     });
     await prisma.financialReview.update({
       where: { id: review.id },
       data: {
-        status:      "complete",
-        reportType:  generated.reportType,
-        score:       generated.score,
-        statusLevel: generated.statusLevel,
-        result:      generated.result,
+        status:        "complete",
+        reportType:    generated.reportType,
+        score:         generated.score,
+        statusLevel:   generated.statusLevel,
+        financialYear: yearHint ?? generated.result.detectedYear ?? null,
+        financials:    generated.result.financials,
+        result:        generated.result,
       },
     });
     return NextResponse.json({ id: review.id, status: "complete" }, { status: 201 });

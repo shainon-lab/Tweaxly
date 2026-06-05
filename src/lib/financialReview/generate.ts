@@ -47,6 +47,11 @@ Return ONLY a single JSON object inside a \`\`\`json code fence. No prose before
 \`\`\`json
 {
   "reportType": "string - the detected report type in plain words",
+  "detectedYear": 2024,
+  "financials": {
+    "revenue": 0, "expenses": 0, "grossProfit": 0, "operatingProfit": 0,
+    "netProfit": 0, "cashPosition": 0, "totalAssets": 0, "totalLiabilities": 0, "equity": 0
+  },
   "healthScore": 0,
   "executiveSummary": "string - a concise plain-English explanation: what happened this period, what improved, what weakened, and the overall financial condition. Focus on business implications, not accounting jargon.",
   "keyFinancials": [{ "label": "Revenue", "value": "string as shown/derived from the report" }],
@@ -88,6 +93,8 @@ Return ONLY a single JSON object inside a \`\`\`json code fence. No prose before
 \`\`\`
 
 REQUIREMENTS:
+- "detectedYear": the fiscal year the report covers (integer, e.g. 2024). Use null only if it genuinely cannot be determined.
+- "financials": extract the headline numbers as plain numbers in the report's currency (no symbols, no thousands separators). Use null for any line the report does not contain. Do not invent values.
 - "cpaQuestions": minimum 5, maximum 15, all personalized to this report.
 - "recommendedActions": between 3 and 10.
 - Forecasts are ESTIMATES, never facts - phrase them as estimates and surface the assumptions.
@@ -118,6 +125,8 @@ export async function generateFinancialReview(opts: {
   fileLabel:  string;
   documents:  ReviewDocumentInput[];
   text:       string;
+  // Optional user-specified fiscal year (overrides auto-detection).
+  yearHint?:  number | null;
 }): Promise<GeneratedReview> {
   const client = new Anthropic({ apiKey: opts.apiKey });
   const tier = await tierConfigForBusiness(opts.businessId, "financial_review");
@@ -142,7 +151,9 @@ export async function generateFinancialReview(opts: {
   }
   const framing =
     `Reporting currency: ${opts.currency}\n` +
-    `Uploaded report: ${opts.fileLabel}\n\n` +
+    `Uploaded report: ${opts.fileLabel}\n` +
+    (opts.yearHint ? `The user indicates this report is for fiscal year ${opts.yearHint}. Use ${opts.yearHint} as detectedYear.\n` : "") +
+    "\n" +
     (opts.documents.length > 0
       ? "Read the attached financial report file(s) above (they may be scanned images - read them carefully, including any tables) and analyze them.\n\n"
       : "") +

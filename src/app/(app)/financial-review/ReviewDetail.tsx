@@ -131,9 +131,9 @@ export default function ReviewDetail({
         </section>
       ) : null}
 
-      {/* ── Forecast layer ── */}
+      {/* ── Section 5: Forecast ── */}
       <section>
-        <SectionTitle title="12-month outlook" />
+        <SectionTitle n={5} title="Forecast - 12-month outlook" />
         <p className="t-meta mb-4 text-slate-400">
           Estimates based on the uploaded report - not guarantees. Actual results depend on execution and market conditions.
         </p>

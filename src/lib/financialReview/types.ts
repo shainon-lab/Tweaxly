@@ -37,9 +37,45 @@ const RecommendedAction = z.object({
 });
 export type RecommendedAction = z.infer<typeof RecommendedAction>;
 
+// Normalised numeric financials (report currency). All nullable - a
+// given report may not contain every line. Used for cross-year trend
+// math in V2 Business Evolution.
+export const NormalizedFinancialsSchema = z.object({
+  revenue:          z.number().nullable().default(null),
+  expenses:         z.number().nullable().default(null),
+  grossProfit:      z.number().nullable().default(null),
+  operatingProfit:  z.number().nullable().default(null),
+  netProfit:        z.number().nullable().default(null),
+  cashPosition:     z.number().nullable().default(null),
+  totalAssets:      z.number().nullable().default(null),
+  totalLiabilities: z.number().nullable().default(null),
+  equity:           z.number().nullable().default(null),
+});
+export type NormalizedFinancials = z.infer<typeof NormalizedFinancialsSchema>;
+
+export const FINANCIALS_LABELS: Record<keyof NormalizedFinancials, string> = {
+  revenue:          "Revenue",
+  expenses:         "Expenses",
+  grossProfit:      "Gross profit",
+  operatingProfit:  "Operating profit",
+  netProfit:        "Net profit",
+  cashPosition:     "Cash position",
+  totalAssets:      "Total assets",
+  totalLiabilities: "Total liabilities",
+  equity:           "Equity",
+};
+
 export const FinancialReviewResultSchema = z.object({
   // Auto-detected report type, e.g. "Profit & Loss Statement".
   reportType: z.string(),
+  // Financial year the report covers, detected from the content (e.g.
+  // 2024). Null if it cannot be determined.
+  detectedYear: z.number().int().nullable().default(null),
+  // Normalised numeric financials for cross-year analysis.
+  financials: NormalizedFinancialsSchema.default({
+    revenue: null, expenses: null, grossProfit: null, operatingProfit: null,
+    netProfit: null, cashPosition: null, totalAssets: null, totalLiabilities: null, equity: null,
+  }),
   // 0-100 overall business health.
   healthScore: z.number().min(0).max(100),
 

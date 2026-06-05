@@ -30,6 +30,8 @@ export default function UploadCard() {
   const [busy, setBusy] = useState(false);
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [year, setYear] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Advance the status message while processing (stops at the last one).
   useEffect(() => {
@@ -71,6 +73,8 @@ export default function UploadCard() {
     try {
       const fd = new FormData();
       for (const f of files) fd.append("files", f);
+      if (/^\d{4}$/.test(year.trim())) fd.append("financialYear", year.trim());
+      if (notes.trim()) fd.append("notes", notes.trim());
       const res = await fetch("/api/financial-review", { method: "POST", body: fd });
       const data = await res.json().catch(() => ({}));
       if (!res.ok && res.status !== 502) {
@@ -141,6 +145,30 @@ export default function UploadCard() {
       <p className="t-meta mt-2.5 text-slate-500">
         Tip: upload the original, text-based PDF exported from your accounting software when you can. Scanned PDFs are supported, but they are read with AI vision - slower and a little less precise.
       </p>
+
+      <div className="mt-4 grid gap-3 sm:grid-cols-[150px_1fr]">
+        <div>
+          <label className="label" htmlFor="fr-year">Financial year</label>
+          <input
+            id="fr-year"
+            inputMode="numeric"
+            placeholder="Auto-detect"
+            value={year}
+            onChange={(e) => setYear(e.target.value.replace(/[^0-9]/g, "").slice(0, 4))}
+            className="input"
+          />
+        </div>
+        <div>
+          <label className="label" htmlFor="fr-notes">Notes (optional)</label>
+          <input
+            id="fr-notes"
+            placeholder="e.g. Final audited version from the CPA"
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+            className="input"
+          />
+        </div>
+      </div>
 
       {files.length > 0 ? (
         <ul className="mt-4 space-y-2">

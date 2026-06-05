@@ -25,10 +25,10 @@ export default async function FinancialReviewPage() {
 
   const reviews = await prisma.financialReview.findMany({
     where: { businessId: business.id },
-    orderBy: { createdAt: "desc" },
+    orderBy: [{ financialYear: { sort: "desc", nulls: "last" } }, { createdAt: "desc" }],
     select: {
-      id: true, fileName: true, reportType: true, status: true,
-      score: true, statusLevel: true, createdAt: true,
+      id: true, fileName: true, reportType: true, financialYear: true,
+      status: true, score: true, statusLevel: true, createdAt: true,
     },
   });
 
@@ -62,6 +62,7 @@ export default async function FinancialReviewPage() {
               <table className="table-base">
                 <thead>
                   <tr>
+                    <th>Year</th>
                     <th>Review</th>
                     <th>Date</th>
                     <th>Score</th>
@@ -71,6 +72,11 @@ export default async function FinancialReviewPage() {
                 <tbody>
                   {reviews.map((r) => (
                     <tr key={r.id} className="cursor-pointer">
+                      <td>
+                        <Link href={`/financial-review/${r.id}`} className="block font-semibold text-slate-100">
+                          {r.financialYear ?? "—"}
+                        </Link>
+                      </td>
                       <td>
                         <Link href={`/financial-review/${r.id}`} className="block">
                           <div className="font-medium text-slate-100">{r.reportType || r.fileName}</div>

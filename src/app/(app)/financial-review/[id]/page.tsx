@@ -36,7 +36,7 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
     <>
       <PageHeader
         title={title}
-        subtitle={`${review.fileName} · ${fmtDate(review.createdAt)}`}
+        subtitle={`${review.financialYear ? `FY ${review.financialYear} · ` : ""}${review.fileName} · ${fmtDate(review.createdAt)}`}
       />
 
       <div className="pt-2">
@@ -61,6 +61,13 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
               <span className="font-semibold text-warn">Scanned PDF detected. </span>
               This report had no text layer, so it was read with AI vision - slower and a little less precise than a text-based file. For the fastest, most accurate reviews, upload the original PDF exported from your accounting software.
             </p>
+          </div>
+        ) : null}
+
+        {review.notes ? (
+          <div className="mb-5 rounded-md border border-line bg-ink-800/60 p-3.5">
+            <div className="t-meta mb-1 uppercase tracking-wide text-slate-400">Notes</div>
+            <p className="t-body text-slate-200">{review.notes}</p>
           </div>
         ) : null}
 
