@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Loader2, Sparkles } from "lucide-react";
 import { notify } from "@/lib/notify";
 import { DNA_DIMENSIONS, type EvolutionResult } from "@/lib/financialReview/evolution";
@@ -24,6 +25,7 @@ export default function EvolutionAnalysis({
   cost: number;
   balance: number;
 }) {
+  const router = useRouter();
   const [result, setResult] = useState<EvolutionResult | null>(initialResult);
   const [busy, setBusy] = useState(false);
   const [bal, setBal] = useState(balance);
@@ -48,6 +50,8 @@ export default function EvolutionAnalysis({
       setResult(data.result as EvolutionResult);
       if (typeof data.balance === "number") setBal(data.balance);
       if (typeof data.creditsUsed === "number") setLastUsed(data.creditsUsed);
+      // Update the sidebar AI-credits balance immediately.
+      router.refresh();
     } catch (e) {
       await notify.alert(e instanceof Error ? e.message : "Could not generate the analysis.");
     } finally {

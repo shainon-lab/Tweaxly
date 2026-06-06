@@ -136,6 +136,9 @@ export default function UploadCard({
       // which shows either the result or a failed state with retry.
       if (data?.id) {
         router.push(`/financial-review/${data.id}`);
+        // Re-fetch server components so the sidebar AI-credits balance
+        // reflects the debit immediately (no manual refresh needed).
+        router.refresh();
         return;
       }
       throw new Error(data?.error || "Something went wrong. Please try again.");
