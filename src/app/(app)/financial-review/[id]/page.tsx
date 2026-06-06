@@ -79,17 +79,16 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         ) : null}
 
         {review.status === "complete" && parsed?.success ? (
-          <>
-            {parsed.data.contextSignals.length > 0 ? (
-              <div className="mb-6">
-                <ContextQuestions
-                  signals={parsed.data.contextSignals}
-                  initialAnswers={businessContext.answers}
-                />
-              </div>
-            ) : null}
+          parsed.data.contextSignals.length > 0 ? (
+            <ContextQuestions
+              signals={parsed.data.contextSignals}
+              initialAnswers={businessContext.answers}
+            >
+              <ReviewDetail result={parsed.data} level={review.statusLevel} />
+            </ContextQuestions>
+          ) : (
             <ReviewDetail result={parsed.data} level={review.statusLevel} />
-          </>
+          )
         ) : review.status === "processing" ? (
           <div className="card mt-2 py-12 text-center">
             <div className="t-card">This review is still processing</div>
