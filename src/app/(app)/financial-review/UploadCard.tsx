@@ -33,7 +33,13 @@ function isSupported(name: string) {
   return /\.(pdf|xlsx|xls|csv)$/i.test(name);
 }
 
-export default function UploadCard() {
+export default function UploadCard({
+  creditCost,
+  creditBalance,
+}: {
+  creditCost: number;
+  creditBalance: number;
+}) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement>(null);
   const [files, setFiles] = useState<File[]>([]);
@@ -114,6 +120,15 @@ export default function UploadCard() {
         }),
       });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        const need = data?.cost ?? creditCost;
+        const have = data?.balance ?? creditBalance;
+        setError(
+          `Not enough AI credits. This review needs ${need} credit${need === 1 ? "" : "s"} and you have ${have}. Add credits or upgrade your plan in Settings.`,
+        );
+        setBusy(false);
+        return;
+      }
       if (!res.ok && res.status !== 502) {
         throw new Error(data?.error || "Upload failed. Please try again.");
       }
@@ -262,9 +277,13 @@ export default function UploadCard() {
 
       {error ? <div className="mt-3 text-sm text-red-300">{error}</div> : null}
 
-      <div className="mt-4 flex items-center justify-between gap-3">
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
         <span className="t-meta text-slate-500">
           {files.length > 0 ? `${files.length} file${files.length === 1 ? "" : "s"} ready` : "No files selected"}
+          {" · "}
+          <span className={creditBalance < creditCost ? "text-warn" : ""}>
+            Uses {creditCost} AI credit{creditCost === 1 ? "" : "s"} · you have {creditBalance}
+          </span>
         </span>
         <button
           type="button"
@@ -272,7 +291,7 @@ export default function UploadCard() {
           disabled={files.length === 0}
           onClick={submit}
         >
-          Generate review
+          Generate review · {creditCost} credits
         </button>
       </div>
     </div>

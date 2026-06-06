@@ -14,21 +14,40 @@ function confidencePill(c: string): string {
 export default function EvolutionAnalysis({
   initialResult,
   stale,
+  contextStale = false,
+  cost,
+  balance,
 }: {
   initialResult: EvolutionResult | null;
   stale: boolean;
+  contextStale?: boolean;
+  cost: number;
+  balance: number;
 }) {
   const [result, setResult] = useState<EvolutionResult | null>(initialResult);
   const [busy, setBusy] = useState(false);
+  const [bal, setBal] = useState(balance);
+  const [lastUsed, setLastUsed] = useState<number | null>(null);
 
   async function generate() {
     if (busy) return;
     setBusy(true);
+    setLastUsed(null);
     try {
       const res = await fetch("/api/financial-review/evolution", { method: "POST" });
       const data = await res.json().catch(() => ({}));
+      if (res.status === 402) {
+        const need = data?.cost ?? cost;
+        const have = data?.balance ?? bal;
+        await notify.alert(
+          `Not enough AI credits. The Business Story needs ${need} credit${need === 1 ? "" : "s"} and you have ${have}. Add credits or upgrade your plan in Settings.`,
+        );
+        return;
+      }
       if (!res.ok) throw new Error(data?.error || "Could not generate the analysis.");
       setResult(data.result as EvolutionResult);
+      if (typeof data.balance === "number") setBal(data.balance);
+      if (typeof data.creditsUsed === "number") setLastUsed(data.creditsUsed);
     } catch (e) {
       await notify.alert(e instanceof Error ? e.message : "Could not generate the analysis.");
     } finally {
@@ -48,14 +67,24 @@ export default function EvolutionAnalysis({
         </p>
         <button type="button" onClick={generate} disabled={busy} className="btn-primary mt-5">
           {busy ? <Loader2 size={15} className="mr-1.5 animate-spin" /> : <Sparkles size={15} className="mr-1.5" />}
-          {busy ? "Analyzing…" : "Generate analysis"}
+          {busy ? "Analyzing…" : `Generate analysis · ${cost} credits`}
         </button>
+        <p className={`t-meta mt-2 ${bal < cost ? "text-warn" : "text-slate-500"}`}>
+          Uses {cost} AI credit{cost === 1 ? "" : "s"} · you have {bal}
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-8">
+      {lastUsed != null ? (
+        <div className="rounded-md border border-good/30 bg-good/10 p-3 t-meta text-slate-300">
+          <span className="font-semibold text-good">Used {lastUsed} AI credit{lastUsed === 1 ? "" : "s"}. </span>
+          You have {bal} remaining.
+        </div>
+      ) : null}
+
       {stale ? (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-warn/30 bg-warn/10 p-3.5">
           <p className="t-meta text-slate-300">
@@ -64,7 +93,18 @@ export default function EvolutionAnalysis({
           </p>
           <button type="button" onClick={generate} disabled={busy} className="btn-ghost text-sm">
             {busy ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : null}
-            Regenerate
+            Regenerate · {cost} credits
+          </button>
+        </div>
+      ) : contextStale ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-accent/30 bg-accent-soft/15 p-3.5">
+          <p className="t-meta text-slate-300">
+            <span className="font-semibold text-accent">New business context available. </span>
+            You answered context questions since this story was generated. Regenerate to fold them in.
+          </p>
+          <button type="button" onClick={generate} disabled={busy} className="btn-ghost text-sm">
+            {busy ? <Loader2 size={14} className="mr-1.5 animate-spin" /> : null}
+            Regenerate · {cost} credits
           </button>
         </div>
       ) : null}

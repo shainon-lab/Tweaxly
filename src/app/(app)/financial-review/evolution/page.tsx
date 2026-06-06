@@ -7,12 +7,14 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getBalance, costFor, ensureMonthlyAllowance } from "@/lib/billing";
 import {
   buildYearSeries,
   computeEvolutionMetrics,
   yearsKeyOf,
   EvolutionResultSchema,
 } from "@/lib/financialReview/evolution";
+import { FinancialAnalysisContextSchema } from "@/lib/financialReview/context";
 import FinancialReviewTabs from "../FinancialReviewTabs";
 import ReviewDisclaimer from "@/components/financial-review/Disclaimer";
 import EvolutionDashboard from "./EvolutionDashboard";
@@ -57,6 +59,18 @@ export default async function EvolutionPage() {
   const initialResult = parsed?.success ? parsed.data : null;
   const stale = !!initialResult && cached!.yearsKey !== currentKey;
 
+  // The story is also out of date if the owner has answered new
+  // business-context questions since it was last generated.
+  const fc = FinancialAnalysisContextSchema.parse(business.financialAnalysisContext ?? {});
+  const contextStale =
+    !!initialResult && !!cached && !!fc.updatedAt &&
+    new Date(fc.updatedAt).getTime() > cached.updatedAt.getTime();
+
+  // AI credits: cost of one Business Story + the current balance.
+  await ensureMonthlyAllowance(business.id).catch(() => {});
+  const creditCost    = costFor("businessEvolution");
+  const creditBalance = await getBalance(business.id);
+
   return (
     <>
       <PageHeader
@@ -68,7 +82,13 @@ export default async function EvolutionPage() {
       <div className="space-y-8 pb-12">
         <ReviewDisclaimer />
         <EvolutionDashboard metrics={metrics} currency={business.currency} />
-        <EvolutionAnalysis initialResult={initialResult} stale={stale} />
+        <EvolutionAnalysis
+          initialResult={initialResult}
+          stale={stale}
+          contextStale={contextStale}
+          cost={creditCost}
+          balance={creditBalance}
+        />
       </div>
     </>
   );

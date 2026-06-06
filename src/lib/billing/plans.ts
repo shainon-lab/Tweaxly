@@ -289,6 +289,11 @@ export const CREDIT_COSTS = {
   deepAnalysis:         3,
   forecastGeneration:   5,
   scenarioRun:          5,
+  // Financial Review module. Both are heavy structured generations
+  // (the review reads scanned PDFs with vision + 4 sections + forecast;
+  // the Business Story is the multi-year narrative + DNA + strategy).
+  financialReview:      5,
+  businessEvolution:    5,
 } as const;
 export type CreditAction = keyof typeof CREDIT_COSTS;
 export function costFor(action: CreditAction): number { return CREDIT_COSTS[action] }

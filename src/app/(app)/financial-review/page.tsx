@@ -10,6 +10,7 @@ import Link from "next/link";
 import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { getBalance, costFor, ensureMonthlyAllowance } from "@/lib/billing";
 import UploadCard from "./UploadCard";
 import FinancialReviewTabs from "./FinancialReviewTabs";
 import ReviewDisclaimer from "@/components/financial-review/Disclaimer";
@@ -38,6 +39,12 @@ export default async function FinancialReviewPage() {
   );
   const showEvolution = distinctYears.size >= 2;
 
+  // AI credits: cost of one review + the workspace's current balance, so
+  // the upload card can tell the owner exactly what will be deducted.
+  await ensureMonthlyAllowance(business.id).catch(() => {});
+  const creditCost    = costFor("financialReview");
+  const creditBalance = await getBalance(business.id);
+
   return (
     <>
       <PageHeader
@@ -49,7 +56,7 @@ export default async function FinancialReviewPage() {
       <div className="space-y-6 pb-12">
         <ReviewDisclaimer />
 
-        <UploadCard />
+        <UploadCard creditCost={creditCost} creditBalance={creditBalance} />
 
         <section className="card">
           <h2 className="t-card mb-1">Previous reviews</h2>

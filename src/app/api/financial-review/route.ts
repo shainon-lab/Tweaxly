@@ -4,6 +4,11 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { detectFileType, buildReviewInput } from "@/lib/financialReview/extract";
 import { generateFinancialReview } from "@/lib/financialReview/generate";
+import {
+  consumeCredits, grantCredits, costFor, getEffectivePlan, ensureMonthlyAllowance,
+} from "@/lib/billing";
+
+const REVIEW_COST = costFor("financialReview");
 
 // File parsing + a 30-90s Claude call need the Node runtime.
 export const runtime = "nodejs";
@@ -171,6 +176,27 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Charge AI credits before generating - this is a user-initiated AI
+  // generation. Bootstrap the wallet first (free starter grant / monthly
+  // allowance), then atomically debit. Refunded below if generation
+  // fails, so the owner only pays for a review they actually receive.
+  await ensureMonthlyAllowance(business.id).catch(() => {});
+  const charge = await consumeCredits(business.id, REVIEW_COST, "financial_review", {
+    fileName: input.fileLabel,
+  });
+  if (!charge.ok) {
+    const eff = await getEffectivePlan(business.id).catch(() => null);
+    return NextResponse.json(
+      {
+        error:    "insufficient_credits",
+        cost:     REVIEW_COST,
+        balance:  charge.balance,
+        fallback: eff?.plan === "pro" ? "buy_credits" : "upgrade",
+      },
+      { status: 402 },
+    );
+  }
+
   // Create the review row up-front so even a generation failure leaves a
   // visible, retrievable record (status "failed") scoped to the workspace.
   const review = await prisma.financialReview.create({
@@ -215,8 +241,17 @@ export async function POST(req: NextRequest) {
         result:        generated.result,
       },
     });
-    return NextResponse.json({ id: review.id, status: "complete" }, { status: 201 });
+    return NextResponse.json(
+      { id: review.id, status: "complete", creditsUsed: REVIEW_COST, balance: charge.balance },
+      { status: 201 },
+    );
   } catch (e) {
+    // Generation failed - refund the credits we debited up-front so the
+    // owner is never charged for a review they did not receive.
+    await grantCredits(business.id, REVIEW_COST, "adjustment", {
+      reason: "Refund: financial review generation failed",
+      meta:   { reviewId: review.id },
+    }).catch(() => {});
     await prisma.financialReview.update({
       where: { id: review.id },
       data: {

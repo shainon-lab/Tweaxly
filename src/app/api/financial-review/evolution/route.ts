@@ -4,9 +4,14 @@ import { prisma } from "@/lib/db";
 import { buildYearSeries, computeEvolutionMetrics, yearsKeyOf } from "@/lib/financialReview/evolution";
 import { generateBusinessEvolution } from "@/lib/financialReview/evolutionGenerate";
 import { FinancialAnalysisContextSchema } from "@/lib/financialReview/context";
+import {
+  consumeCredits, grantCredits, costFor, getEffectivePlan, ensureMonthlyAllowance,
+} from "@/lib/billing";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
+
+const EVOLUTION_COST = costFor("businessEvolution");
 
 function claudeConfigured(): string | null {
   const apiKey = process.env.ANTHROPIC_API_KEY;
@@ -62,6 +67,23 @@ export async function POST() {
     projectBasedBusiness:    fc.projectBasedBusiness,
   };
 
+  // Charge AI credits before generating (user-initiated AI generation).
+  // Bootstrap the wallet, then atomically debit; refunded on failure.
+  await ensureMonthlyAllowance(business.id).catch(() => {});
+  const charge = await consumeCredits(business.id, EVOLUTION_COST, "business_evolution");
+  if (!charge.ok) {
+    const eff = await getEffectivePlan(business.id).catch(() => null);
+    return NextResponse.json(
+      {
+        error:    "insufficient_credits",
+        cost:     EVOLUTION_COST,
+        balance:  charge.balance,
+        fallback: eff?.plan === "pro" ? "buy_credits" : "upgrade",
+      },
+      { status: 402 },
+    );
+  }
+
   let result;
   try {
     result = await generateBusinessEvolution({
@@ -72,6 +94,9 @@ export async function POST() {
       context,
     });
   } catch {
+    await grantCredits(business.id, EVOLUTION_COST, "adjustment", {
+      reason: "Refund: business evolution generation failed",
+    }).catch(() => {});
     return NextResponse.json(
       { error: "The evolution analysis could not be generated. Please try again." },
       { status: 502 },
@@ -85,5 +110,5 @@ export async function POST() {
     update: { yearsKey, result },
   });
 
-  return NextResponse.json({ ok: true, yearsKey, result });
+  return NextResponse.json({ ok: true, yearsKey, result, creditsUsed: EVOLUTION_COST, balance: charge.balance });
 }
