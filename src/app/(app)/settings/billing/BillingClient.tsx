@@ -83,6 +83,8 @@ const COST_LABEL: Record<string, string> = {
   deepAnalysis:        "Deep analysis on a signal",
   forecastGeneration:  "Generate a fresh forecast",
   scenarioRun:         "Run a scenario",
+  financialReview:     "Review a financial report",
+  businessEvolution:   "Generate the Business Story",
 };
 
 function fmtUSD(cents: number): string {

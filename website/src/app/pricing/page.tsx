@@ -115,7 +115,7 @@ interface Plan {
 // the cards in sync as we evolve the copy.
 const TIP = {
   workspace:     "A workspace is a single business. Each has its own data, signals, AI Credits and (on paid plans) team.",
-  credits:       "AI Credits meter every AI-powered action: 1 per consultation question, 3 per deep analysis, 5 per fresh forecast or scenario run.",
+  credits:       "AI Credits meter every AI-powered action: 1 per consultation question, 3 per deep analysis, 5 per fresh forecast, scenario run, financial report review, or Business Story.",
   aiEngine:      "Standard is a lightweight tier so starter credits go further. Advanced is deeper analysis, longer reasoning and priority processing.",
   dataSources:   "Upload as many files and as much historical data as you need. No caps on data ingestion, on any plan.",
   signals:       "Tweaxly automatically surfaces the most important business observations from your data, ranked by impact.",
@@ -326,6 +326,8 @@ const CREDIT_COSTS: { action: string; cost: string }[] = [
   { action: "Deep business analysis on a signal", cost: "3 credits" },
   { action: "Generate a fresh forecast",          cost: "5 credits" },
   { action: "Scenario builder run",               cost: "5 credits" },
+  { action: "Review a financial report",          cost: "5 credits" },
+  { action: "Generate the Business Story",        cost: "5 credits" },
 ];
 
 const CREDIT_PACKS: { pack: string; price: string }[] = [
@@ -346,7 +348,7 @@ const PRICING_FAQS: { q: string; a: string }[] = [
   },
   {
     q: "What is an AI Credit?",
-    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast or running a scenario costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 100 credits every month plus the ability to buy more anytime, and Pro routes those credits through a more capable AI tier with faster responses.",
+    a: "AI Credits are how Tweaxly meters AI-powered work. A simple question to the advisor costs 1 credit. A deep analysis on a signal costs 3 credits. Generating a fresh forecast, running a scenario, reviewing a financial report, or generating the multi-year Business Story each costs 5 credits. Free workspaces get 30 starter credits once (no renewal). Pro workspaces get 100 credits every month plus the ability to buy more anytime, and Pro routes those credits through a more capable AI tier with faster responses.",
   },
   {
     q: "What's the difference between AI on Free vs Pro?",
