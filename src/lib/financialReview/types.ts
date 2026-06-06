@@ -60,6 +60,19 @@ const ReviewFlag = z.object({
 });
 export type ReviewFlag = z.infer<typeof ReviewFlag>;
 
+// A business-friendly follow-up the AI raises ONLY when it detects a
+// pattern in the statements that the owner can clarify (deferred
+// revenue, seasonality, inventory reliance, project-based revenue).
+// Never an accounting-treatment question - the statement is the source
+// of truth; we only ask for business context.
+const ContextSignal = z.object({
+  key:         z.string(), // deferredRevenue | seasonality | inventory | projectBased
+  observation: z.string().default(""),
+  question:    z.string(),
+  options:     z.array(z.string()).default([]),
+});
+export type ContextSignal = z.infer<typeof ContextSignal>;
+
 const ForecastLine = z.object({
   outlook:    z.string(),
   confidence: confidenceSchema,
@@ -137,6 +150,11 @@ export const FinancialReviewResultSchema = z.object({
 
   // ── Section 3: Questions To Ask Your CPA (5-15) ──
   cpaQuestions: z.array(z.string()).default([]),
+
+  // Business-context follow-ups detected from the statements (may be
+  // empty). Surfaced to the owner as plain-English questions; answers
+  // feed the durable financial-analysis context + the Business Story.
+  contextSignals: z.array(ContextSignal).default([]),
 
   // ── Section 4: Action Plan (3-10 recommendations) ──
   recommendedActions: z.array(RecommendedAction).default([]),

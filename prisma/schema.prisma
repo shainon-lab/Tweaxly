@@ -332,6 +332,14 @@ model Business {
   paysSalaries     Boolean?
   goals            String?
   onboardedAt      DateTime?
+  // Durable, business-level financial-analysis context. Accumulated from
+  // contextual follow-up answers (seasonality, deferred revenue, inventory
+  // reliance, project-based revenue, business/revenue model, ...) that the
+  // owner gives in plain English after a report is analyzed. Feeds the
+  // multi-year Business Story and future benchmarking / forecasting /
+  // valuation features. Shape: src/lib/financialReview/context.ts ->
+  // FinancialAnalysisContext.
+  financialAnalysisContext Json?
   createdAt        DateTime  @default(now())
 
   memberships         BusinessMembership[]
@@ -1595,6 +1603,13 @@ model FinancialReview {
   // set/overridden by the user at upload. Drives the dashboard + the V2
   // multi-year Business Evolution analysis.
   financialYear Int?
+  // Reporting country + currency captured at upload. CONTEXT ONLY - they
+  // improve parsing, terminology recognition and country financial
+  // context. They are NEVER used to recalculate the numbers; the audited
+  // statement is always the source of truth. Short codes (e.g. "US",
+  // "USD"). Null when left on auto.
+  reportCountry  String?
+  reportCurrency String?
   // Optional free-text notes the user attaches to a report.
   notes        String?
   // Normalised numeric financials extracted from the report (revenue,

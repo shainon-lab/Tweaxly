@@ -3,6 +3,7 @@ import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { buildYearSeries, computeEvolutionMetrics, yearsKeyOf } from "@/lib/financialReview/evolution";
 import { generateBusinessEvolution } from "@/lib/financialReview/evolutionGenerate";
+import { FinancialAnalysisContextSchema } from "@/lib/financialReview/context";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +45,23 @@ export async function POST() {
 
   const metrics = computeEvolutionMetrics(series);
 
+  // Combine the business profile with the durable financial-analysis
+  // context so the Business Story reflects how this business operates.
+  const fc = FinancialAnalysisContextSchema.parse(business.financialAnalysisContext ?? {});
+  const context = {
+    industry:       business.industry,
+    country:        business.country,
+    businessStage:  business.businessStage,
+    businessFormat: business.businessFormat,
+    goals:          business.goals,
+    businessModel:  fc.businessModel,
+    revenueModel:   fc.revenueModel,
+    seasonalBusiness:        fc.seasonalBusiness,
+    deferredRevenueDetected: fc.deferredRevenueDetected,
+    inventoryHeavyBusiness:  fc.inventoryHeavyBusiness,
+    projectBasedBusiness:    fc.projectBasedBusiness,
+  };
+
   let result;
   try {
     result = await generateBusinessEvolution({
@@ -51,6 +69,7 @@ export async function POST() {
       apiKey,
       currency: business.currency,
       metrics,
+      context,
     });
   } catch {
     return NextResponse.json(

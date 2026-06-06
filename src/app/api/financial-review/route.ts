@@ -78,7 +78,13 @@ export async function POST(req: NextRequest) {
   // The client uploads each file straight to Vercel Blob (bypassing the
   // 4.5 MB serverless body limit) and then POSTs the blob references here
   // as JSON, together with optional metadata.
-  let payload: { blobs?: BlobRef[]; financialYear?: string; notes?: string };
+  let payload: {
+    blobs?: BlobRef[];
+    financialYear?: string;
+    notes?: string;
+    reportCountry?: string;
+    reportCurrency?: string;
+  };
   try {
     payload = await req.json();
   } catch {
@@ -103,6 +109,13 @@ export async function POST(req: NextRequest) {
       : null;
   const notes =
     typeof notesRaw === "string" && notesRaw.trim() ? notesRaw.trim().slice(0, 2000) : null;
+
+  // Reporting country + currency: context only, never used to
+  // recalculate. Accept short codes; ignore anything implausible.
+  const codeOf = (v: unknown): string | null =>
+    typeof v === "string" && /^[A-Za-z]{2,8}$/.test(v.trim()) ? v.trim().toUpperCase() : null;
+  const reportCountry  = codeOf(payload.reportCountry);
+  const reportCurrency = codeOf(payload.reportCurrency);
 
   // The transient blobs must be cleaned up on every exit path (raw bytes
   // are never persisted), so route all early failures through this helper.
@@ -169,6 +182,8 @@ export async function POST(req: NextRequest) {
       fileCount:       input.fileCount,
       scanned:         input.scanned,
       financialYear:   yearHint,
+      reportCountry,
+      reportCurrency,
       notes,
       extractedText:   input.text || null,
       status:          "processing",
@@ -178,13 +193,15 @@ export async function POST(req: NextRequest) {
 
   try {
     const generated = await generateFinancialReview({
-      businessId: business.id,
+      businessId:   business.id,
       apiKey,
-      currency:   business.currency,
-      fileLabel:  input.fileLabel,
-      documents:  input.documents,
-      text:       input.text,
+      currency:     business.currency,
+      fileLabel:    input.fileLabel,
+      documents:    input.documents,
+      text:         input.text,
       yearHint,
+      countryHint:  reportCountry,
+      currencyHint: reportCurrency,
     });
     await prisma.financialReview.update({
       where: { id: review.id },

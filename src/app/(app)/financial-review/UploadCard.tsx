@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { upload } from "@vercel/blob/client";
 import { UploadCloud, FileText, X, Loader2 } from "lucide-react";
+import { COUNTRIES, CURRENCIES } from "@/lib/financialReview/context";
 
 // Upload surface for a new Financial Review. Drag & drop or browse,
 // multiple files (PDF / XLSX / CSV).
@@ -41,6 +42,8 @@ export default function UploadCard() {
   const [stage, setStage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [year, setYear] = useState("");
+  const [country, setCountry] = useState("");
+  const [currency, setCurrency] = useState("");
   const [notes, setNotes] = useState("");
 
   // Advance the status message while processing (stops at the last one).
@@ -105,6 +108,8 @@ export default function UploadCard() {
         body: JSON.stringify({
           blobs,
           financialYear: /^\d{4}$/.test(year.trim()) ? year.trim() : undefined,
+          reportCountry: country || undefined,
+          reportCurrency: currency || undefined,
           notes: notes.trim() || undefined,
         }),
       });
@@ -178,7 +183,35 @@ export default function UploadCard() {
         Tip: upload the original, text-based PDF exported from your accounting software when you can. Scanned PDFs are supported, but they are read with AI vision - slower and a little less precise.
       </p>
 
-      <div className="mt-4 grid gap-3 sm:grid-cols-[150px_1fr]">
+      <div className="mt-4 grid gap-3 sm:grid-cols-3">
+        <div>
+          <label className="label" htmlFor="fr-country">Reporting country</label>
+          <select
+            id="fr-country"
+            value={country}
+            onChange={(e) => setCountry(e.target.value)}
+            className="input"
+          >
+            <option value="">Auto-detect</option>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="label" htmlFor="fr-currency">Reporting currency</label>
+          <select
+            id="fr-currency"
+            value={currency}
+            onChange={(e) => setCurrency(e.target.value)}
+            className="input"
+          >
+            <option value="">Auto-detect</option>
+            {CURRENCIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
+        </div>
         <div>
           <label className="label" htmlFor="fr-year">Financial year</label>
           <input
@@ -190,17 +223,22 @@ export default function UploadCard() {
             className="input"
           />
         </div>
-        <div>
-          <label className="label" htmlFor="fr-notes">Notes (optional)</label>
-          <input
-            id="fr-notes"
-            placeholder="e.g. Final audited version from the CPA"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            className="input"
-          />
-        </div>
       </div>
+
+      <div className="mt-3">
+        <label className="label" htmlFor="fr-notes">Notes (optional)</label>
+        <input
+          id="fr-notes"
+          placeholder="e.g. Final audited version from the CPA"
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          className="input"
+        />
+      </div>
+
+      <p className="t-meta mt-2 text-slate-500">
+        Country and currency are used only to read your report correctly - terminology, language and local conventions. They are never used to recalculate your numbers; the statement is always the source of truth.
+      </p>
 
       {files.length > 0 ? (
         <ul className="mt-4 space-y-2">

@@ -5,7 +5,9 @@ import PageHeader from "@/components/PageHeader";
 import { requireBusiness } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { FinancialReviewResultSchema } from "@/lib/financialReview/types";
+import { FinancialAnalysisContextSchema } from "@/lib/financialReview/context";
 import ReviewDetail from "../ReviewDetail";
+import ContextQuestions from "../ContextQuestions";
 import ReviewActions from "./ReviewActions";
 import ShareButton from "./ShareButton";
 
@@ -31,6 +33,11 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
       : null;
 
   const title = review.reportType || review.fileName || "Financial Review";
+
+  // Durable workspace context - seeds the contextual follow-up answers.
+  const businessContext = FinancialAnalysisContextSchema.parse(
+    business.financialAnalysisContext ?? {},
+  );
 
   return (
     <>
@@ -72,7 +79,17 @@ export default async function ReviewDetailPage({ params }: { params: Promise<{ i
         ) : null}
 
         {review.status === "complete" && parsed?.success ? (
-          <ReviewDetail result={parsed.data} level={review.statusLevel} />
+          <>
+            {parsed.data.contextSignals.length > 0 ? (
+              <div className="mb-6">
+                <ContextQuestions
+                  signals={parsed.data.contextSignals}
+                  initialAnswers={businessContext.answers}
+                />
+              </div>
+            ) : null}
+            <ReviewDetail result={parsed.data} level={review.statusLevel} />
+          </>
         ) : review.status === "processing" ? (
           <div className="card mt-2 py-12 text-center">
             <div className="t-card">This review is still processing</div>

@@ -1,6 +1,7 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { tierConfigForBusiness } from "../aiTier";
+import { parseModelJson } from "./jsonExtract";
 import {
   FinancialReviewResultSchema,
   type FinancialReviewResult,
@@ -65,6 +66,9 @@ Return ONLY a single JSON object inside a \`\`\`json code fence. No prose before
     "outliers": [{ "observation": "a sharp increase/decrease or unusual balance change", "whyItMatters": "possible business impact", "discussionPoint": "string" }]
   },
   "cpaQuestions": ["between 5 and 15 personalized questions to ask the accountant, based entirely on the uploaded data"],
+  "contextSignals": [
+    { "key": "deferredRevenue | seasonality | inventory | projectBased", "observation": "the concrete pattern you saw in the numbers", "question": "a short, plain-English business question the owner can answer", "options": ["the allowed answer options for this signal"] }
+  ],
   "recommendedActions": [
     {
       "action": "string - what to do",
@@ -92,6 +96,15 @@ Return ONLY a single JSON object inside a \`\`\`json code fence. No prose before
 }
 \`\`\`
 
+BUSINESS CONTEXT DETECTION ("contextSignals") - the guiding principle is: NEVER ask the owner to behave like an accountant.
+- The audited statement already contains the accounting treatment approved by management and the auditors. NEVER ask about revenue recognition, deferred-expense policy, capitalization, amortization, inventory valuation methods, or accounting-standard interpretation. Incorrect owner answers are worse than no answers.
+- Instead, scan the statements for a SMALL number of patterns an owner CAN clarify in business terms, and include a signal ONLY when that pattern is genuinely present and the answer would materially improve the analysis:
+  - "deferredRevenue": a significant deferred / unearned / prepaid revenue balance. options EXACTLY: ["Annual subscriptions","Multi-year contracts","Customer prepayments","Retainers","Not sure"]
+  - "seasonality": strong intra-year or quarter-to-quarter fluctuations. options EXACTLY: ["Yes","No","Not sure"]
+  - "inventory": inventory is a significant share of assets. options EXACTLY: ["Yes","No","Not sure"]
+  - "projectBased": revenue + receivables patterns look project-based. options EXACTLY: ["One-time projects","Recurring subscriptions","Product sales","Services","Mixed"]
+- Use the exact "key" and "options" above. Ground "observation" in the actual numbers. If no pattern genuinely applies, return an empty array. Do not invent signals to fill the list.
+
 REQUIREMENTS:
 - "detectedYear": the fiscal year the report covers (integer, e.g. 2024). Use null only if it genuinely cannot be determined.
 - "financials": extract the headline numbers as plain numbers in the report's currency (no symbols, no thousands separators). Use null for any line the report does not contain. Do not invent values.
@@ -101,27 +114,6 @@ REQUIREMENTS:
 - Output ONLY the single JSON object and make sure it is complete and valid (every brace and bracket closed). Do not pad with extra prose.
 - Forecasts are ESTIMATES, never facts - phrase them as estimates and surface the assumptions.
 - Keep the second-opinion items to genuine, report-grounded observations. It is fine for a category to be empty if nothing applies.`;
-
-// Pull the JSON object out of a model response. Order of attempts:
-//   1. A complete ```json ... ``` (or ``` ... ```) fenced block.
-//   2. The substring from the first "{" to the last "}" - this recovers
-//      complete JSON even when the closing fence is missing (the model
-//      stopped before writing it).
-//   3. Whatever remains after stripping a leading opening fence.
-// Genuinely truncated JSON still won't parse; the caller handles that.
-function extractJsonText(text: string): string {
-  const t = text.trim();
-
-  const fenced = t.match(/```(?:json)?\s*([\s\S]*?)```/i);
-  if (fenced) return fenced[1].trim();
-
-  const stripped = t.replace(/^```(?:json)?\s*/i, "");
-  const start = stripped.indexOf("{");
-  if (start === -1) return stripped.trim();
-  const end = stripped.lastIndexOf("}");
-  if (end > start) return stripped.slice(start, end + 1).trim();
-  return stripped.slice(start).trim();
-}
 
 export interface GeneratedReview {
   reportType:  string;
@@ -150,6 +142,10 @@ export async function generateFinancialReview(opts: {
   text:       string;
   // Optional user-specified fiscal year (overrides auto-detection).
   yearHint?:  number | null;
+  // Optional reporting country + currency captured at upload. CONTEXT
+  // ONLY - improves parsing/terminology; never used to recalculate.
+  countryHint?:  string | null;
+  currencyHint?: string | null;
 }): Promise<GeneratedReview> {
   const client = new Anthropic({ apiKey: opts.apiKey });
   const tier = await tierConfigForBusiness(opts.businessId, "financial_review");
@@ -173,9 +169,13 @@ export async function generateFinancialReview(opts: {
     });
   }
   const framing =
-    `Reporting currency: ${opts.currency}\n` +
+    `Reporting currency: ${opts.currencyHint || opts.currency}\n` +
     `Uploaded report: ${opts.fileLabel}\n` +
+    (opts.countryHint ? `Reporting country (context only): ${opts.countryHint}.\n` : "") +
     (opts.yearHint ? `The user indicates this report is for fiscal year ${opts.yearHint}. Use ${opts.yearHint} as detectedYear.\n` : "") +
+    (opts.countryHint || opts.currencyHint
+      ? "The reporting country and currency are CONTEXT ONLY - use them to read terminology, language and country-specific financial conventions. NEVER use them to recalculate, convert, or adjust any figure. The uploaded statement is the source of truth.\n"
+      : "") +
     "\n" +
     (opts.documents.length > 0
       ? "Read the attached financial report file(s) above (they may be scanned images - read them carefully, including any tables) and analyze them.\n\n"
@@ -199,29 +199,11 @@ export async function generateFinancialReview(opts: {
   for (const block of response.content) {
     if (block.type === "text") raw += block.text;
   }
-  if (!raw.trim()) throw new Error("The review engine returned an empty response.");
 
-  // Strip em-dashes (voice rule) and pull the JSON object out of the
-  // response. This tolerates a complete ```json ... ``` fence, an opening
-  // fence with no close (the model was cut off before the closing fence),
-  // and bare JSON with no fence at all.
-  const sanitized = raw.replace(/—/g, " - ");
-  const jsonText = extractJsonText(sanitized);
-
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(jsonText);
-  } catch {
-    // If we got here the JSON itself is incomplete - almost always
-    // because the model hit its output ceiling mid-document. Surface a
-    // clear, actionable message instead of a raw parser error.
-    if (response.stop_reason === "max_tokens") {
-      throw new Error(
-        "This report was too large to analyze in a single pass. Try uploading one statement at a time (for example the profit & loss and the balance sheet separately).",
-      );
-    }
-    throw new Error("The review engine returned a response that could not be read. Please try again.");
-  }
+  const parsed = parseModelJson(raw, {
+    truncated: response.stop_reason === "max_tokens",
+    engine: "review engine",
+  });
   const result = FinancialReviewResultSchema.parse(parsed);
 
   const rawScore = Math.round(Number(result.healthScore));
