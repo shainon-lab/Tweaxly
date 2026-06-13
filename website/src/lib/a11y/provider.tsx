@@ -54,6 +54,25 @@ export function AccessibilityProvider({ children }: { children: React.ReactNode 
 
   useEffect(() => {
     try {
+      // Escape hatch: visiting any page with ?a11yreset (or #a11yreset)
+      // wipes the stored preferences and returns everything to default -
+      // works even if a setting (e.g. Pause animations) has hidden the
+      // widget itself. The URL is cleaned afterwards.
+      const loc = window.location;
+      const wantsReset =
+        new URLSearchParams(loc.search).has("a11yreset") ||
+        loc.hash.toLowerCase() === "#a11yreset";
+      if (wantsReset) {
+        localStorage.removeItem(A11Y_STORAGE_KEY);
+        applyToHtml(DEFAULT_PREFS);
+        setPrefs(DEFAULT_PREFS);
+        const clean = loc.pathname +
+          loc.search.replace(/([?&])a11yreset(=[^&]*)?(&|$)/, "$1").replace(/[?&]$/, "");
+        window.history.replaceState(null, "", clean || "/");
+        hydrated.current = true;
+        return;
+      }
+
       const raw = localStorage.getItem(A11Y_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw) as Partial<A11yPrefs>;

@@ -368,6 +368,20 @@ html[dir="rtl"] .a11y-dialog {
   .a11y-backdrop, .a11y-dialog { animation: none !important; }
 }
 
+/* The accessibility widget must NEVER be frozen by the user's own motion
+   settings. "Pause animations" otherwise freezes the dialog's entrance
+   animation at its invisible first frame, hiding the panel so the user
+   can't reopen it to turn anything off. Force the panel to its final,
+   visible state regardless of the motion prefs. */
+html[data-a11y-pause-anims="on"] .a11y-backdrop,
+html[data-a11y-pause-anims="on"] .a11y-dialog,
+html[data-a11y-reduce-motion="on"] .a11y-backdrop,
+html[data-a11y-reduce-motion="on"] .a11y-dialog {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
+
 .a11y-dialog header {
   display: flex;
   align-items: center;
