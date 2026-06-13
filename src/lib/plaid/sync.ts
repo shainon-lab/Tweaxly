@@ -24,6 +24,7 @@
 
 import "server-only";
 import { prisma } from "@/lib/db";
+import { convertAmount } from "@/lib/fx";
 import { getPlaid } from "./client";
 import { decryptAccessToken } from "./encryption";
 import type {
@@ -219,6 +220,15 @@ async function applyAdded(
     })).map((r) => r.externalId ?? "")
   );
 
+  // Business base currency - Plaid amounts come in the account's own
+  // currency (often foreign), so we convert each to base before storing
+  // `amount`, keeping the original in originalAmount/originalCurrency.
+  const business = await prisma.business.findUnique({
+    where:  { id: businessId },
+    select: { currency: true },
+  });
+  const baseCurrency = (business?.currency ?? "USD").toUpperCase();
+
   let written = 0;
   for (const t of txns) {
     if (existingIds.has(t.transaction_id)) continue;
@@ -227,10 +237,14 @@ async function applyAdded(
 
     const currency = t.iso_currency_code ?? t.unofficial_currency_code ?? src.currency;
     // Plaid: amount positive = outflow. Tweaxly: amount negative = outflow.
-    const amount   = -t.amount;
-    const date     = new Date(t.date);
-    const month    = t.date.slice(0, 7);
-    const category = (t.personal_finance_category?.primary ?? t.category?.[0] ?? null);
+    const rawAmount = -t.amount;
+    const date      = new Date(t.date);
+    const month     = t.date.slice(0, 7);
+    const category  = (t.personal_finance_category?.primary ?? t.category?.[0] ?? null);
+
+    // Convert to base. Same-currency is a no-op (rate 1); a foreign
+    // account gets a historical conversion + a preserved snapshot.
+    const conv = await convertAmount(rawAmount, currency, baseCurrency, date);
 
     await prisma.transaction.create({
       data: {
@@ -239,10 +253,18 @@ async function applyAdded(
         externalId:       t.transaction_id,
         transactionDate:  date,
         accountingMonth:  month,
-        amount,
-        currency,
-        baseCurrency:     currency,
-        type:             amount < 0 ? "expense" : "income",
+        amount:           conv.amount,
+        currency:         conv.originalCurrency,
+        originalAmount:   conv.originalAmount,
+        originalCurrency: conv.originalCurrency,
+        baseCurrency:     conv.baseCurrency,
+        exchangeRate:     conv.exchangeRate,
+        exchangeRateDate: conv.exchangeRateDate,
+        exchangeRateSource: conv.exchangeRateSource,
+        conversionMethod: conv.conversionMethod,
+        isConverted:      conv.isConverted,
+        rateFetchStatus:  conv.rateFetchStatus,
+        type:             conv.amount < 0 ? "expense" : "income",
         vendor:           t.merchant_name ?? t.name ?? null,
         description:      t.name ?? "",
         subcategory:      category, // raw Plaid category; categoryId stays null

@@ -85,8 +85,13 @@ async function main() {
       t.conversionMethod === "daily_historical" && !!t.exchangeRate && Math.abs(t.exchangeRate - 1) > 1e-9;
     if (alreadyConverted) { skip++; continue; }
 
-    // Safety: never convert a legacy row that has no real source snapshot.
-    if (t.originalCurrency == null) { skipLegacy++; continue; }
+    // Rows with no original snapshot (originalCurrency = null) but a
+    // non-base `currency` are un-converted foreign rows - e.g. Plaid
+    // imported USD into an ILS business and stored the raw USD value in
+    // `amount` without converting. `amount` IS the original value here,
+    // so origAmt (= originalAmount ?? amount) is correct to snapshot and
+    // convert. (Base-currency legacy rows take the relabel branch above.)
+    void skipLegacy;
 
     const rate = await fetchRate(norm, base, t.transactionDate);
     if (rate == null) {
