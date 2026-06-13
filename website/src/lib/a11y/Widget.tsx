@@ -158,14 +158,24 @@ export default function AccessibilityWidget() {
           >
             <header>
               <h2 id={titleId}>Accessibility options</h2>
-              <button
-                type="button"
-                className="a11y-close"
-                aria-label="Close accessibility options"
-                onClick={() => setOpen(false)}
-              >
-                <CloseGlyph />
-              </button>
+              <div className="a11y-header-actions">
+                <button
+                  type="button"
+                  className="a11y-header-reset"
+                  onClick={() => reset()}
+                  title="Reset all accessibility settings to default"
+                >
+                  Reset
+                </button>
+                <button
+                  type="button"
+                  className="a11y-close"
+                  aria-label="Close accessibility options"
+                  onClick={() => setOpen(false)}
+                >
+                  <CloseGlyph />
+                </button>
+              </div>
             </header>
 
             <div className="a11y-body">

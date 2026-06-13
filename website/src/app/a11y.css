@@ -509,6 +509,23 @@ html[dir="rtl"] .a11y-dialog {
 }
 .a11y-reset:hover { background: rgba(239, 91, 91, 0.10); color: #fca5a5; }
 
+.a11y-header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.a11y-header-reset {
+  background: transparent;
+  border: 1px solid rgba(239, 91, 91, 0.5);
+  color: #fca5a5;
+  padding: 0.3rem 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.a11y-header-reset:hover { background: rgba(239, 91, 91, 0.14); color: #fecaca; }
+
 .a11y-close {
   width: 32px;
   height: 32px;
