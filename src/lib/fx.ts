@@ -18,6 +18,7 @@
 // the caller can act on (success / missing / failed / same_currency).
 
 import { prisma } from "./db";
+import { normalizeCurrency } from "./currency";
 
 export interface RateLookup {
   rate: number | null;
@@ -215,11 +216,18 @@ export interface ConversionResult {
 }
 
 export async function convertAmount(
-  originalAmount: number,
-  originalCurrency: string,
-  baseCurrency: string,
+  originalAmountInput: number,
+  originalCurrencyInput: string,
+  baseCurrencyInput: string,
   transactionDate: Date,
 ): Promise<ConversionResult> {
+  // Normalize symbols/words (e.g. "€", "euro", "₪", "$") to ISO codes so
+  // the rate service can resolve them. Without this, non-ISO currencies
+  // silently fail to convert and get stored 1:1.
+  const originalAmount   = originalAmountInput;
+  const originalCurrency = normalizeCurrency(originalCurrencyInput, { fallback: originalCurrencyInput.toUpperCase() });
+  const baseCurrency     = normalizeCurrency(baseCurrencyInput, { fallback: baseCurrencyInput.toUpperCase() });
+
   const lookup = await getRate(baseCurrency, originalCurrency, transactionDate);
   if (lookup.status === "same_currency") {
     return {

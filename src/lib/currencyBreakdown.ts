@@ -17,6 +17,7 @@
 
 import type { Prisma } from "@prisma/client";
 import { prisma } from "./db";
+import { normalizeCurrency } from "./currency";
 import type { CurrencyBreakdownItem } from "@/components/MoneyAmountWithCurrencyBreakdown";
 
 // Subset of Transaction fields the breakdown helpers need. Keeping
@@ -55,7 +56,9 @@ export function breakdownFromTxns(
   let convertedTotal = 0;
 
   for (const t of txns) {
-    const oc   = (t.originalCurrency ?? t.currency ?? base).toUpperCase();
+    const oc   = normalizeCurrency(t.originalCurrency ?? t.currency ?? base, {
+      fallback: (t.originalCurrency ?? t.currency ?? base).toUpperCase(),
+    });
     const oamt = t.originalAmount ?? t.amount;
     const cv   = sign(t.amount);
     convertedTotal += cv;
