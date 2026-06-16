@@ -90,7 +90,7 @@ const FULL_SIGNALS: Signal[] = [
 // Full product-accurate deck - used inside the Business Signals section.
 export function SignalDeckFull() {
   return (
-    <div className="glass p-5 sm:p-6">
+    <div className="glass product-dark p-5 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <span className="text-sm font-medium text-slate-100">Signals</span>
@@ -121,7 +121,7 @@ export function SignalDeckHero() {
       {/* Faint workspace grid behind */}
       <div className="absolute inset-0 grid-bg opacity-40 rounded-3xl pointer-events-none" aria-hidden="true" />
 
-      <div className="relative glass p-5 sm:p-6">
+      <div className="relative glass product-dark p-5 sm:p-6">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-100">Signals</span>
@@ -162,7 +162,7 @@ function FloatChip({
     tone === "warn"   ? "border-warn/40 bg-warn/10 text-warn"          :
                         "border-brand-purple/40 bg-brand-purple/10 text-brand-purple";
   return (
-    <div className="w-64 rounded-xl border border-line bg-ink-900/85 backdrop-blur p-3 shadow-2xl shadow-black/40">
+    <div className="product-dark w-64 rounded-xl border border-line bg-ink-900/85 backdrop-blur p-3 shadow-2xl shadow-black/40">
       <div className={`text-[10px] uppercase tracking-wider font-medium ${color} inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5`}>
         <span className="w-1 h-1 rounded-full bg-current" />
         {label}
