@@ -260,7 +260,7 @@ function Hero() {
 
         {/* Hero product visual */}
         <div className="lg:col-span-5">
-          <div className="rounded-2xl border border-line bg-ink-900/60 p-2 shadow-2xl">
+          <div className="rounded-2xl border border-line bg-ink-900 p-2 shadow-2xl">
             <ExecutiveOverviewMock />
           </div>
         </div>
@@ -309,7 +309,7 @@ function CategoryNav() {
   return (
     <nav
       aria-label="Feature categories"
-      className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm"
+      className="border-y border-line/60 bg-ink-800 backdrop-blur-sm"
     >
       <div className="container-wide py-4 flex items-center gap-x-6 gap-y-2 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-600">
         {CATEGORIES.map((c) => (
@@ -377,7 +377,7 @@ function CategorySection({ category }: { category: FeatureCategory }) {
 function CategoryVisual({ visual }: { visual: VisualKey }) {
   if (visual === null) return null;
   return (
-    <div className="mt-8 rounded-2xl border border-line bg-ink-900/60 p-2 shadow-xl">
+    <div className="mt-8 rounded-2xl border border-line bg-ink-900 p-2 shadow-xl">
       {visual === "executive-overview" ? <ExecutiveOverviewMock /> : null}
       {visual === "signal-deck"        ? <SignalDeckFull />        : null}
       {visual === "forecast-chart"     ? <ForecastChart />         : null}

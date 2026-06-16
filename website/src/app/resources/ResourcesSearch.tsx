@@ -85,7 +85,7 @@ export default function ResourcesSearch({
       <label htmlFor="resources-search" className="sr-only">
         Search the Learning Center
       </label>
-      <div className="flex items-center gap-2 rounded-2xl border border-line bg-ink-900/60 px-4 py-3 focus-within:border-brand-purple/60 transition">
+      <div className="flex items-center gap-2 rounded-2xl border border-line bg-ink-900 px-4 py-3 focus-within:border-brand-purple/60 transition">
         <span aria-hidden="true" className="text-slate-500">⌕</span>
         <input
           id="resources-search"
@@ -110,7 +110,7 @@ export default function ResourcesSearch({
       </div>
 
       {open && q.trim().length > 0 ? (
-        <div className="absolute z-30 left-0 right-0 top-full mt-2 rounded-2xl border border-line bg-ink-950 shadow-2xl shadow-black/60 max-h-[480px] overflow-y-auto">
+        <div className="absolute z-30 left-0 right-0 top-full mt-2 rounded-2xl border border-line bg-ink-900 shadow-2xl shadow-slate-400/25 max-h-[480px] overflow-y-auto">
           {!hasResults ? (
             <div className="px-5 py-6 text-sm text-slate-600">
               No matches for &ldquo;{q}&rdquo;. Try a broader term, or browse all categories below.

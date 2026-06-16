@@ -166,7 +166,7 @@ function FeatureVisual({ visual }: { visual: VisualKey }) {
   if (visual === null) return null;
   return (
     <section className="container-wide pb-12 lg:pb-16">
-      <div className="rounded-2xl border border-line bg-ink-900/60 p-2 shadow-2xl max-w-5xl mx-auto">
+      <div className="rounded-2xl border border-line bg-ink-900 p-2 shadow-2xl max-w-5xl mx-auto">
         {visual === "executive-overview" ? <ExecutiveOverviewMock /> : null}
         {visual === "signal-deck"        ? <SignalDeckFull />        : null}
         {visual === "forecast-chart"     ? <ForecastChart />         : null}

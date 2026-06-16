@@ -83,7 +83,7 @@ export default function GlossaryFilter({ entries }: { entries: GlossaryEntry[] }
 
       {/* Grid */}
       {visible.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-line bg-ink-900/30 p-10 text-center">
+        <div className="rounded-2xl border border-dashed border-line bg-ink-800 p-10 text-center">
           <div className="text-base font-medium text-slate-800 mb-1">
             No glossary entries at this level yet
           </div>

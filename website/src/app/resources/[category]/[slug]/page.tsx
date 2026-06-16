@@ -144,7 +144,7 @@ export default async function ArticlePage(
             : glossaryTermsFor(article.meta.category, article.meta.slug, 10);
           if (links.length === 0) return null;
           return (
-            <aside className="mt-8 rounded-2xl border border-line bg-ink-900/40 p-5 sm:p-6">
+            <aside className="mt-8 rounded-2xl border border-line bg-ink-900 p-5 sm:p-6">
               <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3 font-semibold">
                 {isGlossary ? "Articles using this term" : "Key terms in this article"}
               </div>
@@ -167,7 +167,7 @@ export default async function ArticlePage(
                     <Link
                       key={`${l.meta.category}-${l.meta.slug}`}
                       href={articleHref(l.meta)}
-                      className="inline-flex items-center rounded-full border border-line bg-ink-950/60 px-3 py-1.5 text-xs sm:text-[13px] text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
+                      className="inline-flex items-center rounded-full border border-line bg-ink-800 px-3 py-1.5 text-xs sm:text-[13px] text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
                     >
                       {l.meta.title}
                     </Link>
@@ -195,7 +195,7 @@ export default async function ArticlePage(
           <div className="mt-12 pt-6 border-t border-line/40 flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mr-1">Tags</span>
             {article.meta.tags.map((t) => (
-              <span key={t} className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-3 py-1 text-xs text-slate-700">
+              <span key={t} className="inline-flex items-center rounded-full border border-line bg-ink-900 px-3 py-1 text-xs text-slate-700">
                 {t}
               </span>
             ))}
@@ -246,7 +246,7 @@ export default async function ArticlePage(
             <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-4">
               Practical application
             </div>
-            <div className="rounded-2xl border border-line bg-ink-900/40 p-6">
+            <div className="rounded-2xl border border-line bg-ink-900 p-6">
               <p className="text-sm text-slate-700 leading-relaxed">
                 The concepts above show up in two Tweaxly features in particular:
               </p>
@@ -255,7 +255,7 @@ export default async function ArticlePage(
                   <Link
                     key={f.slug}
                     href={`/features/${f.slug}`}
-                    className="block rounded-xl border border-line bg-ink-950/40 p-4 hover:border-brand-purple/40 transition"
+                    className="block rounded-xl border border-line bg-ink-800 p-4 hover:border-brand-purple/40 transition"
                   >
                     <div className="text-sm font-semibold text-[color:var(--color-ink-strong)]">{f.label}</div>
                     <div className="mt-1.5 text-xs text-slate-600 leading-relaxed">{f.hook}</div>

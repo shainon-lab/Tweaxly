@@ -160,7 +160,7 @@ function Hero() {
 
 function PositioningStrip() {
   return (
-    <section className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm">
+    <section className="border-y border-line/60 bg-ink-800 backdrop-blur-sm">
       <div className="container-wide py-5">
         <div className="flex items-center justify-between gap-6 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-600">
           {POSITIONING.map((p) => (
@@ -325,7 +325,7 @@ function ValueCell({ tone, label }: { tone: "bad" | "warn" | "purple" | "good"; 
     tone === "purple" ? "bg-brand-purple" :
                         "bg-good";
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-ink-900/40 px-3 py-2.5 text-sm text-slate-800">
+    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-ink-900 px-3 py-2.5 text-sm text-slate-800">
       <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
       {label}
     </div>
@@ -494,7 +494,7 @@ function FinancialReviewMock() {
       </p>
       <div className="mt-5 grid grid-cols-2 gap-2">
         {SECTIONS.map((s) => (
-          <div key={s} className="rounded-lg border border-line bg-ink-950/40 px-3 py-2 text-xs text-slate-700">
+          <div key={s} className="rounded-lg border border-line bg-ink-800 px-3 py-2 text-xs text-slate-700">
             {s}
           </div>
         ))}
@@ -527,7 +527,7 @@ function HowItWorks() {
       </div>
       <div className="grid sm:grid-cols-3 gap-4">
         {STEPS.map((s) => (
-          <div key={s.n} className="rounded-2xl border border-line bg-ink-900/40 backdrop-blur-sm p-6">
+          <div key={s.n} className="rounded-2xl border border-line bg-ink-900 backdrop-blur-sm p-6">
             <div className="flex items-center gap-3 mb-3">
               <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-purple/15 border border-brand-purple/30 text-brand-purple text-sm font-semibold">
                 {s.n}
@@ -604,7 +604,7 @@ function ConnectYourDataBanner() {
                   {SOURCES.map((s, i) => (
                     <div
                       key={s.name}
-                      className="rounded-xl border border-line/60 bg-ink-900/70 backdrop-blur px-3 py-3 shadow-lg hover:border-brand-purple/40 hover:bg-ink-900/85 transition will-change-transform"
+                      className="rounded-xl border border-line/60 bg-ink-900 backdrop-blur px-3 py-3 shadow-lg hover:border-brand-purple/40 hover:bg-ink-700 transition will-change-transform"
                       style={{
                         transform: `translateY(${(i % 2 === 0 ? -4 : 4)}px)`,
                         animation: `float ${5 + (i % 3)}s ease-in-out ${i * 0.4}s infinite`,
@@ -864,7 +864,7 @@ function LearningCenterSection() {
             <Link
               key={t.slug}
               href={`/resources/business-glossary/${t.slug}`}
-              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
+              className="inline-flex items-center rounded-full border border-line bg-ink-900 px-4 py-2 text-sm text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
             >
               {t.label}
             </Link>

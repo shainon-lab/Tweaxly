@@ -164,7 +164,7 @@ export default async function CategoryPage(
               {featured.length ? "Latest" : "All articles"}
             </div>
             {latest.length === 0 && featured.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-line bg-ink-900/30 p-10 text-center">
+              <div className="rounded-2xl border border-dashed border-line bg-ink-800 p-10 text-center">
                 <div className="text-base font-medium text-slate-800 mb-1">
                   Articles for this category are on the way
                 </div>

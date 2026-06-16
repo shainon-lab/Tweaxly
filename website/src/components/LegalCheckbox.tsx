@@ -72,7 +72,7 @@ function LegalModal({ kind, onClose }: { kind: Exclude<DocKind, null>; onClose: 
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4 py-8"
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
     >
-      <div className="relative w-full max-w-2xl max-h-full bg-ink-900 border border-line rounded-2xl shadow-2xl shadow-black/40 flex flex-col overflow-hidden">
+      <div className="relative w-full max-w-2xl max-h-full bg-ink-900 border border-line rounded-2xl shadow-2xl shadow-slate-400/20 flex flex-col overflow-hidden">
         <div className="shrink-0 flex items-start justify-between gap-3 p-5 border-b border-line bg-ink-900">
           <div>
             <h2 className="text-lg font-semibold text-[color:var(--color-ink-strong)]">{title}</h2>

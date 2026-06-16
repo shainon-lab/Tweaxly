@@ -52,7 +52,7 @@ export function DefinitionBlock({
   children: React.ReactNode;
 }) {
   return (
-    <div className="my-6 rounded-xl border-l-4 border-brand-purple bg-ink-900/40 px-5 py-4">
+    <div className="my-6 rounded-xl border-l-4 border-brand-purple bg-ink-900 px-5 py-4">
       <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-1.5">
         Definition
       </div>
@@ -74,7 +74,7 @@ export function Formula({
   example?: React.ReactNode;
 }) {
   return (
-    <div className="my-7 rounded-xl border border-line bg-ink-900/40 p-5 sm:p-6">
+    <div className="my-7 rounded-xl border border-line bg-ink-900 p-5 sm:p-6">
       <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3">
         Formula
       </div>
@@ -111,7 +111,7 @@ export function ComparisonTable({
       ) : null}
       <table className="w-full text-sm sm:text-[15px] border border-line rounded-xl overflow-hidden">
         <thead>
-          <tr className="bg-ink-900/60">
+          <tr className="bg-ink-900">
             <th className="text-left font-semibold text-[color:var(--color-ink-strong)] px-4 py-3 border-b border-line">{" "}</th>
             {columns.map((c) => (
               <th key={c} className="text-left font-semibold text-[color:var(--color-ink-strong)] px-4 py-3 border-b border-line">
@@ -122,7 +122,7 @@ export function ComparisonTable({
         </thead>
         <tbody>
           {rows.map((row, i) => (
-            <tr key={i} className={i % 2 === 0 ? "bg-ink-950/40" : ""}>
+            <tr key={i} className={i % 2 === 0 ? "bg-ink-800" : ""}>
               <td className="px-4 py-3 align-top text-slate-700 font-medium border-b border-line/40">
                 {row.label}
               </td>
@@ -172,7 +172,7 @@ export function FAQ({ items, title }: { items: { q: string; a: string }[]; title
       </h2>
       <div className="space-y-2">
         {items.map((it, i) => (
-          <details key={i} className="group rounded-xl border border-line bg-ink-900/40 px-5 py-4 open:bg-ink-900/60 transition">
+          <details key={i} className="group rounded-xl border border-line bg-ink-900 px-5 py-4 open:bg-ink-900 transition">
             <summary className="cursor-pointer list-none flex items-start justify-between gap-4">
               <span className="text-base sm:text-[17px] font-medium text-[color:var(--color-ink-strong)] leading-snug">
                 {it.q}

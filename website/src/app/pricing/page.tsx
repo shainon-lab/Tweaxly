@@ -664,7 +664,7 @@ function BulletLine({ bullet }: { bullet: PlanBullet }) {
             "pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 " +
             "transition duration-150 absolute z-20 left-0 top-full mt-1.5 " +
             "max-w-xs w-max rounded-md border border-line bg-ink-900 px-3 py-2 " +
-            "text-[11px] leading-snug text-slate-700 shadow-lg shadow-black/40"
+            "text-[11px] leading-snug text-slate-700 shadow-lg shadow-slate-400/20"
           }
         >
           {bullet.tooltip}
@@ -728,7 +728,7 @@ function FeatureMatrix() {
           <tbody>
             {MATRIX.map((group) => (
               <Fragment key={group.label}>
-                <tr className="bg-ink-950/40">
+                <tr className="bg-ink-800">
                   <th
                     scope="rowgroup"
                     colSpan={4}
@@ -738,7 +738,7 @@ function FeatureMatrix() {
                   </th>
                 </tr>
                 {group.rows.map((row, i) => (
-                  <tr key={`${group.label}-${row.dimension}`} className={i % 2 === 0 ? "bg-ink-950/30" : ""}>
+                  <tr key={`${group.label}-${row.dimension}`} className={i % 2 === 0 ? "bg-ink-800" : ""}>
                     <td className="px-5 py-3 align-top text-slate-800 font-medium border-b border-line/40">
                       {row.dimension}
                     </td>

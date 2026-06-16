@@ -151,7 +151,7 @@ export default function ResourcesIndexPage() {
             <Link
               key={t.meta.slug}
               href={articleHref(t.meta)}
-              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
+              className="inline-flex items-center rounded-full border border-line bg-ink-900 px-4 py-2 text-sm text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
             >
               {t.meta.title}
             </Link>

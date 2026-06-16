@@ -66,7 +66,7 @@ body {
 /* Glass surfaces inside a dark mock become solidly dark (their default
    translucency was tuned for the old dark page). */
 .product-dark.glass,
-.product-dark .glass { background-color: #0f1322; }
+.product-dark .glass { background-color: #0f1322; box-shadow: none; }
 .product-dark.card,
 .product-dark .card { background-color: #11141b; box-shadow: none; }
 
@@ -98,13 +98,16 @@ body {
     box-shadow: 0 1px 2px rgba(22, 24, 38, 0.04), 0 6px 20px rgba(22, 24, 38, 0.05);
   }
 
-  /* Glassmorphic surface for product mockups — stays dark (the mocks are
-     wrapped in .product-dark and depict the dark in-app UI). */
+  /* Frosted surface. On the light theme it's a translucent-white panel;
+     inside .product-dark (the product mockups depicting the dark in-app
+     UI) it's overridden to the dark glass above. Bare .glass must read
+     light so it never renders as muddy gray over the bright page. */
   .glass {
     @apply rounded-2xl border border-line/80;
-    background-color: rgb(11 13 25 / 0.55);
+    background-color: rgb(255 255 255 / 0.72);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 1px 2px rgba(22, 24, 38, 0.04), 0 6px 20px rgba(22, 24, 38, 0.05);
   }
 
   .gradient-text {

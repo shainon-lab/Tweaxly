@@ -188,7 +188,7 @@ function ComparisonTable({ c }: { c: ComparisonContent }) {
             {c.rows.map((row, i) => (
               <tr
                 key={row.dimension}
-                className={i % 2 === 0 ? "bg-ink-950/40" : ""}
+                className={i % 2 === 0 ? "bg-ink-800" : ""}
               >
                 <td className="px-5 py-4 align-top text-slate-700 font-medium border-b border-line/40">
                   {row.dimension}

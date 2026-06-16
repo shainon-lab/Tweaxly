@@ -104,7 +104,7 @@ export default function FaqPage() {
       {/* Category jump-nav */}
       <nav
         aria-label="FAQ categories"
-        className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm"
+        className="border-y border-line/60 bg-ink-800 backdrop-blur-sm"
       >
         <div className="container-wide py-4 flex items-center gap-x-6 gap-y-2 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-600">
           {FAQ_CATEGORIES.map((c) => (
