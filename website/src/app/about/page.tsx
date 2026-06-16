@@ -38,13 +38,13 @@ export default function AboutPage() {
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
           Financial clarity for business owners - <span className="gradient-text">without hiring a CFO</span>.
         </h1>
-        <p className="mt-8 text-lg text-slate-300 leading-relaxed">
+        <p className="mt-8 text-lg text-slate-700 leading-relaxed">
           Most small and medium businesses run on the same gap: an accounting
           system that records what already happened, and a busy owner who
           needs to know what's about to happen next. Spreadsheets, monthly
           closes, and gut feel try to fill that gap - until they don't.
         </p>
-        <p className="mt-5 text-lg text-slate-300 leading-relaxed">
+        <p className="mt-5 text-lg text-slate-700 leading-relaxed">
           Tweaxly was built to close it. It's an AI financial intelligence
           platform that connects your real numbers, surfaces what's
           changing, forecasts where you're heading, and gives you an AI
@@ -63,8 +63,8 @@ export default function AboutPage() {
             { title: "Businesses with a bookkeeper but no CFO", body: "Your accountant does the books. Tweaxly turns those books into business intelligence." },
           ].map((c) => (
             <div key={c.title} className="card">
-              <div className="font-medium text-white">{c.title}</div>
-              <div className="text-sm text-slate-300 mt-2 leading-relaxed">{c.body}</div>
+              <div className="font-medium text-[color:var(--color-ink-strong)]">{c.title}</div>
+              <div className="text-sm text-slate-700 mt-2 leading-relaxed">{c.body}</div>
             </div>
           ))}
         </div>
@@ -72,7 +72,7 @@ export default function AboutPage() {
 
       <section className="container-wide pb-16 lg:pb-24 max-w-3xl">
         <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">What you can achieve with Tweaxly</h2>
-        <ul className="mt-6 space-y-3 text-slate-300 text-base leading-relaxed">
+        <ul className="mt-6 space-y-3 text-slate-700 text-base leading-relaxed">
           {[
             "See your real-time financial dashboard - revenue, expenses, payroll, profit, cash flow - without exporting a single spreadsheet.",
             "Forecast the next 3 to 24 months with explainable assumptions, recurring patterns, seasonality, and confidence bands.",
@@ -91,8 +91,8 @@ export default function AboutPage() {
 
       <section className="container-wide pb-24 max-w-3xl">
         <div className="card">
-          <div className="font-medium text-white text-lg">Why we built this</div>
-          <p className="mt-3 text-slate-300 leading-relaxed">
+          <div className="font-medium text-[color:var(--color-ink-strong)] text-lg">Why we built this</div>
+          <p className="mt-3 text-slate-700 leading-relaxed">
             Enterprise finance teams have had this kind of intelligence for
             years - Anaplan, Workday Adaptive, dedicated FP&A staff. Small
             businesses got bookkeeping software and a quarterly check-in

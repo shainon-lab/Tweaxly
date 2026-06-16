@@ -4,7 +4,7 @@
 
 export function ConsultationMock() {
   return (
-    <div className="glass p-5 sm:p-6 max-w-xl">
+    <div className="glass product-dark p-5 sm:p-6 max-w-xl">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2 text-[11px] text-slate-400">
           <span className="w-1.5 h-1.5 rounded-full bg-brand-purple anim-pulse-soft" />

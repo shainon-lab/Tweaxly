@@ -113,11 +113,11 @@ export const ACCESSIBILITY_SECTIONS: Section[] = [
 
 export default function AccessibilityContent() {
   return (
-    <div className="space-y-8 text-slate-300 leading-relaxed">
+    <div className="space-y-8 text-slate-700 leading-relaxed">
       {ACCESSIBILITY_SECTIONS.map((s) => (
         <section key={s.id} id={s.id}>
           {s.title ? (
-            <h2 className="text-lg font-semibold text-white mb-3">{s.title}</h2>
+            <h2 className="text-lg font-semibold text-[color:var(--color-ink-strong)] mb-3">{s.title}</h2>
           ) : null}
           <div className="space-y-3 text-sm">
             {s.blocks.map((b, i) => {

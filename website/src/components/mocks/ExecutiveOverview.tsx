@@ -30,7 +30,7 @@ function Sparkline({ trendIsGood }: { trendIsGood: boolean }) {
 
 export function ExecutiveOverviewMock() {
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
+    <div className="product-dark rounded-2xl p-4 grid grid-cols-1 lg:grid-cols-5 gap-4">
       {/* KPI Tiles */}
       <div className="lg:col-span-3 grid grid-cols-2 gap-3">
         {TILES.map((t) => {

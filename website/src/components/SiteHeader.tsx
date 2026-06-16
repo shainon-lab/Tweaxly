@@ -38,7 +38,7 @@ export default function SiteHeader({ active }: Props) {
     // Sticky on mobile so the hamburger stays reachable while
     // scrolling. Backdrop-blur keeps the page background visible
     // through the header for a modern SaaS feel.
-    <header className="sticky top-0 z-30 backdrop-blur-md bg-brand-navy/70 border-b border-line/40 supports-[backdrop-filter]:bg-brand-navy/50">
+    <header className="sticky top-0 z-30 backdrop-blur-md bg-white/80 border-b border-line supports-[backdrop-filter]:bg-white/65">
       <div className="container-wide pt-4 sm:pt-6 pb-3 sm:pb-4 flex items-center justify-between gap-2 sm:gap-3">
         <div className="min-w-0">
           <Link href="/" aria-label="Tweaxly home">
@@ -47,13 +47,13 @@ export default function SiteHeader({ active }: Props) {
         </div>
 
         {/* Desktop nav - visible md+ only. */}
-        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-300">
+        <nav className="hidden md:flex items-center gap-6 text-sm text-slate-700">
           {NAV.map((n) => (
             <Link
               key={n.id}
               href={n.href}
               aria-current={active === n.id ? "page" : undefined}
-              className={`hover:text-white transition ${active === n.id ? "text-white" : ""}`}
+              className={`hover:text-[color:var(--color-ink-strong)] transition ${active === n.id ? "text-[color:var(--color-ink-strong)]" : ""}`}
             >
               {n.label}
             </Link>

@@ -104,7 +104,7 @@ function Hero() {
               narrow viewports. */}
           <div
             aria-label="The Tweaxly methodology"
-            className="self-start mb-8 flex items-center flex-wrap gap-x-2 gap-y-1 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-slate-400"
+            className="self-start mb-8 flex items-center flex-wrap gap-x-2 gap-y-1 text-[10px] sm:text-[11px] uppercase tracking-[0.22em] font-medium text-slate-600"
           >
             <span className="text-brand-purple">Track</span>
             <span className="text-slate-600" aria-hidden="true">→</span>
@@ -121,7 +121,7 @@ function Hero() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
             <span className="gradient-text">AI That Understands</span> Your Business
           </h1>
-          <p className="mt-8 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-xl">
+          <p className="mt-8 text-lg sm:text-xl text-slate-700 leading-relaxed max-w-xl">
             Turn your business data into real-time insights, forecasts, signals,
             and AI-powered decisions.
           </p>
@@ -162,7 +162,7 @@ function PositioningStrip() {
   return (
     <section className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm">
       <div className="container-wide py-5">
-        <div className="flex items-center justify-between gap-6 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-400">
+        <div className="flex items-center justify-between gap-6 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-600">
           {POSITIONING.map((p) => (
             <div key={p} className="flex items-center gap-2">
               <span className="w-1 h-1 rounded-full bg-brand-purple" />
@@ -223,7 +223,7 @@ function PlainEnglishExplainer() {
           AI business intelligence for SMB owners,{" "}
           <span className="gradient-text">in plain English</span>.
         </h2>
-        <p className="mt-5 text-lg text-slate-400 leading-relaxed">
+        <p className="mt-5 text-lg text-slate-600 leading-relaxed">
           The short version of what Tweaxly does, who it&apos;s for, and what
           makes it different from the accounting software and dashboards you
           may already use.
@@ -236,10 +236,10 @@ function PlainEnglishExplainer() {
             <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
               {b.eyebrow}
             </div>
-            <h3 className="text-lg sm:text-xl font-semibold text-white leading-snug">
+            <h3 className="text-lg sm:text-xl font-semibold text-[color:var(--color-ink-strong)] leading-snug">
               {b.h3}
             </h3>
-            <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+            <p className="mt-3 text-sm sm:text-base text-slate-700 leading-relaxed">
               {b.body}
             </p>
           </article>
@@ -247,7 +247,7 @@ function PlainEnglishExplainer() {
       </div>
 
       {/* Internal-linking strip - builds the topical-authority graph */}
-      <div className="mt-8 text-sm text-slate-400 flex items-center gap-x-5 gap-y-2 flex-wrap">
+      <div className="mt-8 text-sm text-slate-600 flex items-center gap-x-5 gap-y-2 flex-wrap">
         <Link href="/features" className="text-brand-purple hover:text-brand-teal transition">
           See all features →
         </Link>
@@ -283,7 +283,7 @@ function SectionHeader({
       <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
         {title}
       </h2>
-      <p className="mt-4 text-lg text-slate-400 leading-relaxed">{body}</p>
+      <p className="mt-4 text-lg text-slate-600 leading-relaxed">{body}</p>
     </div>
   );
 }
@@ -325,7 +325,7 @@ function ValueCell({ tone, label }: { tone: "bad" | "warn" | "purple" | "good"; 
     tone === "purple" ? "bg-brand-purple" :
                         "bg-good";
   return (
-    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-ink-900/40 px-3 py-2.5 text-sm text-slate-200">
+    <div className="flex items-center gap-2.5 rounded-xl border border-line bg-ink-900/40 px-3 py-2.5 text-sm text-slate-800">
       <span className={`w-1.5 h-1.5 rounded-full ${dot}`} />
       {label}
     </div>
@@ -356,7 +356,7 @@ function ConsultationSection() {
               "What happens if I hire 2 more engineers?",
               "Which expense category is growing fastest?",
             ].map((q) => (
-              <li key={q} className="flex items-start gap-3 text-sm text-slate-300">
+              <li key={q} className="flex items-start gap-3 text-sm text-slate-700">
                 <span className="mt-1.5 w-1 h-1 rounded-full bg-brand-purple shrink-0" />
                 &ldquo;{q}&rdquo;
               </li>
@@ -386,7 +386,7 @@ function ForecastSection() {
             title={<>Financial forecasting and <span className="gradient-text">cash flow intelligence</span>.</>}
             body="Project where the business is heading. Tweaxly combines historical actuals, recurring patterns, seasonality, and your own scenarios into explainable cash flow forecasting and revenue forecasting - built for growing SMBs, not enterprise accounting teams."
           />
-          <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-300">
+          <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-700">
             <ListBullet icon="↗">Baseline vs scenario, side by side</ListBullet>
             <ListBullet icon="◇">Layer hires, raises, contracts, one-time costs</ListBullet>
             <ListBullet icon="∑">Dollar impact on revenue, margin, and cashflow</ListBullet>
@@ -426,7 +426,7 @@ function OverviewSection() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
             Clarity in minutes, not <span className="gradient-text">spreadsheets</span>.
           </h2>
-          <p className="mt-4 text-lg text-slate-400 leading-relaxed">
+          <p className="mt-4 text-lg text-slate-600 leading-relaxed">
             The first screen every morning - KPIs, deltas, and a single AI takeaway
             anchored to what just changed in your numbers.
           </p>
@@ -452,7 +452,7 @@ function FinancialReviewSection() {
             title={<>Understand the report your <span className="gradient-text">accountant</span> sends you.</>}
             body="Upload a balance sheet, profit & loss or cash flow statement and get a plain-English review of your business - a health score, an AI second opinion, the questions to ask your CPA, and a 12-month outlook. Upload more than one year and watch how the business has evolved."
           />
-          <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-300">
+          <ul className="mt-8 flex flex-col gap-3 max-w-md text-sm text-slate-700">
             <ListBullet icon="◷">From upload to review in 30-90 seconds</ListBullet>
             <ListBullet icon="✓">Health score, second opinion, CPA questions, action plan</ListBullet>
             <ListBullet icon="↗">Multi-year Business Evolution: trends, DNA profile, forecast</ListBullet>
@@ -478,28 +478,28 @@ function FinancialReviewMock() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <div className="text-[11px] uppercase tracking-[0.18em] text-slate-500">Audited annual statements</div>
-          <div className="mt-1 text-sm text-slate-300">FY 2024 · reviewed in 48s</div>
+          <div className="mt-1 text-sm text-slate-700">FY 2024 · reviewed in 48s</div>
         </div>
         <div className="rounded-xl border border-good/40 bg-good/10 px-4 py-3 text-center shrink-0">
           <div className="text-3xl font-bold leading-none text-good">
-            82<span className="text-base font-semibold text-slate-400"> /100</span>
+            82<span className="text-base font-semibold text-slate-600"> /100</span>
           </div>
           <div className="mt-1 text-xs font-semibold text-good">Healthy</div>
         </div>
       </div>
-      <p className="mt-4 text-sm leading-relaxed text-slate-400">
+      <p className="mt-4 text-sm leading-relaxed text-slate-600">
         Profitable in its first full year (net margin 3.6%). Most of the assets -
         71,232 of 132,184 - sit in short-term securities, while only 1,552 is left
         in cash.
       </p>
       <div className="mt-5 grid grid-cols-2 gap-2">
         {SECTIONS.map((s) => (
-          <div key={s} className="rounded-lg border border-line bg-ink-950/40 px-3 py-2 text-xs text-slate-300">
+          <div key={s} className="rounded-lg border border-line bg-ink-950/40 px-3 py-2 text-xs text-slate-700">
             {s}
           </div>
         ))}
       </div>
-      <div className="mt-3 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/5 px-3 py-2 text-xs text-slate-300">
+      <div className="mt-3 flex items-start gap-2 rounded-lg border border-warn/30 bg-warn/5 px-3 py-2 text-xs text-slate-700">
         <span className="font-semibold text-warn shrink-0">Discuss with CPA:</span>
         <span>Payroll rose 32% while revenue rose 8% - one-off hiring or structural?</span>
       </div>
@@ -532,9 +532,9 @@ function HowItWorks() {
               <span className="inline-flex items-center justify-center w-8 h-8 rounded-lg bg-brand-purple/15 border border-brand-purple/30 text-brand-purple text-sm font-semibold">
                 {s.n}
               </span>
-              <div className="text-base font-semibold text-white">{s.title}</div>
+              <div className="text-base font-semibold text-[color:var(--color-ink-strong)]">{s.title}</div>
             </div>
-            <div className="text-sm text-slate-400 leading-relaxed">{s.body}</div>
+            <div className="text-sm text-slate-600 leading-relaxed">{s.body}</div>
           </div>
         ))}
       </div>
@@ -612,7 +612,7 @@ function ConnectYourDataBanner() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="text-xs font-semibold text-white leading-tight truncate">
+                          <div className="text-xs font-semibold text-[color:var(--color-ink-strong)] leading-tight truncate">
                             {s.name}
                           </div>
                           <div className="text-[10px] text-slate-500 mt-0.5 truncate">
@@ -649,19 +649,19 @@ function ConnectYourDataBanner() {
               </div>
               <h2
                 id="connect-data-heading"
-                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] text-white"
+                className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] text-[color:var(--color-ink-strong)]"
               >
                 Your business data.{" "}
                 <span className="gradient-text">Finally understandable.</span>
               </h2>
-              <p className="mt-5 text-base sm:text-lg text-slate-300 leading-relaxed max-w-2xl">
+              <p className="mt-5 text-base sm:text-lg text-slate-700 leading-relaxed max-w-2xl">
                 Connect your bank accounts, cards, PayPal, invoices, and
                 business data in minutes — and let Tweaxly turn them into
                 real-time business signals, forecasts, and AI-powered
                 recommendations.
               </p>
 
-              <ul className="mt-7 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-300 max-w-xl">
+              <ul className="mt-7 grid sm:grid-cols-2 gap-x-6 gap-y-2 text-sm text-slate-700 max-w-xl">
                 {[
                   "5-minute setup",
                   "No credit card required",
@@ -718,7 +718,7 @@ function FinalCTA() {
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
             Get your first <span className="gradient-text">AI business signals</span> today.
           </h2>
-          <p className="mt-4 text-lg text-slate-300 max-w-xl mx-auto">
+          <p className="mt-4 text-lg text-slate-700 max-w-xl mx-auto">
             Upload a CSV, see your business the way a finance team would.
             Free forever - upgrade only when you&apos;re ready.
           </p>
@@ -796,7 +796,7 @@ function LearningCenterSection() {
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
           Learn the language of your business.
         </h2>
-        <p className="mt-5 text-base text-slate-300 leading-relaxed">
+        <p className="mt-5 text-base text-slate-700 leading-relaxed">
           The vocabulary, metrics and frameworks every small business
           owner should know - written without finance jargon. Over 50
           articles and 50 glossary terms, organised by topic.
@@ -811,10 +811,10 @@ function LearningCenterSection() {
             href={`/resources/${c.slug}`}
             className="block group card hover:border-brand-purple/40 transition"
           >
-            <div className="text-base sm:text-lg font-semibold text-white leading-snug">
+            <div className="text-base sm:text-lg font-semibold text-[color:var(--color-ink-strong)] leading-snug">
               {c.label}
             </div>
-            <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+            <div className="mt-2 text-sm text-slate-600 leading-relaxed">
               {c.blurb}
             </div>
             <div className="mt-4 text-[11px] uppercase tracking-wider text-brand-purple">
@@ -839,10 +839,10 @@ function LearningCenterSection() {
                 href={articleHref(m)}
                 className="block group card hover:border-brand-purple/40 transition"
               >
-                <div className="text-sm font-semibold text-white leading-snug">
+                <div className="text-sm font-semibold text-[color:var(--color-ink-strong)] leading-snug">
                   {m.title}
                 </div>
-                <div className="mt-1.5 text-xs text-slate-400 leading-relaxed line-clamp-2">
+                <div className="mt-1.5 text-xs text-slate-600 leading-relaxed line-clamp-2">
                   {m.excerpt}
                 </div>
                 <div className="mt-3 text-[11px] uppercase tracking-wider text-brand-purple">
@@ -864,7 +864,7 @@ function LearningCenterSection() {
             <Link
               key={t.slug}
               href={`/resources/business-glossary/${t.slug}`}
-              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-200 hover:border-brand-purple/60 hover:text-white transition"
+              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
             >
               {t.label}
             </Link>
@@ -894,7 +894,7 @@ function SeoUnifiedSection() {
         <h2 className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1]">
           One financial intelligence platform
         </h2>
-        <p className="mt-5 text-base text-slate-300 leading-relaxed">
+        <p className="mt-5 text-base text-slate-700 leading-relaxed">
           Unified dashboard, financial forecasting, business insights, AI
           advisory, and real-time financial monitoring - in a single
           financial intelligence platform built for SMB owners. Tweaxly

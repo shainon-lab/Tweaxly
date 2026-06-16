@@ -118,11 +118,11 @@ export default async function FeatureSubpage(
       {/* Visible breadcrumb */}
       <nav aria-label="Breadcrumb" className="container-wide pt-8 pb-2">
         <ol className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
-          <li><Link href="/" className="hover:text-slate-200 transition">Home</Link></li>
+          <li><Link href="/" className="hover:text-slate-800 transition">Home</Link></li>
           <li className="text-slate-600">›</li>
-          <li><Link href="/features" className="hover:text-slate-200 transition">Features</Link></li>
+          <li><Link href="/features" className="hover:text-slate-800 transition">Features</Link></li>
           <li className="text-slate-600">›</li>
-          <li className="text-slate-300">{category?.navLabel ?? sp.h1}</li>
+          <li className="text-slate-700">{category?.navLabel ?? sp.h1}</li>
         </ol>
       </nav>
 
@@ -148,10 +148,10 @@ function Hero({ sp }: { sp: SubpageContent }) {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-4">
         Tweaxly Features
       </div>
-      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-white">
+      <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-[color:var(--color-ink-strong)]">
         {sp.h1}
       </h1>
-      <p className="mt-5 text-lg text-slate-300 leading-relaxed">
+      <p className="mt-5 text-lg text-slate-700 leading-relaxed">
         {sp.subtitle}
       </p>
       <div className="mt-8 flex items-center gap-3 flex-wrap">
@@ -179,7 +179,7 @@ function FeatureVisual({ visual }: { visual: VisualKey }) {
 function DeepExplanation({ paragraphs }: { paragraphs: string[] }) {
   return (
     <section className="container-wide pb-12 lg:pb-16 max-w-3xl">
-      <div className="space-y-5 text-base sm:text-lg text-slate-300 leading-relaxed">
+      <div className="space-y-5 text-base sm:text-lg text-slate-700 leading-relaxed">
         {paragraphs.map((p, i) => (
           <p key={i}>{p}</p>
         ))}
@@ -197,17 +197,17 @@ function CategoryFeatureList({ categoryId }: { categoryId: string }) {
         <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
           What's included
         </div>
-        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">
           Capabilities in this area.
         </h2>
       </div>
       <div className="grid lg:grid-cols-2 gap-4 lg:gap-5">
         {category.features.map((f) => (
           <article key={f.name} className="card">
-            <h3 className="text-base font-semibold text-white leading-snug">{f.name}</h3>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed">{f.whatItDoes}</p>
+            <h3 className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{f.name}</h3>
+            <p className="mt-2 text-sm text-slate-600 leading-relaxed">{f.whatItDoes}</p>
             <p className="mt-2 text-sm text-slate-500 leading-relaxed">
-              <span className="text-slate-400">Why it matters: </span>
+              <span className="text-slate-600">Why it matters: </span>
               {f.whyItMatters}
             </p>
           </article>
@@ -223,7 +223,7 @@ function UseCases({ items }: { items: string[] }) {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         Real business use cases
       </div>
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">
         How owners use this in practice.
       </h2>
       <ul className="mt-6 space-y-4">
@@ -232,7 +232,7 @@ function UseCases({ items }: { items: string[] }) {
             <span className="shrink-0 inline-flex items-center justify-center w-7 h-7 rounded-full bg-brand-purple/15 border border-brand-purple/40 text-brand-purple text-xs font-semibold">
               {i + 1}
             </span>
-            <p className="text-base text-slate-300 leading-relaxed pt-0.5">{item}</p>
+            <p className="text-base text-slate-700 leading-relaxed pt-0.5">{item}</p>
           </li>
         ))}
       </ul>
@@ -246,7 +246,7 @@ function FaqSection({ faqs }: { faqs: { q: string; a: string }[] }) {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         Frequently asked questions
       </div>
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-6">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mb-6">
         Questions about this feature.
       </h2>
       <div className="space-y-3">
@@ -254,9 +254,9 @@ function FaqSection({ faqs }: { faqs: { q: string; a: string }[] }) {
           <details key={f.q} className="card group">
             <summary className="cursor-pointer list-none flex items-start gap-3">
               <span className="text-brand-purple group-open:rotate-90 transition-transform mt-1">›</span>
-              <span className="text-base font-semibold text-white leading-snug flex-1">{f.q}</span>
+              <span className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug flex-1">{f.q}</span>
             </summary>
-            <div className="mt-3 ml-7 text-sm text-slate-300 leading-relaxed">{f.a}</div>
+            <div className="mt-3 ml-7 text-sm text-slate-700 leading-relaxed">{f.a}</div>
           </details>
         ))}
       </div>
@@ -275,7 +275,7 @@ function RelatedArticles({ slugs }: { slugs?: string[] }) {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         Related reading
       </div>
-      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-6">
+      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mb-6">
         Go deeper on this topic.
       </h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -285,7 +285,7 @@ function RelatedArticles({ slugs }: { slugs?: string[] }) {
             href={`/resources/${slug}`}
             className="block card group hover:border-brand-purple/40 transition"
           >
-            <div className="text-base font-semibold text-white leading-snug">
+            <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">
               {slugToTitle(slug)}
             </div>
             <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
@@ -294,7 +294,7 @@ function RelatedArticles({ slugs }: { slugs?: string[] }) {
           </Link>
         ))}
       </div>
-      <div className="mt-6 text-sm text-slate-400 flex items-center gap-4 flex-wrap">
+      <div className="mt-6 text-sm text-slate-600 flex items-center gap-4 flex-wrap">
         <Link href="/features" className="text-brand-purple hover:text-brand-teal transition">
           ← Back to all features
         </Link>
@@ -327,7 +327,7 @@ function FinalCta() {
           Bring AI business intelligence <br className="hidden sm:inline" />
           <span className="gradient-text">to your business</span>.
         </h2>
-        <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-4 text-sm sm:text-base text-slate-700 max-w-2xl mx-auto leading-relaxed">
           Tweaxly turns your real financial activity into business signals,
           forecasts, and advice - in real time, using AI.
         </p>

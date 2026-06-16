@@ -68,8 +68,8 @@ export default function GlossaryFilter({ entries }: { entries: GlossaryEntry[] }
               onClick={() => setActive(f.id)}
               className={`text-xs sm:text-sm px-4 py-2 rounded-full border transition uppercase tracking-wider font-semibold ${
                 isActive
-                  ? "border-brand-purple bg-brand-purple/15 text-white"
-                  : "border-line text-slate-400 hover:text-white hover:border-slate-500"
+                  ? "border-brand-purple bg-brand-purple/15 text-[color:var(--color-ink-strong)]"
+                  : "border-line text-slate-600 hover:text-[color:var(--color-ink-strong)] hover:border-slate-500"
               }`}
             >
               {f.label}
@@ -84,10 +84,10 @@ export default function GlossaryFilter({ entries }: { entries: GlossaryEntry[] }
       {/* Grid */}
       {visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-line bg-ink-900/30 p-10 text-center">
-          <div className="text-base font-medium text-slate-200 mb-1">
+          <div className="text-base font-medium text-slate-800 mb-1">
             No glossary entries at this level yet
           </div>
-          <div className="text-sm text-slate-400">
+          <div className="text-sm text-slate-600">
             Try a different difficulty - more entries coming soon.
           </div>
         </div>
@@ -100,14 +100,14 @@ export default function GlossaryFilter({ entries }: { entries: GlossaryEntry[] }
               className="block group card hover:border-brand-purple/40 transition"
             >
               <div className="flex items-start justify-between gap-3 mb-2">
-                <div className="text-base font-semibold text-white leading-snug">
+                <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">
                   {e.title}
                 </div>
                 <span className={`shrink-0 text-[9px] uppercase tracking-wider font-semibold px-2 py-0.5 rounded border ${DIFF_PILL[e.difficulty]}`}>
                   {DIFF_LABEL[e.difficulty]}
                 </span>
               </div>
-              <div className="text-xs text-slate-400 leading-relaxed line-clamp-3">
+              <div className="text-xs text-slate-600 leading-relaxed line-clamp-3">
                 {e.excerpt}
               </div>
             </Link>

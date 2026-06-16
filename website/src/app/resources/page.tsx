@@ -67,7 +67,7 @@ export default function ResourcesIndexPage() {
           Small business finance,<br className="hidden sm:inline" />{" "}
           <span className="gradient-text">in plain English</span>.
         </h1>
-        <p className="mt-6 text-base sm:text-lg text-slate-300 leading-relaxed max-w-3xl">
+        <p className="mt-6 text-base sm:text-lg text-slate-700 leading-relaxed max-w-3xl">
           A growing knowledge base for business owners. Financial fundamentals,
           the metrics worth tracking, cash flow, forecasting, growth, expenses,
           operations, and a glossary you can actually understand. No MBA required.
@@ -98,10 +98,10 @@ export default function ResourcesIndexPage() {
                 href={categoryHref(cat.id)}
                 className="block group card hover:border-brand-purple/40 transition"
               >
-                <div className="text-base sm:text-lg font-semibold text-white leading-snug">
+                <div className="text-base sm:text-lg font-semibold text-[color:var(--color-ink-strong)] leading-snug">
                   {cat.label}
                 </div>
-                <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+                <div className="mt-2 text-sm text-slate-600 leading-relaxed">
                   {cat.blurb}
                 </div>
                 <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide">
@@ -123,10 +123,10 @@ export default function ResourcesIndexPage() {
           <div className="flex flex-wrap items-start justify-between gap-6">
             <div className="max-w-2xl">
               <div className="eyebrow mb-3">Reference</div>
-              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+              <div className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">
                 {glossary.label}
               </div>
-              <p className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+              <p className="mt-3 text-sm sm:text-base text-slate-700 leading-relaxed">
                 {glossary.blurb} Look up any term you&apos;ve heard but never had clearly explained - one entry per term, written for owners, not analysts.
               </p>
             </div>
@@ -151,7 +151,7 @@ export default function ResourcesIndexPage() {
             <Link
               key={t.meta.slug}
               href={articleHref(t.meta)}
-              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-200 hover:border-brand-purple/60 hover:text-white transition"
+              className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-4 py-2 text-sm text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
             >
               {t.meta.title}
             </Link>
@@ -177,8 +177,8 @@ export default function ResourcesIndexPage() {
                   <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-2">
                     {cat?.label ?? a.meta.category}
                   </div>
-                  <div className="text-base font-semibold text-white leading-snug">{a.meta.title}</div>
-                  <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
+                  <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{a.meta.title}</div>
+                  <div className="mt-2 text-xs text-slate-600 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
                   <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide">
                     {a.meta.readingTime} min read
                   </div>
@@ -204,8 +204,8 @@ export default function ResourcesIndexPage() {
                     <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-1.5">
                       {cat?.label ?? a.meta.category}
                     </div>
-                    <div className="text-base font-semibold text-white">{a.meta.title}</div>
-                    <div className="text-sm text-slate-400 mt-1 leading-relaxed">{a.meta.excerpt}</div>
+                    <div className="text-base font-semibold text-[color:var(--color-ink-strong)]">{a.meta.title}</div>
+                    <div className="text-sm text-slate-600 mt-1 leading-relaxed">{a.meta.excerpt}</div>
                     <div className="mt-3 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-3">
                       <span>{fmtDate(a.meta.publishedAt)}</span>
                       <span>·</span>
@@ -225,7 +225,7 @@ export default function ResourcesIndexPage() {
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             Run your business with clearer numbers
           </h2>
-          <p className="mt-3 text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+          <p className="mt-3 text-sm text-slate-700 max-w-xl mx-auto leading-relaxed">
             Tweaxly turns your real financial activity into business signals,
             forecasts, and advice you can actually understand - in plain English.
           </p>

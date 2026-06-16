@@ -101,10 +101,10 @@ export default async function CategoryPage(
           ]}
         />
         <div className="eyebrow mb-3">Learning Center · Category</div>
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] text-white">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.05] text-[color:var(--color-ink-strong)]">
           {cat.label}
         </h1>
-        <p className="mt-5 text-base sm:text-lg text-slate-300 leading-relaxed max-w-3xl">
+        <p className="mt-5 text-base sm:text-lg text-slate-700 leading-relaxed max-w-3xl">
           {cat.blurb}
         </p>
       </section>
@@ -113,7 +113,7 @@ export default async function CategoryPage(
           authority and gives generative engines a substantive answer
           to "what is this category about?". */}
       <section className="container-wide pb-12 max-w-3xl">
-        <div className="article-body text-slate-200 leading-relaxed">
+        <div className="article-body text-slate-800 leading-relaxed">
           <p>{cat.description}</p>
         </div>
       </section>
@@ -130,8 +130,8 @@ export default async function CategoryPage(
                 className="block group card hover:border-brand-purple/40 transition"
               >
                 <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-2">Featured</div>
-                <div className="text-base font-semibold text-white leading-snug">{a.meta.title}</div>
-                <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
+                <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{a.meta.title}</div>
+                <div className="mt-2 text-xs text-slate-600 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
                 <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-2">
                   <span>{fmtDate(a.meta.publishedAt)}</span>
                   <span aria-hidden="true">·</span>
@@ -165,10 +165,10 @@ export default async function CategoryPage(
             </div>
             {latest.length === 0 && featured.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-line bg-ink-900/30 p-10 text-center">
-                <div className="text-base font-medium text-slate-200 mb-1">
+                <div className="text-base font-medium text-slate-800 mb-1">
                   Articles for this category are on the way
                 </div>
-                <div className="text-sm text-slate-400 max-w-md mx-auto">
+                <div className="text-sm text-slate-600 max-w-md mx-auto">
                   We&apos;re building out the {cat.label} library. In the meantime, explore
                   {" "}
                   <Link href="/resources" className="text-brand-purple hover:underline">
@@ -184,8 +184,8 @@ export default async function CategoryPage(
                     href={articleHref(a.meta)}
                     className="block group card hover:border-brand-purple/40 transition"
                   >
-                    <div className="text-base font-semibold text-white leading-snug">{a.meta.title}</div>
-                    <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
+                    <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{a.meta.title}</div>
+                    <div className="mt-2 text-xs text-slate-600 leading-relaxed line-clamp-3">{a.meta.excerpt}</div>
                     <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide flex items-center gap-2">
                       <span>{fmtDate(a.meta.publishedAt)}</span>
                       <span aria-hidden="true">·</span>
@@ -219,10 +219,10 @@ export default async function CategoryPage(
                   href={articleHref(t.meta)}
                   className="block group card hover:border-brand-purple/40 transition"
                 >
-                  <div className="text-sm font-semibold text-white leading-snug">
+                  <div className="text-sm font-semibold text-[color:var(--color-ink-strong)] leading-snug">
                     {t.meta.title}
                   </div>
-                  <div className="mt-1.5 text-xs text-slate-400 leading-relaxed line-clamp-2">
+                  <div className="mt-1.5 text-xs text-slate-600 leading-relaxed line-clamp-2">
                     {t.meta.excerpt}
                   </div>
                 </Link>
@@ -248,8 +248,8 @@ export default async function CategoryPage(
                 href={categoryHref(rc.id)}
                 className="block group card hover:border-brand-purple/40 transition"
               >
-                <div className="text-base font-semibold text-white leading-snug">{rc.label}</div>
-                <div className="mt-2 text-xs text-slate-400 leading-relaxed">{rc.blurb}</div>
+                <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{rc.label}</div>
+                <div className="mt-2 text-xs text-slate-600 leading-relaxed">{rc.blurb}</div>
               </Link>
             ))}
           </div>

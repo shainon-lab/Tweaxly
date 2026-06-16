@@ -94,21 +94,21 @@ export default async function ArticlePage(
             { label: article.meta.title },
           ]}
         />
-        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-white">
+        <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight leading-[1.1] text-[color:var(--color-ink-strong)]">
           {article.meta.title}
         </h1>
-        <div className="mt-4 text-base sm:text-lg text-slate-300 leading-relaxed">
+        <div className="mt-4 text-base sm:text-lg text-slate-700 leading-relaxed">
           {article.meta.excerpt}
         </div>
 
         {/* Author + meta strip */}
-        <div className="mt-7 flex items-center gap-4 text-xs text-slate-400 border-t border-line/40 pt-5">
+        <div className="mt-7 flex items-center gap-4 text-xs text-slate-600 border-t border-line/40 pt-5">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-teal text-white text-xs font-semibold flex items-center justify-center">
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-teal text-[color:var(--color-ink-strong)] text-xs font-semibold flex items-center justify-center">
               {article.meta.author.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
             </div>
             <div>
-              <div className="text-sm text-slate-200 font-medium">{article.meta.author.name}</div>
+              <div className="text-sm text-slate-800 font-medium">{article.meta.author.name}</div>
               <div className="text-[11px] uppercase tracking-[0.12em] text-slate-500">{article.meta.author.role}</div>
             </div>
           </div>
@@ -154,7 +154,7 @@ export default async function ArticlePage(
                     <li key={`${l.meta.category}-${l.meta.slug}`}>
                       <Link
                         href={articleHref(l.meta)}
-                        className="text-sm text-slate-200 hover:text-white hover:underline transition"
+                        className="text-sm text-slate-800 hover:text-[color:var(--color-ink-strong)] hover:underline transition"
                       >
                         {l.meta.title}
                       </Link>
@@ -167,7 +167,7 @@ export default async function ArticlePage(
                     <Link
                       key={`${l.meta.category}-${l.meta.slug}`}
                       href={articleHref(l.meta)}
-                      className="inline-flex items-center rounded-full border border-line bg-ink-950/60 px-3 py-1.5 text-xs sm:text-[13px] text-slate-200 hover:border-brand-purple/60 hover:text-white transition"
+                      className="inline-flex items-center rounded-full border border-line bg-ink-950/60 px-3 py-1.5 text-xs sm:text-[13px] text-slate-800 hover:border-brand-purple/60 hover:text-[color:var(--color-ink-strong)] transition"
                     >
                       {l.meta.title}
                     </Link>
@@ -195,7 +195,7 @@ export default async function ArticlePage(
           <div className="mt-12 pt-6 border-t border-line/40 flex flex-wrap items-center gap-2">
             <span className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mr-1">Tags</span>
             {article.meta.tags.map((t) => (
-              <span key={t} className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-3 py-1 text-xs text-slate-300">
+              <span key={t} className="inline-flex items-center rounded-full border border-line bg-ink-900/60 px-3 py-1 text-xs text-slate-700">
                 {t}
               </span>
             ))}
@@ -219,8 +219,8 @@ export default async function ArticlePage(
                   <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-2">
                     {rcat?.label ?? r.meta.category}
                   </div>
-                  <div className="text-base font-semibold text-white leading-snug">{r.meta.title}</div>
-                  <div className="mt-2 text-xs text-slate-400 leading-relaxed line-clamp-3">{r.meta.excerpt}</div>
+                  <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{r.meta.title}</div>
+                  <div className="mt-2 text-xs text-slate-600 leading-relaxed line-clamp-3">{r.meta.excerpt}</div>
                   <div className="mt-4 text-[11px] text-slate-500 uppercase tracking-wide">
                     {r.meta.readingTime} min read
                   </div>
@@ -247,7 +247,7 @@ export default async function ArticlePage(
               Practical application
             </div>
             <div className="rounded-2xl border border-line bg-ink-900/40 p-6">
-              <p className="text-sm text-slate-300 leading-relaxed">
+              <p className="text-sm text-slate-700 leading-relaxed">
                 The concepts above show up in two Tweaxly features in particular:
               </p>
               <div className="mt-4 grid sm:grid-cols-2 gap-3">
@@ -257,8 +257,8 @@ export default async function ArticlePage(
                     href={`/features/${f.slug}`}
                     className="block rounded-xl border border-line bg-ink-950/40 p-4 hover:border-brand-purple/40 transition"
                   >
-                    <div className="text-sm font-semibold text-white">{f.label}</div>
-                    <div className="mt-1.5 text-xs text-slate-400 leading-relaxed">{f.hook}</div>
+                    <div className="text-sm font-semibold text-[color:var(--color-ink-strong)]">{f.label}</div>
+                    <div className="mt-1.5 text-xs text-slate-600 leading-relaxed">{f.hook}</div>
                     <div className="mt-3 text-[11px] text-brand-purple">Read more →</div>
                   </Link>
                 ))}
@@ -274,7 +274,7 @@ export default async function ArticlePage(
           <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight">
             Bring AI financial intelligence to your business.
           </h2>
-          <p className="mt-3 text-sm text-slate-300 max-w-xl mx-auto leading-relaxed">
+          <p className="mt-3 text-sm text-slate-700 max-w-xl mx-auto leading-relaxed">
             See how Tweaxly turns your real financial activity into business
             signals, forecasts, and advice - in real time, using AI.
           </p>
@@ -300,7 +300,7 @@ export default async function ArticlePage(
               <Link
                 key={l.href}
                 href={l.href}
-                className="text-slate-400 hover:text-white transition"
+                className="text-slate-600 hover:text-[color:var(--color-ink-strong)] transition"
               >
                 {l.label}
               </Link>

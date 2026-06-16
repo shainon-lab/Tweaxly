@@ -187,7 +187,7 @@ function ComparisonLinks() {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         How Tweaxly compares
       </div>
-      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-6">
+      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mb-6">
         Evaluating Tweaxly against what you use today.
       </h2>
       <div className="grid sm:grid-cols-3 gap-4">
@@ -197,8 +197,8 @@ function ComparisonLinks() {
             href={`/compare/${c.slug}`}
             className="block card group hover:border-brand-purple/40 transition"
           >
-            <div className="text-base font-semibold text-white">{c.title}</div>
-            <div className="mt-2 text-sm text-slate-400 leading-relaxed">{c.blurb}</div>
+            <div className="text-base font-semibold text-[color:var(--color-ink-strong)]">{c.title}</div>
+            <div className="mt-2 text-sm text-slate-600 leading-relaxed">{c.blurb}</div>
             <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
               Read the comparison →
             </div>
@@ -226,7 +226,7 @@ function Hero() {
             AI-Powered Business Intelligence <br className="hidden sm:inline" />
             for <span className="gradient-text">Small Business Owners</span>.
           </h1>
-          <p className="mt-7 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-2xl">
+          <p className="mt-7 text-lg sm:text-xl text-slate-700 leading-relaxed max-w-2xl">
             Understand revenue, expenses, profitability, forecasting and
             business trends - without manually analysing spreadsheets.
             Tweaxly turns your real financial activity into business
@@ -242,7 +242,7 @@ function Hero() {
           </div>
 
           {/* Trust indicators */}
-          <ul className="mt-8 flex items-center gap-x-6 gap-y-3 flex-wrap text-xs text-slate-400">
+          <ul className="mt-8 flex items-center gap-x-6 gap-y-3 flex-wrap text-xs text-slate-600">
             <li className="flex items-center gap-2">
               <CheckGlyph /> No credit card required
             </li>
@@ -292,10 +292,10 @@ function Breadcrumb() {
     <nav aria-label="Breadcrumb" className="container-wide pb-3 -mt-2">
       <ol className="flex items-center gap-2 text-xs text-slate-500">
         <li>
-          <Link href="/" className="hover:text-slate-200 transition">Home</Link>
+          <Link href="/" className="hover:text-slate-800 transition">Home</Link>
         </li>
         <li className="text-slate-600">›</li>
-        <li className="text-slate-300">Features</li>
+        <li className="text-slate-700">Features</li>
       </ol>
     </nav>
   );
@@ -311,12 +311,12 @@ function CategoryNav() {
       aria-label="Feature categories"
       className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm"
     >
-      <div className="container-wide py-4 flex items-center gap-x-6 gap-y-2 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-400">
+      <div className="container-wide py-4 flex items-center gap-x-6 gap-y-2 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-600">
         {CATEGORIES.map((c) => (
           <a
             key={c.id}
             href={`#${c.id}`}
-            className="hover:text-white transition flex items-center gap-2"
+            className="hover:text-[color:var(--color-ink-strong)] transition flex items-center gap-2"
           >
             <span className="w-1 h-1 rounded-full bg-brand-purple" />
             {c.navLabel}
@@ -343,10 +343,10 @@ function CategorySection({ category }: { category: FeatureCategory }) {
           <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
             {category.eyebrow}
           </div>
-          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-[1.15] text-white">
+          <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-[1.15] text-[color:var(--color-ink-strong)]">
             {category.h2}
           </h2>
-          <p className="mt-4 text-base sm:text-lg text-slate-400 leading-relaxed">
+          <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed">
             {category.intro}
           </p>
 
@@ -389,7 +389,7 @@ function CategoryVisual({ visual }: { visual: VisualKey }) {
 function FeatureBlock({ feature }: { feature: Feature }) {
   return (
     <article className="card">
-      <h3 className="text-lg font-semibold text-white leading-snug">
+      <h3 className="text-lg font-semibold text-[color:var(--color-ink-strong)] leading-snug">
         {feature.name}
       </h3>
 
@@ -398,19 +398,19 @@ function FeatureBlock({ feature }: { feature: Feature }) {
           <dt className="inline text-slate-500 uppercase tracking-wider text-[10px] mr-2">
             What it does ·
           </dt>
-          <dd className="inline text-slate-300">{feature.whatItDoes}</dd>
+          <dd className="inline text-slate-700">{feature.whatItDoes}</dd>
         </div>
         <div>
           <dt className="inline text-slate-500 uppercase tracking-wider text-[10px] mr-2">
             Why it matters ·
           </dt>
-          <dd className="inline text-slate-300">{feature.whyItMatters}</dd>
+          <dd className="inline text-slate-700">{feature.whyItMatters}</dd>
         </div>
         <div>
           <dt className="inline text-slate-500 uppercase tracking-wider text-[10px] mr-2">
             Example ·
           </dt>
-          <dd className="inline text-slate-400 italic">{feature.useCase}</dd>
+          <dd className="inline text-slate-600 italic">{feature.useCase}</dd>
         </div>
       </dl>
 
@@ -418,11 +418,11 @@ function FeatureBlock({ feature }: { feature: Feature }) {
         <div className="mt-4 pt-4 border-t border-line/50 space-y-2">
           {feature.faqs.map((faq) => (
             <details key={faq.q} className="group">
-              <summary className="cursor-pointer text-sm text-slate-300 hover:text-white transition list-none flex items-start gap-2">
+              <summary className="cursor-pointer text-sm text-slate-700 hover:text-[color:var(--color-ink-strong)] transition list-none flex items-start gap-2">
                 <span className="text-brand-purple group-open:rotate-90 transition-transform mt-0.5">›</span>
                 <span>{faq.q}</span>
               </summary>
-              <div className="mt-2 ml-5 text-sm text-slate-400 leading-relaxed">
+              <div className="mt-2 ml-5 text-sm text-slate-600 leading-relaxed">
                 {faq.a}
               </div>
             </details>
@@ -444,10 +444,10 @@ function FaqSection() {
         <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
           Frequently Asked Questions
         </div>
-        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-[1.15] text-white">
+        <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-[1.15] text-[color:var(--color-ink-strong)]">
           Answers about Tweaxly, in plain English.
         </h2>
-        <p className="mt-4 text-base sm:text-lg text-slate-400 leading-relaxed">
+        <p className="mt-4 text-base sm:text-lg text-slate-600 leading-relaxed">
           What the platform does, how it's different from accounting software,
           how forecasting works, how the AI advisor handles your data, and the
           questions owners ask most often before getting started.
@@ -459,18 +459,18 @@ function FaqSection() {
           <details key={f.q} className="card group">
             <summary className="cursor-pointer list-none flex items-start gap-3">
               <span className="text-brand-purple group-open:rotate-90 transition-transform mt-1">›</span>
-              <span className="text-base font-semibold text-white leading-snug flex-1">
+              <span className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug flex-1">
                 {f.q}
               </span>
             </summary>
-            <div className="mt-3 ml-7 text-sm text-slate-300 leading-relaxed">
+            <div className="mt-3 ml-7 text-sm text-slate-700 leading-relaxed">
               {f.a}
             </div>
           </details>
         ))}
       </div>
 
-      <div className="mt-8 text-sm text-slate-400">
+      <div className="mt-8 text-sm text-slate-600">
         Still have questions?{" "}
         <Link href="/faq" className="text-brand-purple hover:text-brand-teal transition">
           See the full FAQ →
@@ -526,7 +526,7 @@ function RelatedReading() {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         Related reading
       </div>
-      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-6">
+      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mb-6">
         Deep dives from the Tweaxly Resources hub.
       </h2>
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -536,15 +536,15 @@ function RelatedReading() {
             href={`/resources/${a.slug}`}
             className="block card group hover:border-brand-purple/40 transition"
           >
-            <div className="text-base font-semibold text-white leading-snug">{a.title}</div>
-            <div className="mt-2 text-xs text-slate-400 leading-relaxed">{a.blurb}</div>
+            <div className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug">{a.title}</div>
+            <div className="mt-2 text-xs text-slate-600 leading-relaxed">{a.blurb}</div>
             <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">
               Read →
             </div>
           </Link>
         ))}
       </div>
-      <div className="mt-6 text-sm text-slate-400">
+      <div className="mt-6 text-sm text-slate-600">
         <Link href="/resources" className="text-brand-purple hover:text-brand-teal transition">
           Browse all resources →
         </Link>
@@ -569,7 +569,7 @@ function FinalCta() {
           Bring every signal, forecast and answer <br className="hidden sm:inline" />
           <span className="gradient-text">into one control center</span>.
         </h2>
-        <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-4 text-sm sm:text-base text-slate-700 max-w-2xl mx-auto leading-relaxed">
           Tweaxly turns your real financial activity into business signals,
           forecasts, and advice - in real time, using AI.
         </p>

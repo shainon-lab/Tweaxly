@@ -60,8 +60,8 @@ export default function BrandFlow({
           id="brand-flow-heading"
           className={
             asSection
-              ? "text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-[1.15] text-white"
-              : "text-lg text-slate-300 leading-relaxed"
+              ? "text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight leading-[1.15] text-[color:var(--color-ink-strong)]"
+              : "text-lg text-slate-700 leading-relaxed"
           }
         >
           {headline}
@@ -91,12 +91,12 @@ export default function BrandFlow({
             />
 
             {/* Word */}
-            <div className="brand-flow-word mt-4 text-lg sm:text-xl font-semibold tracking-tight text-white">
+            <div className="brand-flow-word mt-4 text-lg sm:text-xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">
               {renderWordWithHighlight(s.word, s.hlIndex)}
             </div>
 
             {/* Microcopy */}
-            <div className="mt-2 text-xs sm:text-sm text-slate-400 leading-relaxed max-w-[14rem]">
+            <div className="mt-2 text-xs sm:text-sm text-slate-600 leading-relaxed max-w-[14rem]">
               {s.sub}
             </div>
           </li>

@@ -330,10 +330,10 @@ export const PRIVACY_SECTIONS: Section[] = [
 
 export default function PrivacyContent() {
   return (
-    <div className="space-y-8 text-slate-300 leading-relaxed">
+    <div className="space-y-8 text-slate-700 leading-relaxed">
       {PRIVACY_SECTIONS.map((s) => (
         <section key={s.id} id={s.id}>
-          <h2 className="text-lg font-semibold text-white mb-3">
+          <h2 className="text-lg font-semibold text-[color:var(--color-ink-strong)] mb-3">
             {s.n != null ? <span className="text-slate-500 mr-2">{s.n}.</span> : null}
             {s.title}
           </h2>
@@ -344,7 +344,7 @@ export default function PrivacyContent() {
               }
               if (b.kind === "sub") {
                 return (
-                  <h3 key={i} className="text-sm font-semibold text-slate-200 mt-2">
+                  <h3 key={i} className="text-sm font-semibold text-slate-800 mt-2">
                     {b.title}
                   </h3>
                 );

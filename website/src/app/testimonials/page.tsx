@@ -110,7 +110,7 @@ export default function TestimonialsPage() {
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
             What business owners are <span className="gradient-text">saying</span>
           </h1>
-          <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed">
+          <p className="mt-6 text-lg sm:text-xl text-slate-700 leading-relaxed">
             See how businesses use Tweaxly to understand trends, forecast
             growth, and make smarter financial decisions - with AI-powered
             financial planning, business signals, and a real-time financial
@@ -128,7 +128,7 @@ export default function TestimonialsPage() {
               className="card flex flex-col justify-between gap-5 relative overflow-hidden group"
             >
               {/* Quote */}
-              <blockquote className="text-sm text-slate-200 leading-relaxed">
+              <blockquote className="text-sm text-slate-800 leading-relaxed">
                 <span aria-hidden="true" className="block text-2xl text-brand-purple/40 leading-none mb-1">“</span>
                 {t.quote}
               </blockquote>
@@ -136,14 +136,14 @@ export default function TestimonialsPage() {
               {/* Footer: avatar placeholder + identity */}
               <div className="flex items-center gap-3 pt-2 border-t border-line/60">
                 <div
-                  className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-teal text-white text-xs font-semibold flex items-center justify-center"
+                  className="w-9 h-9 rounded-full bg-gradient-to-br from-brand-purple to-brand-teal text-[color:var(--color-ink-strong)] text-xs font-semibold flex items-center justify-center"
                   aria-hidden="true"
                 >
                   {t.name.split(" ").map((p) => p[0]).slice(0, 2).join("")}
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-medium text-slate-100 truncate">{t.name}</div>
-                  <div className="text-xs text-slate-400 truncate">{t.role} · {t.company}</div>
+                  <div className="text-sm font-medium text-slate-900 truncate">{t.name}</div>
+                  <div className="text-xs text-slate-600 truncate">{t.role} · {t.company}</div>
                 </div>
                 {t.rating ? (
                   <div className="ml-auto text-xs text-warn" aria-label={`${t.rating} of 5 stars`}>
@@ -167,10 +167,10 @@ export default function TestimonialsPage() {
         <div className="grid gap-6 lg:grid-cols-3">
           {SUPPORTING_SECTIONS.map((s, i) => (
             <article key={i} className="glass p-6 sm:p-7 rounded-2xl">
-              <h2 className="text-lg sm:text-xl font-semibold text-white tracking-tight">
+              <h2 className="text-lg sm:text-xl font-semibold text-[color:var(--color-ink-strong)] tracking-tight">
                 {s.title}
               </h2>
-              <p className="mt-3 text-sm text-slate-300 leading-relaxed">
+              <p className="mt-3 text-sm text-slate-700 leading-relaxed">
                 {s.body}
               </p>
             </article>
@@ -189,7 +189,7 @@ export default function TestimonialsPage() {
             <h2 className="text-3xl sm:text-4xl font-semibold tracking-tight">
               Run your business with the clarity of a finance team.
             </h2>
-            <p className="mt-3 text-base text-slate-300 max-w-xl mx-auto">
+            <p className="mt-3 text-base text-slate-700 max-w-xl mx-auto">
               Open Tweaxly and see your numbers the way an AI financial advisor would.
             </p>
             <div className="mt-7 flex items-center justify-center gap-3 flex-wrap">

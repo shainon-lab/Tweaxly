@@ -404,10 +404,10 @@ export const TERMS_SECTIONS: Section[] = [
 
 export default function TermsContent() {
   return (
-    <div className="space-y-8 text-slate-300 leading-relaxed">
+    <div className="space-y-8 text-slate-700 leading-relaxed">
       {TERMS_SECTIONS.map((s) => (
         <section key={s.id} id={s.id}>
-          <h2 className="text-lg font-semibold text-white mb-3">
+          <h2 className="text-lg font-semibold text-[color:var(--color-ink-strong)] mb-3">
             {s.n != null ? <span className="text-slate-500 mr-2">{s.n}.</span> : null}
             {s.title}
           </h2>
@@ -418,7 +418,7 @@ export default function TermsContent() {
               }
               if (b.kind === "pre") {
                 return (
-                  <p key={i} className="text-slate-200 font-medium tracking-wide">
+                  <p key={i} className="text-slate-800 font-medium tracking-wide">
                     {b.body}
                   </p>
                 );
@@ -427,7 +427,7 @@ export default function TermsContent() {
                 return (
                   <h3
                     key={i}
-                    className="text-sm font-semibold text-white tracking-wide pt-3 mt-2"
+                    className="text-sm font-semibold text-[color:var(--color-ink-strong)] tracking-wide pt-3 mt-2"
                   >
                     {b.text}
                   </h3>

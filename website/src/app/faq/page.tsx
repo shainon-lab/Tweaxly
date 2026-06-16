@@ -82,9 +82,9 @@ export default function FaqPage() {
       {/* Visible breadcrumb */}
       <nav aria-label="Breadcrumb" className="container-wide pt-8 pb-2">
         <ol className="flex items-center gap-2 text-xs text-slate-500 flex-wrap">
-          <li><Link href="/" className="hover:text-slate-200 transition">Home</Link></li>
+          <li><Link href="/" className="hover:text-slate-800 transition">Home</Link></li>
           <li className="text-slate-600">›</li>
-          <li className="text-slate-300">FAQ</li>
+          <li className="text-slate-700">FAQ</li>
         </ol>
       </nav>
 
@@ -93,7 +93,7 @@ export default function FaqPage() {
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
           Tweaxly, <span className="gradient-text">in plain English</span>.
         </h1>
-        <p className="mt-6 text-lg text-slate-300 leading-relaxed">
+        <p className="mt-6 text-lg text-slate-700 leading-relaxed">
           Answers about Tweaxly&apos;s AI business intelligence platform -
           how the AI works, what it tracks, how data gets in, what makes it
           different from accounting software and BI dashboards, and what
@@ -106,12 +106,12 @@ export default function FaqPage() {
         aria-label="FAQ categories"
         className="border-y border-line/60 bg-ink-900/30 backdrop-blur-sm"
       >
-        <div className="container-wide py-4 flex items-center gap-x-6 gap-y-2 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-400">
+        <div className="container-wide py-4 flex items-center gap-x-6 gap-y-2 flex-wrap text-[11px] uppercase tracking-[0.18em] text-slate-600">
           {FAQ_CATEGORIES.map((c) => (
             <a
               key={c.id}
               href={`#${c.id}`}
-              className="hover:text-white transition flex items-center gap-2"
+              className="hover:text-[color:var(--color-ink-strong)] transition flex items-center gap-2"
             >
               <span className="w-1 h-1 rounded-full bg-brand-purple" />
               {c.label}
@@ -131,7 +131,7 @@ export default function FaqPage() {
             <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
               {cat.label}
             </div>
-            <p className="text-base text-slate-400 leading-relaxed">
+            <p className="text-base text-slate-600 leading-relaxed">
               {cat.blurb}
             </p>
           </div>
@@ -149,8 +149,8 @@ export default function FaqPage() {
       {/* Contact + early access CTA */}
       <section className="container-wide pt-12 pb-24 max-w-3xl text-center">
         <div className="card">
-          <div className="text-base font-medium text-white">Didn&apos;t find your answer?</div>
-          <p className="text-sm text-slate-300 mt-2 leading-relaxed">
+          <div className="text-base font-medium text-[color:var(--color-ink-strong)]">Didn&apos;t find your answer?</div>
+          <p className="text-sm text-slate-700 mt-2 leading-relaxed">
             Reach out and we&apos;ll get back to you. We&apos;re a small team
             still in early access so replies come from a real human.
           </p>
@@ -164,19 +164,19 @@ export default function FaqPage() {
 
         {/* Internal-linking footer - GEO authority signal */}
         <div className="mt-8 text-xs text-slate-500 flex items-center gap-4 flex-wrap justify-center">
-          <Link href="/features" className="hover:text-slate-300 transition">
+          <Link href="/features" className="hover:text-slate-700 transition">
             All features →
           </Link>
           <span className="text-slate-600">·</span>
-          <Link href="/compare/accounting-software" className="hover:text-slate-300 transition">
+          <Link href="/compare/accounting-software" className="hover:text-slate-700 transition">
             Tweaxly vs accounting software
           </Link>
           <span className="text-slate-600">·</span>
-          <Link href="/compare/dashboards" className="hover:text-slate-300 transition">
+          <Link href="/compare/dashboards" className="hover:text-slate-700 transition">
             Tweaxly vs dashboards
           </Link>
           <span className="text-slate-600">·</span>
-          <Link href="/resources" className="hover:text-slate-300 transition">
+          <Link href="/resources" className="hover:text-slate-700 transition">
             Resources →
           </Link>
         </div>

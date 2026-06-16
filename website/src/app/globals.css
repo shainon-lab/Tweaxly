@@ -3,43 +3,72 @@
 /* TWEAXLY brand palette — same values as the product (ai-cfo-mvp). The
    navy is the logo's panel; purple/teal are the X gradient stops. */
 @theme inline {
+  /* Soft / warm light theme. The `ink` scale now represents light
+     SURFACES (ink-950 = page, ink-900 = card surface) so the existing
+     bg-ink-* / border-line utilities flip automatically. Dark product
+     mockups re-declare these variables locally via .product-dark. */
+  --color-ink-950: #f6f6fb;  /* page background */
+  --color-ink-900: #ffffff;  /* primary card surface */
+  --color-ink-800: #f2f2f8;  /* subtle raised surface */
+  --color-ink-700: #ececf6;  /* hover / pressed surface */
+  --color-line: #e6e6f0;     /* hairline borders */
+  --color-brand-navy: #0a1428;
+  --color-brand-purple: #7c5cfa;       /* deepened for contrast on light */
+  --color-brand-purple-deep: #6d28d9;
+  --color-brand-teal: #0891b2;          /* deepened for contrast on light */
+  --color-brand-teal-deep: #0e7490;
+  --color-good: #15a36b;
+  --color-bad: #dc2626;
+  --color-warn: #b45309;
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+/* Text tokens (kept out of @theme so the values cascade normally). */
+:root {
+  color-scheme: light;
+  --color-ink-strong: #161826;  /* headings */
+  --color-ink-soft:   #3a3f52;  /* body text */
+  --color-ink-mute:   #6b7088;  /* muted / meta */
+}
+
+html, body {
+  background: #f6f6fb;
+  color: var(--color-ink-soft);
+}
+
+html { scroll-behavior: smooth; }
+
+/* Ambient page background — soft, low-opacity lavender/teal washes over
+   the warm off-white base. Keeps the brand mood while staying bright. */
+body {
+  background-image:
+    radial-gradient(ellipse 90% 60% at 50% -8%, rgba(124, 92, 250, 0.10), transparent 60%),
+    radial-gradient(ellipse 60% 50% at 92% 28%, rgba(8, 145, 178, 0.07), transparent 60%),
+    radial-gradient(ellipse 55% 45% at 6% 82%, rgba(124, 92, 250, 0.06), transparent 60%);
+  background-repeat: no-repeat;
+  background-attachment: fixed;
+}
+
+/* Scoped dark context for product mockups - restores the original dark
+   surface tokens so the in-app dashboard cards keep their dark look and
+   pop as 'screenshots' against the light marketing page. */
+.product-dark {
+  color-scheme: dark;
   --color-ink-950: #0b0d12;
   --color-ink-900: #11141b;
   --color-ink-800: #161a23;
   --color-ink-700: #222735;
   --color-line: #272c3a;
-  --color-brand-navy: #0a1428;
-  --color-brand-purple: #a78bfa;
-  --color-brand-purple-deep: #7c5cfa;
-  --color-brand-teal: #22d3ee;
-  --color-brand-teal-deep: #06b6d4;
-  --color-good: #3ecf8e;
-  --color-bad: #ef5b5b;
-  --color-warn: #f1b04a;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-:root { color-scheme: dark; }
-
-html, body {
-  background: #06091a;
   color: #e7eaf0;
+  background-color: #0c1020;  /* solid dark so translucent children read */
 }
-
-html { scroll-behavior: smooth; }
-
-/* Ambient page background — soft radial blobs of the brand purple and
-   teal, layered over the near-black base. Sets the whole page in a
-   'modern AI surface' mood without being noisy. */
-body {
-  background-image:
-    radial-gradient(ellipse 90% 60% at 50% -10%, rgba(167, 139, 250, 0.22), transparent 60%),
-    radial-gradient(ellipse 60% 50% at 90% 30%, rgba(34, 211, 238, 0.10), transparent 60%),
-    radial-gradient(ellipse 50% 40% at 10% 80%, rgba(167, 139, 250, 0.08), transparent 60%);
-  background-repeat: no-repeat;
-  background-attachment: fixed;
-}
+/* Glass surfaces inside a dark mock become solidly dark (their default
+   translucency was tuned for the old dark page). */
+.product-dark.glass,
+.product-dark .glass { background-color: #0f1322; }
+.product-dark.card,
+.product-dark .card { background-color: #11141b; box-shadow: none; }
 
 @layer components {
   .container-tweaxly { @apply max-w-6xl mx-auto px-6; }
@@ -60,16 +89,17 @@ body {
   .btn-brand { @apply text-white; background-image: linear-gradient(90deg, #a78bfa 0%, #22d3ee 100%); }
   .btn-brand:hover { opacity: 0.9; }
 
-  .btn-ghost { @apply border border-line text-slate-200; }
+  .btn-ghost { @apply border border-line; color: var(--color-ink-soft); background-color: #fff; }
   .btn-ghost:hover { @apply bg-ink-700; }
 
   .card {
     @apply rounded-xl border border-line p-6;
-    background-color: rgb(17 20 27 / 0.8);
+    background-color: #ffffff;
+    box-shadow: 0 1px 2px rgba(22, 24, 38, 0.04), 0 6px 20px rgba(22, 24, 38, 0.05);
   }
 
-  /* Glassmorphic surface for product mockups — subtle blur over the
-     ambient page background. */
+  /* Glassmorphic surface for product mockups — stays dark (the mocks are
+     wrapped in .product-dark and depict the dark in-app UI). */
   .glass {
     @apply rounded-2xl border border-line/80;
     background-color: rgb(11 13 25 / 0.55);
@@ -78,7 +108,8 @@ body {
   }
 
   .gradient-text {
-    background-image: linear-gradient(90deg, #a78bfa 0%, #22d3ee 100%);
+    /* Deepened stops so the gradient stays legible on a light background. */
+    background-image: linear-gradient(90deg, #7c5cfa 0%, #0891b2 100%);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -87,24 +118,25 @@ body {
 
   /* Eyebrow chip — small label that sits above section headings */
   .eyebrow {
-    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em] text-slate-300;
-    border-color: rgb(167 139 250 / 0.30);
-    background-color: rgb(167 139 250 / 0.06);
+    @apply inline-flex items-center gap-2 rounded-full border px-3 py-1 text-[11px] uppercase tracking-[0.18em];
+    color: #6d28d9;
+    border-color: rgb(124 92 250 / 0.30);
+    background-color: rgb(124 92 250 / 0.08);
   }
 }
 
 /* FAQ accordion — uses native <details>/<summary> so it works without JS. */
 details.faq-item {
   border-radius: 14px;
-  border: 1px solid #272c3a;
-  background-color: rgb(17 20 27 / 0.6);
+  border: 1px solid #e6e6f0;
+  background-color: #ffffff;
   padding: 1rem 1.25rem;
   transition: background-color 150ms ease;
-  backdrop-filter: blur(10px);
+  box-shadow: 0 1px 2px rgba(22, 24, 38, 0.04);
 }
 details.faq-item[open] {
-  background-color: rgb(22 26 35 / 0.85);
-  border-color: rgb(167 139 250 / 0.30);
+  background-color: #fbfaff;
+  border-color: rgb(124 92 250 / 0.35);
 }
 details.faq-item > summary {
   list-style: none;
@@ -113,22 +145,22 @@ details.faq-item > summary {
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  font-weight: 500;
-  color: #e7eaf0;
+  font-weight: 600;
+  color: var(--color-ink-strong);
 }
 details.faq-item > summary::-webkit-details-marker { display: none; }
 details.faq-item > summary::after {
   content: "+";
   font-size: 1.25rem;
   line-height: 1;
-  color: #a78bfa;
+  color: #7c5cfa;
   transition: transform 200ms ease;
   flex-shrink: 0;
 }
 details.faq-item[open] > summary::after { content: "−"; }
 details.faq-item > .faq-answer {
   margin-top: 0.75rem;
-  color: #cbd5e1;
+  color: var(--color-ink-soft);
   font-size: 0.875rem;
   line-height: 1.6;
 }
@@ -300,7 +332,7 @@ details.faq-item > .faq-answer {
 .article-body {
   font-size: 1.0625rem;
   line-height: 1.75;
-  color: #cbd5e1;
+  color: var(--color-ink-soft);
 }
 .article-body p {
   margin-top: 1.1em;
@@ -310,10 +342,10 @@ details.faq-item > .faq-answer {
   margin-top: 0;
 }
 .article-body strong {
-  color: #f1f5f9;
+  color: var(--color-ink-strong);
   font-weight: 600;
 }
-.article-body em { color: #e2e8f0; }
+.article-body em { color: var(--color-ink-strong); }
 .article-body ul, .article-body ol {
   margin-top: 1.1em;
   padding-left: 1.25rem;
@@ -324,15 +356,15 @@ details.faq-item > .faq-answer {
 .article-body ul::marker, .article-body ol::marker { color: #64748b; }
 .article-body li::marker { color: #64748b; }
 .article-body a:not(.btn-brand):not(.btn-ghost) {
-  color: #a78bfa;
+  color: #6d28d9;
   text-decoration: underline;
   text-underline-offset: 2px;
 }
 .article-body code {
   font-family: var(--font-mono, ui-monospace, "SF Mono", Menlo, monospace);
   font-size: 0.92em;
-  background: rgba(255, 255, 255, 0.06);
-  border: 1px solid #272c3a;
+  background: #f2f2f8;
+  border: 1px solid #e6e6f0;
   border-radius: 4px;
   padding: 0.05rem 0.35rem;
 }
@@ -340,6 +372,6 @@ details.faq-item > .faq-answer {
 .article-lead {
   font-size: 1.25rem;
   line-height: 1.55;
-  color: #e2e8f0;
+  color: var(--color-ink-strong);
   margin: 1.5rem 0;
 }

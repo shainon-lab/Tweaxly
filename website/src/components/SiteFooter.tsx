@@ -42,11 +42,11 @@ const LEGAL: { href: string; label: string }[] = [
 // Shared link style for every column. Bare strings keep Tailwind's
 // class-scan happy (no template-string interpolation in the source).
 const LINK_CLS =
-  "text-slate-400 hover:text-white transition-colors text-sm leading-snug";
+  "text-slate-600 hover:text-[color:var(--color-ink-strong)] transition-colors text-sm leading-snug";
 
 export default function SiteFooter() {
   return (
-    <footer className="border-t border-line bg-brand-navy mt-20">
+    <footer className="border-t border-line bg-ink-800 mt-20">
       <div className="container-wide pt-14 pb-24 sm:pb-14">
         {/* Top band - brand block + link columns */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-8">
@@ -55,7 +55,7 @@ export default function SiteFooter() {
             <Link href="/" aria-label="Tweaxly home" className="inline-block">
               <Logo size="md" showTagline />
             </Link>
-            <p className="mt-5 text-sm text-slate-400 leading-relaxed max-w-sm">
+            <p className="mt-5 text-sm text-slate-600 leading-relaxed max-w-sm">
               Tweaxly turns your real financial activity into business
               signals, forecasts, and advice - in real time, using AI.
             </p>
@@ -129,7 +129,7 @@ function FooterColumn({
 }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <div className="text-[10px] uppercase tracking-[0.22em] text-slate-400 font-semibold mb-4">
+      <div className="text-[10px] uppercase tracking-[0.22em] text-slate-600 font-semibold mb-4">
         {title}
       </div>
       <ul className="flex flex-col gap-2.5 text-sm">{children}</ul>

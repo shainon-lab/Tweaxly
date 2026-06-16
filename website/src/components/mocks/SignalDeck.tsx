@@ -52,7 +52,7 @@ function SignalMockCard({ s, dim }: { s: Signal; dim?: boolean }) {
   const arrowChar = s.metricArrow === "up" ? "↑" : s.metricArrow === "down" ? "↓" : "";
   return (
     <div
-      className={`rounded-2xl border ${t.border} ${t.glow} ${dim ? "opacity-70" : ""} bg-ink-900/60 p-4 flex flex-col gap-2 backdrop-blur-sm`}
+      className={`rounded-2xl border ${t.border} ${t.glow} ${dim ? "opacity-70" : ""} bg-ink-900/60 product-dark p-4 flex flex-col gap-2 backdrop-blur-sm`}
     >
       <div className="flex items-center gap-2 text-[10px] text-slate-400">
         <span

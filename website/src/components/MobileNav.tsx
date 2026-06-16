@@ -100,7 +100,7 @@ export default function MobileNav({ active }: Props) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex items-center justify-center w-10 h-10 rounded-md text-slate-200 hover:bg-ink-700 transition"
+        className="inline-flex items-center justify-center w-10 h-10 rounded-md text-slate-800 hover:bg-ink-700 transition"
         aria-label="Open menu"
         aria-expanded={open}
         aria-controls="mobile-nav-drawer"
@@ -136,11 +136,11 @@ export default function MobileNav({ active }: Props) {
           >
             {/* Header - close button */}
             <div className="flex items-center justify-between p-5 border-b border-line">
-              <div className="text-sm font-semibold tracking-wide text-slate-200">Menu</div>
+              <div className="text-sm font-semibold tracking-wide text-slate-800">Menu</div>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="inline-flex items-center justify-center w-10 h-10 rounded-md text-slate-300 hover:bg-ink-700 transition"
+                className="inline-flex items-center justify-center w-10 h-10 rounded-md text-slate-700 hover:bg-ink-700 transition"
                 aria-label="Close menu"
               >
                 <CloseGlyph />
@@ -161,8 +161,8 @@ export default function MobileNav({ active }: Props) {
                         aria-current={isActive ? "page" : undefined}
                         className={`flex items-center justify-between text-base py-3 px-3 -mx-3 rounded-lg transition ${
                           isActive
-                            ? "text-white bg-accent-soft"
-                            : "text-slate-200 hover:bg-ink-700"
+                            ? "text-[color:var(--color-ink-strong)] bg-accent-soft"
+                            : "text-slate-800 hover:bg-ink-700"
                         }`}
                       >
                         <span>{p.label}</span>
@@ -180,7 +180,7 @@ export default function MobileNav({ active }: Props) {
                     <Link
                       href={s.href}
                       onClick={() => setOpen(false)}
-                      className="flex items-center justify-between text-sm py-2.5 px-3 -mx-3 rounded-lg text-slate-300 hover:bg-ink-700 transition"
+                      className="flex items-center justify-between text-sm py-2.5 px-3 -mx-3 rounded-lg text-slate-700 hover:bg-ink-700 transition"
                     >
                       <span>{s.label}</span>
                       <span className="text-slate-500" aria-hidden="true">↓</span>

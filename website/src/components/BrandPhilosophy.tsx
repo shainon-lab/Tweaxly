@@ -29,24 +29,24 @@ export default function BrandPhilosophy() {
           </div>
           <h2
             id="how-tweaxly-works"
-            className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1] text-white"
+            className="text-3xl sm:text-4xl lg:text-5xl font-semibold tracking-tight leading-[1.1] text-[color:var(--color-ink-strong)]"
           >
             One methodology, end to end.
           </h2>
-          <p className="mt-5 text-base sm:text-lg text-slate-400 leading-relaxed">
+          <p className="mt-5 text-base sm:text-lg text-slate-600 leading-relaxed">
             Six steps from raw financial data to better business outcomes -
             the philosophy behind every signal, forecast and conversation
             inside the platform.
           </p>
         </div>
 
-        <ul className="lg:col-span-7 space-y-3 text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight leading-[1.3] text-white">
+        <ul className="lg:col-span-7 space-y-3 text-xl sm:text-2xl lg:text-3xl font-semibold tracking-tight leading-[1.3] text-[color:var(--color-ink-strong)]">
           {LINES.map((l) => (
             <li key={l.lead}>
-              <span className="text-white">
+              <span className="text-[color:var(--color-ink-strong)]">
                 {renderLead(l.lead, l.hlIndex)}
               </span>
-              <span className="text-slate-400">{l.tail}</span>
+              <span className="text-slate-600">{l.tail}</span>
             </li>
           ))}
         </ul>

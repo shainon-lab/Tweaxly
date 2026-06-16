@@ -481,9 +481,9 @@ export default function PricingPage() {
 
       <nav aria-label="Breadcrumb" className="container-wide pt-8 pb-2">
         <ol className="flex items-center gap-2 text-xs text-slate-500">
-          <li><Link href="/" className="hover:text-slate-200 transition">Home</Link></li>
+          <li><Link href="/" className="hover:text-slate-800 transition">Home</Link></li>
           <li className="text-slate-600">›</li>
-          <li className="text-slate-300">Pricing</li>
+          <li className="text-slate-700">Pricing</li>
         </ol>
       </nav>
 
@@ -510,7 +510,7 @@ function Hero() {
         Start free.{" "}
         <span className="gradient-text">Upgrade when you&apos;re ready.</span>
       </h1>
-      <p className="mt-6 text-lg sm:text-xl text-slate-300 leading-relaxed max-w-3xl">
+      <p className="mt-6 text-lg sm:text-xl text-slate-700 leading-relaxed max-w-3xl">
         Three plans. AI Credits included on every one - 30 one-time
         starter credits on Free, 100 every month on Pro, 250 every
         month on Executive, plus add-on packs you can buy anytime as
@@ -544,7 +544,7 @@ function PlanCard({ plan }: { plan: Plan }) {
     >
       <header className="mb-4">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold text-white">{plan.name}</h2>
+          <h2 className="text-xl font-semibold text-[color:var(--color-ink-strong)]">{plan.name}</h2>
           {plan.highlight ? (
             <span className="text-[10px] uppercase tracking-[0.18em] text-brand-purple font-semibold">
               Recommended
@@ -552,10 +552,10 @@ function PlanCard({ plan }: { plan: Plan }) {
           ) : null}
         </div>
         <div className="mt-3 flex items-baseline gap-2">
-          <span className="text-4xl font-bold text-white">{plan.price}</span>
-          <span className="text-sm text-slate-400">{plan.period}</span>
+          <span className="text-4xl font-bold text-[color:var(--color-ink-strong)]">{plan.price}</span>
+          <span className="text-sm text-slate-600">{plan.period}</span>
         </div>
-        <p className="mt-3 text-sm text-slate-400 leading-relaxed">{plan.tagline}</p>
+        <p className="mt-3 text-sm text-slate-600 leading-relaxed">{plan.tagline}</p>
       </header>
 
       <div className="mb-6 flex-1">
@@ -626,7 +626,7 @@ function BulletSection({
           {label}
         </div>
       ) : null}
-      <ul className="space-y-2 text-sm text-slate-300 leading-relaxed">
+      <ul className="space-y-2 text-sm text-slate-700 leading-relaxed">
         {bullets.map((b, i) => (
           <BulletLine key={i} bullet={b} />
         ))}
@@ -664,7 +664,7 @@ function BulletLine({ bullet }: { bullet: PlanBullet }) {
             "pointer-events-none invisible opacity-0 group-hover:visible group-hover:opacity-100 " +
             "transition duration-150 absolute z-20 left-0 top-full mt-1.5 " +
             "max-w-xs w-max rounded-md border border-line bg-ink-900 px-3 py-2 " +
-            "text-[11px] leading-snug text-slate-300 shadow-lg shadow-black/40"
+            "text-[11px] leading-snug text-slate-700 shadow-lg shadow-black/40"
           }
         >
           {bullet.tooltip}
@@ -710,7 +710,7 @@ function FeatureMatrix() {
         <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
           Full comparison
         </div>
-        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+        <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">
           Everything that&apos;s included, by plan.
         </h2>
       </div>
@@ -718,7 +718,7 @@ function FeatureMatrix() {
       <div className="overflow-x-auto rounded-2xl border border-line">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-ink-900/80 text-left text-[11px] uppercase tracking-[0.16em] text-slate-400">
+            <tr className="bg-ink-900/80 text-left text-[11px] uppercase tracking-[0.16em] text-slate-600">
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line w-2/5">Capability</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Free</th>
               <th scope="col" className="px-5 py-4 font-semibold border-b border-line">Pro</th>
@@ -739,16 +739,16 @@ function FeatureMatrix() {
                 </tr>
                 {group.rows.map((row, i) => (
                   <tr key={`${group.label}-${row.dimension}`} className={i % 2 === 0 ? "bg-ink-950/30" : ""}>
-                    <td className="px-5 py-3 align-top text-slate-200 font-medium border-b border-line/40">
+                    <td className="px-5 py-3 align-top text-slate-800 font-medium border-b border-line/40">
                       {row.dimension}
                     </td>
-                    <td className="px-5 py-3 align-top text-slate-300 border-b border-line/40">
+                    <td className="px-5 py-3 align-top text-slate-700 border-b border-line/40">
                       {row.free === "✓" ? <CheckGlyph /> : row.free === "—" ? <span className="text-slate-600">—</span> : row.free}
                     </td>
-                    <td className="px-5 py-3 align-top text-slate-300 border-b border-line/40">
+                    <td className="px-5 py-3 align-top text-slate-700 border-b border-line/40">
                       {row.pro === "✓" ? <CheckGlyph /> : row.pro === "—" ? <span className="text-slate-600">—</span> : row.pro}
                     </td>
-                    <td className="px-5 py-3 align-top text-slate-100 border-b border-line/40">
+                    <td className="px-5 py-3 align-top text-slate-900 border-b border-line/40">
                       {row.business === "✓" ? <CheckGlyph /> : row.business === "—" ? <span className="text-slate-600">—</span> : row.business}
                     </td>
                   </tr>
@@ -770,10 +770,10 @@ function AICreditsExplainer() {
           <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
             AI Credits, explained
           </div>
-          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white">
+          <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">
             One simple meter for AI work.
           </h2>
-          <p className="mt-4 text-base text-slate-400 leading-relaxed">
+          <p className="mt-4 text-base text-slate-600 leading-relaxed">
             AI Credits are how Tweaxly meters AI-powered work like consultation,
             deep analysis and fresh forecast runs. Every plan includes a
             monthly allowance, and you can buy more anytime - they&apos;re
@@ -793,8 +793,8 @@ function AICreditsExplainer() {
             <ul className="space-y-2.5 text-sm">
               {CREDIT_COSTS.map((c) => (
                 <li key={c.action} className="flex items-center justify-between gap-4 border-b border-line/30 pb-2 last:border-b-0 last:pb-0">
-                  <span className="text-slate-300">{c.action}</span>
-                  <span className="text-white font-semibold whitespace-nowrap">{c.cost}</span>
+                  <span className="text-slate-700">{c.action}</span>
+                  <span className="text-[color:var(--color-ink-strong)] font-semibold whitespace-nowrap">{c.cost}</span>
                 </li>
               ))}
             </ul>
@@ -807,8 +807,8 @@ function AICreditsExplainer() {
             <ul className="space-y-2.5 text-sm">
               {CREDIT_PACKS.map((p) => (
                 <li key={p.pack} className="flex items-center justify-between gap-4 border-b border-line/30 pb-2 last:border-b-0 last:pb-0">
-                  <span className="text-slate-300">{p.pack}</span>
-                  <span className="text-white font-semibold">{p.price}</span>
+                  <span className="text-slate-700">{p.pack}</span>
+                  <span className="text-[color:var(--color-ink-strong)] font-semibold">{p.price}</span>
                 </li>
               ))}
             </ul>
@@ -828,7 +828,7 @@ function PricingFaq() {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         Pricing FAQ
       </div>
-      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mb-6">
+      <h2 className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mb-6">
         Questions before you start.
       </h2>
       <div className="space-y-3">
@@ -836,13 +836,13 @@ function PricingFaq() {
           <details key={f.q} className="card group">
             <summary className="cursor-pointer list-none flex items-start gap-3">
               <span className="text-brand-purple group-open:rotate-90 transition-transform mt-1">›</span>
-              <span className="text-base font-semibold text-white leading-snug flex-1">{f.q}</span>
+              <span className="text-base font-semibold text-[color:var(--color-ink-strong)] leading-snug flex-1">{f.q}</span>
             </summary>
-            <div className="mt-3 ml-7 text-sm text-slate-300 leading-relaxed">{f.a}</div>
+            <div className="mt-3 ml-7 text-sm text-slate-700 leading-relaxed">{f.a}</div>
           </details>
         ))}
       </div>
-      <div className="mt-6 text-sm text-slate-400">
+      <div className="mt-6 text-sm text-slate-600">
         Still have questions?{" "}
         <Link href="/faq" className="text-brand-purple hover:text-brand-teal transition">
           See the full FAQ →
@@ -863,27 +863,27 @@ function ComparisonLinks() {
       <div className="text-[10px] uppercase tracking-[0.22em] text-brand-purple font-semibold mb-3">
         How Tweaxly compares
       </div>
-      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-white mb-6">
+      <h2 className="text-xl sm:text-2xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mb-6">
         Evaluating Tweaxly against what you use today.
       </h2>
       <div className="grid sm:grid-cols-3 gap-4">
         <Link href="/compare/excel" className="block card group hover:border-brand-purple/40 transition">
-          <div className="text-base font-semibold text-white">Tweaxly vs Excel</div>
-          <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+          <div className="text-base font-semibold text-[color:var(--color-ink-strong)]">Tweaxly vs Excel</div>
+          <div className="mt-2 text-sm text-slate-600 leading-relaxed">
             When to move from spreadsheets to continuous AI business intelligence.
           </div>
           <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">Read →</div>
         </Link>
         <Link href="/compare/accounting-software" className="block card group hover:border-brand-purple/40 transition">
-          <div className="text-base font-semibold text-white">Tweaxly vs Accounting Software</div>
-          <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+          <div className="text-base font-semibold text-[color:var(--color-ink-strong)]">Tweaxly vs Accounting Software</div>
+          <div className="mt-2 text-sm text-slate-600 leading-relaxed">
             Accounting records the past. Tweaxly explains the present and forecasts what&apos;s next.
           </div>
           <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">Read →</div>
         </Link>
         <Link href="/compare/dashboards" className="block card group hover:border-brand-purple/40 transition">
-          <div className="text-base font-semibold text-white">Tweaxly vs Static Dashboards</div>
-          <div className="mt-2 text-sm text-slate-400 leading-relaxed">
+          <div className="text-base font-semibold text-[color:var(--color-ink-strong)]">Tweaxly vs Static Dashboards</div>
+          <div className="mt-2 text-sm text-slate-600 leading-relaxed">
             Power BI &amp; Tableau show data. Tweaxly explains it, forecasts and advises.
           </div>
           <div className="mt-3 text-[11px] text-brand-purple group-hover:text-brand-teal transition uppercase tracking-wider">Read →</div>
@@ -900,7 +900,7 @@ function FinalCta() {
         <h2 className="text-2xl sm:text-3xl lg:text-4xl font-semibold tracking-tight">
           Get your first <span className="gradient-text">AI business signals</span> today.
         </h2>
-        <p className="mt-4 text-sm sm:text-base text-slate-300 max-w-2xl mx-auto leading-relaxed">
+        <p className="mt-4 text-sm sm:text-base text-slate-700 max-w-2xl mx-auto leading-relaxed">
           5-minute setup. No credit card. Your data stays yours. Bring a CSV
           and you&apos;ll have signals, a forecast and an AI advisor before lunch.
         </p>

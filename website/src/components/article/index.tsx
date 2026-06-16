@@ -30,7 +30,7 @@ export function TLDR({ items, label }: { items: string[]; label?: string }) {
       <div className="text-[10px] uppercase tracking-[0.18em] text-brand-purple mb-3 font-semibold">
         {label ?? "In short"}
       </div>
-      <ul className="space-y-2 text-slate-100 text-[15px] sm:text-base leading-relaxed">
+      <ul className="space-y-2 text-slate-900 text-[15px] sm:text-base leading-relaxed">
         {items.map((it, i) => (
           <li key={i} className="flex gap-3">
             <span aria-hidden="true" className="shrink-0 text-brand-purple mt-1">•</span>
@@ -56,8 +56,8 @@ export function DefinitionBlock({
       <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-1.5">
         Definition
       </div>
-      <p className="text-slate-100 text-base sm:text-[17px] leading-relaxed">
-        <strong className="text-white">{term}</strong> {" - "}
+      <p className="text-slate-900 text-base sm:text-[17px] leading-relaxed">
+        <strong className="text-[color:var(--color-ink-strong)]">{term}</strong> {" - "}
         {children}
       </p>
     </div>
@@ -78,7 +78,7 @@ export function Formula({
       <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-3">
         Formula
       </div>
-      <pre className="text-base sm:text-lg text-white font-mono whitespace-pre-wrap leading-relaxed">
+      <pre className="text-base sm:text-lg text-[color:var(--color-ink-strong)] font-mono whitespace-pre-wrap leading-relaxed">
         {formula}
       </pre>
       {example ? (
@@ -86,7 +86,7 @@ export function Formula({
           <div className="text-[10px] uppercase tracking-[0.18em] text-slate-500 mb-2">
             Worked example
           </div>
-          <div className="text-sm text-slate-300 leading-relaxed">{example}</div>
+          <div className="text-sm text-slate-700 leading-relaxed">{example}</div>
         </div>
       ) : null}
     </div>
@@ -112,9 +112,9 @@ export function ComparisonTable({
       <table className="w-full text-sm sm:text-[15px] border border-line rounded-xl overflow-hidden">
         <thead>
           <tr className="bg-ink-900/60">
-            <th className="text-left font-semibold text-white px-4 py-3 border-b border-line">{" "}</th>
+            <th className="text-left font-semibold text-[color:var(--color-ink-strong)] px-4 py-3 border-b border-line">{" "}</th>
             {columns.map((c) => (
-              <th key={c} className="text-left font-semibold text-white px-4 py-3 border-b border-line">
+              <th key={c} className="text-left font-semibold text-[color:var(--color-ink-strong)] px-4 py-3 border-b border-line">
                 {c}
               </th>
             ))}
@@ -123,11 +123,11 @@ export function ComparisonTable({
         <tbody>
           {rows.map((row, i) => (
             <tr key={i} className={i % 2 === 0 ? "bg-ink-950/40" : ""}>
-              <td className="px-4 py-3 align-top text-slate-300 font-medium border-b border-line/40">
+              <td className="px-4 py-3 align-top text-slate-700 font-medium border-b border-line/40">
                 {row.label}
               </td>
               {row.cells.map((cell, j) => (
-                <td key={j} className="px-4 py-3 align-top text-slate-200 border-b border-line/40">
+                <td key={j} className="px-4 py-3 align-top text-slate-800 border-b border-line/40">
                   {cell}
                 </td>
               ))}
@@ -148,7 +148,7 @@ export function KeyTakeaways({ items }: { items: string[] }) {
       <div className="text-[10px] uppercase tracking-[0.18em] text-good mb-3 font-semibold">
         Key takeaways
       </div>
-      <ul className="space-y-2 text-slate-100 text-[15px] sm:text-base leading-relaxed">
+      <ul className="space-y-2 text-slate-900 text-[15px] sm:text-base leading-relaxed">
         {items.map((it, i) => (
           <li key={i} className="flex gap-3">
             <span aria-hidden="true" className="shrink-0 text-good mt-1">✓</span>
@@ -167,19 +167,19 @@ export function FAQ({ items, title }: { items: { q: string; a: string }[]; title
   if (!items?.length) return null;
   return (
     <section className="my-12 not-prose" aria-labelledby="article-faq-heading">
-      <h2 id="article-faq-heading" className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mt-14 mb-5">
+      <h2 id="article-faq-heading" className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mt-14 mb-5">
         {title ?? "Frequently asked questions"}
       </h2>
       <div className="space-y-2">
         {items.map((it, i) => (
           <details key={i} className="group rounded-xl border border-line bg-ink-900/40 px-5 py-4 open:bg-ink-900/60 transition">
             <summary className="cursor-pointer list-none flex items-start justify-between gap-4">
-              <span className="text-base sm:text-[17px] font-medium text-white leading-snug">
+              <span className="text-base sm:text-[17px] font-medium text-[color:var(--color-ink-strong)] leading-snug">
                 {it.q}
               </span>
-              <span aria-hidden="true" className="text-slate-400 group-open:rotate-45 transition shrink-0 mt-0.5">+</span>
+              <span aria-hidden="true" className="text-slate-600 group-open:rotate-45 transition shrink-0 mt-0.5">+</span>
             </summary>
-            <div className="mt-3 text-sm sm:text-base text-slate-300 leading-relaxed">
+            <div className="mt-3 text-sm sm:text-base text-slate-700 leading-relaxed">
               {it.a}
             </div>
           </details>
@@ -206,7 +206,7 @@ export function Breadcrumb({
               {it.label}
             </Link>
           ) : (
-            <span className="text-slate-300">{it.label}</span>
+            <span className="text-slate-700">{it.label}</span>
           )}
           {i < items.length - 1 ? <span aria-hidden="true" className="text-slate-700">/</span> : null}
         </span>
@@ -233,10 +233,10 @@ export function Callout({
     variant === "success" ? "Takeaway"   : "Note";
   return (
     <aside className={`my-8 rounded-2xl border ${tone} p-5`}>
-      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-400 mb-2">
+      <div className="text-[10px] uppercase tracking-[0.18em] text-slate-600 mb-2">
         {title ?? label}
       </div>
-      <div className="text-slate-200 text-base leading-relaxed">{children}</div>
+      <div className="text-slate-800 text-base leading-relaxed">{children}</div>
     </aside>
   );
 }
@@ -250,7 +250,7 @@ export function PullQuote({
 }) {
   return (
     <blockquote className="my-10 relative pl-6 border-l-2 border-brand-purple/60">
-      <div className="text-xl sm:text-2xl text-white font-medium leading-snug">
+      <div className="text-xl sm:text-2xl text-[color:var(--color-ink-strong)] font-medium leading-snug">
         {children}
       </div>
       {attribution ? (
@@ -275,8 +275,8 @@ export function ProductCta({
 }) {
   return (
     <div className="my-10 rounded-2xl border border-brand-purple/30 bg-gradient-to-br from-brand-purple/10 via-transparent to-brand-teal/10 p-6 sm:p-7">
-      <div className="text-base sm:text-lg font-semibold text-white">{title}</div>
-      <p className="mt-2 text-sm text-slate-300 leading-relaxed">{body}</p>
+      <div className="text-base sm:text-lg font-semibold text-[color:var(--color-ink-strong)]">{title}</div>
+      <p className="mt-2 text-sm text-slate-700 leading-relaxed">{body}</p>
       <div className="mt-5">
         {href.startsWith("/") ? (
           <Link href={href} className="btn-brand text-sm px-5 py-2.5 inline-flex">
@@ -299,7 +299,7 @@ export function ProductCta({
 
 export function H2({ id, children }: { id: string; children: React.ReactNode }) {
   return (
-    <h2 id={id} className="text-2xl sm:text-3xl font-semibold tracking-tight text-white mt-14 mb-5 scroll-mt-24">
+    <h2 id={id} className="text-2xl sm:text-3xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mt-14 mb-5 scroll-mt-24">
       {children}
     </h2>
   );
@@ -307,7 +307,7 @@ export function H2({ id, children }: { id: string; children: React.ReactNode }) 
 
 export function H3({ id, children }: { id?: string; children: React.ReactNode }) {
   return (
-    <h3 id={id} className="text-xl font-semibold tracking-tight text-white mt-10 mb-3 scroll-mt-24">
+    <h3 id={id} className="text-xl font-semibold tracking-tight text-[color:var(--color-ink-strong)] mt-10 mb-3 scroll-mt-24">
       {children}
     </h3>
   );

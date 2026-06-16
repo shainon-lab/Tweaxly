@@ -30,15 +30,15 @@ export default function PrivacyPage() {
         <Link href="/">
           <Logo size="md" showTagline />
         </Link>
-        <Link href="/" className="text-sm text-slate-400 hover:text-white transition">
+        <Link href="/" className="text-sm text-slate-600 hover:text-[color:var(--color-ink-strong)] transition">
           ← Back to home
         </Link>
       </header>
 
       <article className="container-wide py-12 max-w-3xl">
         <div className="mb-8">
-          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-white">Privacy Policy</h1>
-          <p className="mt-2 text-sm text-slate-400">Last Updated: {PRIVACY_LAST_UPDATED}</p>
+          <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight text-[color:var(--color-ink-strong)]">Privacy Policy</h1>
+          <p className="mt-2 text-sm text-slate-600">Last Updated: {PRIVACY_LAST_UPDATED}</p>
         </div>
         <PrivacyContent />
       </article>

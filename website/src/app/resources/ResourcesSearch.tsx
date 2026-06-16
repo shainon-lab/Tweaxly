@@ -95,13 +95,13 @@ export default function ResourcesSearch({
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
           autoComplete="off"
-          className="flex-1 bg-transparent outline-none text-sm sm:text-base text-white placeholder:text-slate-500"
+          className="flex-1 bg-transparent outline-none text-sm sm:text-base text-[color:var(--color-ink-strong)] placeholder:text-slate-500"
         />
         {q ? (
           <button
             type="button"
             onClick={() => { setQ(""); setOpen(false); }}
-            className="text-slate-500 hover:text-white transition text-xs"
+            className="text-slate-500 hover:text-[color:var(--color-ink-strong)] transition text-xs"
             aria-label="Clear search"
           >
             Clear
@@ -112,7 +112,7 @@ export default function ResourcesSearch({
       {open && q.trim().length > 0 ? (
         <div className="absolute z-30 left-0 right-0 top-full mt-2 rounded-2xl border border-line bg-ink-950 shadow-2xl shadow-black/60 max-h-[480px] overflow-y-auto">
           {!hasResults ? (
-            <div className="px-5 py-6 text-sm text-slate-400">
+            <div className="px-5 py-6 text-sm text-slate-600">
               No matches for &ldquo;{q}&rdquo;. Try a broader term, or browse all categories below.
             </div>
           ) : null}
@@ -125,7 +125,7 @@ export default function ResourcesSearch({
                     <Link
                       href={c.href}
                       onClick={() => setOpen(false)}
-                      className="block px-5 py-3 text-sm text-slate-200 hover:bg-ink-900 hover:text-white transition"
+                      className="block px-5 py-3 text-sm text-slate-800 hover:bg-ink-900 hover:text-[color:var(--color-ink-strong)] transition"
                     >
                       {c.label}
                     </Link>
@@ -145,8 +145,8 @@ export default function ResourcesSearch({
                       onClick={() => setOpen(false)}
                       className="block px-5 py-3 hover:bg-ink-900 transition"
                     >
-                      <div className="text-sm font-medium text-white leading-snug">{a.title}</div>
-                      <div className="mt-1 text-xs text-slate-400 line-clamp-2 leading-relaxed">{a.excerpt}</div>
+                      <div className="text-sm font-medium text-[color:var(--color-ink-strong)] leading-snug">{a.title}</div>
+                      <div className="mt-1 text-xs text-slate-600 line-clamp-2 leading-relaxed">{a.excerpt}</div>
                     </Link>
                   </li>
                 ))}

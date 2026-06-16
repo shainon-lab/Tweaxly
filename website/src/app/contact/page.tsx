@@ -37,7 +37,7 @@ export default function ContactPage() {
         <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight leading-[1.05]">
           Let&apos;s <span className="gradient-text">talk</span>.
         </h1>
-        <p className="mt-6 text-lg text-slate-300 leading-relaxed">
+        <p className="mt-6 text-lg text-slate-700 leading-relaxed">
           Questions about the AI financial advisor, forecasting, business
           signals, early access, or your specific business setup - send us a
           note and a real human gets back to you.

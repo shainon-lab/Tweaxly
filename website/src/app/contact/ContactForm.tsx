@@ -45,7 +45,7 @@ export default function ContactForm() {
     <form onSubmit={submit} className="card space-y-4">
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="contact-name" className="block text-xs uppercase tracking-wide text-slate-400 mb-1">Name *</label>
+          <label htmlFor="contact-name" className="block text-xs uppercase tracking-wide text-slate-600 mb-1">Name *</label>
           <input
             id="contact-name"
             type="text"
@@ -53,12 +53,12 @@ export default function ContactForm() {
             value={name}
             onChange={(e) => setName(e.target.value)}
             disabled={busy}
-            className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
+            className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
             placeholder="Your name"
           />
         </div>
         <div>
-          <label htmlFor="contact-email" className="block text-xs uppercase tracking-wide text-slate-400 mb-1">Email *</label>
+          <label htmlFor="contact-email" className="block text-xs uppercase tracking-wide text-slate-600 mb-1">Email *</label>
           <input
             id="contact-email"
             type="email"
@@ -66,27 +66,27 @@ export default function ContactForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             disabled={busy}
-            className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
+            className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
             placeholder="you@example.com"
           />
         </div>
       </div>
 
       <div>
-        <label htmlFor="contact-subject" className="block text-xs uppercase tracking-wide text-slate-400 mb-1">Subject</label>
+        <label htmlFor="contact-subject" className="block text-xs uppercase tracking-wide text-slate-600 mb-1">Subject</label>
         <input
           id="contact-subject"
           type="text"
           value={subject}
           onChange={(e) => setSubject(e.target.value)}
           disabled={busy}
-          className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
+          className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple"
           placeholder="What's this about?"
         />
       </div>
 
       <div>
-        <label htmlFor="contact-message" className="block text-xs uppercase tracking-wide text-slate-400 mb-1">Message *</label>
+        <label htmlFor="contact-message" className="block text-xs uppercase tracking-wide text-slate-600 mb-1">Message *</label>
         <textarea
           id="contact-message"
           required
@@ -94,7 +94,7 @@ export default function ContactForm() {
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           disabled={busy}
-          className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple resize-y"
+          className="w-full rounded-md border border-line bg-ink-900 px-3 py-2 text-sm text-slate-900 placeholder-slate-500 focus:border-brand-purple focus:outline-none focus:ring-1 focus:ring-brand-purple resize-y"
           placeholder="Tell us what you're looking for, or what you'd like us to help with."
         />
       </div>

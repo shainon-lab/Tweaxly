@@ -35,7 +35,7 @@ export default function Logo({
       aria-label="TWEAXLY"
     >
       <div
-        className="flex items-center font-semibold text-white"
+        className="flex items-center font-semibold text-[color:var(--color-ink-strong)]"
         style={{ fontSize: s.wordPx, lineHeight: 1, letterSpacing: "0.12em" }}
       >
         <span>TWEA</span>

@@ -37,7 +37,7 @@ export function ForecastChart() {
   void all;
 
   return (
-    <div className="glass p-5 sm:p-6">
+    <div className="glass product-dark p-5 sm:p-6">
       <div className="flex items-start justify-between mb-4 flex-wrap gap-3">
         <div>
           <div className="flex items-center gap-2 text-[11px] text-slate-400 mb-1.5">

@@ -25,7 +25,7 @@ export default function LegalCheckbox({
 
   return (
     <>
-      <label className="flex items-start gap-2.5 text-xs text-slate-300 leading-snug cursor-pointer select-none">
+      <label className="flex items-start gap-2.5 text-xs text-slate-700 leading-snug cursor-pointer select-none">
         <input
           type="checkbox"
           name={name}
@@ -75,13 +75,13 @@ function LegalModal({ kind, onClose }: { kind: Exclude<DocKind, null>; onClose: 
       <div className="relative w-full max-w-2xl max-h-full bg-ink-900 border border-line rounded-2xl shadow-2xl shadow-black/40 flex flex-col overflow-hidden">
         <div className="shrink-0 flex items-start justify-between gap-3 p-5 border-b border-line bg-ink-900">
           <div>
-            <h2 className="text-lg font-semibold text-white">{title}</h2>
+            <h2 className="text-lg font-semibold text-[color:var(--color-ink-strong)]">{title}</h2>
             <p className="text-xs text-slate-500 mt-0.5">Last Updated: {stamp}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="shrink-0 w-8 h-8 inline-flex items-center justify-center text-slate-400 hover:text-white hover:bg-ink-700 rounded-md transition"
+            className="shrink-0 w-8 h-8 inline-flex items-center justify-center text-slate-600 hover:text-[color:var(--color-ink-strong)] hover:bg-ink-700 rounded-md transition"
             aria-label="Close"
           >
             <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
@@ -96,7 +96,7 @@ function LegalModal({ kind, onClose }: { kind: Exclude<DocKind, null>; onClose: 
           <button
             type="button"
             onClick={onClose}
-            className="text-sm px-4 py-1.5 rounded-md border border-line text-slate-300 hover:text-white hover:border-slate-500 transition"
+            className="text-sm px-4 py-1.5 rounded-md border border-line text-slate-700 hover:text-[color:var(--color-ink-strong)] hover:border-slate-500 transition"
           >
             Close
           </button>
