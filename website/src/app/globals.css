@@ -2,7 +2,14 @@
 
 /* TWEAXLY brand palette — same values as the product (ai-cfo-mvp). The
    navy is the logo's panel; purple/teal are the X gradient stops. */
-@theme inline {
+/* NOTE: non-inline @theme (no `inline` keyword) is deliberate. It emits
+   the ink/line/brand scales as real CSS custom properties that the
+   bg-ink-* / border-line utilities reference via var(), so a scoped
+   redefinition inside .product-dark CASCADES to every descendant. With
+   `@theme inline` the values get baked into each utility and the
+   .product-dark overrides silently no-op (dark mock cards rendered as
+   white-60% gray with light borders). */
+@theme {
   /* Soft / warm light theme. The `ink` scale now represents light
      SURFACES (ink-950 = page, ink-900 = card surface) so the existing
      bg-ink-* / border-line utilities flip automatically. Dark product
