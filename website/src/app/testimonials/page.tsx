@@ -166,7 +166,7 @@ export default function TestimonialsPage() {
       <section className="container-wide pb-20 lg:pb-28">
         <div className="grid gap-6 lg:grid-cols-3">
           {SUPPORTING_SECTIONS.map((s, i) => (
-            <article key={i} className="glass p-6 sm:p-7 rounded-2xl">
+            <article key={i} className="card p-6 sm:p-7 rounded-2xl">
               <h2 className="text-lg sm:text-xl font-semibold text-[color:var(--color-ink-strong)] tracking-tight">
                 {s.title}
               </h2>

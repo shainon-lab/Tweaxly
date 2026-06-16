@@ -5,7 +5,6 @@
 
 type Size = "sm" | "md" | "lg";
 
-const NAVY = "#0a1428";
 const PURPLE = "#A78BFA";
 const TEAL = "#22D3EE";
 
@@ -31,7 +30,6 @@ export default function Logo({
   return (
     <div
       className={`inline-flex flex-col items-center rounded-lg ${s.padX} ${s.padY} ${className}`}
-      style={{ backgroundColor: NAVY }}
       aria-label="TWEAXLY"
     >
       <div
@@ -49,7 +47,7 @@ export default function Logo({
         // the header has room for the tagline again.
         <div
           className={`uppercase font-medium whitespace-nowrap ${s.gap}`}
-          style={{ fontSize: s.taglinePx, letterSpacing: "0.25em", color: "#cbd5e1" }}
+          style={{ fontSize: s.taglinePx, letterSpacing: "0.25em", color: "var(--color-ink-mute)" }}
         >
           Your AI Business Pulse
         </div>

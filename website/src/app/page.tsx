@@ -584,10 +584,10 @@ function ConnectYourDataBanner() {
           aria-hidden="true"
           className="absolute inset-0 -z-10"
           style={{
-            backgroundColor: "#0a1428",
+            backgroundColor: "#efedfb",
             backgroundImage:
-              "radial-gradient(ellipse 70% 60% at 20% 30%, rgba(167,139,250,0.22), transparent 65%)," +
-              "radial-gradient(ellipse 60% 50% at 85% 80%, rgba(34,211,238,0.18), transparent 65%)",
+              "radial-gradient(ellipse 70% 60% at 20% 30%, rgba(124,92,250,0.12), transparent 65%)," +
+              "radial-gradient(ellipse 60% 50% at 85% 80%, rgba(8,145,178,0.10), transparent 65%)",
           }}
         />
         <div
